@@ -10,4 +10,8 @@
     <Content Remove="wwwroot\css\AddPatientStep1.cshtml.css" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\" />
+  </ItemGroup>
+
 </Project>

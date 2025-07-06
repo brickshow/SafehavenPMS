@@ -444,6 +444,30 @@ body {
         width: 100%;
         justify-content: center;
     }
+
+    .top-content{
+        display:flex;
+        flex-direction:column;
+    }
+
+     .status {
+        display: none;
+    }
+    .sort-by{
+        display:none !important;
+    }
+
+    .sort-button {
+        display: none;
+    }
+
+    .top-left-corner h5{
+        display:none;
+    }
+
+    .search-input-wrapper, input{
+        width:100%
+    }
 }
 
 /* Additional breakpoint for very small devices */
@@ -455,6 +479,12 @@ body {
 
     .header {
         padding: 0.5rem;
+    }
+}
+@media (max-width: 768px) {
+    .home-section {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 }
 
@@ -500,3 +530,20 @@ body {
     margin: 2rem auto;
 }
 
+.patient-list-card {
+    border: 1px solid transparent;
+    background-color: white;
+    padding: 8px;
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+    height:100px;
+}
+
+.mid-content{
+    width:100%;
+    height:100%;
+    padding:30px;
+    padding-top:40px;
+    justify-content:center;
+    align-items:center;
+}

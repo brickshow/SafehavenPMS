@@ -42,6 +42,8 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("AddPatientStep1");
             }
 
+            Console.WriteLine(TempData["PatientStep1"]);
+
             return View();
         }
         //Acition Post for step 2

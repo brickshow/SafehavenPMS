@@ -1,12 +1,12 @@
 ﻿@{
     ViewBag.Title = "Patient List";
 }
-
+@* Header content *@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
             <i class='bx bxs-user-detail fs-2 me-2'></i>
-            <span><strong class="fs-4">@ViewBag.Title</strong></span>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
         </div>
         <a href="@Url.Action("AddPatientStep1", "Patient")" class="btn btn-primary">
             <i class='bx bx-user-plus me-1'></i>
@@ -15,3 +15,443 @@
     </div>
     <hr class="mt-0 mb-2"/>
 </div>
+
+@* List Of Patient Container *@
+<div class="patient-list-container">
+    @* top content section *@
+    <div class="top-content m-2 d-flex justify-content-between align-content-center">
+       
+        @* Left Corner Section *@
+        <div class="top-left-corner d-flex flex-row align-items-center gap-2">
+            <h5 class="text-custom mb-0">55 Patients</h5>
+            @* Search bar *@
+            <form asp-controller="Patient" asp-action="Search" method="post" class="d-flex flex-row justify-content-center m-1 gap-2">
+                <div class="search-input-wrapper d-flex flex-row gap-2">
+                        <i class='bx bx-search search-icon'></i>
+                        <input class="form-control search-input" placeholder="Search patients..." />
+                </div>
+                <button type="submit" class="btn" style="height:30px">Search</button>
+            </form>
+            @* Filter by status *@
+            <div class="status">
+                <form asp-controller="Patient" asp-action="FilterStatus" method="post" class="d-flex justify-content-center align-items-center"> 
+                    <select style="height:30px; border-radius:20px; padding-left:5px; border:1px dashed #cbcbcb">Status
+                        <option>Active</option>
+                        <option>More Option</option>
+                    </select>
+                </form>
+            </div>
+            @* Sort by *@
+            <div class="sort-by d-flex align-items-center">
+                <form asp-controller="Patient" asp-action="SortBy" method="post">
+                    <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
+                        <span class="me-2">Sort by</span>
+                        <div class="number-box d-flex align-items-center gap-1">
+                            <div class="numbers d-flex flex-column justify-content-center align-items-center">
+                                <span class="number">1</span>
+                                <span class="number">2</span>
+                            </div>
+                            <i class='bx bx-up-arrow-alt'></i>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        @* Print button *@
+        <div class="print-btn">
+            <form asp-controller="Patient" asp-action="PrintPatientList" method="post">
+                <button type="submit" class="btn d-flex align-items-center gap-2">
+                    <i class='bx bx-printer'></i>
+                    <span>Print</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    @* List of patient by cards *@
+    @* TODO: Loop after fetching data *@
+    <div class="mid-content">
+        <div class="row">
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 mb-3">
+                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
+                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
+                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
+                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
+                            <span class="small text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="bot-content py-3">
+        <div class="d-flex justify-content-between align-items-center px-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">Show</span>
+                <select class="form-select form-select-sm" style="width: auto;">
+                    <option>15</option>
+                    <option>30</option>
+                    <option>45</option>
+                    <option>60</option>
+                    <option>All</option>
+                </select>
+            </div>
+
+            <nav aria-label="Patient list pagination">
+                <ul class="pagination mb-0">
+                    <li class="page-item">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <i class='bx bx-chevron-left fs-5'></i>
+                        </a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <i class='bx bx-chevron-right fs-5'></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<style>
+    .search-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-input {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        width: 300px;
+        height:30px;
+        padding: 8px 35px 8px 12px;
+        transition: border-color 0.15s ease-in-out;
+    }
+
+    .search-icon {
+        position: absolute;
+        color: #6c757d;
+        right:10px;
+        font-size: 1.2rem;
+        pointer-events: none;
+    }
+
+        .search-input:focus {
+            border-color: #00A3B4;
+            box-shadow: 0 0 0 0.2rem rgba(0, 163, 180, 0.25);
+            outline: none;
+        }
+
+        .status{
+            border-radius:20px !important;
+        }
+
+    .sort-button {
+        height: 30px;
+        border-radius: 20px;
+        padding: 0 12px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #6c757d;
+        cursor: pointer;
+        min-width: 100px;
+        transition: all 0.2s ease-in-out;
+    }
+
+        .sort-button:hover {
+            border-color: transparent;
+            color: #00A3B4;
+        }
+
+    .number-box {
+        border: 1px solid #ced4da;
+        padding: 2px 4px;
+        border-radius: 6px;
+        background: #f8f9fa;
+    }
+
+    .numbers {
+        line-height: 1;
+        margin: 0;
+    }
+
+    .number {
+        font-size: 8px;
+        display: block;
+    }
+
+    .sort-button:hover .number-box {
+        border-color: #00A3B4;
+    }
+
+    .sort-button:hover i {
+        color: #00A3B4;
+    }
+
+    .sort-button i {
+        font-size: 14px;
+        color: #6c757d;
+        transition: color 0.2s ease-in-out;
+    }
+
+    .page-link {
+        color: #6c757d;
+        border: none;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        min-width: 38px;
+        text-align: center;
+    }
+
+        .page-link:hover {
+            color: #00A3B4;
+            background: none;
+        }
+
+    .page-item.active .page-link {
+        background-color: #00A3B4;
+        border-color: #00A3B4;
+        color: white;
+        border-radius: 4px;
+    }
+
+    .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 0.25rem 2rem 0.25rem 0.5rem;
+    }
+</style>

@@ -2,7 +2,7 @@
     ViewBag.Title = "Patients";
 }
 
-@* Content Header *@
+@* Header section with patient icon and title *@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
@@ -13,14 +13,18 @@
     <hr class="mt-0 mb-2" />
 </div>
 
+@* Main container for the patient form *@
 <div class="patient-form-container">
+    @* Section title with user circle icon *@
     <div class="d-flex align-items-center mb-4">
         <i class='bx bxs-user-circle fs-2 me-2'></i>
         <h4 class="text-custom mb-0">Next Steps</h4>
     </div>
     <form>
         <p>Here are some actions to take now you have created a patient record.</p>
+        @* Container for the three action cards *@
         <div class="cards-container">
+            @* Card 1 - Complete Intake *@
             <div class="cards">
                 <div class="icon-box justify-content-center align-items-center" style="background-color:#23679c; opacity:.5">
                     1
@@ -31,6 +35,8 @@
                 </div>
                 <i class='bx bx-chevron-right chevron-icon'></i>
             </div>
+
+            @* Card 2 - Initial Assessment *@
             <div class="cards">
                 <div class="icon-box justify-content-center align-items-center" style="background-color:#f7ddef; opacity:.8">
                     2
@@ -41,6 +47,8 @@
                 </div>
                 <i class='bx bx-chevron-right chevron-icon'></i>
             </div>
+
+            @* Card 3 - Healthcare Providers Assignment *@
             <div class="cards">
                 <div class="icon-box justify-content-center align-items-center" style="background-color:#527839; opacity:.3">
                     3
@@ -53,12 +61,15 @@
             </div>
         </div>
 
+        @* Skip button container *@
         <div class="d-flex justify-content-end mt-4">
             <button type="submit" class="btn btn-next">Skip for now</button>
         </div>
        
     </form>
 </div>
+
+@* Styles for the cards and containers *@
 <style>
     .cards-container{
         justify-content:center;
@@ -124,3 +135,4 @@
             opacity: 1;
         }
 </style>
+                                        
