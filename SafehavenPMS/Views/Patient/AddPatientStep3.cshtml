@@ -1,0 +1,126 @@
+﻿@{
+    ViewBag.Title = "Patients";
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class='bx bxs-user-detail fs-2 me-2'></i>
+            <span class="text-custom" style="font-size:25px">@ViewBag.Title</span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+<div class="patient-form-container">
+    <div class="d-flex align-items-center mb-4">
+        <i class='bx bxs-user-circle fs-2 me-2'></i>
+        <h4 class="text-custom mb-0">Next Steps</h4>
+    </div>
+    <form>
+        <p>Here are some actions to take now you have created a patient record.</p>
+        <div class="cards-container">
+            <div class="cards">
+                <div class="icon-box justify-content-center align-items-center" style="background-color:#23679c; opacity:.5">
+                    1
+                </div>
+                <div class="card-text d-flex flex-column ms-3">
+                    <h6 class="mb-1"><strong>Complete Intake</strong></h6>
+                    <p class="mb-0">Add background details to complete intake documentation.</p>
+                </div>
+                <i class='bx bx-chevron-right chevron-icon'></i>
+            </div>
+            <div class="cards">
+                <div class="icon-box justify-content-center align-items-center" style="background-color:#f7ddef; opacity:.8">
+                    2
+                </div>
+                <div class="card-text d-flex flex-column ms-3">
+                    <h6 class="mb-1"><strong>Schedule for Initial Assessment</strong></h6>
+                    <p class="mb-0">Schedule the patient's first evaluation with its physician.</p>
+                </div>
+                <i class='bx bx-chevron-right chevron-icon'></i>
+            </div>
+            <div class="cards">
+                <div class="icon-box justify-content-center align-items-center" style="background-color:#527839; opacity:.3">
+                    3
+                </div>
+                <div class="card-text d-flex flex-column ms-3">
+                    <h6 class="mb-1"><strong>Assign Healthcare Providers</strong></h6>
+                    <p class="mb-0">Link the patient to a responsible provider or recovery team.</p>
+                </div>
+                <i class='bx bx-chevron-right chevron-icon'></i>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-next">Skip for now</button>
+        </div>
+       
+    </form>
+</div>
+<style>
+    .cards-container{
+        justify-content:center;
+    }
+
+    .cards {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        height: auto;
+        min-height: 80px;
+        width: 100%;
+        border: 1px solid #767676;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .icon-box {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 50px;
+        height: 50px;
+        border-radius: 3px;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .card-text {
+        flex: 1;
+    }
+
+        .card-text h6 {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .card-text p {
+            font-size: 0.875rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+    .chevron-icon {
+        font-size: 2rem;
+        color: #767676;
+        opacity: 0.5;
+        margin-right: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .cards:hover {
+        border-color: #00A3B4;
+    }
+
+        .cards:hover .chevron-icon {
+            color: #00A3B4;
+            opacity: 1;
+        }
+</style>
