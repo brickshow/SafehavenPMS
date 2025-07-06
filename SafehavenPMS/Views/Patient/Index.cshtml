@@ -1,12 +1,10 @@
 ﻿@{
     ViewBag.Title = "Patient List";
 }
-@* Header content *@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
             <i class='bx bxs-user-detail fs-2 me-2'></i>
-            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
         </div>
         <a href="@Url.Action("AddPatientStep1", "Patient")" class="btn btn-primary">
             <i class='bx bx-user-plus me-1'></i>
