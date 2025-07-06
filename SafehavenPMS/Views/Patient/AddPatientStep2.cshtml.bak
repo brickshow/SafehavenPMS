@@ -1,0 +1,234 @@
+﻿@{
+    ViewBag.Title = "Patients";
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class='bx bxs-user-detail fs-2 me-2'></i>
+            <span class="text-custom" style="font-size:25px">@ViewBag.Title</span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+@* Add patient Content *@
+<div class="patient-form-container ">
+    <div class="d-flex align-items-center mb-4">
+        <i class='bx bxs-user-circle fs-2 me-2'></i>
+        <h4 class="text-custom mb-0">Case Details</h4>
+    </div>
+
+    <form asp-controller="Patient" asp-action="AddPatientStep2" method="post">
+        <div class="row">
+            @* Patient's Date of Intake *@
+            <div class="col-md-6 form-group">
+                <label class="form-label">Date of Intake</label>
+                <input type="date" class="form-control" name="DateOfIntake" required />
+            </div>
+            <div class="col-md-6 form-group">
+                <label class="form-label">Case No.</label>
+                <input type="tel" class="form-control" name="CaseNo" required />
+            </div>
+
+            @*Affiliation*@
+            <div class="col-md-12 form-group">
+                <label class="form-label">Affiliation</label>
+                <input type="text" class="form-control" name="Affiliation" />
+            </div>
+            <div class="col-md-8">
+                <div class="row">
+                    @* Date of Referral *@
+
+                    <div class="col-md-12 form-group">
+                        <label class="form-label">Date of Referral</label>
+                        <input type="date" class="form-control" name="DateOfReferral" required />
+                    </div>
+
+
+                    @* Referred by *@
+                    <div class="col-md-12 form-group">
+                        <label class="form-label">Referred By</label>
+                        <input type="text" class="form-control" name="ReferredBy" />
+                    </div>
+
+                    @*Assign Physicisn*@
+                    <div class="col-md-12 form-group">
+                        <label class="form-label">Physician</label>
+                        <select class="form-select" name="Physician">
+                            <option value="" selected disabled><i>--Select--</i></option>
+                            <option>Sample1</option>
+                            <option>Sample2</option>
+                            <option>Sample3</option>
+                            <option>Sample4</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-md-4" ">
+                @* Upload photo *@
+                <div class="col-md-12 form-group d-flex flex-column align-items-center justify-content-center">
+                    <div class="image-upload-container">
+                        <div class="preview-area">
+                            <img id="imagePreview" src="/Images/default.png" alt="Profile Preview">
+                        </div>
+                        <label for="profileImage" class="upload-button">
+                            <i class='bx bx-upload me-2'></i>
+                            Upload Picture
+                        </label>
+                        <input type="file"
+                               id="profileImage"
+                               name="ProfileImage"
+                               accept="image/*"
+                               class="d-none"
+                               onchange="previewImage(this)">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+       
+
+
+        <div class="indicator">
+            <div class="inactive"></div>
+            <div class="active"></div>
+        </div>
+
+        @* Form Navigation *@
+        <div class="d-flex justify-content-end mt-4">
+            <button type="button" class="btn-cancel" onclick="history.back()">Back</button>
+            <button type="submit" class="btn btn-next">Next</button>
+        </div>
+    </form>
+</div>
+
+@* Specific design for this page *@
+<style>
+
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control {
+        background-color: #f8f8f8;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+    }
+
+    .form-select {
+        background-color: #f8f8f8;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+    }
+
+    .btn-next {
+        background-color: #00A3B4;
+        color: white;
+        padding: 0.5rem 2rem;
+        border-radius: 6px;
+        border: none;
+    }
+
+    .btn-cancel {
+        background-color: transparent;
+        color: #767676;
+        padding: 0.5rem 2rem;
+        border: 2px solid #767676;
+        border-radius: 6px;
+        margin-right: 1rem;
+    }
+
+        .btn-cancel:hover {
+            transform: translateY(-1px);
+        }
+
+    .indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin: 2rem 0;
+    }
+
+        .indicator div {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .indicator .active {
+            background-color: #00A3B4;
+        }
+
+        .indicator .inactive {
+            background-color: #E0E0E0;
+        }
+
+        .image-upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.preview-area {
+    width: 197px;
+    height: 197px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f8f8f8;
+    border: 2px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-area img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-button {
+    background-color: white;
+    color: #00A3B4;
+    border: 2px solid #00A3B4;
+    padding: 0.5rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.upload-button:hover {
+    background-color: #00A3B4;
+    color: white;
+    transform: translateY(-1px);
+}
+
+</style>
+
+@* Script file *@
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+
+            //Load the data as image preview
+            reader.onload = function (e) {
+                document.getElementById('imagePreview').src = e.target.result;
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
