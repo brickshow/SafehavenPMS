@@ -1,0 +1,119 @@
+﻿@{
+    ViewBag.Title = "Internal Email System";
+}
+
+@* Email System Panel *@
+<div class="email-container">
+    @* Email header panel *@
+    <div class="header-panel">
+        <button class="btn">Compose</button>
+
+        @* header navigation *@
+        <nav class="email-navigation g-3">
+            <ul class="email-nav-list d-flex flex-row list-unstyled">
+                <li>Inbox</li>
+                <li>Sent</li>
+                <li>Archive</li>
+            </ul>
+        </nav>
+        <hr class="mt-0 mb-2" />
+    </div>
+
+    @* Email message container  *@
+    <div class="email-msg-container">
+        @* <div class="email-msg">
+            Sample
+        </div> *@
+        <div class="email-msg-container">
+            <div class="email-msg-row d-flex align-items-center">
+                <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
+                <div class="col-md-4 col-12">(no subject)</div>
+                <div class="col-md-3 col-10 text-muted">06/18/2025 - 10:50AM</div>
+                <div class="col-md-1 col-2 text-end message-actions">
+                    <i class="bx bx-archive-arrow-down"></i>
+                    <i class="bx bx-trash"></i>
+                </div>
+            </div>
+            <div class="email-msg-row d-flex align-items-center">
+                <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
+                <div class="col-md-4 col-12">Project Update</div>
+                <div class="col-md-3 col-10 text-muted">06/18/2025 - 10:50AM</div>
+                <div class="col-md-1 col-2 text-end message-actions">
+                    <i class="bx bx-archive-arrow-down"></i>
+                    <i class="bx bx-trash"></i>
+                </div>
+            </div>
+            <div class="email-msg-row d-flex align-items-center">
+                <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
+                <div class="col-md-4 col-12">Check-up Result of John Doe</div>
+                <div class="col-md-3 col-10 text-muted">06/15/2025 - 10:50AM</div>
+                <div class="col-md-1 col-2 text-end message-actions">
+                    <i class="bx bx-archive-arrow-down"></i>
+                    <i class="bx bx-trash"></i>
+                </div>
+            </div>
+            <div class="email-msg-row d-flex align-items-center">
+                <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
+                <div class="col-md-4 col-12">Check-up Result of John Doe</div>
+                <div class="col-md-3 col-10 text-muted">06/14/2025 - 10:50AM</div>
+                <div class="col-md-1 col-2 text-end message-actions">
+                    <i class="bx bx-archive-arrow-down"></i>
+                    <i class="bx bx-trash"></i>
+                </div>
+            </div>
+            <div class="nothing-follows text-center text-muted mt-3">Nothing follows.</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .email-container{
+        width:100%;
+        height:100vh;
+        background-color:white;
+        border-radius:6px;
+        box-shadow: 0 2px 10px rgb(0,0,0,0.1);
+        padding:15px;
+    }
+
+    .email-nav-list {
+        margin-top:20px;
+        margin-left:20px;
+        gap:30px;
+    }
+
+    .email-msg-container {
+        margin: 10px;
+    }
+
+    .email-msg-row {
+        width: 100%;
+        min-height: 48px;
+        background-color: #ededed;
+        border: 1px solid #d3d3d3;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        font-size: 1rem;
+    }
+
+        .email-msg-row:last-child {
+            border-bottom: none;
+        }
+
+    .message-header {
+        font-weight: 500;
+    }
+
+    .message-actions i {
+        margin-left: 10px;
+        cursor: pointer;
+    }
+
+    .nothing-follows {
+        font-size: 0.95rem;
+        text-align: center;
+        color: #888;
+        margin-top: 18px;
+    }
+</style>
