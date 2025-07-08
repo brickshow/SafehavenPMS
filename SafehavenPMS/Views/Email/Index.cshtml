@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "Internal Email System";
+    ViewBag.Title = "Email";
 
     // Section to query (use Context.Request in Razor Pages)
     var section = (Context.Request.Query["section"].ToString() ?? "").ToLower();
@@ -32,21 +32,31 @@
     <div id="composeModal" class="modal-overlay" style="display:none;">
         <div class="modal-content">
             <span class="close-modal" id="closeModalBtn">&times;</span>
-            <h4>Compose New Message</h4>
+            <h4>New Message</h4>
             <form>
-                <div class="mb-2">
+                <div class="input-message">
                     <label for="to" class="form-label">To:</label>
                     <input type="text" id="to" class="form-control" placeholder="Email" />
                 </div>
-                <div class="mb-2">
+                <div class="mb-2 input-message">
                     <label for="subject" class="form-label">Subject:</label>
                     <input type="text" id="subject" class="form-control" placeholder="Subject" />
                 </div>
-                <div class="mb-2">
+                <div class="mb-2 input-message">
                     <label for="body" class="form-label">Message:</label>
                     <textarea id="body" class="form-control" rows="4" placeholder="Type your message..."></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Send</button>
+                <div class="mb02 d-flex justify-content-end align-items-center">
+                    <div class="file-upload">
+                        <input type="file" id="attachment" class="d-none" multiple />
+                        <button type="button" class="btn btn-light" onclick="document.getElementById('attachment').click()">
+                            <i class="bx bx-paperclip"></i> Attach Files
+                        </button>
+                        <small id="fileList" class="text-muted ms-2"></small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </div>
+               
             </form>
         </div>
     </div>
@@ -76,35 +86,8 @@
                         <div class="col-md-4 col-12">(no subject)</div>
                         <div class="col-md-3 col-10 text-muted">06/18/2025 - 10:50AM</div>
                         <div class="col-md-1 col-2 text-end message-actions justify-content-center align-items-center">
-                            <i class="bx bx-archive"></i>
-                            <i class="bx bx-trash"></i>
-                        </div>
-                    </div>
-                    <div class="email-msg-row d-flex align-items-center">
-                        <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
-                        <div class="col-md-4 col-12">Project Update</div>
-                        <div class="col-md-3 col-10 text-muted">06/18/2025 - 10:50AM</div>
-                        <div class="col-md-1 col-2 text-end message-actions">
-                            <i class="bx bx-archive"></i>
-                            <i class="bx bx-trash"></i>
-                        </div>
-                    </div>
-                    <div class="email-msg-row d-flex align-items-center">
-                        <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
-                        <div class="col-md-4 col-12">Check-up Result of John Doe</div>
-                        <div class="col-md-3 col-10 text-muted">06/15/2025 - 10:50AM</div>
-                        <div class="col-md-1 col-2 text-end message-actions">
-                            <i class="bx bx-archive"></i>
-                            <i class="bx bx-trash"></i>
-                        </div>
-                    </div>
-                    <div class="email-msg-row d-flex align-items-center">
-                        <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
-                        <div class="col-md-4 col-12">Check-up Result of John Doe</div>
-                        <div class="col-md-3 col-10 text-muted">06/14/2025 - 10:50AM</div>
-                        <div class="col-md-1 col-2 text-end message-actions">
-                            <i class="bx bx-archive"></i>
-                            <i class="bx bx-trash"></i>
+                            <i class="bx bx-archive fs-5" data-toggle="tooltip" data-placement="top" title="Archive Message"></i>
+                            <i class="text-danger bx bx-trash fs-5 data-toggle=" tooltip" data-placement="top" title="Delete Message" "></i>
                         </div>
                     </div>
                     <div class="nothing-follows text-center text-muted mt-3">Nothing follows.</div>
@@ -114,71 +97,6 @@
       
     </div>
 </div>
-<style>
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.4);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .modal-content {
-        bottom:0;
-        right:0;
-        top:100%;
-        left:100%;
-        background: #fff;
-        padding: 24px 32px;
-        border-radius: 8px;
-        min-width: 320px;
-        max-width: 50%;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-    }
-
-    .close-modal {
-        position: absolute;
-        top: 12px;
-        right: 16px;
-        font-size: 1.5rem;
-        color: #888;
-        cursor: pointer;
-    }
-
-    .modal-content .form-label {
-        font-weight: 500;
-        margin-bottom: 4px;
-        display: block;
-    }
-
-    .modal-content .form-control {
-        width: 100%;
-        padding: 6px 8px;
-        margin-bottom: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 1rem;
-    }
-
-    .modal-content .btn-primary {
-        background: #007178;
-        color: #fff;
-        border: none;
-        padding: 8px 18px;
-        border-radius: 4px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-        .modal-content .btn-primary:hover {
-            background: #005f63;
-        }
-</style>
 
 <script>
      // Show modal when Compose is clicked
