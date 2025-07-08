@@ -1,0 +1,73 @@
+﻿@{
+    ViewBag.Title = "Brix Lampago";
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center justify-content-center">
+            <i class='bx bx-reply fs-2 me-2'></i>
+            <span class="text-custom">Brix Lampago</span>
+        </div>
+        @* Print button *@
+        <div class="print-btn">
+            <form asp-controller="Patient" asp-action="PrintPatientList" method="post">
+                <button type="submit" class="btn d-flex align-items-center gap-2">
+                    <i class='bx bx-printer'></i>
+                    <span>Print</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+@* Patient Details *@
+<div class="content d-flex justify-content-center align-items-center h-100 w-100" style="width:90%; height:90%; margin:10px">
+    <div class="row">
+        @* profile Panel *@
+        
+        <div class="col-md-2 p-1 profile-panel">
+            <div class="text-center">
+               <span class="text-success d-flex m-1 justify-content-end align-items-end">Active</span>
+                <img src="/Images/sample.JPG" class="img-fluid rounded-circle w-75" alt="Alternate Text" />
+                 <label for="ChangeProfile" class="upload-button">
+                            Change Profile
+                        </label>
+                        <input type="file"
+                               id="ChangeProfile"
+                               name="ChangeProfile"
+                               accept="image/*"
+                               class="d-none"
+                               onchange="previewImage(this)">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .upload-button {
+    background-color: white;
+    color: #00A3B4;
+    margin:5px;
+    border: 2px solid #00A3B4;
+    padding: 0.5rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.upload-button:hover {
+    background-color: #00A3B4;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.profile-panel{
+    background-color:white;
+    border-radius:6px;
+    box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);
+}
+</style>

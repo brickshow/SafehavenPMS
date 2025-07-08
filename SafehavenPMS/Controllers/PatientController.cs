@@ -11,6 +11,13 @@ namespace SafehavenPMS.Controllers
             return View();
         }
 
+
+        //Patient Details
+        public IActionResult PatientProfile()
+        {
+            return View();
+        }
+
         //Action View for adding new patient
         public IActionResult AddPatientStep1()
         {
@@ -69,5 +76,6 @@ namespace SafehavenPMS.Controllers
             }
             return View();
         }
+
     }
 }
