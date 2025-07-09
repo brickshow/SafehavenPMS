@@ -770,3 +770,69 @@ body {
 .modal-content .btn-primary:hover {
     background: #005f63;
 }
+
+/*Indicator design*/
+.indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 2rem 0;
+}
+
+    .indicator div {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .indicator .active {
+        background-color: #00A3B4;
+    }
+
+    .indicator .inactive {
+        background-color: #E0E0E0;
+    }
+
+/* Navigation buttons */
+.btn-cancel, .btn-next {
+    width: 150px;
+    padding: 8px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.btn-cancel {
+    background-color: transparent;
+    color: #767676;
+    border: 2px solid #767676;
+}
+
+    .btn-cancel:hover {
+        background-color: #f8f8f8;
+        transform: translateY(-1px);
+    }
+
+.btn-next {
+    justify-content:center;
+    align-items:center;
+    background-color: #00A3B4;
+    color: white;
+    border: 2px solid #00A3B4;
+}
+
+    .btn-next:hover {
+        background-color: #008B9B;
+        border-color: #008B9B;
+        transform: translateY(-1px);
+    }
+    .btn-cancel:hover {
+        transform: translateY(-1px);
+    }
+
+.title {
+    margin-bottom: 20px;
+}

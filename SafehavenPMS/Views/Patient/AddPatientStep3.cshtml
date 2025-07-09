@@ -1,7 +1,10 @@
-﻿@{
+﻿@namespace SafehavenPMS.Views.Patient
+
+@{
     ViewBag.Title = "Patients";
 }
 
+@* Content Header *@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
@@ -12,126 +15,198 @@
     <hr class="mt-0 mb-2" />
 </div>
 
-@* Main container for the patient form *@
-<div class="patient-form-container">
-    @* Section title with user circle icon *@
+@* Add patient Content *@
+<div class="patient-form-container ">
     <div class="d-flex align-items-center mb-4">
         <i class='bx bxs-user-circle fs-2 me-2'></i>
-        <h4 class="text-custom mb-0">Next Steps</h4>
+        <h4 class="text-custom mb-0">Case Details</h4>
     </div>
-    <form>
-        <p>Here are some actions to take now you have created a patient record.</p>
-        @* Container for the three action cards *@
-        <div class="cards-container">
-            @* Card 1 - Complete Intake *@
-            <div class="cards">
-                <div class="icon-box justify-content-center align-items-center" style="background-color:#23679c; opacity:.5">
-                    1
-                </div>
-                <div class="card-text d-flex flex-column ms-3">
-                    <h6 class="mb-1"><strong>Complete Intake</strong></h6>
-                    <p class="mb-0">Add background details to complete intake documentation.</p>
-                </div>
-                <i class='bx bx-chevron-right chevron-icon'></i>
+
+    <div class="d-flex flex-row justify-content-between align-items-center title">
+        <hr class="flex-grow-1 mx-2" />
+        <span style="color:#767667"><strong>Patient Information</strong></span>
+        <hr class="flex-grow-1 mx-2" />
+    </div>
+
+    <form asp-controller="Patient" asp-action="AddPatientStep2" method="post">
+        <div class="row">
+            @* Patient's Date of Intake *@
+            <div class="col-md-6 form-group">
+                <label class="form-label">Date of Intake</label>
+                <input type="date" class="form-control" name="DateOfIntake" required />
             </div>
 
-            @* Card 2 - Initial Assessment *@
-            <div class="cards">
-                <div class="icon-box justify-content-center align-items-center" style="background-color:#f7ddef; opacity:.8">
-                    2
-                </div>
-                <div class="card-text d-flex flex-column ms-3">
-                    <h6 class="mb-1"><strong>Schedule for Initial Assessment</strong></h6>
-                    <p class="mb-0">Schedule the patient's first evaluation with its physician.</p>
-                </div>
-                <i class='bx bx-chevron-right chevron-icon'></i>
+            <div class="col-md-6 form-group">
+                <label class="form-label">Date of Referral</label>
+                <input type="date" class="form-control" name="DateOfReferral" required />
             </div>
 
-            @* Card 3 - Healthcare Providers Assignment *@
-            <div class="cards">
-                <div class="icon-box justify-content-center align-items-center" style="background-color:#527839; opacity:.3">
-                    3
-                </div>
-                <div class="card-text d-flex flex-column ms-3">
-                    <h6 class="mb-1"><strong>Assign Healthcare Providers</strong></h6>
-                    <p class="mb-0">Link the patient to a responsible provider or recovery team.</p>
-                </div>
-                <i class='bx bx-chevron-right chevron-icon'></i>
+
+            @*Affiliation*@
+            <div class="col-md-12 form-group">
+                <label class="form-label">Affiliation</label>
+                <input type="text" class="form-control" name="Affiliation" />
             </div>
+
+            <div class="col-md-12 form-group">
+                <label class="form-label">Referred By</label>
+                <input type="text" class="form-control" name="ReferredBy" />
+            </div>
+
+            @*Assign Physicisn*@
+            <div class="col-md-12 form-group">
+                <label class="form-label">Physician</label>
+                <select class="form-select" name="Physician">
+                    <option value="" selected disabled><i>--Select--</i></option>
+                    <option>Sample1</option>
+                    <option>Sample2</option>
+                    <option>Sample3</option>
+                    <option>Sample4</option>
+                </select>
+            </div>
+
         </div>
 
-        @* Skip button container *@
+        @* Indicator *@
+        <div class="indicator">
+            <div class="inactive"></div>
+            <div class="inactive"></div>
+            <div class="active"></div>
+        </div>
+
+        @* Form Navigation *@
         <div class="d-flex justify-content-end mt-4">
-            <button type="submit" class="btn btn-next">Skip for now</button>
+            <button type="button" class="btn-cancel" onclick="history.back()">Back</button>
+            <button type="submit" class="btn btn-next">Next</button>
         </div>
-       
     </form>
 </div>
 
-@* Styles for the cards and containers *@
+@* Specific design for this page *@
 <style>
-    .cards-container{
-        justify-content:center;
+
+
+    .form-group {
+        margin-bottom: 1.5rem;
     }
 
-    .cards {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        height: auto;
-        min-height: 80px;
-        width: 100%;
-        border: 1px solid #767676;
-        margin-bottom: 20px;
+    .form-control {
+        background-color: #f8f8f8;
+        border: 1px solid #e0e0e0;
         border-radius: 6px;
-        padding: 15px;
-        cursor: pointer;
-        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
     }
 
-    .icon-box {
+    .form-select {
+        background-color: #f8f8f8;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+    }
+
+    .btn-next {
+        background-color: #00A3B4;
+        color: white;
+        padding: 0.5rem 2rem;
+        border-radius: 6px;
+        border: none;
+    }
+
+    .btn-cancel {
+        background-color: transparent;
+        color: #767676;
+        padding: 0.5rem 2rem;
+        border: 2px solid #767676;
+        border-radius: 6px;
+        margin-right: 1rem;
+    }
+
+        .btn-cancel:hover {
+            transform: translateY(-1px);
+        }
+
+    .indicator {
         display: flex;
         justify-content: center;
         align-items: center;
-        min-width: 50px;
-        height: 50px;
-        border-radius: 3px;
-        font-size: 1.25rem;
-        color: white;
+        gap: 8px;
+        margin: 2rem 0;
     }
 
-    .card-text {
-        flex: 1;
+        .indicator div {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .indicator .active {
+            background-color: #00A3B4;
+        }
+
+        .indicator .inactive {
+            background-color: #E0E0E0;
+        }
+
+    .image-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
     }
 
-        .card-text h6 {
-            font-size: 1rem;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .card-text p {
-            font-size: 0.875rem;
-            color: #666;
-            line-height: 1.4;
-        }
-
-    .chevron-icon {
-        font-size: 2rem;
-        color: #767676;
-        opacity: 0.5;
-        margin-right: 0.5rem;
+    .preview-area {
+        width: 197px;
+        height: 197px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #f8f8f8;
+        border: 2px solid #e0e0e0;
         display: flex;
         align-items: center;
+        justify-content: center;
     }
 
-    .cards:hover {
-        border-color: #00A3B4;
-    }
-
-        .cards:hover .chevron-icon {
-            color: #00A3B4;
-            opacity: 1;
+        .preview-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
+
+    .upload-button {
+        background-color: white;
+        color: #00A3B4;
+        border: 2px solid #00A3B4;
+        padding: 0.5rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+        .upload-button:hover {
+            background-color: #00A3B4;
+            color: white;
+            transform: translateY(-1px);
+        }
+
 </style>
-                                        
+
+@* Script file *@
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+
+            //Load the data as image preview
+            reader.onload = function (e) {
+                document.getElementById('imagePreview').src = e.target.result;
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+

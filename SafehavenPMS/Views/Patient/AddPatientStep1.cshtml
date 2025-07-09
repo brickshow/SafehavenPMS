@@ -1,4 +1,5 @@
-﻿@{
+﻿@model SafehavenPMS.ViewModel.AddPatientStep1ViewModel
+@{
     ViewBag.Title = "Patient";
 }
 
@@ -26,42 +27,51 @@
         <hr class="flex-grow-1 mx-2" />
     </div>
 
+    @* Show Validation Summary *@
+    @Html.ValidationSummary(true, "",new {@class = "text-danger"})
+
     <form asp-controller="Patient" asp-action="AddPatientStep1" method="post">
         <div class="row">
             @* Patient's Name and Contact No. *@
             <div class="col-md-4 form-group">
-                <label class="form-label">Firstname</label>
-                <input type="text" class="form-control" name="Firstname" required />
+                <label asp-for="Firstname" class="form-label">Firstname</label>
+                <input asp-for="Firstname" type="text" class="form-control" name="Firstname" required />
+                <span asp-validation-for="Firstname" class="text-danger"></span>
             </div>
 
             <div class="col-md-4 form-group">
-                <label class="form-label">Lastname</label>
-                <input type="text" class="form-control" name="Lastname" required />
+                <label asp-for="Lastname" class="form-label">Lastname</label>
+                <input asp-for="Lastname"  type="text" class="form-control" name="Lastname" required />
+                <span asp-validation-for="Lastname" class="text-danger"></span>
             </div>
 
             <div class="col-md-4 form-group">
-                <label class="form-label">Middle Name</label>
-                <input type="text" class="form-control" name="MiddleName" />
+                <label asp-for="MiddleName" class="form-label">Middle Name</label>
+                <input asp-for="MiddleName" type="text" class="form-control" name="MiddleName" />
+                <span asp-validation-for="MiddleName"class="text-danger"></span>
             </div>
 
             <div class="col-md-6 form-group">
-                <label class="form-label">Contact No.</label>
-                <input type="tel" class="form-control" name="ContactNo" required />
+                <label asp-for="ContactNumber" class="form-label">Contact No.</label>
+                <input asp-for="ContactNumber" type="tel" class="form-control" name="ContactNumber" required />
+                <span asp-validation-for="ContactNumber" class="text-danger"></span>
             </div>
 
             @* Religion and Sex *@
             <div class="col-md-6 form-group">
-                <label class="form-label">Religion</label>
-                <input type="text" class="form-control" name="Religion" />
+                <label asp-for="Religion" class="form-label">Religion</label>
+                <input asp-for="Religion" type="text" class="form-control" name="Religion" />
+                <span asp-validation-for="Religion" class="text-danger"></span>
             </div>
-            <div class="col-md-4 form-group">
-                <label class="form-label">Sex</label>
-                <select class="form-select" name="Sex" required>
+             <div class="col-md-6 form-group">
+                <label asp-for="Sex" class="form-label"></label>
+                <select asp-for="Sex" class="form-select">
                     <option value="" selected disabled>--Select--</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                 </select>
+                <span asp-validation-for="Sex" class="text-danger"></span>
             </div>
 
             @* Marital Status, Date of Birth, and Age *@
@@ -99,12 +109,13 @@
         <div class="indicator">
             <div class="active"></div>
             <div class="inactive"></div>
+            <div class="inactive"></div>
         </div>
 
         @* Form Navigation *@
-        <div class="d-flex justify-content-end mt-4">
-            <button type="button" class="btn-cancel" onclick="history.back()">Cancel</button>
-            <button type="submit" class="btn btn-next">Next</button>
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <button type="button" class="btn-cancel">Cancel</button>
+            <button type="submit" class="btn-next">Next</button>
         </div>
     </form>
 </div>
@@ -138,51 +149,5 @@
         padding: 0.5rem 1rem;
     }
 
-    .btn-next {
-        background-color: #00A3B4;
-        color: white;
-        padding: 0.5rem 2rem;
-        border-radius: 6px;
-        border: none;
-    }
-
-    .btn-cancel {
-        background-color: transparent;
-        color: #767676;
-        padding: 0.5rem 2rem;
-        border: 2px solid #767676;
-        border-radius: 6px;
-        margin-right: 1rem;
-    }
-    .btn-cancel:hover{
-            transform: translateY(-1px);
-    }
-
-    .indicator {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        margin: 2rem 0;
-    }
-
-    .indicator div {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        transition: all 0.3s ease;
-    }
-
-    .indicator .active {
-        background-color: #00A3B4;
-    }
-
-    .indicator .inactive {
-        background-color: #E0E0E0;
-    }
-
-    .title{
-        margin-bottom:20px;
-    }
 </style>
 

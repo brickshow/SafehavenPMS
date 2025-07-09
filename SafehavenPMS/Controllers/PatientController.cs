@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SafehavenPMS.Helpers;
 using SafehavenPMS.ViewModel;
 using System.Text.Json;
 
@@ -28,52 +29,48 @@ namespace SafehavenPMS.Controllers
         [HttpPost]
         public IActionResult AddPatientStep1(AddPatientStep1ViewModel model)
         {
+            //Check if the model state is valid
             if (!ModelState.IsValid)
             {
-                return View(model);
+                return View(model); // If the model state is invalid, return the view with the model to show validation errors
             }
 
-            // Store the data in TempData for step 2
-            TempData["PatientStep1"] = JsonSerializer.Serialize(model);
+            // Store the data in Session
+            HttpContext.Session.SetObject("AddPatientStep1", model);
 
+            Console.WriteLine("Patient Step 1 Data: " + JsonSerializer.Serialize(model));
             // Redirect to step 2
             return RedirectToAction("AddPatientStep2");
         }
 
         //Action View For Step 2
         public IActionResult AddPatientStep2()
-        {
-            // Check if we have data from step 1
-            if (TempData["PatientStep1"] == null)
-            {
-                return RedirectToAction("AddPatientStep1");
-            }
-
-            Console.WriteLine(TempData["PatientStep1"]);
-
+        {   
             return View();
         }
-        //Acition Post for step 2
-        [HttpPost]
-        public IActionResult AddPatientStep2(AddPatientStep2ViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+        ////Acition Post for step 2
+        //[HttpPost]
+        //public IActionResult AddPatientStep2(AddPatientStep2ViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return View(model);
+        //    }
 
-            //Store the data in TempData for step 3
-            TempData["PatientStep2"] = JsonSerializer.Serialize(model);
-            return RedirectToAction("AddPatientStep3");
-        }
+        //    //Store the data in TempData for step 3
+        //    TempData["PatientStep2"] = JsonSerializer.Serialize(model);
+        //    return RedirectToAction("AddPatientStep3");
+        //}
 
         //Action View for step 3
         public IActionResult AddPatientStep3()
         {
-            if (TempData["PatientStep2"] == null)
-            {
-                return RedirectToAction("AddPatientStep1");
-            }
+            return View();
+        }
+
+        //Action view for step 4
+        public IActionResult AddPatientStep4()
+        {
             return View();
         }
 

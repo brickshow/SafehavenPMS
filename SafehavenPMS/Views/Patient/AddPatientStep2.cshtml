@@ -1,8 +1,10 @@
-﻿@{
+﻿@namespace SafehavenPMS.Views.Patient
+
+@{
     ViewBag.Title = "Patients";
 }
 
-@* Content Header *@
+@* Header  *@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
@@ -13,7 +15,8 @@
     <hr class="mt-0 mb-2" />
 </div>
 
-@* Add patient Content *@
+
+@* Upload Images (Can be skipped by the user) *@
 <div class="patient-form-container ">
     <div class="d-flex align-items-center mb-4">
         <i class='bx bxs-user-circle fs-2 me-2'></i>
@@ -22,182 +25,86 @@
 
     <div class="d-flex flex-row justify-content-between align-items-center title">
         <hr class="flex-grow-1 mx-2" />
-        <span style="color:#767667"><strong>Case Details</strong></span>
+        <span style="color:#767667"><strong>Personal Information</strong></span>
         <hr class="flex-grow-1 mx-2" />
     </div>
 
-    <form asp-controller="Patient" asp-action="AddPatientStep2" method="post">
-        <div class="row">
-            @* Patient's Date of Intake *@
-            <div class="col-md-6 form-group">
-                <label class="form-label">Date of Intake</label>
-                <input type="date" class="form-control" name="DateOfIntake" required />
+    <form>
+        <div class="image-upload-container">
+            <div class="preview-area">
+                <img id="imagePreview" src="/Images/sample.JPG" alt="Profile" />
             </div>
-
-            <div class="col-md-6 form-group">
-                <label class="form-label">Date of Referral</label>
-                <input type="date" class="form-control" name="DateOfReferral" required />
+            <div class="upload-button-container">
+                <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" />
+                <button type="button" class="change-picture-btn" onclick="document.getElementById('imageInput').click()">
+                    Change Picture
+                </button>
             </div>
-
-
-            @*Affiliation*@
-            <div class="col-md-12 form-group">
-                <label class="form-label">Affiliation</label>
-                <input type="text" class="form-control" name="Affiliation" />
-            </div>
-
-            <div class="col-md-12 form-group">
-                <label class="form-label">Referred By</label>
-                <input type="text" class="form-control" name="ReferredBy" />
-            </div>
-
-            @*Assign Physicisn*@
-            <div class="col-md-12 form-group">
-                <label class="form-label">Physician</label>
-                <select class="form-select" name="Physician">
-                    <option value="" selected disabled><i>--Select--</i></option>
-                    <option>Sample1</option>
-                    <option>Sample2</option>
-                    <option>Sample3</option>
-                    <option>Sample4</option>
-                </select>
-            </div>
-
         </div>
 
+        @* Indicator *@
         <div class="indicator">
             <div class="inactive"></div>
             <div class="active"></div>
+            <div class="inactive"></div>
         </div>
 
         @* Form Navigation *@
-        <div class="d-flex justify-content-end mt-4">
+        <div class="d-flex justify-content-end gap-3 mt-4">
             <button type="button" class="btn-cancel" onclick="history.back()">Back</button>
             <button type="submit" class="btn btn-next">Next</button>
         </div>
     </form>
+
+
 </div>
 
-@* Specific design for this page *@
 <style>
-
-
-    .form-group {
-        margin-bottom: 1.5rem;
+    .image-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        margin: 2rem auto;
     }
 
-    .form-control {
-        background-color: #f8f8f8;
-        border: 1px solid #e0e0e0;
+    .preview-area {
+        width: 300px;
+        height: 300px;
+        overflow: hidden;
+    }
+
+        .preview-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius:6px;
+        }
+
+    .change-picture-btn {
+        width:300px;
+        padding: 8px 24px;
+        border: 2px solid #008B9B;
         border-radius: 6px;
-        padding: 0.5rem 1rem;
+        background: transparent;
+        color: #008B9B;
+        font-weight: 500;
+        transition: all 0.3s ease;
     }
 
-    .form-select {
-        background-color: #f8f8f8;
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-    }
-
-    .btn-next {
-        background-color: #00A3B4;
-        color: white;
-        padding: 0.5rem 2rem;
-        border-radius: 6px;
-        border: none;
-    }
-
-    .btn-cancel {
-        background-color: transparent;
-        color: #767676;
-        padding: 0.5rem 2rem;
-        border: 2px solid #767676;
-        border-radius: 6px;
-        margin-right: 1rem;
-    }
-
-        .btn-cancel:hover {
+        .change-picture-btn:hover {
+            background-color: #008B9B;
+            color: white;
             transform: translateY(-1px);
         }
-
-    .indicator {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        margin: 2rem 0;
-    }
-
-        .indicator div {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-        }
-
-        .indicator .active {
-            background-color: #00A3B4;
-        }
-
-        .indicator .inactive {
-            background-color: #E0E0E0;
-        }
-
-        .image-upload-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.preview-area {
-    width: 197px;
-    height: 197px;
-    border-radius: 50%;
-    overflow: hidden;
-    background-color: #f8f8f8;
-    border: 2px solid #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.preview-area img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.upload-button {
-    background-color: white;
-    color: #00A3B4;
-    border: 2px solid #00A3B4;
-    padding: 0.5rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    transition: all 0.3s ease;
-}
-
-.upload-button:hover {
-    background-color: #00A3B4;
-    color: white;
-    transform: translateY(-1px);
-}
-
 </style>
 
-@* Script file *@
 <script>
     function previewImage(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
 
-            //Load the data as image preview
-            reader.onload = function (e) {
+            reader.onload = function(e) {
                 document.getElementById('imagePreview').src = e.target.result;
             }
 
