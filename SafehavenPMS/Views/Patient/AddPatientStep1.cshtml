@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
             <i class='bx bxs-user-detail fs-2 me-2'></i>
-            <span><strong class="fs-4">@ViewBag.Title</strong></span>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
         </div>
     </div>
     <hr class="mt-0 mb-2" />
@@ -17,16 +17,33 @@
 <div class="patient-form-container ">
     <div class="d-flex align-items-center mb-4">
         <i class='bx bxs-user-circle fs-2 me-2'></i>
-        <h4 class="mb-0">Add Patient</h4>
+        <h4 class="mb-0 text-custom">Add Patient</h4>
+    </div>
+
+    <div class="d-flex flex-row justify-content-between align-items-center title">
+        <hr class="flex-grow-1 mx-2" />
+        <span style="color:#767667"><strong>Patient Information</strong></span>
+        <hr class="flex-grow-1 mx-2" />
     </div>
 
     <form asp-controller="Patient" asp-action="AddPatientStep1" method="post">
         <div class="row">
             @* Patient's Name and Contact No. *@
-            <div class="col-md-6 form-group">
-                <label class="form-label">Patient's Name</label>
-                <input type="text" class="form-control" name="PatientName" required />
+            <div class="col-md-4 form-group">
+                <label class="form-label">Firstname</label>
+                <input type="text" class="form-control" name="Firstname" required />
             </div>
+
+            <div class="col-md-4 form-group">
+                <label class="form-label">Lastname</label>
+                <input type="text" class="form-control" name="Lastname" required />
+            </div>
+
+            <div class="col-md-4 form-group">
+                <label class="form-label">Middle Name</label>
+                <input type="text" class="form-control" name="MiddleName" />
+            </div>
+
             <div class="col-md-6 form-group">
                 <label class="form-label">Contact No.</label>
                 <input type="tel" class="form-control" name="ContactNo" required />
@@ -37,7 +54,7 @@
                 <label class="form-label">Religion</label>
                 <input type="text" class="form-control" name="Religion" />
             </div>
-            <div class="col-md-6 form-group">
+            <div class="col-md-4 form-group">
                 <label class="form-label">Sex</label>
                 <select class="form-select" name="Sex" required>
                     <option value="" selected disabled>--Select--</option>
@@ -61,10 +78,6 @@
             <div class="col-md-4 form-group">
                 <label class="form-label">Date of Birth</label>
                 <input type="date" class="form-control" name="DateOfBirth" required />
-            </div>
-            <div class="col-md-4 form-group">
-                <label class="form-label">Age</label>
-                <input type="number" class="form-control" name="Age" readonly />
             </div>
 
             @* Address *@
@@ -166,6 +179,10 @@
 
     .indicator .inactive {
         background-color: #E0E0E0;
+    }
+
+    .title{
+        margin-bottom:20px;
     }
 </style>
 
