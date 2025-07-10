@@ -1,4 +1,5 @@
-﻿@namespace SafehavenPMS.Views.Patient
+﻿@model SafehavenPMS.ViewModel.AddPatientStep2ViewModel
+@namespace SafehavenPMS.Views.Patient
 
 @{
     ViewBag.Title = "Patients";
@@ -29,13 +30,13 @@
         <hr class="flex-grow-1 mx-2" />
     </div>
 
-    <form>
+    <form asp-controller="Patient" asp-action="AddPatientStep2" method="post" enctype="multipart/form-data">
         <div class="image-upload-container">
             <div class="preview-area">
                 <img id="imagePreview" src="/Images/sample.JPG" alt="Profile" />
             </div>
             <div class="upload-button-container">
-                <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" />
+                <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="ProfileImage" />
                 <button type="button" class="change-picture-btn" onclick="document.getElementById('imageInput').click()">
                     Change Picture
                 </button>
