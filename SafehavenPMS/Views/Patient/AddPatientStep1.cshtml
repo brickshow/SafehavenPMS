@@ -33,17 +33,19 @@
     <form asp-controller="Patient" asp-action="AddPatientStep1" method="post">
         <div class="row">
             @* Patient's Name and Contact No. *@
+
+            <div class="col-md-4 form-group">
+                <label asp-for="Lastname" class="form-label">Lastname</label>
+                <input asp-for="Lastname" type="text" class="form-control" name="Lastname" required />
+                <span asp-validation-for="Lastname" class="text-danger"></span>
+            </div>
+
             <div class="col-md-4 form-group">
                 <label asp-for="Firstname" class="form-label">Firstname</label>
                 <input asp-for="Firstname" type="text" class="form-control" name="Firstname" required />
                 <span asp-validation-for="Firstname" class="text-danger"></span>
             </div>
 
-            <div class="col-md-4 form-group">
-                <label asp-for="Lastname" class="form-label">Lastname</label>
-                <input asp-for="Lastname"  type="text" class="form-control" name="Lastname" required />
-                <span asp-validation-for="Lastname" class="text-danger"></span>
-            </div>
 
             <div class="col-md-4 form-group">
                 <label asp-for="MiddleName" class="form-label">Middle Name</label>
@@ -63,7 +65,7 @@
                 <input asp-for="Religion" type="text" class="form-control" name="Religion" />
                 <span asp-validation-for="Religion" class="text-danger"></span>
             </div>
-             <div class="col-md-6 form-group">
+             <div class="col-md-4 form-group">
                 <label asp-for="Sex" class="form-label"></label>
                 <select asp-for="Sex" class="form-select">
                     <option value="" selected disabled>--Select--</option>
@@ -86,24 +88,28 @@
                 </select>
             </div>
             <div class="col-md-4 form-group">
-                <label class="form-label">Date of Birth</label>
-                <input type="date" class="form-control" name="DateOfBirth" required />
+                <label asp-for="DateOfBirth" class="form-label">Date of Birth</label>
+                <input asp-for="DateOfBirth" type="date" class="form-control" name="DateOfBirth" required />
+                <span asp-validation-for="DateOfBirth"></span>
             </div>
 
             @* Address *@
             <div class="col-12 form-group">
-                <label class="form-label">Address</label>
-                <textarea class="form-control" name="Address" rows="2"></textarea>
+                <label asp-for="Address" class="form-label">Address</label>
+                <textarea asp-for="Address" class="form-control" name="Address" rows="2"></textarea>
+                <span asp-validation-for="Address"></span>
             </div>
 
             @* Employment/Occupation and Education *@
             <div class="col-md-6 form-group">
-                <label class="form-label">Employment/Occupation</label>
-                <input type="text" class="form-control" name="Occupation" />
+                <label asp-for="Occupation" class="form-label">Employment/Occupation</label>
+                <input asp-for="Occupation" type="text" class="form-control" name="Occupation" />
+                <span asp-validation-for="Occupation"></span>
             </div>
             <div class="col-md-6 form-group">
-                <label class="form-label">Education</label>
-                <input type="text" class="form-control" name="Education" />
+                <label asp-for="Education" class="form-label">Education</label>
+                <input asp-for="Education" type="text" class="form-control" name="Education" />
+                <span asp-validation-for="Education"></span>
             </div>
         </div>
         <div class="indicator">
@@ -114,7 +120,7 @@
 
         @* Form Navigation *@
         <div class="d-flex justify-content-end gap-3 mt-4">
-            <button type="button" class="btn-cancel">Cancel</button>
+            <button type="button" class="btn-cancel" onclick="history.back()">Cancel</button>
             <button type="submit" class="btn-next">Next</button>
         </div>
     </form>

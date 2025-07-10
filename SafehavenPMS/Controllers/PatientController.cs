@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Migrations;
 using SafehavenPMS.Helpers;
 using SafehavenPMS.ViewModel;
 using System.Text.Json;
@@ -45,22 +46,35 @@ namespace SafehavenPMS.Controllers
 
         //Action View For Step 2
         public IActionResult AddPatientStep2()
-        {   
+        {
             return View();
         }
-        ////Acition Post for step 2
-        //[HttpPost]
-        //public IActionResult AddPatientStep2(AddPatientStep2ViewModel model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return View(model);
-        //    }
 
-        //    //Store the data in TempData for step 3
-        //    TempData["PatientStep2"] = JsonSerializer.Serialize(model);
-        //    return RedirectToAction("AddPatientStep3");
-        //}
+        //Action Post for step 2
+        [HttpPost]
+        public IActionResult AddPatientStep2(AddPatientStep2ViewModel model)
+        {
+            // Retrieve and check data from step 1
+            var step1 = HttpContext.Session.GetObject<AddPatientStep1ViewModel>("AddPatientStep1");
+
+            //Check Step 1 is valid
+            if(step1 == null)
+            {
+                TempData["Error"] = "Step 1 data is missing. Please complete step 1 first";
+                return RedirectToAction("AddPatientStep1");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            //If step 1 is valid get the image URL
+            //TODO: Use Cloudinary or google photos 
+
+            //Check if step 1 data is not null
+            return RedirectToAction("AddPatientStep3");
+        }
 
         //Action View for step 3
         public IActionResult AddPatientStep3()
