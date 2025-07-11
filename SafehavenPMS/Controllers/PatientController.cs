@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore.Migrations;
 using SafehavenPMS.Data;
 using SafehavenPMS.Helpers;
@@ -43,24 +44,52 @@ namespace SafehavenPMS.Controllers
         //Action View for adding new patient
         public IActionResult AddPatientStep1()
         {
-            return View();
+            //Display the choices
+            var model = new AddPatientStep1ViewModel
+            {
+                // Initialize the SelectListItems for Education Levels and Marital Statuses
+                EducationLevels = _context.EducationLevels.Select(e => new SelectListItem
+                {
+                    Value = e.EducationLevelId.ToString(),
+                    Text = e.EducationLevelName
+                }).ToList(),
+
+                // Initialize the SelectListItems for Marital Statuses
+                MaritalStatuses = _context.MaritalStatuses.Select(m => new SelectListItem
+                {
+                    Value = m.MaritalStatusId.ToString(),
+                    Text = m.MaritalStatusType.ToString()
+                }).ToList()
+            };
+            return View(model);
         }
 
         //Action post for step 1
         [HttpPost]
         public IActionResult AddPatientStep1(AddPatientStep1ViewModel model)
         {
-            //Check if the model state is valid
             if (!ModelState.IsValid)
             {
-                return View(model); // If the model state is invalid, return the view with the model to show validation errors
+                // Repopulate dropdowns
+                model.EducationLevels = _context.EducationLevels.Select(e => new SelectListItem
+                {
+                    Value = e.EducationLevelId.ToString(),
+                    Text = e.EducationLevelName
+                }).ToList();
+
+                model.MaritalStatuses = _context.MaritalStatuses.Select(m => new SelectListItem
+                {
+                    Value = m.MaritalStatusId.ToString(),
+                    Text = m.MaritalStatusType
+                }).ToList();
+
+                return View(model);
             }
 
             // Store the data in Session
             HttpContext.Session.SetObject("AddPatientStep1", model);
 
             Console.WriteLine("Patient Step 1 Data: " + JsonSerializer.Serialize(model));
-            // Redirect to step 2
             return RedirectToAction("AddPatientStep2");
         }
 
@@ -127,12 +156,12 @@ namespace SafehavenPMS.Controllers
             return View();
         }
 
-        //Action Method to upload case details
-        [HttpPost]
-        public IActionResult AddPatientStep3()
-        {
+        ////Action Method to upload case details
+        //[HttpPost]
+        //public IActionResult AddPatientStep3()
+        //{
 
-        }
+        //}
 
         //Action view for step 4
         public IActionResult AddPatientStep4()

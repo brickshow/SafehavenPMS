@@ -78,13 +78,9 @@
 
             @* Marital Status, Date of Birth, and Age *@
             <div class="col-md-4 form-group">
-                <label class="form-label">Marital Status</label>
-                <select class="form-select" name="MaritalStatus">
+                <label asp-for="MaritalStatusId" class="form-label">Marital Status</label>
+                <select asp-for="MaritalStatusId" class="form-select" asp-items="Model.MaritalStatuses">
                     <option value="" selected disabled>--Select--</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Divorced">Divorced</option>
-                    <option value="Widowed">Widowed</option>
                 </select>
             </div>
             <div class="col-md-4 form-group">
@@ -107,9 +103,11 @@
                 <span asp-validation-for="Occupation"></span>
             </div>
             <div class="col-md-6 form-group">
-                <label asp-for="Education" class="form-label">Education</label>
-                <input asp-for="Education" type="text" class="form-control" name="Education" />
-                <span asp-validation-for="Education"></span>
+                <label asp-for="EducationLevelId" class="form-label">Education</label>
+
+                <select asp-for="EducationLevelId" class="form-select" asp-items="Model.EducationLevels">
+                    <option value="" selected disabled>--Select Education--</option>
+                </select>
             </div>
         </div>
         <div class="indicator">

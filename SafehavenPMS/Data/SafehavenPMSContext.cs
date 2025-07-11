@@ -35,6 +35,25 @@ namespace SafehavenPMS.Data
                 .HasOne(pc => pc.Patient)
                 .WithMany(p => p.PatientCases)
                 .HasForeignKey(pc => pc.PatientId);
+
+            //Data seeding for Education Levels
+            modelBuilder.Entity<Models.EducationLevel>().HasData(
+                new Models.EducationLevel { EducationLevelId = 1, EducationLevelName = "Primary" },
+                new Models.EducationLevel { EducationLevelId = 2, EducationLevelName = "Secondary" },
+                new Models.EducationLevel { EducationLevelId = 3, EducationLevelName = "Tertiary" },
+                new Models.EducationLevel { EducationLevelId = 4, EducationLevelName = "Postgraduate" }
+            );
+
+            //Data seeding for Marital Statuses
+            modelBuilder.Entity<Models.MaritalStatus>().HasData(
+                new Models.MaritalStatus { MaritalStatusId = 1, MaritalStatusType = "Single" },
+                new Models.MaritalStatus { MaritalStatusId = 2, MaritalStatusType = "Married" },
+                new Models.MaritalStatus { MaritalStatusId = 3, MaritalStatusType = "Divorced" },
+                new Models.MaritalStatus { MaritalStatusId = 4, MaritalStatusType = "Widowed" }
+            );
         }
+
+        //Data Seeding
+
     }
 }

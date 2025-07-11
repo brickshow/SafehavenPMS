@@ -1,9 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 
 namespace SafehavenPMS.ViewModel
 {
     public class AddPatientStep1ViewModel
     {
+        [Required]
+        public string PatientID { get; set; }
+
         [Required(ErrorMessage = "First Name is required")]
         public string Firstname { get; set; }
 
@@ -14,7 +18,7 @@ namespace SafehavenPMS.ViewModel
 
         [Required(ErrorMessage = "Date of Birth is required")]
         [DataType(DataType.Date)]
-        public DateTime DateOfBirth { get; set; }
+        public DateTime DateOfBirth { get; set; } = DateTime.UtcNow;
 
         [Required(ErrorMessage= "Contact Number is required")]
         [Phone(ErrorMessage = "Invalid phone number format")]
@@ -29,9 +33,16 @@ namespace SafehavenPMS.ViewModel
         [StringLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
         public string Address { get; set; }
 
-        public string? Occupation { get; set; } //Accept nullable occupation
+        public string? Occupation { get; set; } //Accept nullable occupation    
 
+        // --- for Education ---
         [Required(ErrorMessage = "Education is required")]
-        public string Education { get; set; }
+        public int EducationLevelId { get; set; }
+        public IEnumerable<SelectListItem> EducationLevels { get; set; }
+
+        // --- for Marital Status ---
+        [Required(ErrorMessage = "Marital Status is required")]
+        public int MaritalStatusId { get; set; }
+        public IEnumerable<SelectListItem> MaritalStatuses { get; set; }
     }
 }
