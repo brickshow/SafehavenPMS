@@ -14,6 +14,8 @@ namespace SafehavenPMS.Data
         public DbSet<Models.EducationLevel> EducationLevels { get; set; }
 
         public DbSet<Models.MaritalStatus> MaritalStatuses { get; set; }
+        public DbSet<Models.Religion> Religions { get; set; }
+        public DbSet<Models.Nationality> Nationalities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
