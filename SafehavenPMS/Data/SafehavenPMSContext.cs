@@ -30,11 +30,29 @@ namespace SafehavenPMS.Data
                 .WithMany(e => e.Patients)
                 .HasForeignKey(p => p.EducationLevelID);
 
+            //Religion relationship
+            modelBuilder.Entity<Models.Patient>()
+                .HasOne(e => e.Religion)
+                .WithMany(p => p.Patients)
+                .HasForeignKey(p => p.ReligionID);
+
+            //Nationality relationship
+            modelBuilder.Entity<Models.Patient>()
+                .HasOne(p => p.Nationality)
+                .WithMany(n => n.Patients)
+                .HasForeignKey(p => p.NationalityID);
+
             //For Patient Case
             modelBuilder.Entity<Models.PatientCase>()
                 .HasOne(pc => pc.Patient)
                 .WithMany(p => p.PatientCases)
                 .HasForeignKey(pc => pc.PatientId);
+
+            //Address relationship
+            modelBuilder.Entity<Models.Patient>()
+                .HasOne(p => p.Address)
+                .WithMany(a => a.Patients)
+                .HasForeignKey(p => p.AddressID);
 
             //Data seeding for Education Levels
             modelBuilder.Entity<Models.EducationLevel>().HasData(

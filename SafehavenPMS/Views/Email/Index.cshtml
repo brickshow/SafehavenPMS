@@ -5,7 +5,6 @@
     var section = (Context.Request.Query["section"].ToString() ?? "").ToLower();
 }
 
-@* Email System Panel *@
 <div class="email-container">
     @* Email header panel *@
     <div class="header-panel">
@@ -15,13 +14,13 @@
         <nav class="email-navigation g-3">
             <ul class="email-nav-list d-flex flex-row list-unstyled">
                 <li class="email-nav-item @(string.IsNullOrEmpty(section) || section == "inbox" ? "active" : "")">
-                    <a href="@Url.Action("Index", "Email", new { section = "inbox" })" class="email-nav-link">Inbox</a>
+                    <a asp-page="/Email/Index" asp-route-section="inbox" class="email-nav-link">Inbox</a>
                 </li>
                 <li class="email-nav-item @(section == "sent" ? "active" : "")">
-                    <a href="@Url.Action("Index", "Email", new { section = "sent" })" class="email-nav-link">Sent</a>
+                    <a asp-page="/Email/Index" asp-route-section="sent" class="email-nav-link">Sent</a>
                 </li>
                 <li class="email-nav-item @(section == "archive" ? "active" : "")">
-                    <a href="@Url.Action("Index", "Email", new { section = "archive" })" class="email-nav-link">Archive</a>
+                    <a asp-page="/Email/Index" asp-route-section="archive" class="email-nav-link">Archive</a>
                 </li>
             </ul>
         </nav>
@@ -87,7 +86,7 @@
                         <div class="col-md-3 col-10 text-muted">06/18/2025 - 10:50AM</div>
                         <div class="col-md-1 col-2 text-end message-actions justify-content-center align-items-center">
                             <i class="bx bx-archive fs-5" data-toggle="tooltip" data-placement="top" title="Archive Message"></i>
-                            <i class="text-danger bx bx-trash fs-5 data-toggle=" tooltip" data-placement="top" title="Delete Message" "></i>
+                            <i class="text-danger bx bx-trash fs-5" data-toggle=" tooltip" data-placement="top" title="Delete Message"></i>
                         </div>
                     </div>
                     <div class="nothing-follows text-center text-muted mt-3">Nothing follows.</div>

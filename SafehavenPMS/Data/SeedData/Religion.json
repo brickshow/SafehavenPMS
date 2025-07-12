@@ -1,0 +1,230 @@
+[
+  {
+    "Id": 1,
+    "Name": "Roman Catholic"
+  },
+  {
+    "Id": 2,
+    "Name": "Iglesia ni Cristo"
+  },
+  {
+    "Id": 3,
+    "Name": "Islam"
+  },
+  {
+    "Id": 4,
+    "Name": "Philippine Independent Church"
+  },
+  {
+    "Id": 5,
+    "Name": "Seventh-day Adventist"
+  },
+  {
+    "Id": 6,
+    "Name": "United Church of Christ in the Philippines"
+  },
+  {
+    "Id": 7,
+    "Name": "Jehovah's Witnesses"
+  },
+  {
+    "Id": 8,
+    "Name": "Bible Baptist Church"
+  },
+  {
+    "Id": 9,
+    "Name": "Church of Christ (Disciples)"
+  },
+  {
+    "Id": 10,
+    "Name": "Assemblies of God"
+  },
+  {
+    "Id": 11,
+    "Name": "Evangelical Methodist Church"
+  },
+  {
+    "Id": 12,
+    "Name": "Church of Jesus Christ of Latter-day Saints"
+  },
+  {
+    "Id": 13,
+    "Name": "Pentecostal Missionary Church of Christ"
+  },
+  {
+    "Id": 14,
+    "Name": "Baptist Conference of the Philippines"
+  },
+  {
+    "Id": 15,
+    "Name": "Convention of Philippine Baptist Churches"
+  },
+  {
+    "Id": 16,
+    "Name": "Iglesia Evangelica Metodista en las Islas Filipinas"
+  },
+  {
+    "Id": 17,
+    "Name": "Iglesia Filipina Independiente"
+  },
+  {
+    "Id": 18,
+    "Name": "Iglesia ng Dios kay Kristo Hesus"
+  },
+  {
+    "Id": 19,
+    "Name": "Iglesia ng Dios sa Banaybanay"
+  },
+  {
+    "Id": 20,
+    "Name": "Iglesia ng Dios sa Pilipinas"
+  },
+  {
+    "Id": 21,
+    "Name": "Iglesia sa Dios Espiritu Santo"
+  },
+  {
+    "Id": 22,
+    "Name": "Iglesia sa Dios kay Kristo Jesus"
+  },
+  {
+    "Id": 23,
+    "Name": "Iglesia sa Dios kay Kristo Hesus Haligi at Suhay ng Katotohanan"
+  },
+  {
+    "Id": 24,
+    "Name": "Iglesia sa Dios kay Kristo Hesus, Haligi at Suhay ng Katotohanan sa Bansang Pilipinas"
+  },
+  {
+    "Id": 25,
+    "Name": "Iglesia sa Dios kay Kristo Hesus, Haligi at Suhay ng Katotohanan sa Bansang Pilipinas, Inc."
+  },
+  {
+    "Id": 26,
+    "Name": "Iglesia sa Dios kay Kristo Hesus, Haligi at Suhay ng Katotohanan sa Bansang Pilipinas, Inc. (IDKH)"
+  },
+  {
+    "Id": 27,
+    "Name": "Iglesia sa Dios kay Kristo Hesus, Haligi at Suhay ng Katotohanan sa Bansang Pilipinas, Inc. (IDKH)"
+  },
+  {
+    "Id": 28,
+    "Name": "Jesus Is Lord Church"
+  },
+  {
+    "Id": 29,
+    "Name": "Jesus Miracle Crusade International Ministry"
+  },
+  {
+    "Id": 30,
+    "Name": "Jesus the Anointed One Church"
+  },
+  {
+    "Id": 31,
+    "Name": "Jesus the Christ Church"
+  },
+  {
+    "Id": 32,
+    "Name": "Jesus the Healer Christian Fellowship"
+  },
+  {
+    "Id": 33,
+    "Name": "Jesus the Lord of the Harvest Christian Fellowship"
+  },
+  {
+    "Id": 34,
+    "Name": "Jesus the Living God Church"
+  },
+  {
+    "Id": 35,
+    "Name": "Jesus the Rock of Salvation Church"
+  },
+  {
+    "Id": 36,
+    "Name": "Jesus the Saviour Church"
+  },
+  {
+    "Id": 37,
+    "Name": "Jesus the Shepherd Church"
+  },
+  {
+    "Id": 38,
+    "Name": "Jesus the Way Church"
+  },
+  {
+    "Id": 39,
+    "Name": "Kingdom of Jesus Christ"
+  },
+  {
+    "Id": 40,
+    "Name": "Members Church of God International (Ang Dating Daan)"
+  },
+  {
+    "Id": 41,
+    "Name": "New Apostolic Church"
+  },
+  {
+    "Id": 42,
+    "Name": "Orthodox Church"
+  },
+  {
+    "Id": 43,
+    "Name": "Presbyterian Church"
+  },
+  {
+    "Id": 44,
+    "Name": "Seventh-day Adventist Reform Movement"
+  },
+  {
+    "Id": 45,
+    "Name": "Southern Baptist Convention"
+  },
+  {
+    "Id": 46,
+    "Name": "Unitarian Universalist Church"
+  },
+  {
+    "Id": 47,
+    "Name": "United Methodist Church"
+  },
+  {
+    "Id": 48,
+    "Name": "Victory Christian Fellowship"
+  },
+  {
+    "Id": 49,
+    "Name": "World Mission Society Church of God"
+  },
+  {
+    "Id": 50,
+    "Name": "Aglipayan Church"
+  },
+  {
+    "Id": 51,
+    "Name": "Buddhism"
+  },
+  {
+    "Id": 52,
+    "Name": "Hinduism"
+  },
+  {
+    "Id": 53,
+    "Name": "Judaism"
+  },
+  {
+    "Id": 54,
+    "Name": "Animism"
+  },
+  {
+    "Id": 55,
+    "Name": "Sikhism"
+  },
+  {
+    "Id": 56,
+    "Name": "Bahá?í Faith"
+  },
+  {
+    "Id": 57,
+    "Name": "Other"
+  }
+]
