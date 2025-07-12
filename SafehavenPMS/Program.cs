@@ -1,5 +1,7 @@
 
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SafehavenPMS.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,3 +50,19 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
+
+//Call the seeder 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<SafehavenPMSContext>();
+    context.Database.Migrate();
+
+    // Seed Nationalities
+    var nationalityPath = Path.Combine("Data", "SeedData", "Nationality.json");
+    await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
+
+    // Seed Religions
+    var religionPath = Path.Combine("Data", "SeedData", "Religion.json");
+    await DataSeeder.SeedReligionsAsync(context, religionPath);
+}

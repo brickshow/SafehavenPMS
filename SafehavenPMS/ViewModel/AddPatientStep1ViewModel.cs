@@ -24,7 +24,6 @@ namespace SafehavenPMS.ViewModel
         [Phone(ErrorMessage = "Invalid phone number format")]
         public string ContactNumber { get; set; }
 
-        public string? Religion { get; set; }
 
         [Required(ErrorMessage = "Sex is required")]
         public string Sex { get; set; }
@@ -44,5 +43,13 @@ namespace SafehavenPMS.ViewModel
         [Required(ErrorMessage = "Marital Status is required")]
         public int MaritalStatusId { get; set; }
         public IEnumerable<SelectListItem> MaritalStatuses { get; set; }
+
+        //for Religion
+        public int ReligionId { get; set; }
+        public IEnumerable<SelectListItem> Religions { get; set; }
+
+        //For Nationality
+        public int NationalityId { get; set; }
+        public IEnumerable<SelectListItem> Nationalities { get; set; }
     }
 }

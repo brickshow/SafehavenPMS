@@ -61,10 +61,22 @@
 
             @* Religion and Sex *@
             <div class="col-md-6 form-group">
-                <label asp-for="Religion" class="form-label">Religion</label>
-                <input asp-for="Religion" type="text" class="form-control" name="Religion" />
-                <span asp-validation-for="Religion" class="text-danger"></span>
+                <label asp-for="ReligionId" class="form-label">Religion</label>
+                <select asp-for="ReligionId" class="form-select" asp-items="Model.Religions">
+                    <option value="" selected disabled>--Select Education--</option>
+                </select>
+                <span asp-validation-for="ReligionId" class="text-danger"></span>
             </div>
+
+            <div class="col-md-6 form-group">
+                <label asp-for="NationalityId" class="form-label">Religion</label>
+                <select asp-for="NationalityId" class="form-select" asp-items="Model.Nationalities">
+                    <option value="" selected disabled>--Select Education--</option>
+                </select>
+                <span asp-validation-for="NationalityId" class="text-danger"></span>
+            </div>
+
+
              <div class="col-md-4 form-group">
                 <label asp-for="Sex" class="form-label"></label>
                 <select asp-for="Sex" class="form-select">

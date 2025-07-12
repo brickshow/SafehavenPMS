@@ -59,7 +59,21 @@ namespace SafehavenPMS.Controllers
                 {
                     Value = m.MaritalStatusId.ToString(),
                     Text = m.MaritalStatusType.ToString()
-                }).ToList()
+                }).ToList(),
+
+                //Initialize the SelectListItems for Religions
+                Religions = _context.Religions.Select(r => new SelectListItem
+                {
+                    Value = r.ReligionID.ToString(),
+                    Text = r.ReligionName
+                }),
+
+                //Initialize the SelectListItems for Nationalities
+                Nationalities = _context.Nationalities.Select(n => new SelectListItem
+                {
+                    Value = n.NationalityID.ToString(),
+                    Text = n.NationalityName
+                })
             };
             return View(model);
         }
@@ -83,6 +97,17 @@ namespace SafehavenPMS.Controllers
                     Text = m.MaritalStatusType
                 }).ToList();
 
+                model.Religions = _context.Religions.Select(r => new SelectListItem
+                {
+                    Value = r.ReligionID.ToString(),
+                    Text = r.ReligionName
+                }).ToList();
+
+                model.Nationalities = _context.Nationalities.Select(n => new SelectListItem
+                {
+                    Value = n.NationalityID.ToString(),
+                    Text = n.NationalityName
+                }).ToList();
                 return View(model);
             }
 
