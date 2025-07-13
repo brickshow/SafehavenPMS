@@ -49,20 +49,33 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.Run();
 
-//Call the seeder 
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<SafehavenPMSContext>();
-    context.Database.Migrate();
+    try
+    {
+        var context = services.GetRequiredService<SafehavenPMSContext>();
+        context.Database.Migrate();
 
-    // Seed Nationalities
-    var nationalityPath = Path.Combine("Data", "SeedData", "Nationality.json");
-    await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
 
-    // Seed Religions
-    var religionPath = Path.Combine("Data", "SeedData", "Religion.json");
-    await DataSeeder.SeedReligionsAsync(context, religionPath);
+        // Seed Religions
+        var religionPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Religion.json");
+        await DataSeeder.SeedReligionsAsync(context, religionPath);
+
+        // Seed Nationalities
+        var nationalityPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Nationality.json");
+        await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
+
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.ToString());
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
 }
+
+
+
+app.Run();

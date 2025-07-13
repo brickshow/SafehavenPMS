@@ -1,0 +1,91 @@
+﻿@model SafehavenPMS.ViewModel.ConfirmationViewModel
+
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content p-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-custom" id="confirmationModalLabel">Confirm Patient Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body pt-0">
+                <div class="row">
+                    <div class="col-md-4 d-flex justify-content-center mb-3 mb-md-0">
+                        <img src="@Model.Step2.TempFilePath" alt="Profile Image" class="img-thumbnail rounded" style="width: 200px; height: 200px; object-fit: cover;" />
+                    </div>
+                    <div class="col-md-8">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Personal Information</h6>
+                        <div class="row">
+                            <div class="col-6"><strong>Name:</strong> @Model.Step1.Lastname @Model.Step1.Firstname</div>
+                            <div class="col-6"><strong>Date of Birth:</strong> @Model.Step1.DateOfBirth.ToString("yyyy-MM-dd")</div>
+                            <div class="col-6"><strong>Sex:</strong> @Model.Step1.Sex</div>
+                            <div class="col-6"><strong>Contact Number:</strong> @Model.Step1.ContactNumber</div>
+                            <div class="col-6"><strong>Nationality:</strong> @Model.Step1.NationalityName</div>
+                            <div class="col-6"><strong>Religion:</strong> @Model.Step1.ReligionName</div>
+                            <div class="col-6"><strong>Education:</strong> @Model.Step1.EducationName</div>
+                            <div class="col-6"><strong>Marital Status:</strong> @Model.Step1.MaritalStatusName</div>
+                            <div class="col-12"><strong>Address:</strong> @($"{Model.Step1.Street}, {Model.Step1.Barangay}, {Model.Step1.City}, {Model.Step1.Province}, {Model.Step1.Country}, {Model.Step1.PostalCode}")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 text-center">Case Details</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Date of Intake:</strong> @Model.Step3.DateOfIntake.ToString("yyyy-MM-dd")</p>
+                        <p><strong>Affiliation:</strong> @Model.Step3.Affilation</p>
+                        <p><strong>Accompanied By:</strong> @Model.Step3.AccompaniedBy</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Date of Referral:</strong> @Model.Step3.DateOfReferral.ToString("yyyy-MM-dd")</p>
+                        <p><strong>Referred By:</strong> @Model.Step3.ReferredBy</p>
+                        <p><strong>Physician:</strong> @Model.Step3.Physician</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer justify-content-End border-0 pt-0">
+                <form method="post" asp-action="Confirmation">
+                    <button type="submit" class="btn btn-teal">Confirm & Save</button>
+                </form>
+
+                @* Back to step 1 if need edit *@
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" 
+                onclick="window.location.href='@Url.Action("AddPatientStep1", "Patient")'">
+                    Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-teal {
+        background-color: #00A3B4;
+        color: #fff;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+
+        .btn-teal:hover {
+            background-color: #008a9a;
+        }
+
+    .modal-content {
+        border-radius: 6px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+        margin-bottom: 30px;
+    }
+
+    .img-thumbnail {
+        border: 3px solid #e0e0e0;
+    }
+</style>

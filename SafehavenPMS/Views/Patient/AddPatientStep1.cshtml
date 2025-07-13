@@ -36,13 +36,13 @@
 
             <div class="col-md-4 form-group">
                 <label asp-for="Lastname" class="form-label">Lastname</label>
-                <input asp-for="Lastname" type="text" class="form-control" name="Lastname" required />
+                <input asp-for="Lastname" type="text" class="form-control" name="Lastname" />
                 <span asp-validation-for="Lastname" class="text-danger"></span>
             </div>
 
             <div class="col-md-4 form-group">
                 <label asp-for="Firstname" class="form-label">Firstname</label>
-                <input asp-for="Firstname" type="text" class="form-control" name="Firstname" required />
+                <input asp-for="Firstname" type="text" class="form-control" name="Firstname" />
                 <span asp-validation-for="Firstname" class="text-danger"></span>
             </div>
 
@@ -55,26 +55,28 @@
 
             <div class="col-md-6 form-group">
                 <label asp-for="ContactNumber" class="form-label">Contact No.</label>
-                <input asp-for="ContactNumber" type="tel" class="form-control" name="ContactNumber" required />
+                <input asp-for="ContactNumber" type="tel" class="form-control" name="ContactNumber" />
                 <span asp-validation-for="ContactNumber" class="text-danger"></span>
             </div>
 
             @* Religion and Sex *@
             <div class="col-md-6 form-group">
+                <label asp-for="NationalityId" class="form-label">Nationality</label>
+                <select asp-for="NationalityId" class="form-select" asp-items="Model.Nationalities">
+                    <option value="" selected disabled>--Select Nationality--</option>
+                </select>
+                <span asp-validation-for="NationalityId" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-12 form-group">
                 <label asp-for="ReligionId" class="form-label">Religion</label>
                 <select asp-for="ReligionId" class="form-select" asp-items="Model.Religions">
-                    <option value="" selected disabled>--Select Education--</option>
+                    <option value="" selected disabled>--Select Religion--</option>
                 </select>
                 <span asp-validation-for="ReligionId" class="text-danger"></span>
             </div>
 
-            <div class="col-md-6 form-group">
-                <label asp-for="NationalityId" class="form-label">Religion</label>
-                <select asp-for="NationalityId" class="form-select" asp-items="Model.Nationalities">
-                    <option value="" selected disabled>--Select Education--</option>
-                </select>
-                <span asp-validation-for="NationalityId" class="text-danger"></span>
-            </div>
+       
 
 
              <div class="col-md-4 form-group">
@@ -94,20 +96,55 @@
                 <select asp-for="MaritalStatusId" class="form-select" asp-items="Model.MaritalStatuses">
                     <option value="" selected disabled>--Select--</option>
                 </select>
+                <span asp-validation-for="MaritalStatusId" class="text-danger"></span>
             </div>
+
+        
+
+          
+
             <div class="col-md-4 form-group">
                 <label asp-for="DateOfBirth" class="form-label">Date of Birth</label>
-                <input asp-for="DateOfBirth" type="date" class="form-control" name="DateOfBirth" required />
+                <input asp-for="DateOfBirth" type="date" class="form-control" name="DateOfBirth" />
                 <span asp-validation-for="DateOfBirth"></span>
             </div>
 
-            @* Address *@
-            <div class="col-12 form-group">
-                <label asp-for="Address" class="form-label">Address</label>
-                <textarea asp-for="Address" class="form-control" name="Address" rows="2"></textarea>
-                <span asp-validation-for="Address"></span>
+            <div class="d-flex flex-row justify-content-between align-items-center title" style="margin-top:20px">
+                <hr class="flex-grow-1 mx-2" />
+                <hr class="flex-grow-1 mx-2" />
             </div>
 
+            @* Address *@
+            <div class="col-md-12 form-group">
+                <label asp-for="Street" class="form-label">Street</label>
+                <input asp-for="Street" class="form-control" />
+                <span asp-validation-for="Street" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 form-group">
+                <label asp-for="Barangay" class="form-label">Barangay</label>
+                <input asp-for="Barangay" class="form-control" />
+                <span asp-validation-for="Barangay" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 form-group">
+                <label asp-for="City" class="form-label">City</label>
+                <input asp-for="City" class="form-control" />
+                <span asp-validation-for="City" class="text-danger"></span>
+            </div>
+            <div class="col-md-4 form-group">
+                <label asp-for="Province" class="form-label">Province</label>
+                <input asp-for="Province" class="form-control" />
+                <span asp-validation-for="Province" class="text-danger"></span>
+            </div>
+            <div class="col-md-4 form-group">
+                <label asp-for="Country" class="form-label">Country</label>
+                <input asp-for="Country" class="form-control" />
+                <span asp-validation-for="Country" class="text-danger"></span>
+            </div>
+            <div class="col-md-4 form-group">
+                <label asp-for="PostalCode" class="form-label">Postal Code</label>
+                <input asp-for="PostalCode" class="form-control" />
+                <span asp-validation-for="PostalCode" class="text-danger"></span>
+            </div>
             @* Employment/Occupation and Education *@
             <div class="col-md-6 form-group">
                 <label asp-for="Occupation" class="form-label">Employment/Occupation</label>
@@ -116,10 +153,11 @@
             </div>
             <div class="col-md-6 form-group">
                 <label asp-for="EducationLevelId" class="form-label">Education</label>
-
                 <select asp-for="EducationLevelId" class="form-select" asp-items="Model.EducationLevels">
                     <option value="" selected disabled>--Select Education--</option>
                 </select>
+                <span asp-validation-for="EducationLevelId" class="text-danger"></span>
+
             </div>
         </div>
         <div class="indicator">

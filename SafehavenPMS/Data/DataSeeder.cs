@@ -5,46 +5,61 @@ namespace SafehavenPMS.Data
 {
     public class DataSeeder
     {
-        /// This method is used to seed initial data into the database.
-        //Seed Data for naltionalities
         public static async Task SeedNationalitiesAsync(SafehavenPMSContext context, string jsonFilePath)
         {
-            // Check if the Nationalities table is empty
-            if (!context.Nationalities.Any())
+            try
             {
-                //Read the JSON file
-                var json = await File.ReadAllTextAsync(jsonFilePath);
-                var nationalities = JsonSerializer.Deserialize<List<Nationality>>(json);
-
-
-                //Check if the deserialization was successful
-                if (nationalities != null)
+                if (!context.Nationalities.Any())
                 {
-                    // Add the nationalities to the context
-                    context.Nationalities.AddRange(nationalities);
-                    // Save changes to the database
-                    await context.SaveChangesAsync();
+                    var jsonString = await File.ReadAllTextAsync(jsonFilePath);
+                    var nationalities = JsonSerializer.Deserialize<List<Nationality>>(jsonString, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (nationalities != null)
+                    {
+                        foreach (var nationality in nationalities)
+                        {
+                            nationality.Patients = new List<Patient>(); // Initialize the navigation property
+                            context.Nationalities.Add(nationality);
+                        }
+                        await context.SaveChangesAsync();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error seeding nationalities: {ex.Message}");
             }
         }
 
-        // Seed Data for Religions
         public static async Task SeedReligionsAsync(SafehavenPMSContext context, string jsonFilePath)
         {
-            // Check if the Religions table is empty
-            if (!context.Religions.Any())
+            try
             {
-                //Read the JSON file
-                var json = await File.ReadAllTextAsync(jsonFilePath);
-                var religions = JsonSerializer.Deserialize<List<Religion>>(json);
-                //Check if the deserialization was successful
-                if (religions != null)
+                if (!context.Religions.Any())
                 {
-                    // Add the religions to the context
-                    context.Religions.AddRange(religions);
-                    // Save changes to the database
-                    await context.SaveChangesAsync();
+                    var jsonString = await File.ReadAllTextAsync(jsonFilePath);
+                    var religions = JsonSerializer.Deserialize<List<Religion>>(jsonString, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (religions != null)
+                    {
+                        foreach (var religion in religions)
+                        {
+                            religion.Patients = new List<Patient>(); // Initialize the navigation property
+                            context.Religions.Add(religion);
+                        }
+                        await context.SaveChangesAsync();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error seeding religions: {ex.Message}");
             }
         }
     }

@@ -236,6 +236,10 @@ namespace SafehavenPMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PatientCaseId"));
 
+                    b.Property<string>("AccompaniedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Affilation")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

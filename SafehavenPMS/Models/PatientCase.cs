@@ -8,6 +8,7 @@
         public DateTime DateOfIntake { get; set; }
         public DateTime? DateOfReferral { get; set; }
         public string ReferredBy { get; set; } 
+        public string AccompaniedBy { get; set; } 
         public string Affilation { get; set; } 
         public int StaffId { get; set; }// ID of the staff member handling the case
         public string CaseStatus { get; set; } // e.g., Active, Closed

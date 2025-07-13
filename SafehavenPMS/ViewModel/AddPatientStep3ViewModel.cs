@@ -15,6 +15,8 @@ namespace SafehavenPMS.ViewModel
 
         public string ReferredBy { get; set; }
 
+        public string AccompaniedBy { get; set; }
+
         [Required(ErrorMessage ="Please add Phycisian")]
         public string Physician { get; set; }
     }
