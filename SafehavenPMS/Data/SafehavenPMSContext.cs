@@ -12,7 +12,7 @@ namespace SafehavenPMS.Data
         public DbSet<Models.Patient> Patients { get; set; }
         public DbSet<Models.PatientCase> PatientCases { get; set; }
         public DbSet<Models.EducationLevel> EducationLevels { get; set; }
-
+        public DbSet<Models.Address> Addresses { get; set; }
         public DbSet<Models.MaritalStatus> MaritalStatuses { get; set; }
         public DbSet<Models.Religion> Religions { get; set; }
         public DbSet<Models.Nationality> Nationalities { get; set; }

@@ -1,13 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Newtonsoft.Json.Serialization;
 using SafehavenPMS.Data;
 using SafehavenPMS.Helpers;
+using SafehavenPMS.Models;
 using SafehavenPMS.Services;
 using SafehavenPMS.ViewModel;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace SafehavenPMS.Controllers
 {
@@ -181,9 +185,8 @@ namespace SafehavenPMS.Controllers
         //Action View For Step 2
         public IActionResult AddPatientStep2()
         {
-            //Populate data for editing
-            var model = HttpContext.Session.GetObject<AddPatientStep2ViewModel>("AddPatientStep2");
-            return View();
+            var model = HttpContext.Session.GetObject<AddPatientStep2ViewModel>("AddPatientStep2") ?? new AddPatientStep2ViewModel();
+            return View(model);
         }
 
         //Action Post for step 2
@@ -202,8 +205,17 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("AddPatientStep1");
             }
 
+            //Load the previously stored step 2 if exists
+            var existingStep2 = HttpContext.Session.GetObject<AddPatientStep2ViewModel>("AddPatientStep2");
+
             if (!ModelState.IsValid)
             {
+                //Preserve existing image path in case of validitaion error
+                if (existingStep2 != null && string.IsNullOrEmpty(model.TempFilePath))
+                {
+                    //Save the temp path
+                    model.TempFilePath = existingStep2.TempFilePath;
+                }
                 return View(model);
             }
 
@@ -231,14 +243,19 @@ namespace SafehavenPMS.Controllers
                     model.ProfileImage.CopyTo(fileStream);
                 }
 
-               
-
-
                 //Store path in session
                 model.TempFilePath = $"/uploads/patientProfileImages/{fileName}";
 
                 // Log the temporary file path
                 Console.WriteLine("Temporary file path: " + fileName);
+            }
+            else
+            {
+                // Restore previous image if no new image is uploaded
+                if (existingStep2 != null)
+                {
+                    model.TempFilePath = existingStep2.TempFilePath;
+                }
             }
 
 
@@ -254,7 +271,7 @@ namespace SafehavenPMS.Controllers
         {
             //Populate Step 3 with data for Editing
             var model = HttpContext.Session.GetObject<AddPatientStep3ViewModel>("AddPatientStep3");
-            return View();
+            return View(model);
         }
 
         //Action Method to upload case details
@@ -282,7 +299,6 @@ namespace SafehavenPMS.Controllers
                 return View();
             }
 
-     
             //Add data to json
             HttpContext.Session.SetObject("AddPatientStep3", model);
 
@@ -311,6 +327,130 @@ namespace SafehavenPMS.Controllers
         public IActionResult Confirmation()
         {
             return View();
+        }
+
+        //Action to confirm adding patient and save to database
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveConfirmation()
+        {
+            //Retrieve Session data
+            var step1 = HttpContext.Session.GetObject<AddPatientStep1ViewModel>("AddPatientStep1");
+            var step2 = HttpContext.Session.GetObject<AddPatientStep2ViewModel>("AddPatientStep2");
+            var step3 = HttpContext.Session.GetObject<AddPatientStep3ViewModel>("AddPatientStep3");
+
+            //Check if it is valid
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("AddPatientStep4");
+            }
+
+            //Generate Unique ID for Patient
+            int id = 000000;
+
+            //Check id session is null
+            if(step1 == null || step2 == null)
+            {
+                //Return and throw error
+                TempData["Error"] = "Some of the required patient data is missing. Please re-enter.";
+                return RedirectToAction("AddPatientStep1");
+            }
+
+            //Add the address first to context
+            var address = new Address
+            {
+                Street = step1.Street,
+                Barangay = step1.Barangay,
+                City = step1.City,
+                Province = step1.Province,
+                Country = step1.Country,
+                PostalCode = step1.PostalCode,
+            };
+
+            //Temp URL for profile image
+            string tempUrl = string.Empty;
+
+            //Save Image to Cloudinary
+            if (!string.IsNullOrEmpty(step2.TempFilePath))
+            {
+                //Convert the relative path to absolute path
+                string localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", step2.TempFilePath.TrimStart('/'));
+
+                //Check if the file exists
+                if(!System.IO.File.Exists(localPath))
+                {
+                    TempData["Error"] = "Profile image file not found. Please upload a valid image.";
+                    return RedirectToAction("AddPatientStep2");
+                }
+
+                //Upload the image to Cloudinary
+                try
+                {
+                    //Open the file stream for the image
+                    var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read);
+
+                    //Upload the image using Cloudinary service
+                    string photoUrl = _cloudinaryServices.UploadImageAsync(fileStream, Path.GetFileName(localPath)).Result;
+                    //Set the PhotoUrl in step1
+                    tempUrl = photoUrl;
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "Failed to upload profile image: " + ex.Message;
+                    return RedirectToAction("AddPatientStep2");
+                }
+            }
+
+
+            //Add data to context
+            var patient = new Patient
+            {
+                //Adding the different foreign keys
+                EducationLevelID = step1.EducationLevelId,
+                ReligionID = step1.ReligionId,
+                MaritalStatusID = step1.MaritalStatusId,
+                AddressID = address.AddressID,
+                NationalityID = step1.NationalityId,
+
+                //Adding personal Info
+                Firstname = step1.Firstname,
+                Lastname = step1.Lastname,
+                MiddleName = step1.MiddleName,
+                ContactNumber = step1.ContactNumber,
+                Sex = step1.Sex,
+                DateOfBirth = step1.DateOfBirth,
+                PatienStatus = "Waiting List", //TODO
+                Occupation = step1.Occupation,
+
+                //Adding step 2 into context
+                PhotoUrl = tempUrl, //Set the photo URL from step 2
+            };
+
+            //Save the Patient to the database
+            try
+            {
+                //Add the address to the context
+                _context.Addresses.Add(address); // Add the address first
+                _context.Patients.Add(patient); // Add the address first
+                _context.SaveChanges(); // Save changes to get the AddressID
+
+
+                // Optionally clear session after successful save
+                HttpContext.Session.Remove("AddPatientStep1");
+                HttpContext.Session.Remove("AddPatientStep2");
+                HttpContext.Session.Remove("AddPatientStep3");
+
+                
+                TempData["Success"] = "Patient added successfully!";
+                return RedirectToAction("AddPatientStep4");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error saving patient: " + ex.Message);
+                TempData["Error"] = "There was an error saving the patient.";
+                return View();
+            }
+
         }
 
         //Action view for step 4

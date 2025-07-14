@@ -18,7 +18,7 @@
         public string MiddleName { get; set; }
         public string ContactNumber { get; set; }
         public string Sex { get; set; }
-        public string DateOfBirth { get; set; }
+        public DateTime DateOfBirth { get; set; }
         public string PatienStatus { get; set; }
         public string Occupation { get; set; }
         public string PhotoUrl { get; set; }

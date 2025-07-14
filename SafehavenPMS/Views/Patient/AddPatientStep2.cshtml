@@ -33,7 +33,7 @@
     <form asp-controller="Patient" asp-action="AddPatientStep2" method="post" enctype="multipart/form-data">
         <div class="image-upload-container">
             <div class="preview-area">
-                <img id="imagePreview" src="/Images/default.png" alt="Profile" />
+                <img id="imagePreview" src="@(!string.IsNullOrEmpty(Model.TempFilePath) ? Model.TempFilePath : "/Images/default.png")" alt="Profile" />
             </div>
             <div class="upload-button-container">
                 <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="ProfileImage" />
