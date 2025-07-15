@@ -401,46 +401,42 @@ namespace SafehavenPMS.Controllers
                 }
             }
 
-
-            //Add data to context
-            var patient = new Patient
-            {
-                //Adding the different foreign keys
-                EducationLevelID = step1.EducationLevelId,
-                ReligionID = step1.ReligionId,
-                MaritalStatusID = step1.MaritalStatusId,
-                AddressID = address.AddressID,
-                NationalityID = step1.NationalityId,
-
-                //Adding personal Info
-                Firstname = step1.Firstname,
-                Lastname = step1.Lastname,
-                MiddleName = step1.MiddleName,
-                ContactNumber = step1.ContactNumber,
-                Sex = step1.Sex,
-                DateOfBirth = step1.DateOfBirth,
-                PatienStatus = "Waiting List", //TODO
-                Occupation = step1.Occupation,
-
-                //Adding step 2 into context
-                PhotoUrl = tempUrl, //Set the photo URL from step 2
-            };
-
             //Save the Patient to the database
             try
             {
-                //Add the address to the context
-                _context.Addresses.Add(address); // Add the address first
-                _context.Patients.Add(patient); // Add the address first
-                _context.SaveChanges(); // Save changes to get the AddressID
+                // Step 1: Add the address and save it first
+                _context.Addresses.Add(address);
+                await _context.SaveChangesAsync(); // AddressID is generated here
 
+                // Step 2: Now create the patient using the saved address ID
+                var patient = new Patient
+                {
+                    EducationLevelID = step1.EducationLevelId,
+                    ReligionID = step1.ReligionId,
+                    MaritalStatusID = step1.MaritalStatusId,
+                    AddressID = address.AddressID, // Now it has a real ID
+                    NationalityID = step1.NationalityId,
 
-                // Optionally clear session after successful save
+                    Firstname = step1.Firstname,
+                    Lastname = step1.Lastname,
+                    MiddleName = step1.MiddleName,
+                    ContactNumber = step1.ContactNumber,
+                    Sex = step1.Sex,
+                    DateOfBirth = step1.DateOfBirth,
+                    PatienStatus = "Waiting List",
+                    Occupation = step1.Occupation,
+                    PhotoUrl = tempUrl
+                };
+
+                // Step 3: Save the patient
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+
+                // Clear session
                 HttpContext.Session.Remove("AddPatientStep1");
                 HttpContext.Session.Remove("AddPatientStep2");
                 HttpContext.Session.Remove("AddPatientStep3");
 
-                
                 TempData["Success"] = "Patient added successfully!";
                 return RedirectToAction("AddPatientStep4");
             }
@@ -448,7 +444,7 @@ namespace SafehavenPMS.Controllers
             {
                 Console.WriteLine("Error saving patient: " + ex.Message);
                 TempData["Error"] = "There was an error saving the patient.";
-                return View();
+                return View(); // Make sure there's a view for fallback here
             }
 
         }
