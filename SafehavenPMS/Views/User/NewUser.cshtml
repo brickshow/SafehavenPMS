@@ -1,0 +1,50 @@
+﻿@{
+    ViewBag.Title = "Add New User";
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class='bx bxs-user-detail fs-2 me-2'></i>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+@* Add new user conatiner *@
+<div class="d-flex justify-content-center align-items-center m-auto">
+    <div class="add-panel d-flex flex-column justify-content-start align-items-center w-50 h-50">
+        @* Add user header *@
+        <div class="header" style="background-color:aquamarine">
+            <h5 class="text-custom">New User</h5>
+        </div>
+
+        @* Add user attributes *@
+        <div class="user-fields">
+            <div class="row">
+                @* for user inputs *@
+                <div class="col-md-8">
+                    <div class="col-md-12">
+                        <input placeholder="sample"/>
+                    </div>
+                </div>
+
+                @* for image *@
+                <div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .add-panel{
+        display:flex;
+        width:300px;
+        height:200px;
+    }
+</style>
