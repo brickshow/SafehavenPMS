@@ -2,72 +2,177 @@
     ViewBag.Title = "Brix Lampago";
 }
 
-@* Content Header *@
-<div class="header">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="d-flex align-items-center justify-content-center">
-            <i class='bx bx-reply fs-2 me-2'></i>
-            <span class="text-custom">Brix Lampago</span>
+@* Header: Patient Name + Status *@
+<div>
+    <div class="d-flex justify-content-start align-items-start mb-3">
+        <div class="d-flex align-items-center">
+            <i class='bx bx-reply fs-1 me-2'></i>
+            <img src="/Images/sample.JPG" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;" />
+            <div>
+                <h4 class="mb-0 fw-bold text-custom">Brix Lampago</h4>
+                <span class="text-muted">Patient - 230491</span>
+            </div>
         </div>
-        @* Print button *@
-        <div class="print-btn">
-            <form asp-controller="Patient" asp-action="PrintPatientList" method="post">
-                <button type="submit" class="btn d-flex align-items-center gap-2">
-                    <i class='bx bx-printer'></i>
-                    <span>Print</span>
-                </button>
-            </form>
+        <div class="d-flex align-items-start">
+            <span class="badge bg-success m-2">Active</span>
         </div>
     </div>
-    <hr class="mt-0 mb-2" />
+    <div>
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item"><a class="nav-link" href="#">Overview</a></li>
+            <li class="nav-item"><a class="nav-link active">Personal</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Notes</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Case Documentation</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Prescription & Medication</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Billing</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Activity Logs</a></li>
+        </ul>
+
+    </div>
+
 </div>
 
-@* Patient Details *@
-<div class="content d-flex justify-content-center align-items-center h-100 w-100" style="width:90%; height:90%; margin:10px">
+
+
+@* About Patient Card *@
+<div class="bg-white p-4 rounded shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+            <i class='bx bxs-user-detail fs-4 me-2'></i>
+            <h5 class="fw-bold mb-0 text-custom">About Patient</h5>
+        </div>
+        <a href="#" class="btn text-primary text-light text-decoration-none">Edit</a>
+    </div>
+
     <div class="row">
-        @* profile Panel *@
-        
-        <div class="col-md-2 p-1 profile-panel">
-            <div class="text-center">
-               <span class="text-success d-flex m-1 justify-content-end align-items-end">Active</span>
-                <img src="/Images/sample.JPG" class="img-fluid rounded-circle w-75" alt="Alternate Text" />
-                 <label for="ChangeProfile" class="upload-button">
-                            Change Profile
-                        </label>
-                        <input type="file"
-                               id="ChangeProfile"
-                               name="ChangeProfile"
-                               accept="image/*"
-                               class="d-none"
-                               onchange="previewImage(this)">
+        <!-- Profile Picture (Left Side) -->
+        <div class="col-md-4 text-center mb-4">
+            <img src="/Images/sample.JPG" class="img-fluid m-4" style="width: 300px; height:300px; border-radius:6px" />
+            <label for="ChangeProfile" class="upload-button">Change Picture</label>
+            <input type="file" id="ChangeProfile" class="d-none" accept="image/*" onchange="previewImage(this)" />
+        </div>
+
+        <!-- Personal Information + Case Details (Right Side) -->
+        <div class="col-md-8">
+            <!-- Personal Information -->
+            <div class="d-flex flex-row justify-content-between align-items-center title">
+                <hr class="flex-grow-1 mx-2" />
+                <span style="color:#767667"><strong>Patient Information</strong></span>
+                <hr class="flex-grow-1 mx-2" />
+            </div>            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">First Name</p>
+                    <p class="fw-semibold">John</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Middle Name</p>
+                    <p class="fw-semibold">Smith</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Last Name</p>
+                    <p class="fw-semibold">Smith</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Phone Number</p>
+                    <p class="fw-semibold">09584638152</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Birthdate</p>
+                    <p class="fw-semibold">04/08/1990</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Age</p>
+                    <p class="fw-semibold">50</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Marital Status</p>
+                    <p class="fw-semibold">Married</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Sex</p>
+                    <p class="fw-semibold">Male</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Employment/Occupation</p>
+                    <p class="fw-semibold">Cebu City</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Religion</p>
+                    <p class="fw-semibold">Roman Catholic</p>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <p class="text-muted mb-0">Address</p>
+                    <p class="fw-semibold">Cebu City</p>
+                </div>
+            </div>
+
+            <!-- Case Details -->
+            <div class="d-flex flex-row justify-content-between align-items-center title">
+                <hr class="flex-grow-1 mx-2" />
+                <span style="color:#767667"><strong>Patient Information</strong></span>
+                <hr class="flex-grow-1 mx-2" />
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Case No.</p>
+                    <p class="fw-semibold">09-39923</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Date of Intake</p>
+                    <p class="fw-semibold">January 1, 2022</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Date of Referral</p>
+                    <p class="fw-semibold">January 1, 2923</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Referred By</p>
+                    <p class="fw-semibold">Male</p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p class="text-muted mb-0">Affiliation</p>
+                    <p class="fw-semibold">Male</p>
+                </div>
             </div>
         </div>
     </div>
+
+
 </div>
 
+<!-- Styles -->
 <style>
     .upload-button {
-    background-color: white;
-    color: #00A3B4;
-    margin:5px;
-    border: 2px solid #00A3B4;
-    padding: 0.5rem 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    transition: all 0.3s ease;
-}
+        background-color: white;
+        color: #00A3B4;
+        margin: 5px;
+        border: 2px solid #00A3B4;
+        padding: 0.5rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
 
-.upload-button:hover {
-    background-color: #00A3B4;
-    color: white;
-    transform: translateY(-1px);
-}
+        .upload-button:hover {
+            background-color: #00A3B4;
+            color: white;
+            transform: translateY(-1px);
+        }
 
-.profile-panel{
-    background-color:white;
-    border-radius:6px;
-    box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);
-}
+    .nav-tabs .nav-link {
+        color: #767676;
+        background-color: transparent;
+        border: none;
+        font-weight: normal;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #00A3B4;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid #00A3B4;
+            font-weight: bold;
+        }
 </style>
