@@ -40,7 +40,6 @@ namespace SafehavenPMS.Controllers
             return View();
         }
 
-
         //Patient Details
         public IActionResult PatientProfile()
         {
