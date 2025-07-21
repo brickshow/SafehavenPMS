@@ -15,10 +15,12 @@ namespace SafehavenPMS.Controllers
             _context=context;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int id)
         {
+            var model = GetPatientByID(id);
+
             // This action method will return the view for the patient profile. Main View
-            return View();
+            return View(model);
         }
 
         //Action to load tabs

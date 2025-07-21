@@ -1,7 +1,7 @@
 ﻿@{
     ViewBag.Title = "Email";
 
-    // Section to query (use Context.Request in Razor Pages)
+    // Section to query (use Context.Request in Pages)
     var section = (Context.Request.Query["section"].ToString() ?? "").ToLower();
 }
 

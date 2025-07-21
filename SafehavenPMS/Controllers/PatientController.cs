@@ -344,9 +344,6 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("AddPatientStep4");
             }
 
-            //Generate Unique ID for Patient
-            int id = 000000;
-
             //Check id session is null
             if(step1 == null || step2 == null)
             {
@@ -437,6 +434,7 @@ namespace SafehavenPMS.Controllers
                 HttpContext.Session.Remove("AddPatientStep3");
 
                 TempData["Success"] = "Patient added successfully!";
+
                 return RedirectToAction("AddPatientStep4");
             }
             catch (Exception ex)

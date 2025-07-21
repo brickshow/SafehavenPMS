@@ -24,21 +24,21 @@
         <!-- Navigation Links -->
         <ul class="nav-links">
             <!-- Dashboard -->
-            <li class="navigation">
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
                 <a asp-controller="Home" asp-action="Index">
                     <i class='bx bxs-dashboard'></i>
                     <span class="link_name">Dashboard</span>
                 </a>
             </li>
             <!-- Patient -->
-            <li class="navigation">
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Patient" ? "active" : "")">
                 <a asp-controller="Patient" asp-action="Index">
                     <i class='bx bxs-user-detail'></i>
                     <span class="link_name">Patients</span>
                 </a>
             </li>
             <!-- Clinical Staff -->
-            <li class="navigation">
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Staff" ? "active" : "")">
                 <a asp-controller="Staff" asp-action="Index">
                     <i class='bx bxs-group'></i>
                     <span class="link_name">Clinical Staff</span>
@@ -138,5 +138,46 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+
+
+    @* Loader *@
+    <div id="loadingOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;align-items:center;justify-content:center;">
+        @* Imported from UIVerse *@
+        <div class="loader">
+            <div class="loader-square"></div>
+            <div class="loader-square"></div>
+            <div class="loader-square"></div>
+            <div class="loader-square"></div>
+            <div class="loader-square"></div>
+            <div class="loader-square"></div>
+            <div class="loader-square"></div>
+        </div>
+    </div>
+
+    @* Success Message *@
+    <!-- Success Indicator Modal -->
+    <div class="modal fade" id="waitlistSuccessModal" tabindex="-1" aria-labelledby="waitlistSuccessLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4 text-center">
+                <div class="modal-body">
+                    <i class='bx bx-check-circle' style="font-size:3rem;color:#00A3B4;"></i>
+                    <h5 class="mt-3 mb-2 fw-bold" id="waitlistSuccessLabel">Patient Added in the waitlist</h5>
+                    <button type="button" class="btn btn-teal mt-2" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
+<script>
+    document.addEventListener('submit', function(e){
+        if(e.target && e.target.id === 'confirmationForm'){
+            var overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+    }, true);
+</script>
