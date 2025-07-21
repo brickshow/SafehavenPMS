@@ -19,13 +19,13 @@
     </div>
     <div>
         <ul class="nav nav-tabs mb-4" id="profileTabs">
-            <li class="nav-item"><a class="nav-link" href="#" onclick="loadTab('Overview', 230491, this)">Overview</a></li>
-            <li class="nav-item"><a class="nav-link active" href="#" onclick="loadTab('Personal', 230491, this)">Personal</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" onclick="loadTab('Notes', 230491, this)">Notes</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" onclick="loadTab('CaseDocumentation', 230491, this)">Case Documentation</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" onclick="loadTab('PrescriptionMedication', 230491, this)">Prescription & Medication</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" onclick="loadTab('Billing', 230491, this)">Billing</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" onclick="loadTab('ActivityLogs', 230491, this)">Activity Logs</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Overview</a></li>
+            <li class="nav-item"><a class="nav-link active" href="#">Personal</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" >Notes</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Case Documentation</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Prescription & Medication</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Billing</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Activity Logs</a></li>
         </ul>
     </div>
 </div>
@@ -35,116 +35,6 @@
     @* Optionally, load the default tab content here *@
 </div>
 
-@* About Patient Card *@
-<div class="bg-white p-4 rounded shadow-sm">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="d-flex align-items-center">
-            <i class='bx bxs-user-detail fs-4 me-2'></i>
-            <h5 class="fw-bold mb-0 text-custom">About Patient</h5>
-        </div>
-        <a href="#" class="btn text-primary text-light text-decoration-none">Edit</a>
-    </div>
-
-    <div class="row">
-        @* Profile Picture (Left Side) *@
-        <div class="col-md-4 text-center d-flex flex-column justify-content-start align-items-center">
-            <img src="/Images/sample.JPG" class="img-fluid" style="width: 300px; height:300px; border-radius:6px" />
-
-            <label for="ChangeProfile" class="upload-button text-center"
-                   style="width:300px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 4px;">
-                Change Picture
-            </label>
-
-            <input type="file" id="ChangeProfile" class="d-none" accept="image/*" onchange="previewImage(this)" />
-        </div>
-
-        @* Personal Information + Case Details (Right Side) *@
-        <div class="col-md-8">
-           @* Personal Information *@
-            <div class="d-flex flex-row justify-content-between align-items-center title">
-                <hr class="flex-grow-1 mx-2" />
-                <span style="color:#767667"><strong>Patient Information</strong></span>
-                <hr class="flex-grow-1 mx-2" />
-            </div>            <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">First Name</p>
-                    <p class="fw-semibold">John</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Middle Name</p>
-                    <p class="fw-semibold">Smith</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Last Name</p>
-                    <p class="fw-semibold">Smith</p>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <p class="text-muted mb-0">Phone Number</p>
-                    <p class="fw-semibold">09584638152</p>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <p class="text-muted mb-0">Birthdate</p>
-                    <p class="fw-semibold">04/08/1990</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Age</p>
-                    <p class="fw-semibold">50</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Marital Status</p>
-                    <p class="fw-semibold">Married</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Sex</p>
-                    <p class="fw-semibold">Male</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Employment/Occupation</p>
-                    <p class="fw-semibold">Cebu City</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Religion</p>
-                    <p class="fw-semibold">Roman Catholic</p>
-                </div>
-                <div class="col-md-12">
-                    <p class="text-muted mb-0">Address</p>
-                    <p class="fw-semibold">Cebu City</p>
-                </div>
-            </div>
-
-            @* Case Details *@
-            <div class="d-flex flex-row justify-content-between align-items-center title">
-                <hr class="flex-grow-1 mx-2" />
-                <span style="color:#767667"><strong>Case Details</strong></span>
-                <hr class="flex-grow-1 mx-2" />
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Case No.</p>
-                    <p class="fw-semibold">09-39923</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Date of Intake</p>
-                    <p class="fw-semibold">January 1, 2022</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Date of Referral</p>
-                    <p class="fw-semibold">January 1, 2923</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Referred By</p>
-                    <p class="fw-semibold">Male</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="text-muted mb-0">Affiliation</p>
-                    <p class="fw-semibold">Male</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-</div>
 
 @* Styles *@
 <style>
