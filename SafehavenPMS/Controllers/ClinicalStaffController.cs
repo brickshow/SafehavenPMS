@@ -20,9 +20,17 @@ namespace SafehavenPMS.Controllers
         }
 
         //Action to add a new clinical staff member Step 1
-        public IActionResult AddClinicalStaffStep1()
+        public IActionResult AddNewClinicalStaff()
         {
             // This action method will return the view for adding a new clinical staff member.
+            return View();
+        }
+
+
+        //Action to add profile pic
+        public IActionResult AddProfilePhoto()
+        {
+            //Returns the view for adding a profile photo.
             return View();
         }
     }
