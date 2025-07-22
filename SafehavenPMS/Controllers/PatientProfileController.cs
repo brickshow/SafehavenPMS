@@ -14,6 +14,9 @@ namespace SafehavenPMS.Controllers
         {
             _context=context;
         }
+        //Action to load the overview tab
+        public ActionResult Overview() => PartialView("_Overview");
+        //public ActionResult 
 
         public IActionResult Index(int id)
         {

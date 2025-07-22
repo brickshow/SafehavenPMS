@@ -1,5 +1,7 @@
-﻿@{
+﻿@model SafehavenPMS.Models.Patient
+@{
     ViewBag.Title = "Brix Lampago";
+    var patientId = 123456;
 }
 
 @* Header: Patient Name + Status *@
@@ -19,20 +21,20 @@
     </div>
     <div>
         <ul class="nav nav-tabs mb-4" id="profileTabs">
-            <li class="nav-item"><a class="nav-link" href="#">Overview</a></li>
-            <li class="nav-item"><a class="nav-link active" href="#">Personal</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" >Notes</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Case Documentation</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Prescription & Medication</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Billing</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Activity Logs</a></li>
+            <li class="nav-item"><a class="nav-link active" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Overview", patientId = patientId })" href="#">Overview</a></li>
+            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Personal", patientId = patientId })" href="#">Personal</a></li>
+            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Notes", patientId = patientId })" href="#">Notes</a></li>
+            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_CaseDocumentation", patientId = patientId })" href="#">Case Documentation</a></li>
+            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_PrescriptionMedication", patientId = patientId })" href="#">Prescription & Medication</a></li>
+            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Billing", patientId = patientId })" href="#">Billing</a></li>
+            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_ActivityLogs", patientId = patientId })" href="#">Activity Logs</a></li>
         </ul>
     </div>
 </div>
 
-@* Load each tab when active *@
+@* Initial content area with Overview partial *@
 <div id="tabContentArea">
-    @* Optionally, load the default tab content here *@
+    @await Html.PartialAsync("_Overview", Model);
 </div>
 
 
@@ -72,3 +74,5 @@
             font-weight: bold;
         }
 </style>
+
+<script src="~/js/patient-tabs.js"></script>
