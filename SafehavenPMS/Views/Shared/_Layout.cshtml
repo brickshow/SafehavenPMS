@@ -38,8 +38,8 @@
                 </a>
             </li>
             <!-- Clinical Staff -->
-            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Staff" ? "active" : "")">
-                <a asp-controller="Staff" asp-action="Index">
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClinicalStaff" ? "active" : "")">
+                <a asp-controller="ClinicalStaff" asp-action="Index">
                     <i class='bx bxs-group'></i>
                     <span class="link_name">Clinical Staff</span>
                 </a>

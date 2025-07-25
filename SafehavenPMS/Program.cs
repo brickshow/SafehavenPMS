@@ -46,7 +46,7 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=ClinicalStaff}/{action=AddNewClinicalStaff}/{id?}")
+    pattern: "{controller=ClinicalStaff}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 
