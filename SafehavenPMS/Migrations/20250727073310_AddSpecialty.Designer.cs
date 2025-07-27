@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250712122130_Initial Create")]
-    partial class InitialCreate
+    [Migration("20250727073310_AddSpecialty")]
+    partial class AddSpecialty
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -41,11 +41,7 @@ namespace SafehavenPMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PostalCode")
+                    b.Property<string>("House_Unit")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -57,104 +53,79 @@ namespace SafehavenPMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Subdivision_Village")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("AddressID");
 
-                    b.ToTable("Address");
+                    b.ToTable("Addresses");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.EducationLevel", b =>
+            modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
                 {
-                    b.Property<int>("EducationLevelId")
+                    b.Property<int>("ClinicalStaffID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EducationLevelId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClinicalStaffID"));
 
-                    b.Property<string>("EducationLevelName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("EducationLevelId");
-
-                    b.ToTable("EducationLevels");
-
-                    b.HasData(
-                        new
-                        {
-                            EducationLevelId = 1,
-                            EducationLevelName = "Primary"
-                        },
-                        new
-                        {
-                            EducationLevelId = 2,
-                            EducationLevelName = "Secondary"
-                        },
-                        new
-                        {
-                            EducationLevelId = 3,
-                            EducationLevelName = "Tertiary"
-                        },
-                        new
-                        {
-                            EducationLevelId = 4,
-                            EducationLevelName = "Postgraduate"
-                        });
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.MaritalStatus", b =>
-                {
-                    b.Property<int>("MaritalStatusId")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("AddressID")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaritalStatusId"));
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("MaritalStatusType")
+                    b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("MaritalStatusId");
-
-                    b.ToTable("MaritalStatuses");
-
-                    b.HasData(
-                        new
-                        {
-                            MaritalStatusId = 1,
-                            MaritalStatusType = "Single"
-                        },
-                        new
-                        {
-                            MaritalStatusId = 2,
-                            MaritalStatusType = "Married"
-                        },
-                        new
-                        {
-                            MaritalStatusId = 3,
-                            MaritalStatusType = "Divorced"
-                        },
-                        new
-                        {
-                            MaritalStatusId = 4,
-                            MaritalStatusType = "Widowed"
-                        });
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Nationality", b =>
-                {
-                    b.Property<int>("NationalityID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NationalityID"));
-
-                    b.Property<string>("NationalityName")
+                    b.Property<string>("Firstname")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("NationalityID");
+                    b.Property<DateTime>("HireDate")
+                        .HasColumnType("datetime2");
 
-                    b.ToTable("Nationalities");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Lastname")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MiddleName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PRC_Licensed")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfilePictureURL")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Sex")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Specialty")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ClinicalStaffID");
+
+                    b.HasIndex("AddressID");
+
+                    b.ToTable("ClinicalStaffs");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
@@ -172,9 +143,8 @@ namespace SafehavenPMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DateOfBirth")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("EducationLevelID")
                         .HasColumnType("int");
@@ -220,14 +190,6 @@ namespace SafehavenPMS.Migrations
 
                     b.HasIndex("AddressID");
 
-                    b.HasIndex("EducationLevelID");
-
-                    b.HasIndex("MaritalStatusID");
-
-                    b.HasIndex("NationalityID");
-
-                    b.HasIndex("ReligionID");
-
                     b.ToTable("Patients");
                 });
 
@@ -238,6 +200,10 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PatientCaseId"));
+
+                    b.Property<string>("AccompaniedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Affilation")
                         .IsRequired()
@@ -274,21 +240,15 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("PatientCases");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.Religion", b =>
+            modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
                 {
-                    b.Property<int>("ReligionID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.HasOne("SafehavenPMS.Models.Address", "Address")
+                        .WithMany("ClinicalStaffs")
+                        .HasForeignKey("AddressID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReligionID"));
-
-                    b.Property<string>("ReligionName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("ReligionID");
-
-                    b.ToTable("Religions");
+                    b.Navigation("Address");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
@@ -299,39 +259,7 @@ namespace SafehavenPMS.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SafehavenPMS.Models.EducationLevel", "EducationLevel")
-                        .WithMany("Patients")
-                        .HasForeignKey("EducationLevelID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.MaritalStatus", "MaritalStatus")
-                        .WithMany("Patients")
-                        .HasForeignKey("MaritalStatusID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.Nationality", "Nationality")
-                        .WithMany("Patients")
-                        .HasForeignKey("NationalityID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.Religion", "Religion")
-                        .WithMany("Patients")
-                        .HasForeignKey("ReligionID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Address");
-
-                    b.Navigation("EducationLevel");
-
-                    b.Navigation("MaritalStatus");
-
-                    b.Navigation("Nationality");
-
-                    b.Navigation("Religion");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PatientCase", b =>
@@ -347,32 +275,14 @@ namespace SafehavenPMS.Migrations
 
             modelBuilder.Entity("SafehavenPMS.Models.Address", b =>
                 {
-                    b.Navigation("Patients");
-                });
+                    b.Navigation("ClinicalStaffs");
 
-            modelBuilder.Entity("SafehavenPMS.Models.EducationLevel", b =>
-                {
-                    b.Navigation("Patients");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.MaritalStatus", b =>
-                {
-                    b.Navigation("Patients");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Nationality", b =>
-                {
                     b.Navigation("Patients");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
                 {
                     b.Navigation("PatientCases");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Religion", b =>
-                {
-                    b.Navigation("Patients");
                 });
 #pragma warning restore 612, 618
         }

@@ -5,14 +5,14 @@
 namespace SafehavenPMS.Migrations
 {
     /// <inheritdoc />
-    public partial class AccompaniedBy : Migration
+    public partial class AddSpecialty : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "AccompaniedBy",
-                table: "PatientCases",
+                name: "Specialty",
+                table: "ClinicalStaffs",
                 type: "nvarchar(max)",
                 nullable: false,
                 defaultValue: "");
@@ -22,8 +22,8 @@ namespace SafehavenPMS.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "AccompaniedBy",
-                table: "PatientCases");
+                name: "Specialty",
+                table: "ClinicalStaffs");
         }
     }
 }
