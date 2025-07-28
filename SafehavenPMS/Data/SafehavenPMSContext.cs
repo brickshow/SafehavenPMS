@@ -18,8 +18,22 @@ namespace SafehavenPMS.Data
         {
             ////Relationship between Patient and assigned staff
             /////Many to many relation
-            modelBuilder.Entity<Patient>()
-                 .HasKey(p => new { p.PatientId, p.ClinicalStaffID });
+            modelBuilder.Entity<ClinicalStaffPatient>()
+                .HasKey(cs => new { cs.PatientId, cs.ClinicalStaffId });
+
+            modelBuilder.Entity<ClinicalStaffPatient>()
+                .HasOne(cs => cs.Patient)
+                .WithMany(p => p.ClinicalStaffPatients)
+                .HasForeignKey(cs => cs.PatientId)
+                .OnDelete(DeleteBehavior.Restrict); // Avoid cascade loop
+
+            modelBuilder.Entity<ClinicalStaffPatient>()
+                .HasOne(cs => cs.ClinicalStaff)
+                .WithMany(staff => staff.ClinicalStaffPatients)
+                .HasForeignKey(cs => cs.ClinicalStaffId)
+                .OnDelete(DeleteBehavior.Restrict); // Avoid cascade loop
+
+
             //Address relationship
             modelBuilder.Entity<Models.Patient>()
                 .HasOne(p => p.Address)

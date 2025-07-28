@@ -106,13 +106,14 @@ namespace SafehavenPMS.Controllers
             return View("Index", clinicalStaff.ToList());
         }
 
-        //Action to add a new clinical staff member Step 1
+        //Action to add a new clinical staff member 
+        [HttpGet]
         public IActionResult AddNewClinicalStaff()
         {
-            // This action method will return the view for adding a new clinical staff member.
+            //return staff that position == Physician
             return View();
         }
-
+            
         [HttpPost]
         public IActionResult AddNewClinicalStaff(AddClinicalStaffViewModel model)
         {

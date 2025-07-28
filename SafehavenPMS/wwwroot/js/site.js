@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
         item.addEventListener('click', function() {
             // Remove active class from all navigation items
             navigationItems.forEach(navItem => {
-                navItem.classList.remove('active');git add
+                navItem.classList.remove('active');
             });
             
             // Add active class to clicked item

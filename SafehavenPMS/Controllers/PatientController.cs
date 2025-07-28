@@ -19,7 +19,7 @@ namespace SafehavenPMS.Controllers
     {
         //Inject the SafehavenPMSContext to access the database
         private readonly SafehavenPMSContext _context;
-
+        private readonly UploadPhotoServices _uploadPhotoServices;
         private readonly CloudinaryServices _cloudinaryServices;
 
         //Constructor to initialize the context
@@ -27,6 +27,7 @@ namespace SafehavenPMS.Controllers
         {
             // Constructor logic if needed
             _context = safehavenPMSContext;
+            _uploadPhotoServices = new UploadPhotoServices();
 
             _cloudinaryServices = new CloudinaryServices(
                 new ConfigurationBuilder()
@@ -53,7 +54,7 @@ namespace SafehavenPMS.Controllers
         {
             // Extract Physicians from ClinicalStaffs table where Position is "Physician"
             var physicians = await _context.ClinicalStaffs
-                .Where(p => p.Position == "sdfsd") // Corrected filter
+                .Where(p => p.Position == "Physician") // Corrected filter
                 .Select(p => new SelectListItem
                 {
                     Value = p.ClinicalStaffID.ToString(), // ClinicalStaffID is the primary key
@@ -73,16 +74,191 @@ namespace SafehavenPMS.Controllers
         }
 
         //Post action for adding new patient
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddNewPatient(AddNewPatientViewModel model)
         {
-            //Check if validation state is trie
+            // Remove PhotoUrl from validation since we set it manually later
+            ModelState.Remove("PhotoUrl");
+
+            // Check validation
             if (!ModelState.IsValid)
             {
-                return View();
+                // Log ModelState errors to console
+                foreach (var entry in ModelState)
+                {
+                    var key = entry.Key;
+                    var errors = entry.Value.Errors;
+                    foreach (var error in errors)
+                    {
+                        Console.WriteLine($"Field: {key} - Error: {error.ErrorMessage}");
+                    }
+                }
+
+                // Repopulate physicians dropdown
+                var physicians = await _context.ClinicalStaffs
+                    .Where(p => p.Position == "Physician")
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.ClinicalStaffID.ToString(), // ClinicalStaffID is the primary key
+                        Text = $"{p.Firstname} {p.Lastname}" // Name (or FullName) for display
+                    })
+                    .ToListAsync();
+                ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
+                return View(model); // Return view with model to preserve entered data
             }
 
+            // Locally upload the photo before saving to Cloudinary
+            string filename = null;
+            if (model.Filename != null)
+            {
+                filename = _uploadPhotoServices.UploadPhoto(model.Filename);
+            }
 
-            return View("Index");
+            // Upload the photo to Cloudinary
+            string tempUrl = string.Empty;
+            if (!string.IsNullOrEmpty(filename))
+            {
+                // Convert the relative path to absolute path
+                string localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filename.TrimStart('/'));
+
+                // Check if the file exists
+                if (!System.IO.File.Exists(localPath))
+                {
+                    TempData["Error"] = "Profile image file not found. Please upload a valid image.";
+                    // Repopulate physicians dropdown
+                    var physicians = await _context.ClinicalStaffs
+                        .Where(p => p.Position == "Physician")
+                        .Select(p => new SelectListItem
+                        {
+                            Value = p.ClinicalStaffID.ToString(), // ClinicalStaffID is the primary key
+                            Text = $"{p.Firstname} {p.Lastname}" // Name (or FullName) for display
+                        })
+                        .ToListAsync();
+                    ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
+                    return View(model);
+                }
+
+                // Upload the image to Cloudinary
+                try
+                {
+                    using (var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+                    {
+                        tempUrl = await _cloudinaryServices.UploadImageAsync(fileStream, Path.GetFileName(localPath));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error uploading to Cloudinary: {ex.Message}");
+                    TempData["Error"] = $"Failed to upload profile image: {ex.Message}";
+                    // Repopulate physicians dropdown
+                    var physicians = await _context.ClinicalStaffs
+                        .Where(p => p.Position == "Physician")
+                        .Select(p => new SelectListItem
+                        {
+                            Value = p.ClinicalStaffID.ToString(), // ClinicalStaffID is the primary key
+                            Text = $"{p.Firstname} {p.Lastname}" // Name (or FullName) for display
+                        })
+                        .ToListAsync();
+                    ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
+                    return View(model);
+                }
+            }
+
+            //Saving Address
+            var address = new Address
+            {
+                House_Unit = model.House_Unit,
+                Street = model.Street,
+                Subdivision_Village = model.Subdivision_Village,
+                Barangay = model.Barangay,
+                City = model.City,
+                Province = model.Province
+            };
+            try
+            {
+                _context.Addresses.Add(address);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving address: {ex.Message}");
+                TempData["Error"] = "There was an error saving the address.";
+                // Repopulate physicians dropdown
+                var physicians = await _context.ClinicalStaffs
+                    .Where(p => p.Position == "Physician")
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.ClinicalStaffID.ToString(), // ClinicalStaffID is the primary key
+                        Text = $"{p.Firstname} {p.Lastname}" // Name (or FullName) for display
+                    })
+                    .ToListAsync();
+                ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
+                return View(model);
+            }
+
+            // Save Patient to database
+            try
+            {
+                var patient = new Patient
+                {
+                    Firstname = model.Firstname,
+                    MiddleName = model.MiddleName,
+                    Lastname = model.Lastname,
+                    DateOfBirth = model.DateOfBirth,
+                    Sex = model.Sex,
+                    Occupation = model.Occupation,
+                    PatientStatus = model.PatientStatus,
+                    Education = model.Education,
+                    Religion = model.Religion,
+                    MaritalStatus = model.MaritalStatus,
+                    DateOfReferral = model.DateOfReferral,
+                    ReferredBy = model.ReferredBy,
+                    Affiliation = model.Affiliation,
+                    PhotoUrl = tempUrl,
+                    AddressID = address.AddressID,
+                };
+
+                // Add patient to database
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+
+                // Handle many-to-many relationship with ClinicalStaff (Physician)
+                if (model.ClinicalStaff > 0)
+                {
+                    var patientPhysician = new PatientPhysician
+                    {
+                        PatientId = patient.Id,
+                        ClinicalStaffId = model.ClinicalStaff
+                    };
+                    _context.PatientPhysicians.Add(patientPhysician);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving patient: {ex.Message}");
+                TempData["Error"] = "There was an error saving the patient.";
+                // Repopulate physicians dropdown
+                var physicians = await _context.ClinicalStaffs
+                    .Where(p => p.Position == "Physician")
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.ClinicalStaffID.ToString(), // ClinicalStaffID is the primary key
+                        Text = $"{p.Firstname} {p.Lastname}" // Name (or FullName) for display
+                    })
+                    .ToListAsync();
+                ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
+                return View(model);
+            }
+
+            // Clean up: Remove temporary photo
+            if (!string.IsNullOrEmpty(filename))
+            {
+                _uploadPhotoServices.DeletePhoto(filename);
+            }
+
+            return RedirectToAction("Index");
         }
         //    //Action View for adding new patient
         //    public IActionResult AddPatientStep1()

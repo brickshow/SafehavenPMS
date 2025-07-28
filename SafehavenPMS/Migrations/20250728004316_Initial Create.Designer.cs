@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250727163847_UpdatePatientModel")]
-    partial class UpdatePatientModel
+    [Migration("20250728004316_Initial Create")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,24 +24,6 @@ namespace SafehavenPMS.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("ClinicalStaffPatient", b =>
-                {
-                    b.Property<int>("ClinicalStaffsClinicalStaffID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PatientsPatientId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PatientsClinicalStaffID")
-                        .HasColumnType("int");
-
-                    b.HasKey("ClinicalStaffsClinicalStaffID", "PatientsPatientId", "PatientsClinicalStaffID");
-
-                    b.HasIndex("PatientsPatientId", "PatientsClinicalStaffID");
-
-                    b.ToTable("ClinicalStaffPatient");
-                });
 
             modelBuilder.Entity("SafehavenPMS.Models.Address", b =>
                 {
@@ -146,13 +128,28 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("ClinicalStaffs");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
+            modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaffPatient", b =>
                 {
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ClinicalStaffID")
+                    b.Property<int>("ClinicalStaffId")
                         .HasColumnType("int");
+
+                    b.HasKey("PatientId", "ClinicalStaffId");
+
+                    b.HasIndex("ClinicalStaffId");
+
+                    b.ToTable("ClinicalStaffPatient");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
+                {
+                    b.Property<int>("PatientId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PatientId"));
 
                     b.Property<int>("AddressID")
                         .HasColumnType("int");
@@ -160,6 +157,9 @@ namespace SafehavenPMS.Migrations
                     b.Property<string>("Affiliation")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ClinicalStaffID")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
@@ -215,26 +215,11 @@ namespace SafehavenPMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("PatientId", "ClinicalStaffID");
+                    b.HasKey("PatientId");
 
                     b.HasIndex("AddressID");
 
                     b.ToTable("Patients");
-                });
-
-            modelBuilder.Entity("ClinicalStaffPatient", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
-                        .WithMany()
-                        .HasForeignKey("ClinicalStaffsClinicalStaffID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.Patient", null)
-                        .WithMany()
-                        .HasForeignKey("PatientsPatientId", "PatientsClinicalStaffID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
@@ -246,6 +231,25 @@ namespace SafehavenPMS.Migrations
                         .IsRequired();
 
                     b.Navigation("Address");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaffPatient", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
+                        .WithMany("ClinicalStaffPatients")
+                        .HasForeignKey("ClinicalStaffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                        .WithMany("ClinicalStaffPatients")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ClinicalStaff");
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
@@ -264,6 +268,16 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("ClinicalStaffs");
 
                     b.Navigation("Patients");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
+                {
+                    b.Navigation("ClinicalStaffPatients");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
+                {
+                    b.Navigation("ClinicalStaffPatients");
                 });
 #pragma warning restore 612, 618
         }

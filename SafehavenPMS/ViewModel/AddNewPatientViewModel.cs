@@ -38,7 +38,23 @@ namespace SafehavenPMS.ViewModel
         public DateTime DateOfReferral { get; set; }
         public string? ReferredBy { get; set; }
         public string? Affiliation { get; set; }
+        public IFormFile Filename { get; set; }
         public string? PhotoUrl { get; set; }
+
+        public string House_Unit { get; set; }
+        public string Street { get; set; }
+        public string Subdivision_Village { get; set; }
+
+        [Required(ErrorMessage = "Barangay is required")]
+        public string Barangay { get; set; }
+
+
+        [Required(ErrorMessage = "City is required")]
+        public string City { get; set; }
+
+
+        [Required(ErrorMessage = "Province is required")]
+        public string Province { get; set; }
 
     }
 }

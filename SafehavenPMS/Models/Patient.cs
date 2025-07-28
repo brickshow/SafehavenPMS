@@ -28,6 +28,6 @@
         //Navigation Properties
         //One -to-Many Relationships
         public Address Address { get; set; }
-        public IEnumerable<Models.ClinicalStaff> ClinicalStaffs { get; set; }
+        public IEnumerable<Models.ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
     }
 }

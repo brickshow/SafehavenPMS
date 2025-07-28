@@ -22,6 +22,6 @@ namespace SafehavenPMS.Models
         public int AddressID { get; set; } // Foreign key for Address
 
         public Address Address { get; set; } // Navigation property for Address
-        public IEnumerable<Models.Patient> Patients { get; set; } // Navigation property for Address
+        public IEnumerable<Models.ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Navigation property for Address
     } 
 }
