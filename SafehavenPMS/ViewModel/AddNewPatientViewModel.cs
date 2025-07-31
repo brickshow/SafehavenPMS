@@ -26,7 +26,6 @@ namespace SafehavenPMS.ViewModel
         public string Sex { get; set; }
 
         public string? Occupation { get; set; }
-        public string PatientStatus { get; set; }
         public string? Education { get; set; }
         public string? Religion { get; set; }
 

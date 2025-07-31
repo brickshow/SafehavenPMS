@@ -497,7 +497,7 @@ body {
 }
 
 /*button design global*/
-.btn {
+.btn-custom {
     background: linear-gradient(to right, #069FB2, #058594);
     color: white;
     border: none;
@@ -509,7 +509,7 @@ body {
     font-weight: 500;
 }
 
-    .btn:hover {
+    .btn-custom:hover {
         background: linear-gradient(to right, #047483, #058A9B);
         color: white;
         box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);

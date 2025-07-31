@@ -8,7 +8,6 @@
         public int PatientId { get; set; }
         public Patient Patient { get; set; }
 
-
         //Clinical Staff Foreign key
         public int ClinicalStaffId { get; set; }
         public ClinicalStaff ClinicalStaff { get; set; }

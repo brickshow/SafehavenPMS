@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SafehavenPMS.Data;
 using SafehavenPMS.Helpers;
 using SafehavenPMS.Models;
@@ -34,77 +35,124 @@ namespace SafehavenPMS.Controllers
                    .Build()
            );
         }
-
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? page = 1, int? pageSize = 10, string searchQuery = null, string status = null, string sortOrder = null)
         {
-            // Default sort: newest to oldest
-            ViewBag.SortOrder = "newest";
-            //Populate data to table
-            var staffList = await _context.ClinicalStaffs
+            var query = _context.ClinicalStaffs
                 .Include(add => add.Address)
-                .ToListAsync();
+                .Where(d => d.IsDeleted == false)
+                .AsQueryable();
 
-            //Return the list off staff
-            return View(staffList);
-        }
+            // Calculate total staff count (unfiltered, unpaged)
+            int totalStaffCount = await _context.ClinicalStaffs.CountAsync();
+            ViewBag.TotalStaffCount = totalStaffCount;
+            ViewBag.CurrentPage = page ?? 1;
+            ViewBag.PageSize = pageSize ?? 10;
+            ViewBag.SearchQuery = searchQuery;
+            ViewBag.Status = status;
+            ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
 
-        // GET: ClinicalStaff/Search
-        [HttpGet]
-        public IActionResult Search(string searchQuery)
-        {
-            var staff = _context.ClinicalStaffs.AsQueryable();
-
+            // Apply search
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 searchQuery = searchQuery.ToLower();
-                staff = staff.Where(s =>
+                query = query.Where(s =>
                     s.Firstname.ToLower().Contains(searchQuery) ||
                     s.Lastname.ToLower().Contains(searchQuery) ||
                     s.Specialty.ToLower().Contains(searchQuery) ||
                     s.Position.ToLower().Contains(searchQuery));
             }
 
-            return View("Index", staff.ToList());
+            // Apply status filter
+            if (!string.IsNullOrEmpty(status))
+            {
+                if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                    query = query.Where(s => s.IsActive);
+                else if (status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+                    query = query.Where(s => !s.IsActive);
+            }
+
+
+            // Apply sorting
+            if (string.IsNullOrEmpty(sortOrder))
+            {
+                // Default: newest to oldest by CreatedAt
+                query = query.OrderByDescending(s => s.CreatedAt);
+            }
+            else
+            {
+                // Toggle by Firstname
+                query = sortOrder == "ascending"
+                    ? query.OrderBy(s => s.Firstname).ThenBy(s => s.Lastname)
+                    : query.OrderByDescending(s => s.Firstname).ThenBy(s => s.Lastname);
+            }
+
+            // Calculate total pages for filtered results
+            int totalItems = await query.CountAsync();
+            int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
+            ViewBag.TotalPages = totalPages;
+
+            // Ensure page is within valid range
+            int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
+            ViewBag.CurrentPage = currentPage;
+
+            // Apply pagination
+            var staffList = await query
+                .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
+                .Take(pageSize > 0 ? pageSize.Value : totalItems)
+                .ToListAsync();
+
+            return View(staffList);
+        }
+        [HttpGet]
+        public IActionResult Search(string searchQuery)
+        {
+            return RedirectToAction("Index", new { searchQuery, page = 1, pageSize = ViewBag.PageSize ?? 10, status = ViewBag.Status, sortOrder = ViewBag.SortOrder });
         }
 
         [HttpGet]
         public IActionResult FilterStatus(string status)
         {
-            // Default to "Active" if status is null (but not if empty)
-            if (status == null)
-                status = "Active";
-
-            var staff = _context.ClinicalStaffs.AsQueryable();
-
-            // Filter only if not empty
-            if (!string.IsNullOrEmpty(status))
-            {
-                if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
-                    staff = staff.Where(s => s.IsActive);
-                else if (status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
-                    staff = staff.Where(s => !s.IsActive);
-                // If empty string, do not apply filter (i.e. All)
-            }
-
-            ViewBag.Status = status;
-
-            return View("Index", staff.ToList());
+            return RedirectToAction("Index", new { status, page = 1, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder });
         }
 
-        //Action to sort the staff from new to old
+        [HttpGet]
         public IActionResult SortBy(string sortOrder)
         {
-            // Toggle sort order: default to newest if not specified
-            ViewBag.SortOrder = sortOrder == "oldest" ? "newest" : "oldest";
-
-            // Fetch and sort clinical staff
-            var clinicalStaff = _context.ClinicalStaffs.AsQueryable();
-            clinicalStaff = sortOrder == "oldest"
-                ? clinicalStaff.OrderBy(s => s.ClinicalStaffID) // Oldest to newest
-                : clinicalStaff.OrderByDescending(s => s.ClinicalStaffID); // Newest to oldest
-
-            return View("Index", clinicalStaff.ToList());
+            return RedirectToAction("Index", new { sortOrder, page = 1, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, status = ViewBag.Status });
         }
+
+        //Action for Profile
+
+        [HttpGet]
+        public async Task<IActionResult> Profile(int id)
+        {
+            // Query staff with address and assigned patients
+            var staff = await _context.ClinicalStaffs
+                .Include(a => a.Address)
+                .Include(csp => csp.ClinicalStaffPatients)
+                    .ThenInclude(pa => pa.Patient)
+                .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
+
+            // Null check BEFORE using the object
+            if (staff == null)
+            {
+                TempData["Error"] = "Staff not found";
+                return RedirectToAction("Index"); // or wherever appropriate
+            }
+
+            // Build the view model
+            var viewModel = new ClinicalStaffProfileViewModel
+            {
+                Staffs = new List<ClinicalStaff> { staff }, // Staffs expects a list
+                Patients = staff.ClinicalStaffPatients
+                                .Select(csp => csp.Patient)
+                                .Distinct()
+                                .ToList()
+            };
+
+            return View(viewModel);
+        }
+
 
         //Action to add a new clinical staff member 
         [HttpGet]
@@ -136,42 +184,45 @@ namespace SafehavenPMS.Controllers
                 return View(model); // Pass model back to preserve entered data
             }
 
+            // Check if Hire Date is in the future
+            if (model.HireDate > DateTime.Now)
+            {
+                TempData["Error"] = "Hire Date must not be in the future.";
+                return View(model);
+            }
+
             //Locally upload the photo before saving to session
             model.Filename = _uploadPhotoServices.UploadPhoto(model.ImageProfile);
 
             //Upload the Photo to cloudinary
-            //Temp URL for profile image
-            string tempUrl = string.Empty;
+            string tempUrl = string.Empty; // Default image
+            string filename = null;
 
-            //Save Image to Cloudinary
-            if (!string.IsNullOrEmpty(model.Filename))
+            if (model.ImageProfile != null && model.ImageProfile.Length > 0)
             {
-                //Convert the relative path to absolute path
-                string localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", model.Filename.TrimStart('/'));
-
-                //Check if the file exists
-                if (!System.IO.File.Exists(localPath))
+                filename = _uploadPhotoServices.UploadPhoto(model.ImageProfile);
+                if (!string.IsNullOrEmpty(filename))
                 {
-                    TempData["Error"] = "Profile image file not found. Please upload a valid image.";
-                    return RedirectToAction("AddPatientStep2");
-                }
+                    string localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filename);
+                    if (!System.IO.File.Exists(localPath))
+                    {
+                        TempData["Error"] = "Profile image file not found. Please upload a valid image.";
+                        return View(model);
+                    }
 
-                //Upload the image to Cloudinary
-                try
-                {
-                    //Open the file stream for the image
-                    var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read);
-
-                    //Upload the image using Cloudinary service
-                    string photoUrl = _cloudinaryServices.UploadImageAsync(fileStream, Path.GetFileName(localPath)).Result;
-                    //Set the PhotoUrl in step1
-                    tempUrl = photoUrl;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error" + ex.Message);
-                    TempData["Error"] = "Failed to upload profile image: " + ex.Message;
-                    return View();
+                    try
+                    {
+                        using var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read);
+                        tempUrl = _cloudinaryServices.UploadImageAsync(fileStream, Path.GetFileName(localPath)).Result;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                        TempData["Error"] = "Failed to upload profile image: " + ex.Message;
+                        _uploadPhotoServices.DeletePhoto(filename); // Clean up temp file on failure
+                        return View(model);
+                    }
+                    _uploadPhotoServices.DeletePhoto(filename); // Clean up temp file on success
                 }
             }
 
@@ -229,14 +280,203 @@ namespace SafehavenPMS.Controllers
 
             //Remove the IFormFile in session
             model.ImageProfile = null;
-            //Remove Temp Image
-            _uploadPhotoServices.DeletePhoto(model.Filename);
-
+            TempData["SuccessMessage"] = "Clinical staff added successfully!";
 
             return RedirectToAction("Index");
         }
 
 
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var staff = await _context.ClinicalStaffs
+                .Include(s => s.Address)
+                .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
+
+            if (staff == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new AddClinicalStaffViewModel
+            {
+                ClinicalStaffID = staff.ClinicalStaffID,
+                Firstname = staff.Firstname,
+                MiddleName = staff.MiddleName,
+                Lastname = staff.Lastname,
+                Sex = staff.Sex,
+                PhoneNumber = staff.PhoneNumber,
+                Specialty = staff.Specialty,
+                Position = staff.Position,
+                RPC_Licensed = staff.PRC_Licensed,
+                Email = staff.Email,
+                HireDate = staff.HireDate,
+                House_Unit = staff.Address?.House_Unit,
+                Street = staff.Address?.Street,
+                Subdivision_Village = staff.Address?.Subdivision_Village,
+                Barangay = staff.Address?.Barangay,
+                City = staff.Address?.City,
+                Province = staff.Address?.Province,
+                // ImageProfile is IFormFile and not set here (handled on POST)
+                Filename = staff.ProfilePictureURL, // Map existing image URL if needed
+            };
+            Console.WriteLine(viewModel.Filename);
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(int id, AddClinicalStaffViewModel staff)
+        {
+            Console.WriteLine($"Received ID: {id}, Staff ClinicalStaffID: {staff.ClinicalStaffID}");
+            if (id != staff.ClinicalStaffID)
+            {
+                return BadRequest("ID mismatch between route and form data.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                foreach (var entry in ModelState)
+                {
+                    var key = entry.Key;
+                    var errors = entry.Value.Errors;
+                    foreach (var error in errors)
+                    {
+                        Console.WriteLine($"Field: {key} - Error: {error.ErrorMessage}");
+                        TempData["ValidationErrors"] = TempData["ValidationErrors"]?.ToString() + $"<br/>Field: {key} - Error: {error.ErrorMessage}";
+                    }
+                }
+                return View(staff);
+            }
+
+            var existingStaff = await _context.ClinicalStaffs
+                .Include(s => s.Address)
+                .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
+
+            if (existingStaff == null)
+            {
+                return NotFound();
+            }
+
+            // Update basic staff properties
+            existingStaff.Firstname = staff.Firstname;
+            existingStaff.MiddleName = staff.MiddleName;
+            existingStaff.Lastname = staff.Lastname;
+            existingStaff.Sex = staff.Sex;
+            existingStaff.PhoneNumber = staff.PhoneNumber;
+            existingStaff.Specialty = staff.Specialty;
+            existingStaff.Position = staff.Position;
+            existingStaff.PRC_Licensed = staff.RPC_Licensed; // Fixed typo
+            existingStaff.Email = staff.Email;
+            existingStaff.HireDate = staff.HireDate;
+
+            // Handle address update
+            if (existingStaff.Address != null)
+            {
+                existingStaff.Address.House_Unit = staff.House_Unit;
+                existingStaff.Address.Street = staff.Street;
+                existingStaff.Address.Subdivision_Village = staff.Subdivision_Village;
+                existingStaff.Address.Barangay = staff.Barangay;
+                existingStaff.Address.City = staff.City;
+                existingStaff.Address.Province = staff.Province;
+            }
+            else if (!string.IsNullOrEmpty(staff.House_Unit) || !string.IsNullOrEmpty(staff.Street) ||
+                     !string.IsNullOrEmpty(staff.Subdivision_Village) || !string.IsNullOrEmpty(staff.Barangay) ||
+                     !string.IsNullOrEmpty(staff.City) || !string.IsNullOrEmpty(staff.Province))
+            {
+                var newAddress = new Address
+                {
+                    House_Unit = staff.House_Unit,
+                    Street = staff.Street,
+                    Subdivision_Village = staff.Subdivision_Village,
+                    Barangay = staff.Barangay,
+                    City = staff.City,
+                    Province = staff.Province
+                };
+                _context.Addresses.Add(newAddress);
+                await _context.SaveChangesAsync();
+                existingStaff.AddressID = newAddress.AddressID;
+            }
+
+            // Handle profile picture update
+            if (staff.ImageProfile != null && staff.ImageProfile.Length > 0)
+            {
+                string filename = _uploadPhotoServices.UploadPhoto(staff.ImageProfile);
+                string localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filename.TrimStart('/'));
+
+                if (System.IO.File.Exists(localPath))
+                {
+                    try
+                    {
+                        using var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read);
+                        string photoUrl = await _cloudinaryServices.UploadImageAsync(fileStream, Path.GetFileName(localPath));
+                        existingStaff.ProfilePictureURL = photoUrl;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error uploading image: " + ex.Message);
+                        TempData["Error"] = "Failed to upload profile image: " + ex.Message;
+                        return View(staff);
+                    }
+                    _uploadPhotoServices.DeletePhoto(filename);
+                }
+            }
+
+            try
+            {
+                _context.ClinicalStaffs.Update(existingStaff);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ClinicalStaffExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Helper method to check if ClinicalStaff exists
+        private bool ClinicalStaffExists(int id)
+        {
+            return _context.ClinicalStaffs.Any(e => e.ClinicalStaffID == id);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var staff = await _context.ClinicalStaffs.FindAsync(id);
+            if (staff == null)
+            {
+                TempData["Error"] = "Error to delete Staff";
+            }
+            return View(staff);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var staff = await _context.ClinicalStaffs.FindAsync(id);
+
+            if (staff != null)
+            {
+                staff.IsDeleted = true;
+                _context.ClinicalStaffs.Update(staff);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = $"Patient {staff.Firstname} {staff.Lastname} has been deleted successfully.";
+
+
+            return RedirectToAction("Index");
+        }
 
         //Action to add profile pic
         public IActionResult AddProfilePhoto()

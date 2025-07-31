@@ -10,41 +10,47 @@ namespace SafehavenPMS.Data
         {
         }
 
-        public DbSet<Models.Patient> Patients { get; set; }
-        public DbSet<Models.Address> Addresses { get; set; }
-        public DbSet<Models.ClinicalStaff> ClinicalStaffs { get; set; }
+        public DbSet<Patient> Patients { get; set; }
+        public DbSet<ClinicalStaff> ClinicalStaffs { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+        public DbSet<ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            ////Relationship between Patient and assigned staff
-            /////Many to many relation
+            // Configure the many-to-many relationship
             modelBuilder.Entity<ClinicalStaffPatient>()
-                .HasKey(cs => new { cs.PatientId, cs.ClinicalStaffId });
+                .HasKey(cp => new { cp.PatientId, cp.ClinicalStaffId });
 
             modelBuilder.Entity<ClinicalStaffPatient>()
-                .HasOne(cs => cs.Patient)
+                .HasOne(cp => cp.Patient)
                 .WithMany(p => p.ClinicalStaffPatients)
-                .HasForeignKey(cs => cs.PatientId)
-                .OnDelete(DeleteBehavior.Restrict); // Avoid cascade loop
+                .HasForeignKey(cp => cp.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ClinicalStaffPatient>()
-                .HasOne(cs => cs.ClinicalStaff)
-                .WithMany(staff => staff.ClinicalStaffPatients)
-                .HasForeignKey(cs => cs.ClinicalStaffId)
-                .OnDelete(DeleteBehavior.Restrict); // Avoid cascade loop
+                .HasOne(cp => cp.ClinicalStaff)
+                .WithMany(c => c.ClinicalStaffPatients)
+                .HasForeignKey(cp => cp.ClinicalStaffId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-
-            //Address relationship
-            modelBuilder.Entity<Models.Patient>()
+            // Configure Address relationships with explicit foreign key
+            modelBuilder.Entity<Patient>()
                 .HasOne(p => p.Address)
-                .WithMany(a => a.Patients)
-                .HasForeignKey(p => p.AddressID);
+                .WithMany()
+                .HasForeignKey(p => p.AddressID) // Explicitly map AddressID
+                .OnDelete(DeleteBehavior.Restrict);
 
-            //Address relationship for Clinical Staff
-            modelBuilder.Entity<Models.ClinicalStaff>()
-                .HasOne(cs => cs.Address)
-                .WithMany(a => a.ClinicalStaffs)
-                .HasForeignKey(cs => cs.AddressID);
+            modelBuilder.Entity<ClinicalStaff>()
+                .HasOne(c => c.Address)
+                .WithMany()
+                .HasForeignKey(c => c.AddressID) // Explicitly map AddressID
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Global safeguard: Disable all cascade deletes
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                relationship.DeleteBehavior = DeleteBehavior.Restrict;
+            }
         }
     }
 }
