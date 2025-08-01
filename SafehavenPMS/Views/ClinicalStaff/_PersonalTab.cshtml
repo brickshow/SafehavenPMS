@@ -1,0 +1,112 @@
+﻿@model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
+
+@{
+    var staff = Model.Staffs.FirstOrDefault();
+}
+
+@* About Patient Card *@
+<div class="bg-white rounded shadow-sm">
+    <div class="d-flex justify-content-end align-items-center m-2`">
+        <a href="@Url.Action("Edit", "ClinicalStaff", new { id = staff?.ClinicalStaffID })" class="text-decoration-none m-3">Edit</a>
+    </div>
+
+    <div class="row">
+        <!-- Profile Picture (Left Side) -->
+        <div class="col-md-4 text-center mb-4">
+            <img src="@(string.IsNullOrEmpty(staff?.ProfilePictureURL) ? "/Images/default.png" :staff.ProfilePictureURL)" class="img-fluid m-4" style="width: 300px; height:300px; border-radius:6px" />
+            <label for="ChangeProfile" class="upload-button">Change Picture</label>
+            <input type="file" id="ChangeProfile" class="d-none" accept="image/*" onchange="previewImage(this)" />
+        </div>
+
+        <!-- Personal Information + Case Details (Right Side) -->
+        <div class="col-md-8">
+            <!-- Personal Information -->
+            <div class="d-flex flex-row justify-content-between align-items-center title">
+                <hr class="flex-grow-1 mx-2" />
+                <span style="color:#015F6B">Staff Information</span>
+                <hr class="flex-grow-1 mx-2" />
+            </div>            
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">First Name</p>
+                    <p class="fw-semibold">@staff?.Firstname</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Middle Name</p>
+                    <p class="fw-semibold">@staff?.MiddleName</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Last Name</p>
+                    <p class="fw-semibold">@staff?.Lastname</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Phone Number</p>
+                    <p class="fw-semibold">@staff?.PhoneNumber</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Sex</p>
+                    <p class="fw-semibold">@staff?.Sex</p>
+                </div>
+
+                @* TODO: Add birth date attributes *@
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Birthdate</p>
+                    <p class="fw-semibold">10/06/2001</p>
+                </div>
+
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Age</p>
+                    <p class="fw-semibold">50</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Position</p>
+                    <p class="fw-semibold">@staff?.Position</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Specialty</p>
+                    <p class="fw-semibold">@staff?.Specialty</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Email</p>
+                    <p class="fw-semibold">@staff?.Email</p>
+                </div>
+
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Lisence no.</p>
+                    <p class="fw-semibold">@staff?.PRC_Licensed</p>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <p class="text-muted mb-0">Hired Date</p>
+                    <p class="fw-semibold">@staff?.HireDate.ToShortDateString()</p>
+                </div>
+                <div class="col-md-12 mb-2">
+                    <p class="text-muted mb-0">Address</p>
+                    <p class="fw-semibold">
+                        @staff?.Address.House_Unit, @staff?.Address.Street, @staff?.Address.Barangay, @staff?.Address.City, @staff?.Address.Province
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .upload-button {
+        background-color: white;
+        color: #00A3B4;
+        margin: 5px;
+        border: 2px solid #00A3B4;
+        padding: 0.5rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+        .upload-button:hover {
+            background-color: #00A3B4;
+            color: white;
+            transform: translateY(-1px);
+        }
+</style>

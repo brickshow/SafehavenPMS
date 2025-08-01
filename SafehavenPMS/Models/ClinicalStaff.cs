@@ -19,9 +19,9 @@ namespace SafehavenPMS.Models
         public DateTime HireDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; }
-        public int AddressID { get; set; } // Foreign key for Address
-
-        public Address Address { get; set; } // Navigation property for Address
-        public IEnumerable<Models.ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Navigation property for Address
-    } 
+        public bool IsDeleted { get; set; }
+        public int AddressID { get; set; } // Foreign key from Address
+        public Address Address { get; set; }
+        public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with Patient    
+    }
 }

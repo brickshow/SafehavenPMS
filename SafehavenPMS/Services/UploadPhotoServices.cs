@@ -8,6 +8,12 @@
         //Method to upload a photo
         public string UploadPhoto(IFormFile ProfileImage)
         {
+            // Return null if no image is provided
+            if (ProfileImage == null || ProfileImage.Length == 0)
+            {
+                return null;
+            }
+
             var tempDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "TempPhotos");
             // Ensure the TempPhotos directory exists
             if (!Directory.Exists(tempDirectory))

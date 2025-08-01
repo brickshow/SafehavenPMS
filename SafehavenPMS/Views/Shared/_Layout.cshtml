@@ -8,13 +8,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/line-awesome/1.3.0/line-awesome/css/line-awesome.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+    @* Injecting Fullcalendar Via CDN *@
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+
+
     @* Icons8 *@
     <link rel="stylesheet" href="https://cdn.lineicons.com/2.0/LineIcons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SafeHavenPatientManagementSystem.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <div class="sidebar">
+    <div class="sidebar close">
         <!-- Logo -->
         <div class="logo-details">
             <i class='bx bxs-plus-medical'></i>
@@ -46,7 +50,7 @@
             </li>
             <!-- Doctor Schedule -->
             <li class="navigation">
-                <a asp-controller="Appointments" asp-action="Index">
+                <a asp-controller="Appointment" asp-action="Index">
                     <i class='bx bxs-calendar-event'></i>
                     <span class="link_name">Doctor Schedule</span>
                 </a>
@@ -144,15 +148,7 @@
     @* Loader *@
     <div id="loadingOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;align-items:center;justify-content:center;">
         @* Imported from UIVerse *@
-        <div class="loader">
-            <div class="loader-square"></div>
-            <div class="loader-square"></div>
-            <div class="loader-square"></div>
-            <div class="loader-square"></div>
-            <div class="loader-square"></div>
-            <div class="loader-square"></div>
-            <div class="loader-square"></div>
-        </div>
+        <div class="loader"></div>
     </div>
 
     @* Success Message *@
@@ -168,16 +164,42 @@
             </div>
         </div>
     </div>
+
+    @* FUll Calendar CDN *@
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+
 </body>
 </html>
 
+
 <script>
-    document.addEventListener('submit', function(e){
-        if(e.target && e.target.id === 'confirmationForm'){
-            var overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex';
-            }
+    // Show loader on form submission
+    document.addEventListener('submit', function (e) {
+        var overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
         }
     }, true);
+
+    // Show loader on anchor link clicks (navigation)
+    // document.addEventListener('click', function (e) {
+    //     const target = e.target.closest('a');
+
+    //     Only handle links inside the app (not external or with target="_blank")
+    //     if (target && target.href && !target.target && target.hostname === location.hostname) {
+    //         const overlay = document.getElementById('loadingOverlay');
+
+    //         Exclude anchor links with href starting with #
+    //         if (!target.getAttribute('href').startsWith('#')) {
+    //             overlay.style.display = 'flex';
+    //         }
+    //     }
+    // }, true);
+
+    // Optional: Hide loader if the page is staying due to error or client-side redirect (debugging use)
+    window.addEventListener('pageshow', function () {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) overlay.style.display = 'none';
+    });
 </script>

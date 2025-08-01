@@ -36,11 +36,11 @@ namespace SafehavenPMS.ViewModel
 
         [Required(ErrorMessage = "Hire Date is required")]
         public DateTime HireDate { get; set; }
-        public IFormFile ImageProfile { get; set; }
-        public string? Filename { get; set; }
-        public string House_Unit { get; set; }
-        public string Street { get; set; }
-        public string Subdivision_Village { get; set; }
+        public IFormFile? ImageProfile { get; set; } // explicitly nullable
+        public string? Filename { get; set; } // stores current ProfilePictureURL
+        public string? House_Unit { get; set; }
+        public string? Street { get; set; }
+        public string? Subdivision_Village { get; set; }
 
         [Required(ErrorMessage = "Barangay is required")]
         public string Barangay { get; set; }

@@ -1,0 +1,102 @@
+﻿@model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
+
+<div class="row">
+    @* Left: Activity Timeline *@
+    <div class="col-lg-6">
+        <h6 class="mb-3">Today</h6>
+        @* List of activities *@
+        <div class="card mb-3 shadow-sm border-0 p-3">
+            <div class="row align-items-center py-2 border-bottom">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="bx bx-file fs-4 text-primary me-2"></i>
+                        <strong>Initial Assessment - Dr. Ang Pao</strong>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Wednesday, July 02, 2025 • 05:30 PM - 06:15 PM
+                    </p>
+                </div>
+                <div class="col-md-4 d-flex justify-content-end">
+                    <button class="btn-cancel btn-sm btn-outline-secondary px-4">Pending</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 shadow-sm border-0 p-3">
+            <div class="row align-items-center py-2 border-bottom">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="bx bx-file fs-4 text-primary me-2"></i>
+                        <strong>Behavioral Notes - Psychiatrist</strong>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Wednesday, July 02, 2025 • 05:30 PM - 06:15 PM
+                    </p>
+                </div>
+                <div class="col-md-4 d-flex justify-content-end">
+                    <button class="btn-next btn-sm btn-primary px-4">View</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 p-3">
+            <div class="row align-items-center py-2 border-bottom">
+                <div class="col-md-8 d-flex flex-column">
+                    <div class="d-flex flex-row align-items-center">
+                        <i class="bx bx-capsule fs-4 text-primary me-2"></i>
+                        <strong>Biogesic Medication - Nurse Aimee</strong>
+                    </div>
+                    <p class="text-muted mb-0 small">Wednesday, July 02, 2025 • 05:30 PM - 06:15 PM</p>
+                </div>
+                <div class="col-md-4 d-flex justify-content-end">
+                    <button class="btn-cancel btn-outline-success px-3">Administered</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Assigned Patients -->
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0"><i class="bx bx-user me-2"></i>Assigned Patients</h6>
+        </div>
+        <div class="d-flex flex-row align-items-center mb-3">
+            <input type="text" class="form-control me-2 w-75" placeholder="Search by name..." />
+            <button class="btn-custom btn-primary btn-sm w-25">+ Add Patient</button>
+        </div>
+
+
+        <div class="assigned-patients" style="max-height: 350px; overflow-y:auto;">
+            @if (Model.Patients.Count <= 0)
+            {
+                <div class="d-flex justify-content-center align-items-center">
+                    <span class="text-center">No Patients Assigned</span>
+                </div>
+
+            }
+
+            @foreach (var patient in Model.Patients)
+            {
+                <div class="card p-2 d-flex flex-row align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center">
+                        <img src="@(string.IsNullOrEmpty(patient.PhotoUrl) ? "/Images/default.png" : patient.PhotoUrl)"
+                             class="rounded-circle me-2" style="width:60px; height:60px;" />
+                        <div>
+                            <div>
+                                <strong>@patient.Firstname @patient.Lastname</strong><br />
+                                <span class="text-muted small">@patient.PatientId</span><br />
+                            </div>
+                            <div class="text-green-600 text-sm font-semibold">
+                                ● Active
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm d-flex justify-content-center align-items-center rounded-circle"
+                            style="width: 28px; height: 28px;">
+                        <i class="bx bx-minus fw-bold" style="font-size: 16px;"></i>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

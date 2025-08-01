@@ -7,7 +7,7 @@
 
         //Foreign Keys
         public int AddressID { get; set; }//Foreign key from Address
-        public int ClinicalStaffID { get; set; }//Foreign key from Address
+
         public string Firstname { get; set; }
         public string Lastname { get; set; }
         public string MiddleName { get; set; }
@@ -25,9 +25,8 @@
         public string PhotoUrl { get; set; }
 
 
-        //Navigation Properties
         //One -to-Many Relationships
         public Address Address { get; set; }
-        public IEnumerable<Models.ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
+        public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with ClinicalStaff
     }
 }

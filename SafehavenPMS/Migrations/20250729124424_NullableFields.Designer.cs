@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250728004316_Initial Create")]
-    partial class InitialCreate
+    [Migration("20250729124424_NullableFields")]
+    partial class NullableFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,7 +42,6 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("House_Unit")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Province")
@@ -50,11 +49,9 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Street")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Subdivision_Village")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AddressID");
@@ -71,6 +68,9 @@ namespace SafehavenPMS.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClinicalStaffID"));
 
                     b.Property<int>("AddressID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AddressID1")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -125,6 +125,8 @@ namespace SafehavenPMS.Migrations
 
                     b.HasIndex("AddressID");
 
+                    b.HasIndex("AddressID1");
+
                     b.ToTable("ClinicalStaffs");
                 });
 
@@ -140,7 +142,7 @@ namespace SafehavenPMS.Migrations
 
                     b.HasIndex("ClinicalStaffId");
 
-                    b.ToTable("ClinicalStaffPatient");
+                    b.ToTable("ClinicalStaffPatients");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
@@ -154,12 +156,12 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("AddressID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("AddressID1")
+                        .HasColumnType("int");
+
                     b.Property<string>("Affiliation")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ClinicalStaffID")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
@@ -219,16 +221,23 @@ namespace SafehavenPMS.Migrations
 
                     b.HasIndex("AddressID");
 
+                    b.HasIndex("AddressID1");
+
                     b.ToTable("Patients");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.Address", "Address")
-                        .WithMany("ClinicalStaffs")
+                        .WithMany()
                         .HasForeignKey("AddressID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("SafehavenPMS.Models.Address", null)
+                        .WithMany("ClinicalStaffs")
+                        .HasForeignKey("AddressID1")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Address");
                 });
@@ -255,10 +264,15 @@ namespace SafehavenPMS.Migrations
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.Address", "Address")
-                        .WithMany("Patients")
+                        .WithMany()
                         .HasForeignKey("AddressID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("SafehavenPMS.Models.Address", null)
+                        .WithMany("Patients")
+                        .HasForeignKey("AddressID1")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Address");
                 });

@@ -1,12 +1,9 @@
 ﻿@model SafehavenPMS.ViewModel.AddClinicalStaffViewModel
 
 @{
-    ViewBag.Title = "Add Clinical Staff";
-
-
+    ViewBag.Title = "Edit Clinical Staff";
 }
 
-@* Content Header *@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
@@ -18,191 +15,143 @@
 </div>
 
 <div class="add-satff-content">
+    @if (TempData["ValidationErrors"] != null)
+    {
+        <div class="alert alert-danger">
+            @Html.Raw(TempData["ValidationErrors"])
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
     <div class="align-items-center">
         <div class="left-panel d-flex flex-row align-items-center p-2">
             <span class="mb-0 fs-4" style="color:#015F6B">Personal Information</span>
         </div>
         <hr class="mt-0 mb-2" />
     </div>
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger m-3 d-flex justify-content-Start align-items-center" style="height:20px">
-            @TempData["Error"]
-        </div>
-    }
-    <form asp-controller="ClinicalStaff" asp-action="AddNewClinicalStaff" method="post" enctype="multipart/form-data">
+    <form asp-controller="ClinicalStaff" asp-action="Edit" asp-route-id="@Model.ClinicalStaffID" method="post" enctype="multipart/form-data">
+        <input asp-for="ClinicalStaffID" type="hidden" />
         <div class="staff-form-container p-3">
             <div class="row">
                 <div class="col-md-12">
-                    @* Name Fields *@
                     <div class="row mb-3 justify-content-center">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Firstname" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">First Name</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Firstname" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Firstname" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Firstname" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Firstname" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="MiddleName" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Middle Name</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="MiddleName" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="MiddleName" class="text-danger"></span>
-                            </div>
+                            <input asp-for="MiddleName" type="text" class="form-control flex-grow-1 uniform-input" />
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Lastname" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Last Name</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Lastname" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Lastname" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Lastname" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Lastname" class="text-danger"></span>
                         </div>
                     </div>
-
-                    @* Other Details *@
                     <div class="row mb-3">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Sex" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Sex</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <select asp-for="Sex" class="form-select flex-grow-1 uniform-input">
-                                    <option selected value="">--Select--</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                </select>
-                                <span asp-validation-for="Sex" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Sex" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Sex" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
-                            <label asp-for="PhoneNumber" class="form-label mb-0 me-2" style="width: 110px;">Phone Number</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="PhoneNumber" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                            </div>
+                            <label asp-for="PhoneNumber" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Phone Number</label>
+                            <input asp-for="PhoneNumber" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Position" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Position</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Position" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Position" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Position" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Position" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div class="row">
-                @* Left Side Inputs *@
                 <div class="col-md-8">
                     <div class="row mb-3">
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Specialty" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Specialty</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Specialty" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Specialty" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Specialty" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Specialty" class="text-danger"></span>
                         </div>
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Email" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Email</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Email" type="email" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Email" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Email" type="email" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                     </div>
-
                     <div class="row mb-3">
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="RPC_Licensed" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">PRC Licensed</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="RPC_Licensed" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="RPC_Licensed" class="text-danger"></span>
-                            </div>
+                            <input asp-for="RPC_Licensed" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="RPC_Licensed" class="text-danger"></span>
                         </div>
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="HireDate" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Hire Date</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="HireDate" type="date" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="HireDate" class="text-danger"></span>
-                            </div>
+                            <input asp-for="HireDate" type="date" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="HireDate" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
-
-                @* Right Side: Upload Photo *@
                 <div class="col-md-4 d-flex flex-row align-items-center justify-content-center">
                     <div class="rounded-circle border overflow-hidden mb-2" style="width: 100px; height: 100px;">
-                        <img id="imagePreview" src="/Images/default.png" alt="Profile" class="w-100 h-100 object-fit-cover">
+                        <img id="imagePreview" src="@(string.IsNullOrEmpty(Model.Filename) ? "/Images/default.png" : Model.Filename)" alt="Profile" class="w-100 h-100 object-fit-cover">
                     </div>
                     <button type="button" class="change-picture-btn btn-outline-secondary btn-sm ms-3" onclick="document.getElementById('imageInput').click()">Upload Photo</button>
-                    <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="ImageProfile">
+                    <input type="file" id="imageInput" asp-for="ImageProfile" class="d-none" accept="image/*" onchange="previewImage(this)">
                 </div>
             </div>
         </div>
-
-        @* Home address Section *@
         <div class="align-items-center">
             <div class="left-panel d-flex flex-row align-items-center p-2">
                 <span class="mb-0 fs-4" style="color:#015F6B">Home Address</span>
             </div>
             <hr class="mt-0 mb-2" />
         </div>
-
         <div class="staff-form-container p-3">
             <div class="row">
                 <div class="col-md-12">
-                    @* Address Fields *@
                     <div class="row mb-3 justify-content-center">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="House_Unit" class="form-label mb-0 me-2" style="width: 110px;">House No./Unit</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="House_Unit" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="House_Unit" class="text-danger"></span>
-                            </div>
+                            <input asp-for="House_Unit" type="text" class="form-control flex-grow-1 uniform-input" />
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Street" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Street</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Street" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Street" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Street" type="text" class="form-control flex-grow-1 uniform-input" />
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Subdivision_Village" class="form-label mb-0 me-2" style="width: 110px;">Subdivision/ Village</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Subdivision_Village" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Subdivision_Village" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Subdivision_Village" type="text" class="form-control flex-grow-1 uniform-input" />
                         </div>
                     </div>
-
                     <div class="row mb-3">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Barangay" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Barangay</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Barangay" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Barangay" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Barangay" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Barangay" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="City" class="form-label mb-0 me-2" style="width: 110px;">City/ Municipality</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="City" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="City" class="text-danger"></span>
-                            </div>
+                            <input asp-for="City" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="City" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Province" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Province</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Province" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Province" class="text-danger"></span>
-                            </div>
+                            <input asp-for="Province" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <span asp-validation-for="Province" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        @* Action Buttons *@
         <div class="p-3">
             <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
@@ -258,25 +207,23 @@
     }
 </style>
 
-
-@section Scripts{
-<script>
-    function previewImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                document.getElementById('imagePreview').src = e.target.result;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-</script>
-
-@if (ViewBag.ShowModal == true)
-{
+@section Scripts {
     <script>
-        var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-        confirmationModal.show();
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
     </script>
-}
+    @if (ViewBag.ShowModal == true)
+    {
+        <script>
+            var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            confirmationModal.show();
+        </script>
+    }
 }

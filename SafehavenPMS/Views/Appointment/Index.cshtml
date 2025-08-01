@@ -1,0 +1,94 @@
+﻿@{
+    ViewBag.Title = "Appointment Calendar";
+}
+
+
+<div class="header">
+    <i class='bx  bx-calendar-check fs-4'></i>
+    <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+    <hr class="mt-0 mb-2" />
+</div>
+
+
+<div id="appointmentCalendar"></div>
+
+<style>
+    #appointmentCalendar {
+        max-width: 100%;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    /* Header background and padding */
+.fc .fc-toolbar.fc-header-toolbar {
+    background-color: #015F6B;  /* Dark teal */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+/* Title text (e.g., "August 2025") */
+.fc .fc-toolbar-title {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+    /* Day numbers in dark teal */
+    .fc .fc-daygrid-day-number {
+        color: #015F6B;
+        font-weight: 600;
+    }
+
+    /* Grid lines in light teal */
+    .fc .fc-scrollgrid,
+    .fc .fc-scrollgrid td,
+    .fc .fc-daygrid-day {
+        border-color: #b3dfe5;
+    }
+
+    /* Background for better readability */
+    .fc .fc-daygrid-day-frame {
+        background-color: #f8fcfc;
+    }
+
+    /* Change the color of the day names in the calendar header */
+.fc .fc-col-header-cell-cushion {
+    color: #015F6B; /* Dark teal or your preferred color */
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('appointmentCalendar');
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 'auto',
+            events: '/Appointments/GetAppointments', // URL to your controller action
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            selectable: true,
+            dateClick: function(info) {
+                alert('Clicked date: ' + info.dateStr);
+                // Optionally open a modal to create a new appointment
+            },
+            eventClick: function(info) {
+                alert('Appointment: ' + info.event.title);
+                // Optionally open a modal to edit/cancel appointment
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+
+

@@ -1,340 +1,221 @@
-﻿@{
+﻿@model IEnumerable<SafehavenPMS.Models.Patient>
+
+@{
     ViewBag.Title = "Patient List";
 }
+
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="d-flex align-items-center">
-            <i class='bx bxs-user-detail fs-2 me-2'></i>
+        <div class="d-flex align-items-center g-4">
+            <div class="d-flex justify-content-center align-items-center">
+                <i class='bx bxs-user fs-2 me-2'></i>
+                <h5 class="text-custom mb-0">Patients</h5>
+            </div>
+            <div class="top-content m-2 d-flex justify-content-between align-content-center">
+                <div class="top-left-corner d-flex flex-row align-items-center gap-2">
+                    @* Search bar *@
+                    <form asp-controller="Patient" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                        <div class="search-input-wrapper d-flex flex-row gap-2">
+                            <i class='bx bx-search search-icon'></i>
+                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+                        </div>
+                        <button type="submit" class="btn-custom" style="height:30px">Search</button>
+                    </form>
+                    <!-- Filter by status -->
+                    <div class="status">
+                        <form asp-controller="Patient" asp-action="FilterStatus" method="get" class="d-flex justify-content-center align-items-center">
+                            <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 10)" />
+                            <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                            <select name="status" style="height:30px; border-radius:20px; padding-left:5px; border:1px dashed #cbcbcb" onchange="this.form.submit()">
+                                <option value="">All</option>
+                                <option value="Active" selected="@(ViewBag.Status == "Active")">Active</option>
+                                <option value="Waitlisted" selected="@(ViewBag.Status == "Waitlisted")">Waitlisted</option>
+                                <option value="Pending Assesment" selected="@(ViewBag.Status == "Pending Assesment")">Pending Assesment</option>
+                                <option value="Pending Approval" selected="@(ViewBag.Status == "Pending Approval")">Pending Approval</option>
+                                <option value="Admitted" selected="@(ViewBag.Status == "Admitted")">Admitted</option>
+                                <option value="Inactive" selected="@(ViewBag.Status == "Admitted")">Inactive</option>
+                            </select>
+                        </form>
+                    </div>
+                    <!-- Sort by -->
+                    <div class="sort-by d-flex align-items-center">
+                        <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm">
+                            <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
+                                <span class="me-2">Sort by</span>
+                                <div class="number-box d-flex align-items-center gap-1">
+                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
+                                        <span class="number">A</span>
+                                        <span class="number">Z</span>
+                                    </div>
+                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
+                                </div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <a href="@Url.Action("AddPatientStep1", "Patient")" class="btn btn-primary">
+        <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
             <i class='bx bx-user-plus me-1'></i>
             New Patient
         </a>
     </div>
-    <hr class="mt-0 mb-2"/>
+    <hr class="mt-0 mb-2" />
 </div>
 
-@* List Of Patient Container *@
-<div class="patient-list-container">
-    @* top content section *@
-    <div class="top-content m-2 d-flex justify-content-between align-content-center">
-       
-        @* Left Corner Section *@
-        <div class="top-left-corner d-flex flex-row align-items-center gap-2">
-            <h5 class="text-custom mb-0">55 Patients</h5>
-            @* Search bar *@
-            <form asp-controller="Patient" asp-action="Search" method="post" class="d-flex flex-row justify-content-center m-1 gap-2">
-                <div class="search-input-wrapper d-flex flex-row gap-2">
-                        <i class='bx bx-search search-icon'></i>
-                        <input class="form-control search-input" placeholder="Search patients..." />
+<!-- Table Container -->
+<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["SuccessMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
-                <button type="submit" class="btn" style="height:30px">Search</button>
-            </form>
-            @* Filter by status *@
-            <div class="status">
-                <form asp-controller="Patient" asp-action="FilterStatus" method="post" class="d-flex justify-content-center align-items-center"> 
-                    <select style="height:30px; border-radius:20px; padding-left:5px; border:1px dashed #cbcbcb">Status
-                        <option>Active</option>
-                        <option>More Option</option>
-                    </select>
-                </form>
-            </div>
-            @* Sort by *@
-            <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Patient" asp-action="SortBy" method="post">
-                    <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
-                        <span class="me-2">Sort by</span>
-                        <div class="number-box d-flex align-items-center gap-1">
-                            <div class="numbers d-flex flex-column justify-content-center align-items-center">
-                                <span class="number">1</span>
-                                <span class="number">2</span>
-                            </div>
-                            <i class='bx bx-up-arrow-alt'></i>
-                        </div>
-                    </button>
-                </form>
             </div>
         </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" id="errorToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["Error"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
 
-        @* Print button *@
-        <div class="print-btn">
-            <form asp-controller="Patient" asp-action="PrintPatientList" method="post">
-                <button type="submit" class="btn d-flex align-items-center gap-2">
-                    <i class='bx bx-printer'></i>
-                    <span>Print</span>
-                </button>
+    <div class="table-header d-flex justify-content-center align-items-center text-center">
+        <h5 class="mb-0">@(ViewBag.TotalPatientCount > 0 ? ViewBag.TotalPatientCount + " Patients" : "No Patients found")</h5>
+    </div>
+
+    @* Print and show number of row section *@
+    <div class="d-flex justify-content-between align-items-center m-2 mt-4">
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Show</span>
+            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                <input type="hidden" name="status" value="@ViewBag.Status" />
+                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
+                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                </select>
             </form>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-center">
+            <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
         </div>
     </div>
-    @* List of patient by cards *@
-    @* TODO: Loop after fetching data *@
-    <div class="mid-content">
-        <div class="row">
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-4 mb-3">
-                <div class="patient-list-card d-flex align-items-center p-3 border rounded">
-                    <div class="image-container flex-shrink-0 me-3" style="width:80px; height:80px;">
-                        <img src="~/Images/sample.JPG" alt="Patient" class="w-100 h-100 rounded-circle" />
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <h6 class="fw-bold mb-1 text-truncate">Brix T. Lampago</h6>
-                        <p class="text-muted small mb-2">ID Number: SFN-000001</p>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="status-dot bg-success rounded-circle" style="width:8px; height:8px;"></span>
-                            <span class="small text-success">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="table-responsive-custom">
+        <table class="table mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>No.</th>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Sex</th>
+                    <th>Status</th>
+                    <th>Assigned Team</th>
+                    <th>Program Duration</th>
+                    <th>Drug Dependency</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() != true)
+                {
+                    <tr>
+                        <td colspan="9" class="text-center">No patients found.</td>
+                    </tr>
+                }
+                else
+                {
+                    int rowNum = 1;
+                    foreach (var patient in Model)
+                    {
+                        <tr>
+                            <td>@rowNum</td>
+                            <td>@patient.PatientId</td>
+                            <td><strong>@patient.Firstname @patient.Lastname</strong></td>
+                            <td>@patient.Sex</td>
+                            <td>@patient.PatientStatus</td>
+                            <td>
+                                @if (patient.ClinicalStaffPatients?.FirstOrDefault()?.ClinicalStaff != null)
+                                {
+                                    var staff = patient.ClinicalStaffPatients.First().ClinicalStaff;
+                                    <div>
+                                        <img src="@(string.IsNullOrEmpty(staff.ProfilePictureURL) ? "/Images/default.png" : staff.ProfilePictureURL)" alt="Alternate Text" 
+                                        style="width:30px; height:30px; border-radius:50%"/>
+                                    </div>
+                                }
+                            </td>
+                            
+                            <td>-</td>
+                            <td>-</td>
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5"></i>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="@Url.Action("Profile", "Patient", new { id = patient.PatientId })">View Profile</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">Schedule Initial Assesment</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">Review Intake Form</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">Remove from Wait List</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                            
+                        </tr>
+                        rowNum++;
+                    }
+                }
+            </tbody>
+        </table>
     </div>
+
     <div class="bot-content py-3">
         <div class="d-flex justify-content-between align-items-center px-3">
-            <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small">Show</span>
-                <select class="form-select form-select-sm" style="width: auto;">
-                    <option>15</option>
-                    <option>30</option>
-                    <option>45</option>
-                    <option>60</option>
-                    <option>All</option>
-                </select>
+            <div style="opacity:.5;">
+                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalStaffCount ?? 0)</span>
             </div>
-
-            <nav aria-label="Patient list pagination">
+            <nav aria-label="Clinical staff list pagination">
                 <ul class="pagination mb-0">
-                    <li class="page-item">
-                        <a class="page-link" href="#" aria-label="Previous">
+                    <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#" aria-label="Next">
+                    @if (ViewBag.PageSize != null && (int)ViewBag.PageSize > 0)
+                    {
+                        int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+                        int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+                        int startPage = Math.Max(1, currentPage - 2);
+                        int endPage = Math.Min(totalPages, currentPage + 2);
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", "Patient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
+                            </li>
+                        }
+                    }
+                    <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>
@@ -344,3 +225,65 @@
     </div>
 </div>
 
+<style>
+    .table-header {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .table-responsive-custom {
+        overflow-x: auto;
+        white-space: nowrap;
+        width: 100%;
+    }
+
+    .table td, .table th {
+        white-space: nowrap;
+    }
+
+    .dropdown {
+        position: relative;
+        z-index: 1000;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        z-index: 1001;
+        top: 100%;
+        left: 0;
+    }
+
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
+
+    .print-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        background-color: white;
+        border: 1px solid #e9ecef;
+        color: #495057;
+        transition: background-color 0.3s;
+    }
+
+        .print-button:hover {
+            background-color: #e9ecef;
+        }
+
+    @@media print {
+        .header, .bot-content, .print-button, .top-content {
+            display: none;
+        }
+
+        .table-header-custom {
+            background-color: #015F6B;
+            -webkit-print-color-adjust: exact;
+        }
+    }
+</style>
