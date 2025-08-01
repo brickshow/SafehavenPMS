@@ -67,8 +67,35 @@
 
 <!-- Table Container -->
 <div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["SuccessMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" id="errorToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["Error"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="table-header d-flex justify-content-center align-items-center text-center">
-        <h5 class="mb-0">@(Model?.Count() > 0 ? Model.Count() + " Patients" : "No Patients")</h5>
+        <h5 class="mb-0">@(ViewBag.TotalPatientCount > 0 ? ViewBag.TotalPatientCount + " Patients" : "No Patients found")</h5>
     </div>
 
     @* Print and show number of row section *@
@@ -131,7 +158,10 @@
                                 @if (patient.ClinicalStaffPatients?.FirstOrDefault()?.ClinicalStaff != null)
                                 {
                                     var staff = patient.ClinicalStaffPatients.First().ClinicalStaff;
-                                    <div>@staff.Firstname @staff.Lastname</div>
+                                    <div>
+                                        <img src="@(string.IsNullOrEmpty(staff.ProfilePictureURL) ? "/Images/default.png" : staff.ProfilePictureURL)" alt="Alternate Text" 
+                                        style="width:30px; height:30px; border-radius:50%"/>
+                                    </div>
                                 }
                             </td>
                             
