@@ -27,15 +27,16 @@
                             <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 10)" />
                             <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                             <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-                            <select name="status" style="height:30px; border-radius:20px; padding-left:5px; border:1px dashed #cbcbcb" onchange="this.form.submit()">
+                            <select name="status" class="form-select custom-dropdown" onchange="this.form.submit()">
                                 <option value="">All</option>
-                                <option value="Active" selected="@(ViewBag.Status == "Active")">Active</option>
-                                <option value="Waitlisted" selected="@(ViewBag.Status == "Waitlisted")">Waitlisted</option>
-                                <option value="Pending Assesment" selected="@(ViewBag.Status == "Pending Assesment")">Pending Assesment</option>
-                                <option value="Pending Approval" selected="@(ViewBag.Status == "Pending Approval")">Pending Approval</option>
-                                <option value="Admitted" selected="@(ViewBag.Status == "Admitted")">Admitted</option>
-                                <option value="Inactive" selected="@(ViewBag.Status == "Admitted")">Inactive</option>
+                                <option value="Active" selected="@(ViewBag.Status == "Active")">🟩 Active</option>
+                                <option value="Waitlisted" selected="@(ViewBag.Status == "Waitlisted")">🟧 Waitlisted</option>
+                                <option value="Pending Assesment" selected="@(ViewBag.Status == "Pending Assesment")">🟪 Pending Assesment</option>
+                                <option value="Pending Approval" selected="@(ViewBag.Status == "Pending Approval")">🟦 Pending Approval</option>
+                                <option value="Admitted" selected="@(ViewBag.Status == "Admitted")">🟪 Admitted</option>
+                                <option value="Inactive" selected="@(ViewBag.Status == "Inactive")">🟥 Inactive</option>
                             </select>
+
                         </form>
                     </div>
                     <!-- Sort by -->
@@ -131,8 +132,6 @@
                     <th>Sex</th>
                     <th>Status</th>
                     <th>Assigned Team</th>
-                    <th>Program Duration</th>
-                    <th>Drug Dependency</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -153,7 +152,33 @@
                             <td>@patient.PatientId</td>
                             <td><strong>@patient.Firstname @patient.Lastname</strong></td>
                             <td>@patient.Sex</td>
-                            <td>@patient.PatientStatus</td>
+                            <td class="p-0 m-0 align-middle">
+                                @if (patient.PatientStatus == "Active")
+                                {
+                                    <div style="background-color:#CBE5DC; border-radius:30px; width:50%; margin:0; padding:0;">
+                                        <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
+                                    </div>
+                                }
+                                @if (patient.PatientStatus == "Waitlisted")
+                                {
+                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:50%; margin:0; padding:0;">
+                                        <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
+                                    </div>
+                                }
+                                @if (patient.PatientStatus == "Pending Assesment")
+                                {
+                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:50%; margin:0; padding:0;">
+                                        <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
+                                    </div>
+                                }
+                                @if (patient.PatientStatus == "Pending Approval")
+                                {
+                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:50%; margin:0; padding:0;">
+                                        <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
+                                    </div>
+                                }
+
+                            </td>
                             <td>
                                 @if (patient.ClinicalStaffPatients?.FirstOrDefault()?.ClinicalStaff != null)
                                 {
@@ -164,22 +189,45 @@
                                     </div>
                                 }
                             </td>
-                            
-                            <td>-</td>
-                            <td>-</td>
                             <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bx bx-dots-vertical fs-5"></i>
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
                                     </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="@Url.Action("Profile", "Patient", new { id = patient.PatientId })">View Profile</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">Schedule Initial Assesment</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">Review Intake Form</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">Remove from Wait List</a></li>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("Profile", "Patient", new { id = patient.PatientId })">
+                                                <span class="badge-dot bg-primary"></span>
+                                                View Profile
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">
+                                                <span class="badge-dot bg-warning"></span>
+                                                Schedule Initial Assessment
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">
+                                                <span class="badge-dot bg-success"></span>
+                                                Review Intake Form
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">
+                                                <span class="badge-dot bg-danger"></span>
+                                                Remove from Wait List
+                                            </a>
+                                        </li>
                                     </ul>
                                 </div>
                             </td>
+
                             
                         </tr>
                         rowNum++;
@@ -248,7 +296,7 @@
 
     .dropdown {
         position: relative;
-        z-index: 1000;
+        z-index: auto !important;
     }
 
     .dropdown-menu {
@@ -256,6 +304,7 @@
         z-index: 1001;
         top: 100%;
         left: 0;
+        z-index: 1055 !important;
     }
 
     .rotate-180 {
@@ -286,4 +335,33 @@
             -webkit-print-color-adjust: exact;
         }
     }
+
+    .badge-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .bg-primary {
+        background-color: #7D4CDB;
+    }
+    /* Purple */
+    .bg-warning {
+        background-color: #FF9900;
+    }
+    /* Orange */
+    .bg-success {
+        background-color: #22C55E;
+    }
+    /* Green */
+    .bg-danger {
+        background-color: #F44336;
+    }
+    /* Red */
+
+    .dropdown-menu.dropdown-menu-end {
+        transform: translateX(-10px); /* or try -12px or -8px to adjust the alignment */
+    }
+
 </style>
