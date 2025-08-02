@@ -281,18 +281,15 @@
 
     .dropdown {
         position: relative;
-        z-index: 1; /* Keep it within table context */
+        z-index: auto !important;
     }
 
     .dropdown-menu {
-        position: absolute !important;
-        z-index: 1050 !important;
-        transform: translate3d(0, 0, 0) !important;
+        position: absolute;
+        z-index: 1001;
         top: 100%;
-        right: 0; /* Anchor it relative to the dots icon */
-        left: auto !important; /* Prevent forced left positioning */
-        margin-top: 2px; /* Small vertical gap */
-        margin-right: -10px; /* Move it slightly left to avoid hitting dots */
+        left: 0;
+        z-index: 1055 !important;
     }
     .rotate-180 {
         transform: rotate(180deg);
