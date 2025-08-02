@@ -3,7 +3,70 @@
 }
 
 
-<div class="header">
+<div class="container-fluid">
+    @* Content Header *@
+    <div class="header d-flex justify-content-between">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex align-items-center g-4">
+                <i class='bx bx-calendar-alt fs-4 m-0 p-0'></i>
+                <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+            </div>
+        </div>
+        <a href="#" class="btn-custom btn-primary text-decoration-none">
+            +  New
+        </a>
+    </div>
+    @* Tabs *@
+    <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar"
+                    type="button" role="tab" aria-controls="calendar" aria-selected="true">
+                Calendar
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="availability-tab" data-bs-toggle="tab" data-bs-target="#availability"
+                    type="button" role="tab" aria-controls="availability" aria-selected="false">
+                Availability
+            </button>
+        </li>
+    </ul>
+
+
+    @* Tab Content *@
+    <div class="tab-content" id="staffTabContent">
+        <div class="tab-pane fade show active" id="calendar" role="tabpanel" aria-labelledby="calendar-tab">
+            @await Html.PartialAsync("_Calendar")
+        </div>
+
+        <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab">
+            @await Html.PartialAsync("_Availability")
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .nav-tabs .nav-link {
+        color: #767676;
+        background-color: transparent;
+        border: none;
+        font-weight: normal;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #00A3B4;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid #00A3B4;
+            font-weight: bold;
+        }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+
+
+@* <div class="header">
     <i class='bx  bx-calendar-check fs-4'></i>
     <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
     <hr class="mt-0 mb-2" />
@@ -90,5 +153,5 @@
         calendar.render();
     });
 </script>
-
+ *@
 

@@ -1,0 +1,86 @@
+﻿@* Container for Availability Page *@
+<div class="container-fluid border rounded bg-white p-4" style="width: 100%; margin-top: 20px;">
+
+    @* Header with Icon and Title *@
+    <div class="table-header d-flex justify-content-center align-items-center text-center">
+        <h5 class="mb-0">Availability</h5>
+    </div>
+
+
+    @* Filters/Search and Date Picker *@
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-column">
+            <label for="search" class="form-label visually-hidden">Search</label>
+            <input type="text" id="search" class="form-control" placeholder="Search by title ..." style="width: 250px;">
+        </div>
+
+        <div class="form-group d-flex justify-content-center align-items-center gap-2">
+            <label for="startDate" class="form-label m-0">Start Date</label>
+            <input type="date" id="startDate" class="form-control" style="width: 180px;">
+        </div>
+    </div>
+
+    @* Availability Table *@
+    <div class="table-responsive">
+        <table class="table table-bordered text-center align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Date Range</th>
+                    <th>Day/s</th>
+                    <th>Time Slot(s)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Availability 1</td>
+                    <td>Aug 5 – Aug 10</td>
+                    <td>Mon, Tue, Thurs, Wed, Fri</td>
+                    <td class="text-start">
+                        <strong>Mon:</strong> 06:00–07:00 AM<br />
+                        08:00–09:00 AM<br />
+                        <strong>Tue:</strong> 08:00–09:00 AM<br />
+                        <strong>Wed:</strong> 10:00–11:00 AM<br />
+                        <strong>Thurs:</strong> 07:00–08:00 AM<br />
+                        <strong>Fri:</strong> 09:00–10:00 AM
+                    </td>
+                    <td class="text-center d-flex justify-content-center gap-2">
+                        <a href="#" class="border rounded px-2 py-1 text-primary hover-fill" title="Edit">
+                            <i class='bx bx-edit'></i>
+                        </a>
+                        <a href="#" class="border rounded px-2 py-1 text-danger hover-fill" title="Delete">
+                            <i class='bx bx-trash'></i>
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .table-header {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-radius: 6px;
+        margin-bottom:10px;
+    }
+
+    .table-header-custom {
+        background-color: #015F6B !important;
+        color: #ffffff !important;
+    }
+
+    .hover-fill:hover {
+        background-color: rgba(0, 163, 180, 0.1); /* Light teal for hover */
+        transition: background-color 0.3s ease;
+    }
+
+    .hover-fill.text-danger:hover {
+        background-color: rgba(244, 63, 94, 0.1); /* Light red for delete hover */
+    }
+</style>
