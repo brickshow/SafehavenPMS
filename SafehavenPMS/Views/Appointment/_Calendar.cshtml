@@ -65,10 +65,20 @@
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
             selectable: true,
-            dateClick: function(info) {
-                alert('Clicked date: ' + info.dateStr);
-                // Optionally open a modal to create a new appointment
-            },
+               dateClick: function(info) {
+                        const selectedDate = info.dateStr;
+
+                        // Set the date in your modal's Flatpickr instance
+                        const flatpickrInstance = flatpickr("#appointmentDateModal", {
+                            defaultDate: selectedDate,
+                            dateFormat: "Y-m-d"
+                        });
+                        flatpickrInstance.setDate(selectedDate, true);
+
+                        // Open the modal
+                        var modal = new bootstrap.Modal(document.getElementById('calendar-modal'));
+                        modal.show();
+                    },
             eventClick: function(info) {
                 alert('Appointment: ' + info.event.title);
                 // Optionally open a modal to edit/cancel appointment

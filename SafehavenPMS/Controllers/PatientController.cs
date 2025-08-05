@@ -83,16 +83,18 @@ namespace SafehavenPMS.Controllers
             }
 
             // Apply sorting
-            if (string.IsNullOrEmpty(sortOrder))
+            // Apply sorting
+            if (sortOrder == null)
             {
-                query = query.OrderByDescending(p => p.Firstname); // Adjust if your model doesn't have CreatedAt
+                query = query.OrderByDescending(p => p.CreatedAt);
             }
             else
             {
                 query = sortOrder == "ascending"
                     ? query.OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
-                    : query.OrderByDescending(p => p.Firstname).ThenBy(p => p.Lastname);
+                    : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
             }
+
 
             // Pagination logic
             int totalItems = await query.CountAsync();
@@ -216,6 +218,13 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
 
+            //Ensuring BOD not a future 
+            if(model.DateOfBirth > DateTime.Now)
+            {
+                TempData["Message"] = "Please provide a valid Birthdate";
+                return View();
+            }
+
             string filename = null;
             string tempUrl = string.Empty;
 
@@ -334,6 +343,7 @@ namespace SafehavenPMS.Controllers
                     Affiliation = model.Affiliation,
                     PhotoUrl = tempUrl,
                     AddressID = address.AddressID,
+                    CreatedAt = DateTime.Now,
                 };
 
                 // Save patient to database

@@ -33,23 +33,31 @@
             {
                 <div class="alert alert-danger">@TempData["Message"]</div>
             }
+
             <div class="row">
                 <div class="col-md-12">
                     @* Name Fields *@
                     <div class="row mb-3 justify-content-center">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Firstname" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">First Name</label>
-                            <input asp-for="Firstname" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Firstname" class="text-danger"></span>
+                            @* Input and validation vertically aligned *@
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Firstname" type="text" class="form-control uniform-input" />
+                                <span asp-validation-for="Firstname" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="MiddleName" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Middle Name</label>
-                            <input asp-for="MiddleName" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="MiddleName" type="text" class="form-control uniform-input" />
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Lastname" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Last Name</label>
-                            <input asp-for="Lastname" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Lastname" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Lastname" type="text" class="form-control uniform-input" />
+                                <span asp-validation-for="Lastname" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -57,22 +65,28 @@
                     <div class="row mb-3">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="DateOfBirth" class="form-label mb-0 me-2" style="width: 110px;">Date Of Birth</label>
-                            <input asp-for="DateOfBirth" type="date" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="DateOfBirth" type="date" class="form-control uniform-input" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Sex" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Sex</label>
-                            <select asp-for="Sex" class="form-control flex-grow-1 uniform-input">
-                                <option value="">--Select--</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                            <span asp-validation-for="Sex" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <select asp-for="Sex" class="form-control uniform-input">
+                                    <option value="">--Select--</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                                <span asp-validation-for="Sex" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Occupation" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Occupation</label>
-                            <input asp-for="Occupation" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Occupation" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Occupation" type="text" class="form-control uniform-input" />
+                                <span asp-validation-for="Occupation" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -84,47 +98,59 @@
                     <div class="row mb-3">
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="MaritalStatus" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Marital Status</label>
-                            <select asp-for="MaritalStatus" class="form-control flex-grow-1 uniform-input">
-                                <option value="">--Select--</option>
-                                <option value="Single">Single</option>
-                                <option value="Married">Married</option>
-                                <option value="Divorced">Divorced</option>
-                                <option value="Widowed">Widowed</option>
-                            </select>
-                            <span asp-validation-for="MaritalStatus" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <select asp-for="MaritalStatus" class="form-control uniform-input">
+                                    <option value="">--Select--</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Widowed">Widowed</option>
+                                </select>
+                                <span asp-validation-for="MaritalStatus" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Religion" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Religion</label>
-                            <input asp-for="Religion" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Religion" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Religion" type="text" class="form-control uniform-input" />
+                                <span asp-validation-for="Religion" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Education" class="form-label mb-0 me-2" style="width: 110px;">Educational Attainment</label>
-                            <input asp-for="Education" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Education" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Education" type="text" class="form-control uniform-input" />
+                                <span asp-validation-for="Education" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="ContactNumber" class="form-label mb-0 me-2" style="width: 110px;">Phone Number</label>
-                            <input asp-for="ContactNumber" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="ContactNumber" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="ContactNumber" type="text" class="form-control uniform-input" />
+                                <span asp-validation-for="ContactNumber" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                @* Photo Upload *@
+                @* Photo Upload Section *@
                 <div class="col-md-4 d-flex flex-row align-items-center justify-content-center">
                     <div class="rounded-circle border overflow-hidden mb-2" style="width: 100px; height: 100px;">
                         <img id="imagePreview" src="/Images/default.png" alt="Profile" class="w-100 h-100 object-fit-cover">
                     </div>
                     <button type="button" class="change-picture-btn btn-outline-secondary btn-sm ms-3" onclick="document.getElementById('imageInput').click()">Upload Photo</button>
-                    <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="Filename">
-                    <span asp-validation-for="Filename" class="text-danger"></span>
+                    <div class="d-flex flex-column uniform-input flex-grow-1">
+                        <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="Filename">
+                        <span asp-validation-for="Filename" class="text-danger"></span>
+                    </div>
                 </div>
             </div>
         </div>
+
+
 
         @* Home Address Section *@
         <div class="align-items-center">
@@ -141,36 +167,48 @@
                     <div class="row mb-3 justify-content-center">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="House_Unit" class="form-label mb-0 me-2" style="width: 110px;">House No./Unit</label>
-                            <input asp-for="House_Unit" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="House_Unit" type="text" class="form-control flex-grow-1 uniform-input" />
                             <span asp-validation-for="House_Unit" class="text-danger"></span>
+                           </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Street" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Street</label>
-                            <input asp-for="Street" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Street" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Street" type="text" class="form-control flex-grow-1 uniform-input" />
+                                <span asp-validation-for="Street" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Subdivision_Village" class="form-label mb-0 me-2" style="width: 110px;">Subdivision/ Village</label>
-                            <input asp-for="Subdivision_Village" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Subdivision_Village" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Subdivision_Village" type="text" class="form-control flex-grow-1 uniform-input" />
+                                <span asp-validation-for="Subdivision_Village" class="text-danger"></span>
+                           </div>
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Barangay" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Barangay</label>
-                            <input asp-for="Barangay" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Barangay" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Barangay" type="text" class="form-control flex-grow-1 uniform-input" />
+                                <span asp-validation-for="Barangay" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="City" class="form-label mb-0 me-2" style="width: 110px;">City/ Municipality</label>
-                            <input asp-for="City" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="City" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="City" type="text" class="form-control flex-grow-1 uniform-input" />
+                                <span asp-validation-for="City" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Province" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Province</label>
-                            <input asp-for="Province" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Province" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <input asp-for="Province" type="text" class="form-control flex-grow-1 uniform-input" />
+                                <span asp-validation-for="Province" class="text-danger"></span>
+                          </div>
                         </div>
                     </div>
                 </div>
@@ -190,20 +228,29 @@
                 <div class="col-md-12">
                     @* Intake Fields *@
                     <div class="row mb-3 justify-content-center">
-                        <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
-                            <label asp-for="DateOfReferral" class="form-label mb-0 me-2" style="width: 110px;">Date Of Referral</label>
-                            <input asp-for="DateOfReferral" type="date" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="DateOfReferral" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
-                            <label asp-for="ReferredBy" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Referred By</label>
-                            <input asp-for="ReferredBy" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="ReferredBy" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
-                            <label asp-for="Affiliation" class="form-label mb-0 me-2" style="width: 110px;">Affiliation</label>
-                            <input asp-for="Affiliation" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="Affiliation" class="text-danger"></span>
+                        @* Intake Fields *@
+                        <div class="row mb-3 justify-content-center">
+                            <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
+                                <label asp-for="DateOfReferral" class="form-label mb-0 me-2" style="width: 110px;">Date Of Referral</label>
+                                <div class="d-flex flex-column uniform-input flex-grow-1">
+                                    <input asp-for="DateOfReferral" type="date" class="form-control flex-grow-1 uniform-input" />
+                                    <span asp-validation-for="DateOfReferral" class="text-danger"></span>
+                               </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
+                                <label asp-for="ReferredBy" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Referred By</label>
+                                <div class="d-flex flex-column uniform-input flex-grow-1">
+                                    <input asp-for="ReferredBy" type="text" class="form-control flex-grow-1 uniform-input" />
+                                    <span asp-validation-for="ReferredBy" class="text-danger"></span>
+                               </div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
+                                <label asp-for="Affiliation" class="form-label mb-0 me-2" style="width: 110px;">Affiliation</label>
+                                <div class="d-flex flex-column uniform-input flex-grow-1">
+                                    <input asp-for="Affiliation" type="text" class="form-control flex-grow-1 uniform-input" />
+                                    <span asp-validation-for="Affiliation" class="text-danger"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -211,10 +258,12 @@
                     <div class="row mb-3">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="ClinicalStaff" class="form-label mb-0 me-2" style="width: 110px;">Assigned Physician</label>
-                            <select id="physicianSelect" asp-for="ClinicalStaff" class="form-control uniform-input" asp-items="@ViewBag.Physicians">
-                                <option value="">-- Select Physician --</option>
-                            </select>
-                            <span asp-validation-for="ClinicalStaff" class="text-danger"></span>
+                            <div class="d-flex flex-column uniform-input flex-grow-1">
+                                <select id="physicianSelect" asp-for="ClinicalStaff" class="form-control uniform-input" asp-items="@ViewBag.Physicians">
+                                    <option value="">-- Select Physician --</option>
+                                </select>
+                                <span asp-validation-for="ClinicalStaff" class="text-danger"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -229,6 +278,7 @@
             </div>
         </div>
     </form>
+
 </div>
 
 @* Styles *@
@@ -299,7 +349,4 @@
             confirmationModal.show();
         </script>
     }
-
-    @* Validation Scripts *@
-    <partial name="_ValidationScriptsPartial" />
 }

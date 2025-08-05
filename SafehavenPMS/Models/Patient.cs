@@ -21,8 +21,9 @@
         public string MaritalStatus { get; set; }
         public DateTime DateOfReferral { get; set; }
         public string ReferredBy { get; set; }
-        public string Affiliation { get; set; }
+        public string? Affiliation { get; set; }
         public string PhotoUrl { get; set; }
+        public DateTime CreatedAt { get; set; }
 
 
         //One -to-Many Relationships
