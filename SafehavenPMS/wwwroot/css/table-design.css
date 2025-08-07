@@ -1,0 +1,89 @@
+﻿.table-header {
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(to right, #069FB2, #058594);
+    color: white;
+    font-weight: 600;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.table-responsive-custom {
+    overflow-x: auto;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.table td, .table th {
+    white-space: nowrap;
+}
+
+.dropdown {
+    position: relative;
+    z-index: auto !important;
+}
+
+.dropdown-menu {
+    position: absolute;
+    z-index: 1001;
+    top: 100%;
+    left: 0;
+    z-index: 1055 !important;
+}
+
+.rotate-180 {
+    transform: rotate(180deg);
+}
+
+.print-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    color: #495057;
+    transition: background-color 0.3s;
+}
+
+    .print-button:hover {
+        background-color: #e9ecef;
+    }
+
+@@media print {
+    .header, .bot-content, .print-button, .top-content {
+        display: none;
+    }
+
+    .table-header-custom {
+        background-color: #015F6B;
+        -webkit-print-color-adjust: exact;
+    }
+}
+
+.badge-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.bg-primary {
+    background-color: #7D4CDB;
+}
+/* Purple */
+.bg-warning {
+    background-color: #FF9900;
+}
+/* Orange */
+.bg-success {
+    background-color: #22C55E;
+}
+/* Green */
+.bg-danger {
+    background-color: #F44336;
+}
+/* Red */
+
+.dropdown-menu.dropdown-menu-end {
+    transform: translateX(-10px); /* or try -12px or -8px to adjust the alignment */
+}

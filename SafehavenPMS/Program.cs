@@ -46,35 +46,35 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Medication}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<SafehavenPMSContext>();
-        context.Database.Migrate();
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    try
+//    {
+//        var context = services.GetRequiredService<SafehavenPMSContext>();
+//        context.Database.Migrate();
 
 
-        // Seed Religions
-        var religionPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Religion.json");
-        await DataSeeder.SeedReligionsAsync(context, religionPath);
+//        // Seed Religions
+//        var religionPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Religion.json");
+//        await DataSeeder.SeedReligionsAsync(context, religionPath);
 
-        // Seed Nationalities
-        var nationalityPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Nationality.json");
-        await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
+//        // Seed Nationalities
+//        var nationalityPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Nationality.json");
+//        await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
 
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(ex.ToString());
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-    }
-}
+//    }
+//    catch (Exception ex)
+//    {
+//        Console.WriteLine(ex.ToString());
+//        var logger = services.GetRequiredService<ILogger<Program>>();
+//        logger.LogError(ex, "An error occurred while seeding the database.");
+//    }
+//}
 
 
 

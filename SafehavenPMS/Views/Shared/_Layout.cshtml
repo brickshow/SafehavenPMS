@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/line-awesome/1.3.0/line-awesome/css/line-awesome.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+    @* Link to table css *@
+    <link href="~/css/table-design.css" rel="stylesheet" />
+
     @* Injecting Fullcalendar Via CDN *@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
 
@@ -65,7 +68,7 @@
             </li>
             <!-- Medication -->
             <li class="navigation">
-                <a asp-controller="Records" asp-action="Index">
+                <a asp-controller="Medication" asp-action="Index">
                     <i class='bx bxs-capsule'></i>
                     <span class="link_name">Medication</span>
                 </a>
