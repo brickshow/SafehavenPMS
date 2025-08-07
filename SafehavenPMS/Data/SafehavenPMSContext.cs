@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using SafehavenPMS.Models;
 
 namespace SafehavenPMS.Data
@@ -14,6 +15,10 @@ namespace SafehavenPMS.Data
         public DbSet<ClinicalStaff> ClinicalStaffs { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
+        public DbSet<Availability> Availabilities { get; set; }
+        public DbSet<AvailabilityDay> AvailabilityDays { get; set; }
+
+        public DbSet<TimeSlot> TimeSlots { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +50,20 @@ namespace SafehavenPMS.Data
                 .WithMany()
                 .HasForeignKey(c => c.AddressID) // Explicitly map AddressID
                 .OnDelete(DeleteBehavior.Restrict);
+
+            //Configure relationshio between entities for appoinment
+            modelBuilder.Entity<TimeSlot>()
+                .HasOne(t => t.Day)
+                .WithMany(t => t.TimeSlots)
+                .HasForeignKey(d => d.DayId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<AvailabilityDay>()
+                .HasOne(a => a.Availability)
+                .WithMany(a => a.Days)
+                .HasForeignKey(d => d.AvailabilityId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
 
             // Global safeguard: Disable all cascade deletes
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))

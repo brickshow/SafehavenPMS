@@ -875,3 +875,27 @@ body {
     border-radius: 4px;
     padding: 0.25rem 2rem 0.25rem 0.5rem;
 }
+
+/*form modal*/
+/* Custom class for right-side modal */
+.right-modal .modal-dialog {
+    position: fixed;
+    right: 0;
+    margin: 0;
+    height: 100%;
+    max-width: 500px; /* adjust width as needed */
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.right-modal.show .modal-dialog {
+    transform: translateX(0);
+}
+
+.modal-dialog-slideout {
+    margin: 0;
+    height: 100vh;
+    width: 100%;
+    max-width: 480px;
+    pointer-events: auto;
+}

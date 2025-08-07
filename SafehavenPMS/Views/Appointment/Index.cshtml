@@ -104,44 +104,7 @@
     </div>
 </div>
 
-@* Calendar for picking appointment dates with Flatpickr *@
-<div id="calendarPopover" class="d-none position-absolute bg-white shadow border rounded p-3" style="z-index: 1050; width: 520px;">
-
-    <div class="d-flex">
-        <!-- Calendar Section -->
-        <div class="pe-4 border-end" style="width: 260px;">
-            <label class="form-label fw-semibold mb-2">Select Date</label>
-            <input type="text" id="appointmentDate" class="form-control mb-3" placeholder="Pick a date">
-        </div>
-
-        @* Time Selection Section *@
-        <div class="ps-4 flex-grow-1">
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Start and End Time</label>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary">04:00 AM</button>
-                    <button class="btn btn-outline-secondary">05:00 PM</button>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Available Times</label>
-                <div class="available-times d-flex flex-wrap gap-2">
-                    @* Time buttons will be added dynamically *@
-                </div>
-                <small class="text-muted d-block mt-2 no-times-msg">No available times found</small>
-            </div>
-
-            <div class="text-end">
-                <button class="btn btn-custom btn-primary">Confirm</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-<div class="container-fluid">
+<div class="container-fluid mt-0">
     @* Content Header *@
     <div class="header d-flex justify-content-between">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -201,29 +164,6 @@
             border-bottom: 3px solid #00A3B4;
             font-weight: bold;
         }
-
-    /* Custom class for right-side modal */
-    .right-modal .modal-dialog {
-        position: fixed;
-        right: 0;
-        margin: 0;
-        height: 100%;
-        max-width: 480px; /* adjust width as needed */
-        transform: translateX(100%);
-        transition: transform 0.3s ease-in-out;
-    }
-
-    .right-modal.show .modal-dialog {
-        transform: translateX(0);
-    }
-
-    .modal-dialog-slideout {
-        margin: 0;
-        height: 100vh;
-        width: 100%;
-        max-width: 480px;
-        pointer-events: auto;
-    }
 </style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

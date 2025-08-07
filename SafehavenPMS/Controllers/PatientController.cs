@@ -426,7 +426,11 @@ namespace SafehavenPMS.Controllers
             return View(viewModel);
         }
 
+        public IActionResult Edit(int Id)
+        {
 
+            return View();
+        }
 
         //    //Action View for adding new patient
         //    public IActionResult AddPatientStep1()
