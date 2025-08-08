@@ -478,11 +478,9 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index");
         }
 
-        //Action to add profile pic
-        public IActionResult AddProfilePhoto()
-        {
-            //Returns the view for adding a profile photo.
-            return View();
-        }
+        //Action for adding new staff availability
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public Task<IActionResult> SaveAvailability([FromBody] )
     }
 }
