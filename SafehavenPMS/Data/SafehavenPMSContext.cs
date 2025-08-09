@@ -13,7 +13,6 @@ namespace SafehavenPMS.Data
 
         public DbSet<Patient> Patients { get; set; }
         public DbSet<ClinicalStaff> ClinicalStaffs { get; set; }
-        public DbSet<Address> Addresses { get; set; }
         public DbSet<ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
         public DbSet<Availability> Availabilities { get; set; }
         public DbSet<AvailabilityDay> AvailabilityDays { get; set; }
@@ -38,31 +37,26 @@ namespace SafehavenPMS.Data
                 .HasForeignKey(cp => cp.ClinicalStaffId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure Address relationships with explicit foreign key
-            modelBuilder.Entity<Patient>()
-                .HasOne(p => p.Address)
-                .WithMany()
-                .HasForeignKey(p => p.AddressID) // Explicitly map AddressID
-                .OnDelete(DeleteBehavior.Restrict);
-
+            // ClinicalStaff → Availability
             modelBuilder.Entity<ClinicalStaff>()
-                .HasOne(c => c.Address)
-                .WithMany()
-                .HasForeignKey(c => c.AddressID) // Explicitly map AddressID
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasMany(c => c.Availabilities)
+                .WithOne(a => a.ClinicalStaff)
+                .HasForeignKey(a => a.ClinicalStaffId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            //Configure relationshio between entities for appoinment
-            modelBuilder.Entity<TimeSlot>()
-                .HasOne(t => t.Day)
-                .WithMany(t => t.TimeSlots)
-                .HasForeignKey(d => d.DayId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<AvailabilityDay>()
-                .HasOne(a => a.Availability)
-                .WithMany(a => a.Days)
+            // Availability → AvailabilityDay
+            modelBuilder.Entity<Availability>()
+                .HasMany(a => a.Days)
+                .WithOne(d => d.Availability)
                 .HasForeignKey(d => d.AvailabilityId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // AvailabilityDay → TimeSlot
+            modelBuilder.Entity<AvailabilityDay>()
+                .HasMany(d => d.TimeSlots)
+                .WithOne(ts => ts.Day)
+                .HasForeignKey(ts => ts.DayId)
+                .OnDelete(DeleteBehavior.Cascade);
 
 
             // Global safeguard: Disable all cascade deletes

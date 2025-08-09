@@ -6,5 +6,6 @@ namespace SafehavenPMS.ViewModel
     {
         public List<ClinicalStaff> Staffs { get; set; }
         public List<Patient> Patients { get; set; }
+        public AvailabilityViewModel Availability { get; set; }
     }
 }

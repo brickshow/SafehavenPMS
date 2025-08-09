@@ -18,6 +18,9 @@ namespace SafehavenPMS.Models
         [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }//Not required
 
+        //Clinical staff foreign key
+        public int ClinicalStaffId { get; set; }
+        public ClinicalStaff ClinicalStaff { get; set; }
         // Navigation property
         public ICollection<AvailabilityDay> Days { get; set; }
     }
