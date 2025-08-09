@@ -1,0 +1,83 @@
+﻿@model SafehavenPMS.ViewModel.AvailabilityViewModel
+
+<div id="calendar-modal" class="modal fade right-modal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-slideout">
+        <div class="modal-content border-0 shadow h-100 d-flex flex-column">
+   
+            @* Modal Header *@
+            <div class="modal-header bg-white border-bottom">
+                <i class='bx bx-calendar-check fs-4 me-2'></i>
+                <h5 class="modal-title fw-bold mb-0">Add Availability</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            @* Scrollable Body *@
+            <div class="modal-body overflow-auto flex-grow-1">
+                <form id="availability-form"
+                      asp-controller="Appointment"
+                      asp-action="AddAvailabilityDate"
+                      method="post">
+
+                    <!-- Title -->
+                    <div class="col-md-12 d-flex flex-column align-items-start p-2">
+                        <label asp-for="Title" class="form-label mb-0 me-2 text-nowrap">Title</label>
+                        <input asp-for="Title" type="text" class="form-control flex-grow-1 uniform-input" id="availability-title" />
+                        <span class="text-danger" id="title-error"></span>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="row p-2">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StartDate" class="form-label mb-0 me-2 text-nowrap">Start Date</label>
+                            <input asp-for="StartDate" type="date" class="form-control uniform-input" id="start-date" />
+                            <span class="text-danger" id="start-date-error"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EndDate" class="form-label mb-0 me-2 text-nowrap">End Date</label>
+                            <input asp-for="EndDate" type="date" class="form-control uniform-input" id="end-date" />
+                            <span class="text-danger" id="end-date-error"></span>
+                        </div>
+                    </div>
+                </form>
+
+                @* Weekdays Container *@
+                <div class="p-2" id="weekdays-container">
+                    @* Weekday sections will be dynamically generated here *@
+                </div>
+            </div>
+
+            @* Footer pinned at the bottom *@
+            <div class="modal-footer bg-white border-top">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" onclick="saveAvailability()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function trySubmit() {
+        const start = document.getElementById('start-date').value;
+        const end = document.getElementById('end-date').value;
+
+        if (start) {
+            if (end) {
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+
+                if (endDate < startDate) {
+                    document.getElementById('end-date-error').textContent =
+                        'End date must be after or equal to start date';
+                    return;
+                } else {
+                    document.getElementById('end-date-error').textContent = '';
+                }
+            }
+            document.getElementById('availability-form').submit();
+        }
+    }
+
+    document.getElementById('start-date').addEventListener('change', trySubmit);
+    document.getElementById('end-date').addEventListener('change', trySubmit);
+</script>
