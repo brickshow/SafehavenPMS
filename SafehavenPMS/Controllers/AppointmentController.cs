@@ -124,5 +124,11 @@ namespace SafehavenPMS.Controllers
                 return Json(new { success = false, message = "An error occurred while saving availability" });
             }
         }
+
+        //[HttpGet]
+        //public async Task<IActionResult> ScheduleAppointment()
+        //{
+        //    return 
+        //}
     }
 }

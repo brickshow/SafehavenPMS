@@ -66,6 +66,7 @@
     <hr class="mt-0 mb-2" />
 </div>
 
+
 <!-- Table Container -->
 <div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     @if (TempData["SuccessMessage"] != null)
@@ -205,7 +206,9 @@
                                         </li>
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                               href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">
+                                               href="#"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#appointment-modal">
                                                 <span class="badge-dot bg-warning"></span>
                                                 Schedule Initial Assessment
                                             </a>
@@ -227,8 +230,6 @@
                                     </ul>
                                 </div>
                             </td>
-
-                            
                         </tr>
                         rowNum++;
                     }
@@ -272,6 +273,8 @@
         </div>
     </div>
 </div>
+
+@await Html.PartialAsync("_AddAppointmentModal")
 
 <style>
     .table-header {
@@ -365,3 +368,25 @@
     }
 
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalEl = document.getElementById('appointment-modal');
+        var modal = new bootstrap.Modal(modalEl);
+
+        // If state is stored, reopen modal
+        if (localStorage.getItem('appointmentModalOpen') === 'true') {
+            modal.show();
+        }
+
+        // When modal opens
+        modalEl.addEventListener('shown.bs.modal', function () {
+            localStorage.setItem('appointmentModalOpen', 'true');
+        });
+
+        // When modal closes
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            localStorage.setItem('appointmentModalOpen', 'false');
+        });
+    });
+</script>

@@ -300,8 +300,7 @@ namespace SafehavenPMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var staff = await _context.ClinicalStaffs
-                .Include(s => s.Address)
+            var staff = await _context.ClinicalStaffs   
                 .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
 
             if (staff == null)
