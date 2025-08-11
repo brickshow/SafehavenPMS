@@ -7,6 +7,14 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/line-awesome/1.3.0/line-awesome/css/line-awesome.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    @* SweetAlert2 for better notifications *@
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Select2 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     @* Injecting Fullcalendar Via CDN *@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
@@ -58,7 +66,7 @@
             </li>
             <!-- Doctor Schedule -->
             <li class="navigation">
-                <a asp-controller="Appointment" asp-action="Index">
+                <a asp-controller="Appointments" asp-action="Index">
                     <i class='bx bxs-calendar-event'></i>
                     <span class="link_name">Doctor Schedule</span>
                 </a>
@@ -182,30 +190,19 @@
 
 
 <script>
-    // Show loader on form submission
     document.addEventListener('submit', function (e) {
         var overlay = document.getElementById('loadingOverlay');
-        if (overlay) {
+
+        // Check if the form being submitted is inside a modal
+        var form = e.target;
+        var isModalForm = form.closest('.modal') !== null;
+
+        // Only show loader if it's not a modal form
+        if (overlay && !isModalForm) {
             overlay.style.display = 'flex';
         }
     }, true);
 
-    // Show loader on anchor link clicks (navigation)
-    // document.addEventListener('click', function (e) {
-    //     const target = e.target.closest('a');
-
-    //     Only handle links inside the app (not external or with target="_blank")
-    //     if (target && target.href && !target.target && target.hostname === location.hostname) {
-    //         const overlay = document.getElementById('loadingOverlay');
-
-    //         Exclude anchor links with href starting with #
-    //         if (!target.getAttribute('href').startsWith('#')) {
-    //             overlay.style.display = 'flex';
-    //         }
-    //     }
-    // }, true);
-
-    // Optional: Hide loader if the page is staying due to error or client-side redirect (debugging use)
     window.addEventListener('pageshow', function () {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) overlay.style.display = 'none';

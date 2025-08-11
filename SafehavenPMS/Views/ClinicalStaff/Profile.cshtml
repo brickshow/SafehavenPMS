@@ -79,6 +79,12 @@
 
 @await Html.PartialAsync("_AvailabilityModal", Model.Availability)
 
+@* Show toast notification *@
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="toast-container" aria-live="polite" aria-atomic="true" class="bg-transparent"></div>
+</div>
+
+
 <style>
     .card {
         border: 1px solid #e9ecef;

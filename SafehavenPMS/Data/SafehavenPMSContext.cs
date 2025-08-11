@@ -41,7 +41,7 @@ namespace SafehavenPMS.Data
             modelBuilder.Entity<ClinicalStaff>()
                 .HasMany(c => c.Availabilities)
                 .WithOne(a => a.ClinicalStaff)
-                .HasForeignKey(a => a.ClinicalStaffId)
+                .HasForeignKey(a => a.ClinicalStaffID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Availability → AvailabilityDay

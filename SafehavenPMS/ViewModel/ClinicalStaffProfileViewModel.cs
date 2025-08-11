@@ -1,11 +1,11 @@
-﻿using SafehavenPMS.Models;
+﻿    using SafehavenPMS.Models;
 
-namespace SafehavenPMS.ViewModel
-{
-    public class ClinicalStaffProfileViewModel
+    namespace SafehavenPMS.ViewModel
     {
-        public List<ClinicalStaff> Staffs { get; set; }
-        public List<Patient> Patients { get; set; }
-        public AvailabilityViewModel Availability { get; set; }
+        public class ClinicalStaffProfileViewModel
+        {
+            public List<ClinicalStaff> Staffs { get; set; }
+            public List<Patient> Patients { get; set; }
+            public List<AvailabilityViewModel> Availability { get; set; } = new();
+        }
     }
-}

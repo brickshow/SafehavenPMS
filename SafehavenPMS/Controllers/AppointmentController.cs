@@ -4,89 +4,125 @@ using SafehavenPMS.Data;
 using SafehavenPMS.Helpers;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 
 namespace SafehavenPMS.Controllers
 {
     public class AppointmentController : Controller
     {
-        //Inject Context or services if needed
         private readonly SafehavenPMSContext _context;
 
-        //Constructor
         public AppointmentController(SafehavenPMSContext context)
         {
             _context = context;
         }
-        public IActionResult AddAvailabilityDate(AvailabilityViewModel model)
+
+        [HttpPost]
+        public async Task<IActionResult> AddAvailabilityDate([FromBody] AvailabilityViewModel request)
         {
-            // Check validation
-            foreach (var entry in ModelState)
+            try
             {
-                var key = entry.Key;
-                var errors = entry.Value.Errors;
-                foreach (var error in errors)
+                // Validate the request
+                if (string.IsNullOrEmpty(request.Title))
                 {
-                    Console.WriteLine($"Field: {key} - Error: {error.ErrorMessage}");
+                    return Json(new { success = false, message = "Title is required" });
                 }
+
+                if (request.StartDate < DateTime.Now)
+                {
+                    return Json(new { success = false, message = "The start date must be today or in the future" });
+                }
+
+                if (request.StartDate == default(DateTime))
+                {
+                    return Json(new { success = false, message = "Start date is required" });
+                }
+
+                if (!request.NoEndDate && request.EndDate == null)
+                {
+                    return Json(new { success = false, message = "End date is required unless 'No end date' is checked" });
+                }
+
+                if (!request.NoEndDate && request.EndDate <= request.StartDate)
+                {
+                    return Json(new { success = false, message = "End date must be after start date" });
+                }
+
+                if (request.Days == null || !request.Days.Any())
+                {
+                    return Json(new { success = false, message = "At least one day with time slots must be selected" });
+                }
+
+                // Create the main Availability record
+                var availability = new Availability
+                {
+                    Title = request.Title,
+                    StartDate = request.StartDate,
+                    EndDate = request.NoEndDate ? null : request.EndDate,
+                    ClinicalStaffID = request.ClinicalStaffID,
+                    Days = new List<AvailabilityDay>()
+                };
+
+                // Process each selected day
+                foreach (var dayRequest in request.Days)
+                {
+                    if (dayRequest.TimeSlots == null || !dayRequest.TimeSlots.Any())
+                        continue; // Skip days without time slots
+
+                    var availabilityDay = new AvailabilityDay
+                    {
+                        DayName = dayRequest.DayName,
+                        TimeSlots = new List<TimeSlot>()
+                    };
+
+                    // Process time slots for this day
+                    foreach (var timeSlotRequest in dayRequest.TimeSlots)
+                    {
+                            if (timeSlotRequest.EndTime > timeSlotRequest.StartTime) // Validate that end time is after start time
+                            {
+                                var timeSlot = new TimeSlot
+                                {
+                                    StartTime = timeSlotRequest.StartTime,
+                                    EndTime = timeSlotRequest.EndTime
+                                };
+                                availabilityDay.TimeSlots.Add(timeSlot);
+                            }
+                       
+                    }
+
+                    // Only add the day if it has valid time slots
+                    if (availabilityDay.TimeSlots.Any())
+                    {
+                        availability.Days.Add(availabilityDay);
+                    }
+                }
+
+                // Final validation - make sure we have at least one day with time slots
+                if (!availability.Days.Any())
+                {
+                    return Json(new { success = false, message = "At least one day with valid time slots must be selected" });
+                }
+
+                if (!_context.ClinicalStaffs.Any(cs => cs.ClinicalStaffID == request.ClinicalStaffID))
+                {
+                    ModelState.AddModelError("", "Invalid Clinical Staff ID");
+                    return View(request);
+                }
+
+                // Save to database
+                _context.Availabilities.Add(availability); // Replace with your actual DbSet name
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Availability saved successfully" });
             }
-
-            // Debug: print model as JSON
-            string json = System.Text.Json.JsonSerializer.Serialize(model, new JsonSerializerOptions
+            catch (Exception ex)
             {
-                WriteIndented = true // makes JSON pretty
-            });
-            Console.WriteLine(json);
+                // Log the exception (use your logging framework)
+                // _logger.LogError(ex, "Error saving availability");
 
-            // Save in session
-            HttpContext.Session.SetObject<AvailabilityViewModel>("AddAvailabilityDate", model);
-
-            return RedirectToAction("Index", "ClinicalStaff"); // fixed parameter order
-        }
-        //[HttpPost]
-        //public async Task<IActionResult> SaveAvailability([FromBody] AvailabilityViewModel model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    if (model.EndDate < model.StartDate)
-        //    {
-        //        return BadRequest(new { message = "End date must be after or equal to start date." });
-        //    }
-
-        //    try
-        //    {
-        //        foreach (var day in model.Days.Where(d => d.IsAvailable))
-        //        {
-        //            foreach (var slot in day.TimeSlots)
-        //            {
-        //                if (slot.StartTime == default || slot.EndTime == default)
-        //                    continue;
-
-        //                var availability = new SafehavenPMS.Models.Availability
-        //                {
-        //                    Title = model.Title,
-        //                    StartDate = model.StartDate,
-        //                    EndDate = model.EndDate ?? model.StartDate, // Fallback to StartDate if EndDate is null
-        //                };
-
-        //                _context.Availabilities.Add(availability);
-        //            }
-        //        }
-
-        //        await _context.SaveChangesAsync();
-        //        return Ok(new { message = "Availability saved successfully" });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { message = "An error occurred while saving availability", error = ex.Message });
-        //    }
-        //}
-        public IActionResult Index()
-        {
-            return View();
+                return Json(new { success = false, message = "An error occurred while saving availability" });
+            }
         }
     }
 }

@@ -18,8 +18,10 @@ namespace SafehavenPMS.Models
         [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }//Not required
 
+        public bool NoEndDate { get; set; } // Indicates if the availability has no end date
+
         //Clinical staff foreign key
-        public int ClinicalStaffId { get; set; }
+        public int ClinicalStaffID { get; set; }
         public ClinicalStaff ClinicalStaff { get; set; }
         // Navigation property
         public ICollection<AvailabilityDay> Days { get; set; }
@@ -33,6 +35,7 @@ namespace SafehavenPMS.Models
 
         [Required]
         public string DayName { get; set; } // e.g., "Monday", "Tuesday"
+        public bool IsAvailable { get; set; }
 
         // Foreign key
         public int AvailabilityId { get; set; }

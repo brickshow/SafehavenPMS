@@ -138,16 +138,46 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("Index"); // or wherever appropriate
             }
 
+            // Map availabilities from DB into ViewModel list
+            var availabilities = await _context.Availabilities
+                .Where(a => a.ClinicalStaffID == id)
+                .Include(a => a.Days)
+                    .ThenInclude(d => d.TimeSlots)
+                .Select(a => new AvailabilityViewModel
+                {
+                    ClinicalStaffID = a.ClinicalStaffID,
+                    Title = a.Title,
+                    StartDate = a.StartDate,
+                    EndDate = a.EndDate,
+                    NoEndDate = a.NoEndDate,
+                    Days = a.Days.Select(d => new DayAvailabilityViewModel
+                    {
+                        DayId = d.DayId,
+                        DayName = d.DayName,
+                        IsAvailable = d.IsAvailable,
+                        TimeSlots = d.TimeSlots.Select(ts => new TimeSlotViewModel
+                        {
+                            TimeSlotId = ts.TimeSlotId,
+                            StartTime = ts.StartTime,
+                            EndTime = ts.EndTime
+                        }).ToList()
+                    }).ToList()
+                })
+                .ToListAsync();
+
             // Build the view model
             var viewModel = new ClinicalStaffProfileViewModel
             {
-                Staffs = new List<ClinicalStaff> { staff }, // Staffs expects a list
+                Staffs = new List<ClinicalStaff> { staff },
                 Patients = staff.ClinicalStaffPatients
                                 .Select(csp => csp.Patient)
                                 .Distinct()
-                                .ToList()
+                                .ToList(),
+                Availability = availabilities // pass the populated list here
             };
 
+            
+            ViewBag.ClinicalStaffId = id;
             return View(viewModel);
         }
 
@@ -453,9 +483,11 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index");
         }
 
-        ////Action for adding new staff availability
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public Task<IActionResult> SaveAvailability([FromBody] )
+        //Action for adding new staff availability
+        [HttpGet]
+        public IActionResult SaveAvailability()
+        {
+            return PartialView("_Availability");
+        }
     }
 }
