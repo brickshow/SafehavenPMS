@@ -174,4 +174,8 @@
                 alert('Error loading availability.'); // Show alert to user
             });
     });
+
+    function loadPatientInfo(id){
+        fetch(`/Appointment/GetDetails?id=${patientId}`)
+    }
 </script>

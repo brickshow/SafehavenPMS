@@ -127,7 +127,41 @@ namespace SafehavenPMS.Controllers
                 return Json(new { success = false, message = "An error occurred while saving availability" });
             }
         }
+        //Action for getting Patient name and staff name
+        [HttpGet]
+        public async Task<IActionResult> GetDetails(int id)
+        {
+            //Filter patient information
+            var patient = await _context.Patients
+                                .Where(p => p.PatientId == id)
+                                .FirstOrDefaultAsync();
 
+            //Check if patient is null
+            if (patient == null)
+                return Json(new List<string>());//Return empty if patient is null
+
+            //Get the specific data to pass in view using json
+            string patientName = $"{patient.Firstname} {patient.Lastname}";
+
+            // Staff name (assuming only one staff per patient)
+            var staff = patient.ClinicalStaffPatients
+                .Select(csp => csp.ClinicalStaff)
+                .FirstOrDefault();
+
+            string staffName = staff != null
+                ? $"{staff.Firstname} {staff.Lastname}"
+                : "No staff assigned";
+
+            // Return JSON object
+            return Json(new
+            {
+                success = true,
+                patientName,
+                staffName
+            });
+        }
+
+        //Action for getting availability time 
         [HttpGet]
         public async Task<IActionResult> GetAvailabilityTime(int id, DateTime date)
         {
@@ -148,6 +182,8 @@ namespace SafehavenPMS.Controllers
 
                 //Set staff ID based on patient query
                 int staffId = patient.ClinicalStaffId;
+                string patientname = $"{patient.Patient.Firstname} {patient.Patient.Lastname}";
+                string staffName = $"{patient.ClinicalStaff.Firstname} {patient.ClinicalStaff.Lastname}";
 
                 // Step 2: Get the day of the week for the provided date
                 var dayOfWeek = date.ToString("dddd"); // e.g., "Monday"
@@ -198,8 +234,7 @@ namespace SafehavenPMS.Controllers
                 {
                     success = true,
                     timeSlots,
-                    patientName = $"{patient.Patient.Firstname} {patient.Patient.Lastname}",
-                    staffName = $"{patient.ClinicalStaff.Firstname} {patient.ClinicalStaff.Lastname}"
+                    patientName = patientname, //Passing patient name to view for auto fill feature
                 });
             }
             catch (Exception ex)
