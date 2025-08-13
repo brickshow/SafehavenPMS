@@ -52,29 +52,74 @@
 </style>
 
 <script>
+    // Wait until the entire HTML document is loaded before running this script
     document.addEventListener('DOMContentLoaded', function () {
+        // Find the calendar container element by ID
         var calendarEl = document.getElementById('appointmentCalendar');
 
+        // Create a new FullCalendar instance
         var calendar = new FullCalendar.Calendar(calendarEl, {
+            // Set the default calendar view to a full month
             initialView: 'dayGridMonth',
-            height: 'auto',
-            events: '/Appointments/GetAppointments', // URL to your controller action
+            height: 'auto', // Let the calendar adjust its height automatically
+
+            // Load events from your controller (must return JSON)
+            events: '/Appointments/GetAppointments',
+
+            // Setup header toolbar buttons
             headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                left: 'prev,next today', // navigation buttons
+                center: 'title',         // current month/year title
+                right: 'dayGridMonth,timeGridWeek,timeGridDay' // view toggle buttons
             },
-            selectable: true,
+
+            selectable: true, // allow selecting dates on the calendar
+
+            // When a calendar day is clicked
             dateClick: function(info) {
-                alert('Clicked date: ' + info.dateStr);
-                // Optionally open a modal to create a new appointment
+                const selectedDate = info.dateStr; // the date clicked in YYYY-MM-DD format
+
+                // Initialize Flatpickr on the date input inside the modal
+                const flatpickrInstance = flatpickr("#appointmentDateModal", {
+                    defaultDate: selectedDate,  // pre-fill the clicked date
+                    dateFormat: "Y-m-d"         // keep format consistent with the backend
+                });
+
+                // Manually update Flatpickr to ensure it's using the clicked date
+                flatpickrInstance.setDate(selectedDate, true);
+
+                // Open the Bootstrap modal with ID 'calendar-modal'
+                var modal = new bootstrap.Modal(document.getElementById('calendar-modal'));
+                modal.show();
             },
+
+            // When an event (appointment) is clicked
             eventClick: function(info) {
-                alert('Appointment: ' + info.event.title);
-                // Optionally open a modal to edit/cancel appointment
+                alert('Appointment: ' + info.event.title); // show the title in a popup
+                // You can replace this with opening an "Edit" modal instead
+            },
+
+            // Highlight today's cell in the calendar (in dayGridMonth view)
+            dayCellDidMount: function (info) {
+                const today = new Date();       // get today's date
+                const cellDate = info.date;     // the date for the current cell
+
+                // Check if this cell is today (compare only year, month, day)
+                if (
+                    cellDate.getFullYear() === today.getFullYear() &&
+                    cellDate.getMonth() === today.getMonth() &&
+                    cellDate.getDate() === today.getDate()
+                ) {
+                    // Apply custom styles to visually highlight today
+                    info.el.style.backgroundColor = '#fff4e5';  // light teal background
+                    info.el.style.border = '2px solid #00A3B4'; // border to emphasize
+                    info.el.style.borderRadius = '8px';         // rounded corners
+                }
             }
         });
 
+        // Finally, render the calendar to the page
         calendar.render();
     });
+
 </script>

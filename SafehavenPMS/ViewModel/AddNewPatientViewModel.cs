@@ -37,7 +37,7 @@ namespace SafehavenPMS.ViewModel
         public DateTime DateOfReferral { get; set; }
         public string? ReferredBy { get; set; }
         public string? Affiliation { get; set; }
-        public IFormFile Filename { get; set; }
+        public IFormFile? Filename { get; set; }
         public string? PhotoUrl { get; set; }
 
         public string House_Unit { get; set; }

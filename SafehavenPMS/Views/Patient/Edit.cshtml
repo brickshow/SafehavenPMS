@@ -1,7 +1,7 @@
 ﻿@model SafehavenPMS.ViewModel.AddNewPatientViewModel
 
 @{
-    ViewBag.Title = "Add Patient";
+    ViewBag.Title = "Edit Patient";
 }
 
 
@@ -143,7 +143,7 @@
                     </div>
                     <button type="button" class="change-picture-btn btn-outline-secondary btn-sm ms-3" onclick="document.getElementById('imageInput').click()">Upload Photo</button>
                     <div class="d-flex flex-column uniform-input flex-grow-1">
-                        <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="Filename">
+                             input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="Filename">
                         <span asp-validation-for="Filename" class="text-danger"></span>
                     </div>
                 </div>
@@ -169,8 +169,8 @@
                             <label asp-for="House_Unit" class="form-label mb-0 me-2" style="width: 110px;">House No./Unit</label>
                             <div class="d-flex flex-column uniform-input flex-grow-1">
                                 <input asp-for="House_Unit" type="text" class="form-control flex-grow-1 uniform-input" />
-                            <span asp-validation-for="House_Unit" class="text-danger"></span>
-                           </div>
+                                <span asp-validation-for="House_Unit" class="text-danger"></span>
+                            </div>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Street" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Street</label>
@@ -184,7 +184,7 @@
                             <div class="d-flex flex-column uniform-input flex-grow-1">
                                 <input asp-for="Subdivision_Village" type="text" class="form-control flex-grow-1 uniform-input" />
                                 <span asp-validation-for="Subdivision_Village" class="text-danger"></span>
-                           </div>
+                            </div>
                         </div>
                     </div>
 
@@ -208,7 +208,7 @@
                             <div class="d-flex flex-column uniform-input flex-grow-1">
                                 <input asp-for="Province" type="text" class="form-control flex-grow-1 uniform-input" />
                                 <span asp-validation-for="Province" class="text-danger"></span>
-                          </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -235,14 +235,14 @@
                                 <div class="d-flex flex-column uniform-input flex-grow-1">
                                     <input asp-for="DateOfReferral" type="date" class="form-control flex-grow-1 uniform-input" />
                                     <span asp-validation-for="DateOfReferral" class="text-danger"></span>
-                               </div>
+                                </div>
                             </div>
                             <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                                 <label asp-for="ReferredBy" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Referred By</label>
                                 <div class="d-flex flex-column uniform-input flex-grow-1">
                                     <input asp-for="ReferredBy" type="text" class="form-control flex-grow-1 uniform-input" />
                                     <span asp-validation-for="ReferredBy" class="text-danger"></span>
-                               </div>
+                                </div>
                             </div>
                             <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                                 <label asp-for="Affiliation" class="form-label mb-0 me-2" style="width: 110px;">Affiliation</label>

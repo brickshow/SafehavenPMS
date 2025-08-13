@@ -66,6 +66,7 @@
     <hr class="mt-0 mb-2" />
 </div>
 
+
 <!-- Table Container -->
 <div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     @if (TempData["SuccessMessage"] != null)
@@ -127,7 +128,7 @@
             <thead class="table-light">
                 <tr>
                     <th>No.</th>
-                    <th>Patient ID</th>
+                    @* <th>Patient ID</th> *@
                     <th>Name</th>
                     <th>Sex</th>
                     <th>Status</th>
@@ -149,31 +150,31 @@
                     {
                         <tr>
                             <td>@rowNum</td>
-                            <td>@patient.PatientId</td>
+                            @* <td>@patient.PatientId</td> *@
                             <td><strong>@patient.Firstname @patient.Lastname</strong></td>
                             <td>@patient.Sex</td>
                             <td class="p-0 m-0 align-middle">
                                 @if (patient.PatientStatus == "Active")
                                 {
-                                    <div style="background-color:#CBE5DC; border-radius:30px; width:50%; margin:0; padding:0;">
+                                    <div style="background-color:#CBE5DC; border-radius:30px; width:110px; margin:0; padding:0;">
                                         <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
                                     </div>
                                 }
                                 @if (patient.PatientStatus == "Waitlisted")
                                 {
-                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:50%; margin:0; padding:0;">
+                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:110px; margin:0; padding:0;">
                                         <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
                                     </div>
                                 }
                                 @if (patient.PatientStatus == "Pending Assesment")
                                 {
-                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:50%; margin:0; padding:0;">
+                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:110px; margin:0; padding:0;">
                                         <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
                                     </div>
                                 }
                                 @if (patient.PatientStatus == "Pending Approval")
                                 {
-                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:50%; margin:0; padding:0;">
+                                    <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:110px; margin:0; padding:0;">
                                         <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
                                     </div>
                                 }
@@ -205,7 +206,10 @@
                                         </li>
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                               href="@Url.Action("Edit", "Patient", new { id = patient.PatientId })">
+                                               href="#"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#appointment-modal"
+                                               onclick="setPatientId(@patient.PatientId)">
                                                 <span class="badge-dot bg-warning"></span>
                                                 Schedule Initial Assessment
                                             </a>
@@ -227,8 +231,6 @@
                                     </ul>
                                 </div>
                             </td>
-
-                            
                         </tr>
                         rowNum++;
                     }
@@ -240,7 +242,7 @@
     <div class="bot-content py-3">
         <div class="d-flex justify-content-between align-items-center px-3">
             <div style="opacity:.5;">
-                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalStaffCount ?? 0)</span>
+                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalPatientCount ?? 0)</span>
             </div>
             <nav aria-label="Clinical staff list pagination">
                 <ul class="pagination mb-0">
@@ -272,6 +274,8 @@
         </div>
     </div>
 </div>
+
+@await Html.PartialAsync("_AddAppointmentModal")
 
 <style>
     .table-header {
@@ -365,3 +369,11 @@
     }
 
 </style>
+
+<script>
+    //Function to pass and set ID to modal
+    function setPatientId(id) {
+       console.log("Setting patientId:", id);
+       document.getElementById('patientId').value = id;
+     }
+</script>

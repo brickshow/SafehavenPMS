@@ -1,0 +1,177 @@
+﻿
+<!-- Updated modal in your Layout file -->
+<div id="appointment-modal" class="modal fade right-modal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-slideout">
+        <div class="modal-content border-0 shadow h-100 d-flex flex-column">
+            <!-- Modal Header -->
+            <div class="modal-header bg-white border-bottom">
+                <div class="d-flex align-items-center">
+                    <i class='bx bx-calendar-check fs-4 me-2 text-primary'></i>
+                    <h5 class="modal-title fw-bold mb-0">Schedule Appointment</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body overflow-auto flex-grow-1">
+                <form id="appointment-form" asp-controller="Appointment" asp-action="ScheduleAssessment" method="post">
+                    <!-- Hidden field for patient ID -->
+                    <input type="hidden" id="patientId" name="PatientId" />
+
+                    <div class="mb-3">
+                        <label for="appointmentDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="appointmentDate" name="AppointmentDate" required>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" id="view-availability"
+                                class="btn-custom btn-outline-primary">
+                            View Availability
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Available Time</label>
+                        <div id="time-slots" class="row g-4">
+                            <!-- dynamically filled -->
+                        </div>
+                    </div>
+
+                    @* Populated by Patient Name *@
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Patient Name</label>
+                        <input type="text" class="form-control" id="patientName" name="PatientName" disabled>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="clinicalStaff" class="form-label">Assign Clinical Staff</label>
+                        <input type="text" class="form-control" id="staffName" name="StaffName" disabled>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Visit Type</label>
+                        <select class="form-select" id="duration" name="Duration">
+                            <option>--Select--</option>
+                            <option value="Medical Assessment">Medical Assessment</option>
+                            <option value="Emergency Visit">Emergency Visit</option>
+                            <option value="Follow-Up Treatment">Follow-Up Treatment</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Add Description</label>
+                        <textarea class="form-control" id="notes" name="Notes" rows="3" placeholder="Additional notes for the assessment..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer bg-white border-top">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn-custom btn-primary" form="appointment-form">
+                    <i class='bx bx-calendar-plus me-1'></i>
+                    Schedule Appointment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .right-modal .modal-dialog-slideout {
+        min-height: 100%;
+        margin: 0 0 0 auto;
+        max-width: 500px;
+        width: 100%;
+    }
+
+    .right-modal .modal.fade .modal-dialog-slideout {
+        transform: translate(100%, 0);
+        transition: transform 0.3s ease-out;
+    }
+
+    .right-modal .modal.fade.show .modal-dialog-slideout {
+        transform: translate(0, 0);
+    }
+
+    @@media (max-width: 576px) {
+        .right-modal .modal-dialog-slideout {
+            max-width: 100%;
+            margin: 0;
+        }
+    }
+
+    .badge-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .bg-warning {
+        background-color: #FF9900;
+    }
+</style>
+
+@* Retrieve data using Ajax *@
+<script>
+         // When the "View Availability" button is clicked
+    document.getElementById('view-availability').addEventListener('click', function () {
+
+        // Get the chosen date from the input field
+        let date = document.getElementById('appointmentDate').value;
+
+        // Get the patient ID from the hidden/visible field
+        let patientId = document.getElementById('patientId').value;
+
+        // If no date is selected, show a warning and stop here
+        if (!date) {
+            alert('Please select a date first.');
+            return;
+        }
+
+        // Send a request to the server to get availability times for this patient and date
+        fetch(`/Appointment/GetAvailabilityTime?id=${patientId}&date=${date}`)
+            .then(res => res.json()) // Convert the server response to JSON
+            .then(data => { // 'data' will contain our server's result
+                // Get the time slots container in the HTML
+                let container = document.getElementById('time-slots');
+
+                // Clear any old time slots
+                container.innerHTML = '';
+
+                // Fill in patient name and staff name automatically
+                    if (data.patientName) {
+                        document.querySelector('input[name="PatientName"]').value = data.patientName;
+                    }
+                    if (data.staffName) {
+                        document.querySelector('input[name="StaffName"]').value = data.staffName;
+                    }
+
+                // If the server says "not successful" OR no time slots are found
+                if (!data.success || !data.timeSlots || data.timeSlots.length === 0) {
+                    // Show a "No availability" message
+                    container.innerHTML = '<div class="col-12 text-muted">No availability</div>';
+                    return; // Stop here
+                }
+
+                // Go through each time slot sent by the server
+                data.timeSlots.forEach(ts => {
+                    // Add a clickable time box to the container
+                    container.innerHTML += `
+                        <div class="col-md-3">
+                            <div class="time-container text-center"
+                                 style="border:1px solid Gray; border-radius:6  px; cursor:pointer;color:#069FB2">
+                                ${ts.startTime}
+                            </div>
+                        </div>`;
+                });
+            })
+            .catch(err => {
+                // If there was an error (server down, wrong data, etc.)
+                console.error(err); // Show details in browser console
+                alert('Error loading availability.'); // Show alert to user
+            });
+    });
+</script>

@@ -38,7 +38,6 @@ namespace SafehavenPMS.Controllers
         public async Task<IActionResult> Index(int? page = 1, int? pageSize = 10, string searchQuery = null, string status = null, string sortOrder = null)
         {
             var query = _context.ClinicalStaffs
-                .Include(add => add.Address)
                 .Where(d => d.IsDeleted == false)
                 .AsQueryable();
 
@@ -128,7 +127,6 @@ namespace SafehavenPMS.Controllers
         {
             // Query staff with address and assigned patients
             var staff = await _context.ClinicalStaffs
-                .Include(a => a.Address)
                 .Include(csp => csp.ClinicalStaffPatients)
                     .ThenInclude(pa => pa.Patient)
                 .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
@@ -140,16 +138,52 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("Index"); // or wherever appropriate
             }
 
+            // Map availabilities from DB into ViewModel list
+            var availabilities = await _context.Availabilities
+                .Where(a => a.ClinicalStaffID == id)
+                .Include(a => a.Days)
+                    .ThenInclude(d => d.TimeSlots)
+                .Select(a => new AvailabilityViewModel
+                {
+                    ClinicalStaffID = a.ClinicalStaffID,
+                    Title = a.Title,
+                    StartDate = a.StartDate,
+                    EndDate = a.EndDate,
+                    NoEndDate = a.NoEndDate,
+
+                    // Only include days where IsAvailable == true
+                    Days = a.Days
+                        .Where(d => d.IsAvailable)
+                        .Select(d => new DayAvailabilityViewModel
+                        {
+                            DayId = d.DayId,
+                            DayName = d.DayName,
+                            IsAvailable = d.IsAvailable,
+
+                            // Keep all time slots for available days (filter further if needed)
+                            TimeSlots = d.TimeSlots.Select(ts => new TimeSlotViewModel
+                            {
+                                TimeSlotId = ts.TimeSlotId,
+                                StartTime = ts.StartTime,
+                                EndTime = ts.EndTime
+                            }).ToList()
+                        }).ToList()
+                })
+                .ToListAsync();
+
             // Build the view model
             var viewModel = new ClinicalStaffProfileViewModel
             {
-                Staffs = new List<ClinicalStaff> { staff }, // Staffs expects a list
+                Staffs = new List<ClinicalStaff> { staff },
                 Patients = staff.ClinicalStaffPatients
                                 .Select(csp => csp.Patient)
                                 .Distinct()
-                                .ToList()
+                                .ToList(),
+                Availability = availabilities // pass the populated list here
             };
 
+            
+            ViewBag.ClinicalStaffId = id;
             return View(viewModel);
         }
 
@@ -226,26 +260,9 @@ namespace SafehavenPMS.Controllers
                 }
             }
 
-
-            //Saving Address
-            var address = new Address
-            {
-                House_Unit = model.House_Unit,
-                Street = model.Street,
-                Subdivision_Village = model.Subdivision_Village,
-                Barangay = model.Barangay,
-                City = model.City,
-                Province = model.Province
-            };
-
             //Save Clinical staff to database
             try
             {
-                //Save first the address to database to get the address ID
-                 _context.Addresses.Add(address);
-                 _context.SaveChanges();
-
-
                 //Add the Clinincal Staff Information
                 var staff = new ClinicalStaff
                 {
@@ -262,7 +279,7 @@ namespace SafehavenPMS.Controllers
                     HireDate = model.HireDate,
                     CreatedAt = DateTime.Now,
                     IsActive = true,
-                    AddressID = address.AddressID
+                    Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}"
                 };
 
                 //Save to database
@@ -289,8 +306,7 @@ namespace SafehavenPMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var staff = await _context.ClinicalStaffs
-                .Include(s => s.Address)
+            var staff = await _context.ClinicalStaffs   
                 .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
 
             if (staff == null)
@@ -311,12 +327,6 @@ namespace SafehavenPMS.Controllers
                 RPC_Licensed = staff.PRC_Licensed,
                 Email = staff.Email,
                 HireDate = staff.HireDate,
-                House_Unit = staff.Address?.House_Unit,
-                Street = staff.Address?.Street,
-                Subdivision_Village = staff.Address?.Subdivision_Village,
-                Barangay = staff.Address?.Barangay,
-                City = staff.Address?.City,
-                Province = staff.Address?.Province,
                 // ImageProfile is IFormFile and not set here (handled on POST)
                 Filename = staff.ProfilePictureURL, // Map existing image URL if needed
             };
@@ -370,33 +380,33 @@ namespace SafehavenPMS.Controllers
             existingStaff.Email = staff.Email;
             existingStaff.HireDate = staff.HireDate;
 
-            // Handle address update
-            if (existingStaff.Address != null)
-            {
-                existingStaff.Address.House_Unit = staff.House_Unit;
-                existingStaff.Address.Street = staff.Street;
-                existingStaff.Address.Subdivision_Village = staff.Subdivision_Village;
-                existingStaff.Address.Barangay = staff.Barangay;
-                existingStaff.Address.City = staff.City;
-                existingStaff.Address.Province = staff.Province;
-            }
-            else if (!string.IsNullOrEmpty(staff.House_Unit) || !string.IsNullOrEmpty(staff.Street) ||
-                     !string.IsNullOrEmpty(staff.Subdivision_Village) || !string.IsNullOrEmpty(staff.Barangay) ||
-                     !string.IsNullOrEmpty(staff.City) || !string.IsNullOrEmpty(staff.Province))
-            {
-                var newAddress = new Address
-                {
-                    House_Unit = staff.House_Unit,
-                    Street = staff.Street,
-                    Subdivision_Village = staff.Subdivision_Village,
-                    Barangay = staff.Barangay,
-                    City = staff.City,
-                    Province = staff.Province
-                };
-                _context.Addresses.Add(newAddress);
-                await _context.SaveChangesAsync();
-                existingStaff.AddressID = newAddress.AddressID;
-            }
+            //// Handle address update
+            //if (existingStaff.Address != null)
+            //{
+            //    existingStaff.Address.House_Unit = staff.House_Unit;
+            //    existingStaff.Address.Street = staff.Street;
+            //    existingStaff.Address.Subdivision_Village = staff.Subdivision_Village;
+            //    existingStaff.Address.Barangay = staff.Barangay;
+            //    existingStaff.Address.City = staff.City;
+            //    existingStaff.Address.Province = staff.Province;
+            //}
+            //else if (!string.IsNullOrEmpty(staff.House_Unit) || !string.IsNullOrEmpty(staff.Street) ||
+            //         !string.IsNullOrEmpty(staff.Subdivision_Village) || !string.IsNullOrEmpty(staff.Barangay) ||
+            //         !string.IsNullOrEmpty(staff.City) || !string.IsNullOrEmpty(staff.Province))
+            //{
+            //    var newAddress = new Address
+            //    {
+            //        House_Unit = staff.House_Unit,
+            //        Street = staff.Street,
+            //        Subdivision_Village = staff.Subdivision_Village,
+            //        Barangay = staff.Barangay,
+            //        City = staff.City,
+            //        Province = staff.Province
+            //    };
+            //    _context.Addresses.Add(newAddress);
+            //    await _context.SaveChangesAsync();
+            //    existingStaff.AddressID = newAddress.AddressID;
+            //}
 
             // Handle profile picture update
             if (staff.ImageProfile != null && staff.ImageProfile.Length > 0)
@@ -478,11 +488,11 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index");
         }
 
-        //Action to add profile pic
-        public IActionResult AddProfilePhoto()
+        //Action for adding new staff availability
+        [HttpGet]
+        public IActionResult SaveAvailability()
         {
-            //Returns the view for adding a profile photo.
-            return View();
+            return PartialView("_Availability");
         }
     }
 }

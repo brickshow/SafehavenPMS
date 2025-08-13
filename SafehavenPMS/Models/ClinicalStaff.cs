@@ -18,10 +18,11 @@ namespace SafehavenPMS.Models
         public string Email { get; set; }
         public DateTime HireDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string Address { get; set; }
         public bool IsActive { get; set; }
         public bool IsDeleted { get; set; }
-        public int AddressID { get; set; } // Foreign key from Address
-        public Address Address { get; set; }
-        public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with Patient    
+
+        public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with Patient
+        public ICollection<Availability> Availabilities { get; set; } //Navigation property
     }
 }

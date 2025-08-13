@@ -12,7 +12,7 @@
             <a href="@Url.Action("Index", "Patient")" class="me-3">
                 <i class="bx bx-reply fs-1 text-custom"></i>
             </a>
-            <img src="@(string.IsNullOrEmpty(patient?.PhotoUrl) ? "/Images/default.png" : patient?.PhotoUrl)"
+            <img src="@(string.IsNullOrEmpty(patient?.PhotoUrl) ? "/Images/default.png" : patient.PhotoUrl)"
                  class="rounded-circle me-3" style="width:60px; height:60px;" />
             <div>
                 <div class="d-flex flex-row justify-content-start align-items-center" style="gap:10px">

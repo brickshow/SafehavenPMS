@@ -4,15 +4,12 @@
     {
         //Personal Information
         public int PatientId { get; set; }
-
-        //Foreign Keys
-        public int AddressID { get; set; }//Foreign key from Address
-
         public string Firstname { get; set; }
         public string Lastname { get; set; }
         public string MiddleName { get; set; }
         public string PhoneNumber { get; set; }
         public string Sex { get; set; }
+        public string Address { get; set; }
         public DateTime DateOfBirth { get; set; }
         public string PatientStatus { get; set; }
         public string Occupation { get; set; }
@@ -21,12 +18,12 @@
         public string MaritalStatus { get; set; }
         public DateTime DateOfReferral { get; set; }
         public string ReferredBy { get; set; }
-        public string Affiliation { get; set; }
+        public string? Affiliation { get; set; }
         public string PhotoUrl { get; set; }
+        public DateTime CreatedAt { get; set; }
 
 
         //One -to-Many Relationships
-        public Address Address { get; set; }
         public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with ClinicalStaff
     }
 }
