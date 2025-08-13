@@ -6,29 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SafehavenPMS.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "Addresses",
-                columns: table => new
-                {
-                    AddressID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    House_Unit = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Street = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Subdivision_Village = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Barangay = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    City = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Province = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Addresses", x => x.AddressID);
-                });
-
             migrationBuilder.CreateTable(
                 name: "ClinicalStaffs",
                 columns: table => new
@@ -47,25 +29,13 @@ namespace SafehavenPMS.Migrations
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     HireDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    AddressID = table.Column<int>(type: "int", nullable: false),
-                    AddressID1 = table.Column<int>(type: "int", nullable: true)
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClinicalStaffs", x => x.ClinicalStaffID);
-                    table.ForeignKey(
-                        name: "FK_ClinicalStaffs_Addresses_AddressID",
-                        column: x => x.AddressID,
-                        principalTable: "Addresses",
-                        principalColumn: "AddressID",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ClinicalStaffs_Addresses_AddressID1",
-                        column: x => x.AddressID1,
-                        principalTable: "Addresses",
-                        principalColumn: "AddressID",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -74,12 +44,12 @@ namespace SafehavenPMS.Migrations
                 {
                     PatientId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    AddressID = table.Column<int>(type: "int", nullable: false),
                     Firstname = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Lastname = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     MiddleName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Sex = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
                     PatientStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Occupation = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -88,24 +58,35 @@ namespace SafehavenPMS.Migrations
                     MaritalStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateOfReferral = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ReferredBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Affiliation = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Affiliation = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PhotoUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AddressID1 = table.Column<int>(type: "int", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Patients", x => x.PatientId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Availabilities",
+                columns: table => new
+                {
+                    AvailabilityId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    NoEndDate = table.Column<bool>(type: "bit", nullable: false),
+                    ClinicalStaffID = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Availabilities", x => x.AvailabilityId);
                     table.ForeignKey(
-                        name: "FK_Patients_Addresses_AddressID",
-                        column: x => x.AddressID,
-                        principalTable: "Addresses",
-                        principalColumn: "AddressID",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Patients_Addresses_AddressID1",
-                        column: x => x.AddressID1,
-                        principalTable: "Addresses",
-                        principalColumn: "AddressID",
+                        name: "FK_Availabilities_ClinicalStaffs_ClinicalStaffID",
+                        column: x => x.ClinicalStaffID,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -133,30 +114,67 @@ namespace SafehavenPMS.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "AvailabilityDays",
+                columns: table => new
+                {
+                    DayId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DayName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
+                    AvailabilityId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AvailabilityDays", x => x.DayId);
+                    table.ForeignKey(
+                        name: "FK_AvailabilityDays_Availabilities_AvailabilityId",
+                        column: x => x.AvailabilityId,
+                        principalTable: "Availabilities",
+                        principalColumn: "AvailabilityId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TimeSlots",
+                columns: table => new
+                {
+                    TimeSlotId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    DayId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TimeSlots", x => x.TimeSlotId);
+                    table.ForeignKey(
+                        name: "FK_TimeSlots_AvailabilityDays_DayId",
+                        column: x => x.DayId,
+                        principalTable: "AvailabilityDays",
+                        principalColumn: "DayId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Availabilities_ClinicalStaffID",
+                table: "Availabilities",
+                column: "ClinicalStaffID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AvailabilityDays_AvailabilityId",
+                table: "AvailabilityDays",
+                column: "AvailabilityId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_ClinicalStaffPatients_ClinicalStaffId",
                 table: "ClinicalStaffPatients",
                 column: "ClinicalStaffId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ClinicalStaffs_AddressID",
-                table: "ClinicalStaffs",
-                column: "AddressID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ClinicalStaffs_AddressID1",
-                table: "ClinicalStaffs",
-                column: "AddressID1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Patients_AddressID",
-                table: "Patients",
-                column: "AddressID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Patients_AddressID1",
-                table: "Patients",
-                column: "AddressID1");
+                name: "IX_TimeSlots_DayId",
+                table: "TimeSlots",
+                column: "DayId");
         }
 
         /// <inheritdoc />
@@ -166,13 +184,19 @@ namespace SafehavenPMS.Migrations
                 name: "ClinicalStaffPatients");
 
             migrationBuilder.DropTable(
-                name: "ClinicalStaffs");
+                name: "TimeSlots");
 
             migrationBuilder.DropTable(
                 name: "Patients");
 
             migrationBuilder.DropTable(
-                name: "Addresses");
+                name: "AvailabilityDays");
+
+            migrationBuilder.DropTable(
+                name: "Availabilities");
+
+            migrationBuilder.DropTable(
+                name: "ClinicalStaffs");
         }
     }
 }

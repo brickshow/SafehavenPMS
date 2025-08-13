@@ -208,7 +208,8 @@
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                href="#"
                                                data-bs-toggle="modal"
-                                               data-bs-target="#appointment-modal">
+                                               data-bs-target="#appointment-modal"
+                                               onclick="setPatientId(@patient.PatientId)">
                                                 <span class="badge-dot bg-warning"></span>
                                                 Schedule Initial Assessment
                                             </a>
@@ -370,23 +371,9 @@
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var modalEl = document.getElementById('appointment-modal');
-        var modal = new bootstrap.Modal(modalEl);
-
-        // If state is stored, reopen modal
-        if (localStorage.getItem('appointmentModalOpen') === 'true') {
-            modal.show();
-        }
-
-        // When modal opens
-        modalEl.addEventListener('shown.bs.modal', function () {
-            localStorage.setItem('appointmentModalOpen', 'true');
-        });
-
-        // When modal closes
-        modalEl.addEventListener('hidden.bs.modal', function () {
-            localStorage.setItem('appointmentModalOpen', 'false');
-        });
-    });
+    //Function to pass and set ID to modal
+    function setPatientId(id) {
+       console.log("Setting patientId:", id);
+       document.getElementById('patientId').value = id;
+     }
 </script>

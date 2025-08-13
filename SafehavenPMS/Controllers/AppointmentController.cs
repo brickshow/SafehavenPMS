@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SafehavenPMS.Data;
 using SafehavenPMS.Helpers;
@@ -61,6 +62,7 @@ namespace SafehavenPMS.Controllers
                     StartDate = request.StartDate,
                     EndDate = request.NoEndDate ? null : request.EndDate,
                     ClinicalStaffID = request.ClinicalStaffID,
+                    
                     Days = new List<AvailabilityDay>()
                 };
 
@@ -73,6 +75,7 @@ namespace SafehavenPMS.Controllers
                     var availabilityDay = new AvailabilityDay
                     {
                         DayName = dayRequest.DayName,
+                        IsAvailable = true,
                         TimeSlots = new List<TimeSlot>()
                     };
 
@@ -125,10 +128,87 @@ namespace SafehavenPMS.Controllers
             }
         }
 
-        //[HttpGet]
-        //public async Task<IActionResult> ScheduleAppointment()
-        //{
-        //    return 
-        //}
+        [HttpGet]
+        public async Task<IActionResult> GetAvailabilityTime(int id, DateTime date)
+        {
+            try
+            {
+                // Step 1: Retrieve the ClinicalStaffId for the given PatientId
+                var patient = await _context.ClinicalStaffPatients
+                                    .Include(p => p.ClinicalStaff)
+                                    .FirstOrDefaultAsync(p => p.PatientId == id);
+
+                Console.WriteLine($"Step 1: Retrieved staffId = {patient} for PatientId = {id}");
+
+                if (patient == null) // Check for 0 since ClinicalStaffId is an int
+                {
+                    Console.WriteLine("Step 1: No clinical staff assigned to this patient");
+                    return Json(new { success = false, message = "No clinical staff assigned to this patient" });
+                }
+
+                //Set staff ID based on patient query
+                int staffId = patient.ClinicalStaffId;
+
+                // Step 2: Get the day of the week for the provided date
+                var dayOfWeek = date.ToString("dddd"); // e.g., "Monday"
+                Console.WriteLine($"Step 2: dayOfWeek = {dayOfWeek} for date = {date}");
+
+                // Step 3: Query availabilities for the staff, filtering by date and active days
+                var availabilities = await _context.Availabilities
+                                    .Include(a => a.Days)
+                                        .ThenInclude(d => d.TimeSlots)
+                                    .Where(a => a.ClinicalStaffID == staffId &&
+                                            a.StartDate.Date <= date.Date &&
+                                            (a.NoEndDate || a.EndDate == null || a.EndDate.Value.Date >= date.Date))
+                                    .ToListAsync();
+
+                Console.WriteLine($"Step 3: Found {availabilities.Count} availabilities for staffId = {staffId}");
+                foreach (var a in availabilities)
+                {
+                    Console.WriteLine($"  AvailabilityId = {a.AvailabilityId}, StartDate = {a.StartDate}, EndDate = {a.EndDate}, NoEndDate = {a.NoEndDate}");
+                    foreach (var d in a.Days)
+                    {
+                        Console.WriteLine($"    DayId = {d.DayId}, DayName = {d.DayName}, IsAvailable = {d.IsAvailable}");
+                    }
+                }
+
+                var timeSlots = availabilities
+                               .SelectMany(a => a.Days)
+                               .Where(d => d.DayName == dayOfWeek && d.IsAvailable)
+                               .SelectMany(d => d.TimeSlots)
+                               .Select(ts => new {
+                                   ts.TimeSlotId,
+                                   //Convert Army time to AM/PM Format
+                                   StartTime = DateTime.Today.Add(ts.StartTime).ToString("hh:mm tt"),
+                                   EndTime = DateTime.Today.Add(ts.EndTime).ToString("hh:mm tt")
+                               })
+                               .Distinct()
+                               .OrderBy(t => t.StartTime)
+                               .ToList();
+
+                Console.WriteLine($"Step 4: Found {timeSlots.Count} time slots for dayOfWeek = {dayOfWeek}");
+
+                if (!timeSlots.Any())
+                {
+                    Console.WriteLine("Step 4: No time slots available due to filtering by dayOfWeek and IsAvailable");
+                    return Json(new { success = false, message = "No time slots available for the specified date" });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    timeSlots,
+                    patientName = $"{patient.Patient.Firstname} {patient.Patient.Lastname}",
+                    staffName = $"{patient.ClinicalStaff.Firstname} {patient.ClinicalStaff.Lastname}"
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                // Log the exception (use your logging framework)
+                // _logger.LogError(ex, "Error retrieving availability for patient {PatientId} on {Date}", id, date);
+                return Json(new { success = false, message = "An error occurred while retrieving availability" });
+            }
+        }
     }
 }

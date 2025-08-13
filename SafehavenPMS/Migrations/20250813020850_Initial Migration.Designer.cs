@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250809022946_NewDatabase")]
-    partial class NewDatabase
+    [Migration("20250813020850_Initial Migration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,11 +33,14 @@ namespace SafehavenPMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AvailabilityId"));
 
-                    b.Property<int>("ClinicalStaffId")
+                    b.Property<int>("ClinicalStaffID")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("NoEndDate")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
@@ -48,7 +51,7 @@ namespace SafehavenPMS.Migrations
 
                     b.HasKey("AvailabilityId");
 
-                    b.HasIndex("ClinicalStaffId");
+                    b.HasIndex("ClinicalStaffID");
 
                     b.ToTable("Availabilities");
                 });
@@ -67,6 +70,9 @@ namespace SafehavenPMS.Migrations
                     b.Property<string>("DayName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
 
                     b.HasKey("DayId");
 
@@ -263,7 +269,7 @@ namespace SafehavenPMS.Migrations
                 {
                     b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
                         .WithMany("Availabilities")
-                        .HasForeignKey("ClinicalStaffId")
+                        .HasForeignKey("ClinicalStaffID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

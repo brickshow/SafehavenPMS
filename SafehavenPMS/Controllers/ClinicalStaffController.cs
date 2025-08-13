@@ -150,18 +150,24 @@ namespace SafehavenPMS.Controllers
                     StartDate = a.StartDate,
                     EndDate = a.EndDate,
                     NoEndDate = a.NoEndDate,
-                    Days = a.Days.Select(d => new DayAvailabilityViewModel
-                    {
-                        DayId = d.DayId,
-                        DayName = d.DayName,
-                        IsAvailable = d.IsAvailable,
-                        TimeSlots = d.TimeSlots.Select(ts => new TimeSlotViewModel
+
+                    // Only include days where IsAvailable == true
+                    Days = a.Days
+                        .Where(d => d.IsAvailable)
+                        .Select(d => new DayAvailabilityViewModel
                         {
-                            TimeSlotId = ts.TimeSlotId,
-                            StartTime = ts.StartTime,
-                            EndTime = ts.EndTime
+                            DayId = d.DayId,
+                            DayName = d.DayName,
+                            IsAvailable = d.IsAvailable,
+
+                            // Keep all time slots for available days (filter further if needed)
+                            TimeSlots = d.TimeSlots.Select(ts => new TimeSlotViewModel
+                            {
+                                TimeSlotId = ts.TimeSlotId,
+                                StartTime = ts.StartTime,
+                                EndTime = ts.EndTime
+                            }).ToList()
                         }).ToList()
-                    }).ToList()
                 })
                 .ToListAsync();
 

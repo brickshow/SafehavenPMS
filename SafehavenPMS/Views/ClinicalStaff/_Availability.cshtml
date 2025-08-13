@@ -42,7 +42,7 @@
                     foreach (var available in Model.Availability)
                     {
                         // Filter only available days
-                        var availableDays = available.Days.Where(d => !d.IsAvailable).ToList();
+                        var availableDays = available.Days.Where(d => d.IsAvailable).ToList();
 
                         foreach (var day in availableDays)
                         {
