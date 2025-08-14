@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SafehavenPMS.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitailCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -115,6 +115,44 @@ namespace SafehavenPMS.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Appointments",
+                columns: table => new
+                {
+                    AppointmentId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AvailabilityId = table.Column<int>(type: "int", nullable: false),
+                    ClinicalStaffID = table.Column<int>(type: "int", nullable: false),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    VisitType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StaffId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Appointments", x => x.AppointmentId);
+                    table.ForeignKey(
+                        name: "FK_Appointments_Availabilities_AvailabilityId",
+                        column: x => x.AvailabilityId,
+                        principalTable: "Availabilities",
+                        principalColumn: "AvailabilityId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Appointments_ClinicalStaffs_ClinicalStaffID",
+                        column: x => x.ClinicalStaffID,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Appointments_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "PatientId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AvailabilityDays",
                 columns: table => new
                 {
@@ -157,6 +195,21 @@ namespace SafehavenPMS.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Appointments_AvailabilityId",
+                table: "Appointments",
+                column: "AvailabilityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_ClinicalStaffID",
+                table: "Appointments",
+                column: "ClinicalStaffID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_PatientId",
+                table: "Appointments",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Availabilities_ClinicalStaffID",
                 table: "Availabilities",
                 column: "ClinicalStaffID");
@@ -180,6 +233,9 @@ namespace SafehavenPMS.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Appointments");
+
             migrationBuilder.DropTable(
                 name: "ClinicalStaffPatients");
 

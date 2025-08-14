@@ -76,7 +76,7 @@ namespace SafehavenPMS.Data
             modelBuilder.Entity<ClinicalStaff>()
                 .HasMany(s => s.Appointments)
                 .WithOne(a => a.Staff)
-                .HasForeignKey(a => a.StaffId)
+                .HasForeignKey(a => a.ClinicalStaffID)
                 .OnDelete(DeleteBehavior.Cascade);
 
 

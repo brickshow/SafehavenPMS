@@ -1,8 +1,8 @@
-﻿    @model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
+﻿@model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
 
-
+<div class="availability-container g-4">
     @* Container for Availability Page *@
-    <div class="container-fluid border rounded bg-white p-4" style="width: 100%; margin-top: 20px;">
+    <div class="container-fluid border rounded bg-white p-4" style="width: 100%;">
 
         @* Header with Icon and Title *@
         <div class="table-header d-flex justify-content-center align-items-center text-center">
@@ -12,7 +12,7 @@
 
         @* Filters/Search and Date Picker *@
         <div class="d-flex justify-content-between align-items-center mb-3">
-            
+
 
             <div class="form-group d-flex justify-content-center align-items-center gap-2">
                 <label for="startDate" class="form-label m-0">Date</label>
@@ -33,64 +33,71 @@
                     </tr>
                 </thead>
                 <tbody>
-                @if (Model.Availability == null || !Model.Availability.Any())
-                {
-                    <tr><td colspan="5">No Availability Date</td></tr>
-                }
-                else
-                {
-                    foreach (var available in Model.Availability)
+                    @if (Model.Availability == null || !Model.Availability.Any())
                     {
-                        // Filter only available days
-                        var availableDays = available.Days.Where(d => d.IsAvailable).ToList();
-
-                        foreach (var day in availableDays)
+                        <tr><td colspan="5">No Availability Date</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var available in Model.Availability)
                         {
-                            <tr>
-                                <td>@available.Title</td>
-                                <td>
-                                    @{
-                                        // Find the correct date for this specific day
-                                        var targetDay = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), day.DayName);
-                                        var date = available.StartDate;
+                            // Filter only available days
+                            var availableDays = available.Days.Where(d => d.IsAvailable).ToList();
 
-                                        while (date.DayOfWeek != targetDay)
-                                        {
-                                            date = date.AddDays(1);
-                                        }
-                                    }
-                                    @date.ToString("MMM dd yyyy") <!-- Example: Aug 11 2025 -->
-                                </td>
-                                <td>@day.DayName</td>
-                                <td class="text-center">
-                                    <ul class="list-unstyled mb-0">
-                                        @foreach (var slot in day.TimeSlots)
-                                        {
-                                            <li class="mb-1">
-                                                <i class="bx bx-time-five text-success me-1"></i>
-                                                @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
-                                            </li>
-                                        }
-                                    </ul>
-                                </td>
+                            foreach (var day in availableDays)
+                            {
+                                <tr>
+                                    <td>@available.Title</td>
+                                    <td>
+                                        @{
+                                            // Find the correct date for this specific day
+                                            var targetDay = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), day.DayName);
+                                            var date = available.StartDate;
 
-                                <td class="text-center d-flex justify-content-center gap-2">
-                                    <a href="#" data-bs-toggle="modal" data-bs-target="#appointment-modal" class="border rounded px-2 py-1 text-primary hover-fill" title="Edit">
-                                        <i class='bx bx-edit'></i>
-                                    </a>
-                                    <a href="#" class="border rounded px-2 py-1 text-danger hover-fill" title="Delete">
-                                        <i class='bx bx-trash'></i>
-                                    </a>
-                                </td>
-                            </tr>
+                                            while (date.DayOfWeek != targetDay)
+                                            {
+                                                date = date.AddDays(1);
+                                            }
+                                        }
+                                        @date.ToString("MMM dd yyyy") <!-- Example: Aug 11 2025 -->
+                                    </td>
+                                    <td>@day.DayName</td>
+                                    <td class="text-center">
+                                        <ul class="list-unstyled mb-0">
+                                            @foreach (var slot in day.TimeSlots)
+                                            {
+                                                <li class="mb-1">
+                                                    <i class="bx bx-time-five text-success me-1"></i>
+                                                    @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
+                                                </li>
+                                            }
+                                        </ul>
+                                    </td>
+
+                                    <td class="text-center d-flex justify-content-center gap-2">
+                                        <a href="#" data-bs-toggle="modal" data-bs-target="#appointment-modal" class="border rounded px-2 py-1 text-primary hover-fill" title="Edit">
+                                            <i class='bx bx-edit'></i>
+                                        </a>
+                                        <a href="#" class="border rounded px-2 py-1 text-danger hover-fill" title="Delete">
+                                            <i class='bx bx-trash'></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
                         }
                     }
-                }
 
                 </tbody>
             </table>
         </div>
     </div>
+
+    @* Reder partial views *@
+    @await Html.PartialAsync(
+    "StaffPartialViews/AddAvailabilityPartial",
+        Model.NewAvailability
+        )
+</div>
 
     <style>
         .table-header {
@@ -116,4 +123,13 @@
         .hover-fill.text-danger:hover {
             background-color: rgba(244, 63, 94, 0.1); /* Light red for delete hover */
         }
+
+    .availability-container {
+        display: flex;
+        margin: 10px;
+        gap: 20px; /* horizontal space */
+        align-items: flex-start; /* top align, no height stretching */
+    }
     </style>
+
+<script src="/js/appointment.js"></script>
