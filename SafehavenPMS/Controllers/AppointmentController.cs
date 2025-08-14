@@ -179,18 +179,19 @@ namespace SafehavenPMS.Controllers
                 }
 
                 var timeSlots = availabilities
-                    .SelectMany(a => a.Days)
-                    .Where(d => d.DayName == dayOfWeek && d.IsAvailable)
-                    .SelectMany(d => d.TimeSlots)
-                    .Select(ts => new
-                    {
-                        ts.TimeSlotId,
-                        StartTime = DateTime.Today.Add(ts.StartTime).ToString("hh:mm tt"),
-                        EndTime = DateTime.Today.Add(ts.EndTime).ToString("hh:mm tt")
-                    })
-                    .Distinct()
-                    .OrderBy(t => t.StartTime)
-                    .ToList();
+                                .SelectMany(a => a.Days, (a, d) => new { Availability = a, Day = d }) // Keep availability reference
+                                .Where(ad => ad.Day.DayName == dayOfWeek && ad.Day.IsAvailable)
+                                .SelectMany(ad => ad.Day.TimeSlots, (ad, ts) => new
+                                {
+                                    ts.TimeSlotId,
+                                    ad.Availability.AvailabilityId, // Include availabilityId
+                                    StaffId = ad.Availability.ClinicalStaffID, // Include staffId
+                                    StartTime = DateTime.Today.Add(ts.StartTime).ToString("hh:mm tt"),
+                                    EndTime = DateTime.Today.Add(ts.EndTime).ToString("hh:mm tt")
+                                })
+                                .Distinct()
+                                .OrderBy(t => t.StartTime)
+                                .ToList();
 
                 Console.WriteLine($"Step 4: Found {timeSlots.Count} time slots for dayOfWeek = {dayOfWeek}");
 
@@ -218,15 +219,47 @@ namespace SafehavenPMS.Controllers
         [HttpPost]
         public async Task<IActionResult> Schedule([FromBody] Appointment model)
         {
-            //Check if model state is valid
-            if(!ModelState.IsValid)
+            // Check if model state is valid
+            if (!ModelState.IsValid)
             {
-                return Json(new { success = false, message = "Invalid appointment data" });
+                // Collect all model state errors
+                var errors = ModelState
+                    .Where(ms => ms.Value.Errors.Count > 0)
+                    .Select(ms => new
+                    {
+                        Field = ms.Key,
+                        Errors = ms.Value.Errors.Select(e => e.ErrorMessage).ToList()
+                    })
+                    .ToList();
+
+                // Log to console for debugging
+                Console.WriteLine("ModelState Errors:");
+                foreach (var error in errors)
+                {
+                    Console.WriteLine($"Field: {error.Field}");
+                    foreach (var err in error.Errors)
+                    {
+                        Console.WriteLine($"  - {err}");
+                    }
+                }
+
+                // Return errors in JSON (helpful for frontend debugging)
+                return Json(new { success = false, message = "Invalid appointment data", errors });
             }
 
-            //Save to database
-            await _context.Appointments.AddAsync(model);
-            await _context.SaveChangesAsync();
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                _context.Appointments.Add(model);
+                _context.SaveChanges();
+
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw;
+            }
 
             return Json(new { success = true, message = "Appointment scheduled successfully" });
         }

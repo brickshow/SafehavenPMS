@@ -33,6 +33,9 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("AvailabilityId")
                         .HasColumnType("int");
 
+                    b.Property<int>("ClinicalStaffID")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -40,9 +43,6 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StaffId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -57,9 +57,9 @@ namespace SafehavenPMS.Migrations
 
                     b.HasIndex("AvailabilityId");
 
-                    b.HasIndex("PatientId");
+                    b.HasIndex("ClinicalStaffID");
 
-                    b.HasIndex("StaffId");
+                    b.HasIndex("PatientId");
 
                     b.ToTable("Appointments");
                 });
@@ -312,15 +312,15 @@ namespace SafehavenPMS.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "Staff")
                         .WithMany("Appointments")
-                        .HasForeignKey("PatientId")
+                        .HasForeignKey("ClinicalStaffID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "Staff")
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
                         .WithMany("Appointments")
-                        .HasForeignKey("StaffId")
+                        .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

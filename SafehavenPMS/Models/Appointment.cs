@@ -12,20 +12,20 @@ namespace SafehavenPMS.Models
         [Required]
         public int AvailabilityId { get; set; }
         [ForeignKey("AvailabilityId")]
-        public Availability Availability { get; set; } // Navigation property
+        public Availability? Availability { get; set; } // Navigation property
 
 
         // Foreign key to Staff
         [Required]
-        public int StaffId { get; set; }
-        [ForeignKey("StaffId")]
-        public ClinicalStaff Staff { get; set; } // Navigation property
+        public int ClinicalStaffID { get; set; }
+        [ForeignKey("ClinicalStaffID")]
+        public ClinicalStaff? Staff { get; set; } // Navigation property
 
         // Foreign key to Patient
         [Required]
         public int PatientId { get; set; }
         [ForeignKey("PatientId")]
-        public Patient Patient { get; set; } // Navigation property
+        public Patient? Patient { get; set; } // Navigation property
 
 
         public string VisitType { get; set; }
