@@ -1,5 +1,4 @@
-﻿
-<!-- Updated modal in your Layout file -->
+﻿<!-- Updated modal in your Layout file -->
 <div id="appointment-modal" class="modal fade right-modal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-slideout">
         <div class="modal-content border-0 shadow h-100 d-flex flex-column">
@@ -16,21 +15,13 @@
             <div class="modal-body overflow-auto flex-grow-1">
                 <form id="appointment-form" asp-controller="Appointment" asp-action="ScheduleAssessment" method="post">
                     <!-- Hidden field for patient ID -->
-                    <input type="hidden" id="patientId" name="PatientId" />
-
+                    <input type="hidden" id="modalPatientId" name="PatientId" value="" />
                     <div class="mb-3">
                         <label for="appointmentDate" class="form-label">Date</label>
                         <input type="date" class="form-control" id="appointmentDate" name="AppointmentDate" required>
                     </div>
 
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="button" id="view-availability"
-                                class="btn-custom btn-outline-primary">
-                            View Availability
-                        </button>
-                    </div>
-
-                    <div class="mb-3">
+                    <div class="mb-3 border-bottom p-3">
                         <label class="form-label">Available Time</label>
                         <div id="time-slots" class="row g-4">
                             <!-- dynamically filled -->
@@ -113,69 +104,143 @@
         background-color: #FF9900;
     }
 </style>
-
-@* Retrieve data using Ajax *@
 <script>
-         // When the "View Availability" button is clicked
-    document.getElementById('view-availability').addEventListener('click', function () {
+    // Store the selected slot data
+    let selectedSlot = null; // Only declared once
 
-        // Get the chosen date from the input field
-        let date = document.getElementById('appointmentDate').value;
+    // Add change event listener to the date input field
+    document.getElementById('appointmentDate').addEventListener('change', function () {
+        let date = this.value;
+        let patientId = document.getElementById('modalPatientId').value;
 
-        // Get the patient ID from the hidden/visible field
-        let patientId = document.getElementById('patientId').value;
-
-        // If no date is selected, show a warning and stop here
-        if (!date) {
-            alert('Please select a date first.');
+        if (!date) return;
+        if (!patientId || patientId === '0') {
+            alert('Invalid patient ID. Please try again.');
             return;
         }
 
-        // Send a request to the server to get availability times for this patient and date
-        fetch(`/Appointment/GetAvailabilityTime?id=${patientId}&date=${date}`)
-            .then(res => res.json()) // Convert the server response to JSON
-            .then(data => { // 'data' will contain our server's result
-                // Get the time slots container in the HTML
-                let container = document.getElementById('time-slots');
+        console.log("Fetching availability for patientId:", patientId, "date:", date);
 
-                // Clear any old time slots
+        fetch(`/Appointment/GetAvailabilityTime?id=${patientId}&date=${date}`)
+            .then(res => res.json())
+            .then(data => {
+                let container = document.getElementById('time-slots');
                 container.innerHTML = '';
 
-                // Fill in patient name and staff name automatically
-                    if (data.patientName) {
-                        document.querySelector('input[name="PatientName"]').value = data.patientName;
-                    }
-                    if (data.staffName) {
-                        document.querySelector('input[name="StaffName"]').value = data.staffName;
-                    }
-
-                // If the server says "not successful" OR no time slots are found
-                if (!data.success || !data.timeSlots || data.timeSlots.length === 0) {
-                    // Show a "No availability" message
-                    container.innerHTML = '<div class="col-12 text-muted">No availability</div>';
-                    return; // Stop here
+                if (data.patientName) {
+                    document.querySelector('input[name="PatientName"]').value = data.patientName;
+                }
+                if (data.staffName) {
+                    document.querySelector('input[name="StaffName"]').value = data.staffName;
                 }
 
-                // Go through each time slot sent by the server
+                if (!data.success || !data.timeSlots || data.timeSlots.length === 0) {
+                    container.innerHTML = '<div class="col-12 text-muted">No availability</div>';
+                    return;
+                }
+
                 data.timeSlots.forEach(ts => {
-                    // Add a clickable time box to the container
-                    container.innerHTML += `
-                        <div class="col-md-3">
-                            <div class="time-container text-center"
-                                 style="border:1px solid Gray; border-radius:6  px; cursor:pointer;color:#069FB2">
-                                ${ts.startTime}
-                            </div>
+                    let slotHTML = document.createElement('div');
+                    slotHTML.className = 'col-md-3';
+                    slotHTML.innerHTML = `
+                        <div class="time-container text-center"
+                             style="border:1px solid Gray; border-radius:6px; cursor:pointer; color:#069FB2">
+                            ${ts.startTime}
                         </div>`;
+
+                    let slotButton = slotHTML.querySelector('.time-container');
+
+                    slotButton.addEventListener('click', function () {
+                        // Reset previously selected slot
+                        if (selectedSlot && selectedSlot.button !== slotButton) {
+                            selectedSlot.button.style.backgroundColor = '';
+                            selectedSlot.button.style.color = '#069FB2';
+                        }
+
+                        // Toggle current slot
+                        if (selectedSlot && selectedSlot.button === slotButton) {
+                            slotButton.style.backgroundColor = '';
+                            slotButton.style.color = '#069FB2';
+                            selectedSlot = null;
+                        } else {
+                            slotButton.style.backgroundColor = '#069FB2';
+                            slotButton.style.color = 'white';
+
+                            // Save selected slot data
+                            selectedSlot = {
+                                button: slotButton,
+                                timeSlotId: ts.timeSlotId,
+                                availabilityId: ts.availabilityId,
+                                staffId: ts.staffId,
+                                startTime: ts.startTime
+                            };
+                            console.log("Selected slot data:", selectedSlot);
+                        }
+                    });
+
+                    container.appendChild(slotHTML);
                 });
             })
             .catch(err => {
-                // If there was an error (server down, wrong data, etc.)
-                console.error(err); // Show details in browser console
-                alert('Error loading availability.'); // Show alert to user
+                console.error("Error loading availability:", err);
+                alert('Error loading availability.');
             });
     });
 
-    function loadPatientInfo(id){
-        fetch(`/Appointment/GetDetails?id=${patientId}`)
-    }
+    // Handle Schedule Appointment button click
+    document.querySelector('button[form="appointment-form"]').addEventListener('click', function (e) {
+        e.preventDefault();
+
+        if (!selectedSlot) {
+            alert('Please select a time slot first.');
+            return;
+        }
+
+        let payload = {
+            appointmentDate: document.getElementById('appointmentDate').value,
+            availabilityId: selectedSlot.availabilityId,
+            description: document.getElementById('notes').value,
+            patientId: document.getElementById('modalPatientId').value,
+            staffId: selectedSlot.staffId,
+            status: "Pending",
+            timeSlotId: selectedSlot.timeSlotId,
+            visitType: document.getElementById('duration').value
+        };
+
+        console.log("Submitting appointment payload:", payload);
+
+        fetch('/Appointment/Schedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => {
+            console.log("Response status:", res.status);
+            return res.text();
+        })
+        .then(text => {
+            console.log("Raw response text:", text);
+            let resp;
+            try {
+                resp = JSON.parse(text);
+            } catch (err) {
+                console.error("Failed to parse JSON:", err);
+                alert("Unexpected server response.");
+                return;
+            }
+
+            console.log("Parsed response object:", resp);
+
+            if (resp.success) {
+                alert('Appointment scheduled!');
+            } else {
+                alert('Failed to schedule appointment: ' + resp.message);
+            }
+        })
+        .catch(err => {
+            console.error("Error submitting appointment:", err);
+            alert('Error scheduling appointment.');
+        });
+    });
 </script>
+

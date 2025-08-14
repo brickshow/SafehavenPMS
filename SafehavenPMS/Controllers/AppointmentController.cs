@@ -127,76 +127,46 @@ namespace SafehavenPMS.Controllers
                 return Json(new { success = false, message = "An error occurred while saving availability" });
             }
         }
-        //Action for getting Patient name and staff name
-        [HttpGet]
-        public async Task<IActionResult> GetDetails(int id)
-        {
-            //Filter patient information
-            var patient = await _context.Patients
-                                .Where(p => p.PatientId == id)
-                                .FirstOrDefaultAsync();
-
-            //Check if patient is null
-            if (patient == null)
-                return Json(new List<string>());//Return empty if patient is null
-
-            //Get the specific data to pass in view using json
-            string patientName = $"{patient.Firstname} {patient.Lastname}";
-
-            // Staff name (assuming only one staff per patient)
-            var staff = patient.ClinicalStaffPatients
-                .Select(csp => csp.ClinicalStaff)
-                .FirstOrDefault();
-
-            string staffName = staff != null
-                ? $"{staff.Firstname} {staff.Lastname}"
-                : "No staff assigned";
-
-            // Return JSON object
-            return Json(new
-            {
-                success = true,
-                patientName,
-                staffName
-            });
-        }
-
+      
         //Action for getting availability time 
         [HttpGet]
         public async Task<IActionResult> GetAvailabilityTime(int id, DateTime date)
         {
             try
             {
-                // Step 1: Retrieve the ClinicalStaffId for the given PatientId
+                if (id <= 0)
+                {
+                    Console.WriteLine("Invalid patient ID provided");
+                    return Json(new { success = false, message = "Invalid patient ID" });
+                }
+
                 var patient = await _context.ClinicalStaffPatients
-                                    .Include(p => p.ClinicalStaff)
-                                    .FirstOrDefaultAsync(p => p.PatientId == id);
+                    .Include(p => p.ClinicalStaff)
+                    .Include(p => p.Patient)
+                    .FirstOrDefaultAsync(p => p.PatientId == id);
 
-                Console.WriteLine($"Step 1: Retrieved staffId = {patient} for PatientId = {id}");
+                Console.WriteLine($"Step 1: Retrieved patient = {patient?.PatientId} for PatientId = {id}");
 
-                if (patient == null) // Check for 0 since ClinicalStaffId is an int
+                if (patient == null)
                 {
                     Console.WriteLine("Step 1: No clinical staff assigned to this patient");
                     return Json(new { success = false, message = "No clinical staff assigned to this patient" });
                 }
 
-                //Set staff ID based on patient query
                 int staffId = patient.ClinicalStaffId;
-                string patientname = $"{patient.Patient.Firstname} {patient.Patient.Lastname}";
+                string patientName = $"{patient.Patient.Firstname} {patient.Patient.Lastname}";
                 string staffName = $"{patient.ClinicalStaff.Firstname} {patient.ClinicalStaff.Lastname}";
 
-                // Step 2: Get the day of the week for the provided date
-                var dayOfWeek = date.ToString("dddd"); // e.g., "Monday"
+                var dayOfWeek = date.ToString("dddd");
                 Console.WriteLine($"Step 2: dayOfWeek = {dayOfWeek} for date = {date}");
 
-                // Step 3: Query availabilities for the staff, filtering by date and active days
                 var availabilities = await _context.Availabilities
-                                    .Include(a => a.Days)
-                                        .ThenInclude(d => d.TimeSlots)
-                                    .Where(a => a.ClinicalStaffID == staffId &&
-                                            a.StartDate.Date <= date.Date &&
-                                            (a.NoEndDate || a.EndDate == null || a.EndDate.Value.Date >= date.Date))
-                                    .ToListAsync();
+                    .Include(a => a.Days)
+                        .ThenInclude(d => d.TimeSlots)
+                    .Where(a => a.ClinicalStaffID == staffId &&
+                                a.StartDate.Date <= date.Date &&
+                                (a.NoEndDate || a.EndDate == null || a.EndDate.Value.Date >= date.Date))
+                    .ToListAsync();
 
                 Console.WriteLine($"Step 3: Found {availabilities.Count} availabilities for staffId = {staffId}");
                 foreach (var a in availabilities)
@@ -209,18 +179,18 @@ namespace SafehavenPMS.Controllers
                 }
 
                 var timeSlots = availabilities
-                               .SelectMany(a => a.Days)
-                               .Where(d => d.DayName == dayOfWeek && d.IsAvailable)
-                               .SelectMany(d => d.TimeSlots)
-                               .Select(ts => new {
-                                   ts.TimeSlotId,
-                                   //Convert Army time to AM/PM Format
-                                   StartTime = DateTime.Today.Add(ts.StartTime).ToString("hh:mm tt"),
-                                   EndTime = DateTime.Today.Add(ts.EndTime).ToString("hh:mm tt")
-                               })
-                               .Distinct()
-                               .OrderBy(t => t.StartTime)
-                               .ToList();
+                    .SelectMany(a => a.Days)
+                    .Where(d => d.DayName == dayOfWeek && d.IsAvailable)
+                    .SelectMany(d => d.TimeSlots)
+                    .Select(ts => new
+                    {
+                        ts.TimeSlotId,
+                        StartTime = DateTime.Today.Add(ts.StartTime).ToString("hh:mm tt"),
+                        EndTime = DateTime.Today.Add(ts.EndTime).ToString("hh:mm tt")
+                    })
+                    .Distinct()
+                    .OrderBy(t => t.StartTime)
+                    .ToList();
 
                 Console.WriteLine($"Step 4: Found {timeSlots.Count} time slots for dayOfWeek = {dayOfWeek}");
 
@@ -234,16 +204,31 @@ namespace SafehavenPMS.Controllers
                 {
                     success = true,
                     timeSlots,
-                    patientName = patientname, //Passing patient name to view for auto fill feature
+                    patientName,
+                    staffName
                 });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
-                // Log the exception (use your logging framework)
-                // _logger.LogError(ex, "Error retrieving availability for patient {PatientId} on {Date}", id, date);
                 return Json(new { success = false, message = "An error occurred while retrieving availability" });
             }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Schedule([FromBody] Appointment model)
+        {
+            //Check if model state is valid
+            if(!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "Invalid appointment data" });
+            }
+
+            //Save to database
+            await _context.Appointments.AddAsync(model);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Appointment scheduled successfully" });
         }
     }
 }

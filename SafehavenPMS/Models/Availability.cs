@@ -25,6 +25,9 @@ namespace SafehavenPMS.Models
         public ClinicalStaff ClinicalStaff { get; set; }
         // Navigation property
         public ICollection<AvailabilityDay> Days { get; set; }
+
+        //Navigaton property to Appointment
+        public ICollection<Appointment> Appointments { get; set; } // Navigation property for appointments
     }
 
     // Days within the availability date range

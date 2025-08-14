@@ -16,8 +16,8 @@ namespace SafehavenPMS.Data
         public DbSet<ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
         public DbSet<Availability> Availabilities { get; set; }
         public DbSet<AvailabilityDay> AvailabilityDays { get; set; }
-
         public DbSet<TimeSlot> TimeSlots { get; set; }
+        public DbSet<Appointment> Appointments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,6 +56,27 @@ namespace SafehavenPMS.Data
                 .HasMany(d => d.TimeSlots)
                 .WithOne(ts => ts.Day)
                 .HasForeignKey(ts => ts.DayId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Availability -> Appointment
+            modelBuilder.Entity<Availability>()
+                .HasMany(a => a.Appointments)
+                .WithOne(ap => ap.Availability)
+                .HasForeignKey(ap => ap.AvailabilityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Patient -> Appointment
+            modelBuilder.Entity<Patient>()
+                .HasMany(p => p.Appointments)
+                .WithOne(a => a.Patient)
+                .HasForeignKey(a => a.PatientId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ClinicalStaff -> Appointment
+            modelBuilder.Entity<ClinicalStaff>()
+                .HasMany(s => s.Appointments)
+                .WithOne(a => a.Staff)
+                .HasForeignKey(a => a.StaffId)
                 .OnDelete(DeleteBehavior.Cascade);
 
 
