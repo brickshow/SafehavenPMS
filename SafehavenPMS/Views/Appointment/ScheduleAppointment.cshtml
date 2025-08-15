@@ -1,0 +1,77 @@
+﻿@{
+    ViewBag.Title = "Appointment";
+}
+
+
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class="bx bxs-calendar-check fs-2 me-2" title="Calendar"></i>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+
+<div id="appointment" class="appointment d-flex flex-column justify-content-center m-auto w-50 mt-4">
+    @* Appointment Header *@
+    <div class="d-flex justify-content-start border-bottom w-100 p-2">
+            <i class='bx bx-calendar-check fs-4 me-2 text-primary'></i>
+            <h5 class="modal-title fw-bold mb-0">Schedule Appointment</h5>
+    </div>
+    <div class="row align-items-start m-3">
+        @* Calendar *@
+        <div class="col-md-6">
+            <form asp-controller="Appointment" asp-action="SubmitDate" method="post" id="appointmentForm">
+                <span class="d-block mb-2 fw-bold">Select Date</span>
+                <input type="hidden" name="SelectedDate" id="selectedDate">
+                <div id="datepicker"></div>
+            </form>
+        </div>
+
+        @* Available Time *@
+        <div class="col-md-6">
+            <span class="d-block mb-2 fw-bold">Available Time</span>
+            <div class="d-flex flex-column border rounded p-3">
+                @if (ViewBag.AvailableTimes != null && ViewBag.AvailableTimes.Count > 0)
+                {
+                    foreach (var slot in ViewBag.AvailableTimes)
+                    {
+                        <div>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</div>
+                    }
+                }
+                else
+                {
+                    <div class="text-muted">No Available Time</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .appointment{
+        background-color:white;
+    }
+</style>
+
+
+<script>
+    flatpickr("#datepicker", {
+        inline: true,
+        dateFormat: "Y-m-d",
+        defaultDate: new Date(),
+        minDate: "today",
+        onChange: function(selectedDates, dateStr) {
+            // Set hidden input value
+            document.getElementById("selectedDate").value = dateStr;
+            // Auto-submit form
+            document.getElementById("appointmentForm").submit();
+        }
+    });
+</script>

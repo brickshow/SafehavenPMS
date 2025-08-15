@@ -1,31 +1,40 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
-    const addBtn = document.getElementById("availability-button");
-    const closeBtn = document.getElementById("close-availability");
-    const tabElementList = document.querySelectorAll('button[data-bs-toggle="tab"]');
-    const availabilityInput = document.getElementById("availability-input");
+﻿// Wait until the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function () {
+    // Get references to key elements
+    const addBtn = document.getElementById("availability-button"); // The button to open Add Availability
+    const closeBtn = document.getElementById("close-availability"); // Button to close the panel
+    const tabElementList = document.querySelectorAll('button[data-bs-toggle="tab"]'); // All tabs
+    const availabilityInput = document.getElementById("availability-input"); // The Add Availability panel
 
+    // -------------------------
     // Restore active tab on page load
-    const savedTab = localStorage.getItem("activeTab");
+    // -------------------------
+    const savedTab = localStorage.getItem("activeTab"); // Get saved tab ID from localStorage
     if (savedTab) {
         const tabToActivate = document.querySelector(`button[data-bs-target="${savedTab}"]`);
         if (tabToActivate) {
             const tab = new bootstrap.Tab(tabToActivate);
-            tab.show();
+            tab.show(); // Show saved tab
         }
     }
 
-    // Show/hide add button when tabs change and save active tab
+    // -------------------------
+    // Show/hide add button when tabs change & save active tab
+    // -------------------------
     tabElementList.forEach(function (tabElement) {
         tabElement.addEventListener('shown.bs.tab', function (event) {
             const targetId = event.target.getAttribute("data-bs-target");
-            localStorage.setItem("activeTab", targetId);
+            localStorage.setItem("activeTab", targetId); // Save current tab
             if (addBtn) {
+                // Show add button only if the current tab is "availability"
                 addBtn.style.display = targetId === "#availability" ? "flex" : "none";
             }
         });
     });
 
+    // -------------------------
     // Set initial visibility of add button
+    // -------------------------
     const activeTabElement = document.querySelector('button[data-bs-toggle="tab"].active');
     if (addBtn) {
         addBtn.style.display =
@@ -34,49 +43,58 @@
                 : "none";
     }
 
+    // -------------------------
     // Open the availability input with animation
+    // -------------------------
     if (addBtn) {
         addBtn.addEventListener("click", function (e) {
             e.preventDefault();
             if (availabilityInput) {
-                availabilityInput.style.display = "block";
-                setTimeout(() => availabilityInput.classList.add("show"), 10);
-                localStorage.setItem("availability-input-visible", "true");
+                availabilityInput.style.display = "block"; // Show panel
+                setTimeout(() => availabilityInput.classList.add("show"), 10); // Add animation class
+                localStorage.setItem("availability-input-visible", "true"); // Save visibility in localStorage
             }
         });
     }
 
+    // -------------------------
     // Close the availability input with animation
+    // -------------------------
     if (closeBtn) {
         closeBtn.addEventListener("click", function () {
             if (availabilityInput) {
-                availabilityInput.classList.remove("show");
+                availabilityInput.classList.remove("show"); // Remove animation
                 availabilityInput.addEventListener('transitionend', function handler() {
-                    availabilityInput.style.setProperty('display', 'none', 'important');
+                    availabilityInput.style.setProperty('display', 'none', 'important'); // Hide panel
                     availabilityInput.removeEventListener('transitionend', handler);
-                    localStorage.setItem("availability-input-visible", "false");
+                    localStorage.setItem("availability-input-visible", "false"); // Update localStorage
                 });
             }
         });
     }
 
-    // Restore availability form visibility
+    // -------------------------
+    // Restore availability panel visibility after refresh
+    // -------------------------
     if (localStorage.getItem("availability-input-visible") === "true" && availabilityInput) {
-        availabilityInput.style.display = "block";
-        setTimeout(() => availabilityInput.classList.add("show"), 10);
+        availabilityInput.style.display = "block"; // Show panel
+        setTimeout(() => availabilityInput.classList.add("show"), 10); // Add animation
     }
 
-    // Persist input values
+    // -------------------------
+    // Persist input values for title, dates, and checkbox
+    // -------------------------
     const inputIds = ["availability-title", "start-date", "end-date", "availability-checkbox"];
     inputIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             if (el.type === "checkbox") {
-                el.checked = JSON.parse(localStorage.getItem(id)) || false;
+                el.checked = JSON.parse(localStorage.getItem(id)) || false; // Restore checkbox state
             } else {
-                el.value = localStorage.getItem(id) || "";
+                el.value = localStorage.getItem(id) || ""; // Restore input value
             }
 
+            // Save changes to localStorage
             el.addEventListener('input', function () {
                 if (el.type === "checkbox") {
                     localStorage.setItem(id, el.checked);
@@ -86,333 +104,280 @@
             });
         }
     });
+
+    // -------------------------
+    // Handle day checkboxes (show/hide times)
+    // -------------------------
+    document.querySelectorAll('.day-checkbox').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            const dayName = this.id.replace('-check', ''); // Get day name from checkbox ID
+            const timesDiv = document.getElementById(dayName + '-times'); // Find times container
+            timesDiv.style.display = this.checked ? 'block' : 'none'; // Show/hide times
+        });
+    });
+
 });
 
+// -------------------------
+// Function to add a new time slot row for a day
+// -------------------------
+function addTimeSlot(dayName) {
+    const container = document.getElementById(dayName + '-times'); // Container for time slots
+    const slotCount = container.querySelectorAll('.d-flex').length + 1; // Count existing slots
 
-//function updateWeekdays() {
-//    // Get the start date input value
-//    const startDate = document.getElementById('start-date').value;
-//    // Get the end date input value
-//    const endDate = document.getElementById('end-date').value;
-//    // Check if "No End Date" checkbox is checked
-//    const noEndDate = document.getElementById('availability-checkbox').checked;
-//    // Get the container element where weekdays will be rendered
-//    const weekdaysContainer = document.getElementById('weekdays-container');
+    const div = document.createElement('div'); // Create new row
+    div.className = 'd-flex align-items-center mb-2';
+    div.id = `${dayName}-slot-${slotCount}`;
+    div.innerHTML = `
+        <input type="time" class="form-control me-2" value="06:00">
+        <span class="me-2">–</span>
+        <input type="time" class="form-control me-2" value="07:00">
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">-</button>
+    `;
+    container.appendChild(div); // Add row to container
+}
 
-//    // Clear previous weekday sections to refresh the UI
-//    weekdaysContainer.innerHTML = '';
+// -------------------------
+// Gather all availability data from form
+// -------------------------
+function gatherAvailabilityForSave() {
+    const days = [];
 
-//    // If start date is empty, show error message and return
-//    if (!startDate) {
-//        document.getElementById('start-date-error').textContent = 'Start date is required';
-//        return;
-//    } else {
-//        // Clear error message if start date is provided
-//        document.getElementById('start-date-error').textContent = '';
-//    }
+    document.querySelectorAll('.day-checkbox').forEach(checkbox => {
+        const dayName = checkbox.id.replace('-check', '');
+        const dayId = checkbox.dataset.dayId;
+        if (!checkbox.checked) return; // Skip unchecked days
 
-//    let end;
+        const timeSlots = [];
+        document.querySelectorAll(`#${dayName}-times .d-flex`).forEach(slotDiv => {
+            const start = slotDiv.querySelector('input[type="time"]:nth-child(1)').value;
+            const end = slotDiv.querySelector('input[type="time"]:nth-child(3)').value;
+            timeSlots.push({ StartTime: start, EndTime: end });
+        });
 
-//    // Calculate the end date based on "No End Date" checkbox
-//    if (noEndDate) {
-//        // If "No End Date" is checked, set end date to one month after start date
-//        end = new Date(startDate);
-//        end.setMonth(end.getMonth() + 1);
-//        // Clear end date error and disable end date input
-//        document.getElementById('end-date-error').textContent = '';
-//        document.getElementById('end-date').disabled = true;
-//        document.getElementById('end-date').value = '';
-//    } else {
-//        // Enable end date input
-//        document.getElementById('end-date').disabled = false;
+        days.push({ DayId: dayId, DayName: dayName, TimeSlots: timeSlots });
+    });
 
-//        // If end date is missing, show error and return
-//        if (!endDate) {
-//            document.getElementById('end-date-error').textContent = 'End date is required unless "No End Date" is checked';
-//            return;
-//        }
+    return {
+        ClinicalStaffID: document.querySelector('input[name="ClinicalStaffID"]').value,
+        Title: document.querySelector('#availability-title').value,
+        StartDate: document.querySelector('#start-date').value,
+        EndDate: document.querySelector('#end-date').value,
+        NoEndDate: document.querySelector('#availability-checkbox').checked,
+        Days: days
+    };
+}
 
-//        end = new Date(endDate);
+// -------------------------
+// Save availability to server
+// -------------------------
+function saveAvailability() {
+    const data = gatherAvailabilityForSave();
 
-//        // If end date is before start date, show error and return
-//        if (end < new Date(startDate)) {
-//            document.getElementById('end-date-error').textContent = 'End date must be after start date';
-//            return;
-//        } else {
-//            // Clear end date error if validation passes
-//            document.getElementById('end-date-error').textContent = '';
-//        }
-//    }
+    // Get the checkbox and input elements
+    const noEndDateCheckbox = document.getElementById('availability-checkbox');
+    const endDateInput = document.getElementById('end-date');
+    const startDateInput = document.getElementById('start-date');
 
-//    // Array of all weekdays as strings (lowercase)
-//    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    // -------------------------
+    // Required field validations
+    // -------------------------
+    if (!data.Title || data.Title.trim() === "") {
+        showToast('Title is required!', 'error');
+        return;
+    }
 
-//    // Set to store weekdays that fall within the date range
-//    const activeDays = new Set();
+    if (!data.StartDate || data.StartDate.trim() === "") {
+        showToast('Start date is required!', 'error');
+        return;
+    }
 
-//    // Determine active weekdays within the date range
-//    const start = new Date(startDate);
+    const today = new Date();
+    const startDate = new Date(startDateInput.value);
 
-//    // Loop from start date up to and including end date
-//    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-//        // Add the weekday string (e.g. "monday") to activeDays set
-//        activeDays.add(days[d.getDay()]);
-//    }
+    // -------------------------
+    // Start date must not be in past
+    // -------------------------
+    if (startDate < today.setHours(0, 0, 0, 0)) {
+        showToast('Start date cannot be in the past!', 'error');
+        return;
+    }
 
-//    // Loop over all days of the week to create UI sections
-//    days.forEach(day => {
-//        // Check if current day is within the date range
-//        const isActive = activeDays.has(day);
+    // -------------------------
+    // End Date validation
+    // -------------------------
+    if (!noEndDateCheckbox.checked) { // If "No End Date" is NOT checked
+        if (!endDateInput.value || endDateInput.value.trim() === "") {
+            showToast("Please select an End Date or check 'No End Date'", 'error');
+            return;
+        }
 
-//        // Create a container div for this day's section
-//        const daySection = document.createElement('div');
-//        daySection.className = `day-section mb-3 ${isActive ? 'active' : ''}`; // Add active class if day is in range
-//        daySection.id = `${day}-section`; // Set unique id for the day section
+        const endDate = new Date(endDateInput.value);
+        if (endDate < startDate) {
+            showToast("End Date cannot be earlier than Start Date", 'error');
+            return;
+        }
+    }
 
-//        // Set inner HTML for the day section
-//        daySection.innerHTML = `
-//            <div class="form-check d-flex align-items-center">
-//                <input class="form-check-input me-2" type="checkbox" id="${day}-check" onchange="toggleDay(this, '${day}')" ${isActive ? '' : 'disabled'}>
-//                <label class="form-check-label fw-semibold" for="${day}-check">${day.charAt(0).toUpperCase() + day.slice(1)}</label>
-//            </div>
-//            <div class="time-slots mt-2" id="${day}-times" style="display: none;">
-//                <div class="d-flex align-items-center mb-2" id="${day}-slot-1">
-//                    <input type="time" class="form-control me-2" value="06:00">
-//                    <span class="me-2">–</span>
-//                    <input type="time" class="form-control me-2" value="07:00">
-//                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot('${day}')">+</button>
-//                </div>
-//            </div>
-//        `;
-
-//        // Append the created day section to the weekdays container in the DOM
-//        weekdaysContainer.appendChild(daySection);
-
-//        // Get the checkbox input for the current day
-//        const checkbox = document.getElementById(`${day}-check`);
-
-//        // If the day is not active (outside date range), uncheck the checkbox and hide its time slots
-//        if (!isActive) {
-//            checkbox.checked = false;
-//            document.getElementById(`${day}-times`).style.display = 'none';
-//        }
-//    });
-//}
-
-//function toggleDay(checkbox, day) {
-//    const timeSlotsDiv = document.getElementById(`${day}-times`);
-//    if (checkbox.checked) {
-//        timeSlotsDiv.style.display = 'block';
-//    } else {
-//        timeSlotsDiv.style.display = 'none';
-//    }
-//}
-
-//function addTimeSlot(day) {
-//    const timeSlotsDiv = document.getElementById(`${day}-times`);
-//    const slotCount = timeSlotsDiv.children.length + 1;
-
-//    const newSlot = document.createElement('div');
-//    newSlot.className = 'd-flex align-items-center mb-2';
-//    newSlot.id = `${day}-slot-${slotCount}`;
-//    newSlot.innerHTML = `
-//        <input type="time" class="form-control me-2" value="06:00">
-//        <span class="me-2">–</span>
-//        <input type="time" class="form-control me-2" value="07:00">
-//        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeSlot('${day}-slot-${slotCount}')">-</button>
-//    `;
-
-//    timeSlotsDiv.appendChild(newSlot);
-//}
-
-//function removeTimeSlot(slotId) {
-//    const slot = document.getElementById(slotId);
-//    if (slot) {
-//        slot.remove();
-//    }
-//}
-
-//// Function to collect all form data and send to server
-//function saveAvailability() {
-//    // Clear any existing error messages
-//    clearErrorMessages();
-
-//    // Get basic form data
-//    const title = document.getElementById('availability-title').value.trim();
-//    const startDate = document.getElementById('start-date').value;
-//    const endDate = document.getElementById('end-date').value;
-//    const noEndDate = document.getElementById('availability-checkbox').checked;
-//    const clinicalStaffId = parseInt(document.getElementById('clinical-staff-id').value);
-
-//    // Validate basic fields
-//    let hasErrors = false;
-
-//    if (!title) {
-//        document.getElementById('title-error').textContent = 'Title is required';
-//        hasErrors = true;
-//    }
-
-//    if (!startDate) {
-//        document.getElementById('start-date-error').textContent = 'Start date is required';
-//        hasErrors = true;
-//    }
-
-//    if (!noEndDate && !endDate) {
-//        document.getElementById('end-date-error').textContent = 'End date is required unless "No End Date" is checked';
-//        hasErrors = true;
-//    }
-
-//    // Collect selected days and their time slots
-//    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-//    const selectedDays = [];
-
-//    days.forEach(day => {
-//        const checkbox = document.getElementById(`${day}-check`);
-//        if (checkbox && checkbox.checked) {
-//            const timeSlotsDiv = document.getElementById(`${day}-times`);
-//            const timeSlots = [];
-
-//            // Get all time slot pairs for this day
-//            const slotDivs = timeSlotsDiv.querySelectorAll('.d-flex.align-items-center.mb-2');
-//            slotDivs.forEach(slotDiv => {
-//                const timeInputs = slotDiv.querySelectorAll('input[type="time"]');
-//                if (timeInputs.length === 2) {
-//                    const startTime = timeInputs[0].value;
-//                    const endTime = timeInputs[1].value;
-
-//                    if (startTime && endTime && endTime > startTime) {
-//                        timeSlots.push({
-//                            startTime: startTime,
-//                            endTime: endTime
-//                        });
-//                    }
-//                }
-//            });
-
-//            if (timeSlots.length > 0) {
-//                selectedDays.push({
-//                    dayName: day.charAt(0).toUpperCase() + day.slice(1), // Capitalize first letter
-//                    timeSlots: timeSlots
-//                });
-//            }
-//        }
-//    });
-
-//    if (selectedDays.length === 0) {
-//        alert('Please select at least one day with time slots');
-//        hasErrors = true;
-//    }
-
-//    if (hasErrors) {
-//        return;
-//    }
-
-//    // Prepare data to send
-//    const requestData = {
-//        title: title,
-//        startDate: startDate,
-//        endDate: noEndDate ? null : endDate,
-//        noEndDate: noEndDate,
-//        clinicalStaffId: clinicalStaffId,
-//        days: selectedDays
-//    };
-
-//    // Show loading state
-//    const saveButton = document.querySelector('button[type="submit"]');
-//    const originalText = saveButton.textContent;
-//    saveButton.disabled = true;
-//    saveButton.textContent = 'Saving...';
-
-//    // Send to server
-//    fetch('/Appointment/AddAvailabilityDate', {
-//        method: 'POST',
-//        headers: {
-//            'Content-Type': 'application/json',
-//            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-//        },
-//        body: JSON.stringify(requestData)
-//    })
-//        .then(response => response.json())
-//        .then(data => {
-//            if (data.success) {
-//                // Success - close modal and show success message
-//                const modal = bootstrap.Modal.getInstance(document.getElementById('calendar-modal'));
-//                modal.hide();
-
-//                // You can show a success toast/alert here
-//                showToast('Availability saved successfully!', 'success');
-
-//                // Reset form
-//                resetForm();
-//            } else {
-//                // Show error message
-//                showToast(data.message || 'An error occurred while saving.', 'error');
-//            }
-//        })
-//        .catch(error => {
-//            console.error('Error:', error);
-//            showToast('An error occurred while saving. Please try again.', 'error');
-//        })
-//        .finally(() => {
-//            // Restore button state
-//            saveButton.disabled = false;
-//            saveButton.textContent = originalText;
-//        });
-//}
-
-//function clearErrorMessages() {
-//    document.getElementById('title-error').textContent = '';
-//    document.getElementById('start-date-error').textContent = '';
-//    document.getElementById('end-date-error').textContent = '';
-//}
-
-//function resetForm() {
-//    document.getElementById('availability-form').reset();
-//    document.getElementById('weekdays-container').innerHTML = '';
-//    clearErrorMessages();
-//}
+    // -------------------------
+    // Days validation
+    // -------------------------
+    if (!data.Days || data.Days.length === 0) {
+        showToast('Select at least one day before saving!', 'error');
+        return;
+    }
 
 
-//    // Handle form submission
-//    document.getElementById('availability-form').addEventListener('submit', function (e) {
-//        e.preventDefault(); // Prevent default form submission
-//        saveAvailability();
-//    });
+    // -------------------------
+    // Time slot validation for each day
+    // -------------------------
+    // -------------------------
+    // Time slot validation for each day
+    // -------------------------
+    let invalidTime = false;
 
-//    // Initialize weekdays when modal is shown
-//    const calendarModal = document.getElementById('calendar-modal');
-//    if (calendarModal) {
-//        calendarModal.addEventListener('shown.bs.modal', function () {
-//            updateWeekdays();
-//        });
-//    }
+    document.querySelectorAll('.day-checkbox').forEach(cb => {
+        if (cb.checked) {
+            const dayName = cb.id.replace('-check', '');
+            const timesContainer = document.getElementById(dayName + '-times');
+            if (timesContainer) {
+                const timeInputs = timesContainer.querySelectorAll('input[type="time"]');
+                const startTimesSet = new Set();
 
+                // Loop through start-end pairs
+                for (let i = 0; i < timeInputs.length; i += 2) {
+                    const startTime = timeInputs[i].value;
+                    const endTime = timeInputs[i + 1]?.value;
 
-////Show Toast for notification
-//function showToast(message, type = 'success') {
-//    const toastContainer = document.getElementById('toast-container');
+                    if (!startTime || !endTime) {
+                        invalidTime = true;
+                        showToast(`Time slots for ${dayName} cannot be empty`, 'error');
+                        return;
+                    }
 
-//    // Create the toast element
-//    const toastEl = document.createElement('div');
-//    toastEl.className = `toast align-items-center text-white border-0 ${type === 'success' ? 'bg-success' : 'bg-danger'}`;
-//    toastEl.role = 'alert';
-//    toastEl.ariaLive = 'assertive';
-//    toastEl.ariaAtomic = 'true';
-//    toastEl.innerHTML = `
-//        <div class="d-flex">
-//            <div class="toast-body">
-//                ${message}
-//            </div>
-//            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-//        </div>
-//    `;
+                    // Check for duplicate start times
+                    if (startTimesSet.has(startTime)) {
+                        invalidTime = true;
+                        showToast(`Duplicate start time '${startTime}' for ${dayName} is not allowed`, 'error');
+                        return;
+                    }
+                    startTimesSet.add(startTime);
 
-//    toastContainer.appendChild(toastEl);
+                    // Convert times to minutes for proper comparison
+                    const [startHour, startMinute] = startTime.split(':').map(Number);
+                    const [endHour, endMinute] = endTime.split(':').map(Number);
+                    const startTotal = startHour * 60 + startMinute;
+                    const endTotal = endHour * 60 + endMinute;
 
-//    // Show toast using Bootstrap's JS
-//    const bsToast = new bootstrap.Toast(toastEl, { delay: 3000 });
-//    bsToast.show();
+                    if (startTotal >= endTotal) {
+                        invalidTime = true;
+                        showToast(`Invalid time slot for ${dayName}: Start time must be before End time`, 'error');
+                        return;
+                    }
+                }
+            }
+        }
+    });
 
-//    // Remove toast from DOM after it's hidden
-//    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
-//}
+    if (invalidTime) return;
+
+    // -------------------------
+    // All validations passed, send data to server
+    // -------------------------
+    fetch('/ClinicalStaff/SaveAvailabilityJson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                showToast('Availability saved successfully!', 'success');
+
+                // -------------------------
+                // Hide panel after save
+                // -------------------------
+                const availabilityDiv = document.getElementById('availability-input');
+                if (availabilityDiv) {
+                    availabilityDiv.classList.remove('show');
+                    availabilityDiv.style.setProperty('display', 'none', 'important');
+                }
+
+                // -------------------------
+                // Clear all input values & localStorage
+                // -------------------------
+                const inputIds = ["availability-title", "start-date", "end-date", "availability-checkbox"];
+                inputIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (el.type === "checkbox") el.checked = false;
+                        else el.value = '';
+                        localStorage.removeItem(id);
+                    }
+                });
+
+                // -------------------------
+                // Clear day checkboxes, hide times, reset slots, remove localStorage
+                // -------------------------
+                document.querySelectorAll('.day-checkbox').forEach(cb => {
+                    cb.checked = false;
+                    const dayName = cb.id.replace('-check', '');
+                    const timesContainer = document.getElementById(dayName + '-times');
+                    if (timesContainer) {
+                        timesContainer.style.display = 'none';
+                        timesContainer.innerHTML = `
+                            <div class="d-flex align-items-center mb-2" id="${dayName}-slot-1">
+                                <input type="time" class="form-control me-2" value="06:00">
+                                <span class="me-2">–</span>
+                                <input type="time" class="form-control me-2" value="07:00">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot('${dayName}')">+</button>
+                            </div>
+                        `;
+                    }
+                    localStorage.removeItem(`${dayName}-check`);
+                });
+
+                // -------------------------
+                // Remove visibility flag
+                // -------------------------
+                localStorage.removeItem("availability-input-visible");
+
+            } else {
+                const errorMessage = result.message || 'Error saving availability';
+                showToast(errorMessage, 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Server error: ' + (err.message || 'Unable to save availability'), 'error');
+        });
+}
+
+//Show Toast for notification
+function showToast(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container');
+
+    // Create the toast element
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white border-0 ${type === 'success' ? 'bg-success' : 'bg-danger'}`;
+    toastEl.role = 'alert';
+    toastEl.ariaLive = 'assertive';
+    toastEl.ariaAtomic = 'true';
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+    toastContainer.appendChild(toastEl);
+
+    // Show toast using Bootstrap's JS
+    const bsToast = new bootstrap.Toast(toastEl, { delay: 3000 });
+    bsToast.show();
+
+    // Remove toast from DOM after it's hidden
+    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+}

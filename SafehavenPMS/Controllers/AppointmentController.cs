@@ -19,6 +19,30 @@ namespace SafehavenPMS.Controllers
             _context = context;
         }
 
+        public IActionResult ScheduleAppointment()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SubmitDate(DateTime selectedDate)
+        {
+            // Get the day name ("Monday", "Tuesday", etc.)
+            var dayName = selectedDate.DayOfWeek.ToString();
+
+            // Query matching day slots for the selected date
+            var timeSlots = await _context.AvailabilityDays
+                .Where(d => d.DayName == dayName && d.IsAvailable)
+                .SelectMany(d => d.TimeSlots) // Flatten the TimeSlot collections
+                .OrderBy(t => t.StartTime)
+                .ToListAsync();
+
+            // Pass to the view
+            ViewBag.SelectedDate = selectedDate;
+            ViewBag.AvailableTimes = timeSlots;
+
+            return View("ScheduleAppointment");
+        }
 
         //        [HttpPost]
         //        public async Task<IActionResult> AddAvailabilityDate([FromBody] AvailabilityViewModel request)

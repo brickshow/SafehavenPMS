@@ -205,17 +205,9 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item"
-                                               href="#"
-                                               data-bs-toggle="modal"
-                                               data-bs-target="#appointment-modal"
-                                               onclick="setPatientInfo(
-                                                                       '@patient.PatientId',
-                                                                       '@($"{patient.Firstname} {patient.Lastname}")',
-                                                                       '@(patient.ClinicalStaffPatients?.FirstOrDefault()?.ClinicalStaff != null
-                                                                                                                  ? $"{patient.ClinicalStaffPatients.First().ClinicalStaff.Firstname} {patient.ClinicalStaffPatients.First().ClinicalStaff.Lastname}"
-                                                                                                                  : "Not Assigned")'
-                                                           )">
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("ScheduleAppointment", "Appointment", new { id = patient.PatientId })">
+                                                <span class="badge-dot bg-warning"></span>
                                                 Schedule Initial Assessment
                                             </a>
                                         </li>
@@ -294,11 +286,13 @@
     }
 
     .table-responsive-custom {
-        overflow-x: auto;
-        white-space: nowrap;
-        width: 100%;
+        overflow: visible !important;
     }
 
+    .dropdown-menu {
+        position: absolute !important;
+        z-index: 1055 !important;
+    }
     .table td, .table th {
         white-space: nowrap;
     }
@@ -306,14 +300,6 @@
     .dropdown {
         position: relative;
         z-index: auto !important;
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        z-index: 1001;
-        top: 100%;
-        left: 0;
-        z-index: 1055 !important;
     }
 
     .rotate-180 {

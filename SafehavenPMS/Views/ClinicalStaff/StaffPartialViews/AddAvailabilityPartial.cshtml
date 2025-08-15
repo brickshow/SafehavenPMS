@@ -50,22 +50,29 @@
     <div class="row p-2 flex-grow-1 overflow-auto">
         <div class="col-12">
             <h6 class="fw-semibold mb-3">Available Days</h6>
-
-            @foreach (var day in Model.Days)
+            @if(Model.Days == null)
             {
-                <div class="form-check d-flex align-items-center mb-1">
-                    <input class="form-check-input me-2 day-checkbox" type="checkbox" id="@(day.DayName)-check">
-                    <label class="form-check-label fw-semibold" for="@(day.DayName)-check">@day.DayName</label>
-                </div>
-
-                <div class="time-slots mt-2 mb-3" id="@(day.DayName)-times" style="display: none;">
-                    <div class="d-flex align-items-center mb-2" id="@(day.DayName)-slot-1">
-                        <input type="time" class="form-control me-2" value="06:00">
-                        <span class="me-2">–</span>
-                        <input type="time" class="form-control me-2" value="07:00">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot('@day.DayName')">+</button>
+                <div class="text-center d-flex justify-content-center">No Available days</div>
+            }
+            else
+            {
+                @foreach (var day in Model.Days)
+                {
+                    <div class="form-check d-flex align-items-center mb-1">
+                        <input class="form-check-input me-2 day-checkbox" type="checkbox" id="@(day.DayName)-check">
+                        <label class="form-check-label fw-semibold" for="@(day.DayName)-check">@day.DayName</label>
                     </div>
-                </div>
+
+                    <div class="time-slots mt-2 mb-3" id="@(day.DayName)-times" style="display: none;">
+                        <div class="d-flex align-items-center mb-2" id="@(day.DayName)-slot-1">
+                            <input type="time" class="form-control me-2" value="06:00">
+                            <span class="me-2">–</span>
+                            <input type="time" class="form-control me-2" value="07:00">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot('@day.DayName')">+</button>
+                        </div>
+                    </div>
+                }
+
             }
         </div>
     </div>
@@ -100,107 +107,5 @@
 </style>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-        // Toggle the visibility of the time slots when checkbox is clicked
-        document.querySelectorAll('.day-checkbox').forEach(function(checkbox) {
-            checkbox.addEventListener('change', function() {
-                const dayName = this.id.replace('-check', '');
-                const timesDiv = document.getElementById(dayName + '-times');
-                timesDiv.style.display = this.checked ? 'block' : 'none';
-            });
-        });
-
-    });
-
-    //function to add a new time slot
-    function addTimeSlot(dayName) {
-        const container = document.getElementById(dayName + '-times');
-        const slotCount = container.querySelectorAll('.d-flex').length + 1;
-
-        const div = document.createElement('div');
-        div.className = 'd-flex align-items-center mb-2';
-        div.id = `${dayName}-slot-${slotCount}`;
-        div.innerHTML = `
-            <input type="time" class="form-control me-2" value="06:00">
-            <span class="me-2">–</span>
-            <input type="time" class="form-control me-2" value="07:00">
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">-</button>
-        `;
-        container.appendChild(div);
-    }
-
-    function gatherAvailabilityForSave() {
-        const days = [];
-
-        document.querySelectorAll('.day-checkbox').forEach(checkbox => {
-            const dayName = checkbox.id.replace('-check', '');
-            const dayId = checkbox.dataset.dayId;
-            if (!checkbox.checked) return;
-
-            const timeSlots = [];
-            document.querySelectorAll(`#${dayName}-times .d-flex`).forEach(slotDiv => {
-                const start = slotDiv.querySelector('input[type="time"]:nth-child(1)').value;
-                const end = slotDiv.querySelector('input[type="time"]:nth-child(3)').value;
-                timeSlots.push({ StartTime: start, EndTime: end });
-            });
-
-            days.push({ DayId: dayId, DayName: dayName, TimeSlots: timeSlots });
-        });
-
-        return {
-            ClinicalStaffID: document.querySelector('input[name="ClinicalStaffID"]').value,
-            Title: document.querySelector('#availability-title').value,
-            StartDate: document.querySelector('#start-date').value,
-            EndDate: document.querySelector('#end-date').value,
-            NoEndDate: document.querySelector('#availability-checkbox').checked,
-            Days: days
-        };
-    }
-
-       function saveAvailability() {
-        const data = gatherAvailabilityForSave();
-
-        fetch('/ClinicalStaff/SaveAvailabilityJson', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(res => res.json())
-        .then(result => {
-            if(result.success) {
-                alert('Availability saved successfully!');
-
-                // 1. Force close the Add Availability panel
-                const availabilityDiv = document.getElementById('availability-input');
-                availabilityDiv.style.setProperty('display', 'none', 'important'); // hide
-                availabilityDiv.classList.remove('show'); // remove animation class
-
-                // 2. Clear all input fields
-                document.querySelector('#availability-title').value = '';
-                document.querySelector('#start-date').value = '';
-                document.querySelector('#end-date').value = '';
-                document.querySelector('#availability-checkbox').checked = false;
-
-                // Clear day checkboxes and reset time slots
-                document.querySelectorAll('.day-checkbox').forEach(cb => {
-                    cb.checked = false;
-                    const dayName = cb.id.replace('-check', '');
-                    const timesContainer = document.getElementById(dayName + '-times');
-                    timesContainer.style.display = 'none';
-                    timesContainer.innerHTML = `
-                        <div class="d-flex align-items-center mb-2" id="${dayName}-slot-1">
-                            <input type="time" class="form-control me-2" value="06:00">
-                            <span class="me-2">–</span>
-                            <input type="time" class="form-control me-2" value="07:00">
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimeSlot('${dayName}')">+</button>
-                        </div>
-                    `;
-                });
-            } else {
-                alert('Error saving availability');
-            }
-        })
-        .catch(err => console.error(err));
-    }
+   
 </script>
