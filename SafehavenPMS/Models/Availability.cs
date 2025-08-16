@@ -38,7 +38,7 @@ namespace SafehavenPMS.Models
 
         [Required]
         public string DayName { get; set; } // e.g., "Monday", "Tuesday"
-        public bool IsAvailable { get; set; }
+        public bool IsAvailable { get; set; } = true;
 
         // Foreign key
         public int AvailabilityId { get; set; }
@@ -61,6 +61,7 @@ namespace SafehavenPMS.Models
 
         [Required]
         public TimeSpan EndTime { get; set; }
+        public bool IsAvailable { get; set; } = true;
 
         // Foreign key
         public int DayId { get; set; }
