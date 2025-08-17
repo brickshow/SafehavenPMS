@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250816162150_NewAdeedNasad")]
-    partial class NewAdeedNasad
+    [Migration("20250817090720_Nanasad")]
+    partial class Nanasad
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -32,6 +32,9 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AppointmentId"));
+
+                    b.Property<int>("AvailabilityDayId")
+                        .HasColumnType("int");
 
                     b.Property<int>("AvailabilityId")
                         .HasColumnType("int");
@@ -52,17 +55,24 @@ namespace SafehavenPMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TimeSlotId")
+                        .HasColumnType("int");
+
                     b.Property<string>("VisitType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AppointmentId");
 
+                    b.HasIndex("AvailabilityDayId");
+
                     b.HasIndex("AvailabilityId");
 
                     b.HasIndex("ClinicalStaffID");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("TimeSlotId");
 
                     b.ToTable("Appointments");
                 });
@@ -312,6 +322,12 @@ namespace SafehavenPMS.Migrations
 
             modelBuilder.Entity("SafehavenPMS.Models.Appointment", b =>
                 {
+                    b.HasOne("SafehavenPMS.Models.AvailabilityDay", "Day")
+                        .WithMany()
+                        .HasForeignKey("AvailabilityDayId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("SafehavenPMS.Models.Availability", "Availability")
                         .WithMany("Appointments")
                         .HasForeignKey("AvailabilityId")
@@ -330,11 +346,21 @@ namespace SafehavenPMS.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SafehavenPMS.Models.TimeSlot", "TimeSlot")
+                        .WithMany()
+                        .HasForeignKey("TimeSlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Availability");
+
+                    b.Navigation("Day");
 
                     b.Navigation("Patient");
 
                     b.Navigation("Staff");
+
+                    b.Navigation("TimeSlot");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Availability", b =>

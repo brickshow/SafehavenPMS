@@ -1,5 +1,4 @@
-﻿@model SafehavenPMS.ViewModel.AppointmentViewModel
-
+﻿
 @{
     ViewBag.Title = "Appointment";
 }
@@ -46,8 +45,8 @@
                 <span class="d-block mb-2 fw-bold">Available Time</span>
                 <div class="d-flex flex-column border rounded p-3 mb-3">
                     <div class="row">
-                        <input type="hidden" asp-for="PatientId" />
-                        <input type="hidden" asp-for="ClinicalStaffID" />
+                        <input type="hidden"  />
+                        <input type="hidden"  />
                         <input type="hidden" name="SelectedDate" value="@ViewBag.SelectedDate" />
 
                         @if (ViewBag.AvailableTimes != null && ((IEnumerable<object>)ViewBag.AvailableTimes).Cast<dynamic>().Any())
@@ -70,22 +69,21 @@
                     </div>
                 </div>
 
-            
                 @* Patient Information *@
                 <div class="mb-3">
                     <label class="form-label">Patient Name</label>
-                    <input asp-for="PatientName" type="text" class="form-control" disabled />
+                    <input type="text" class="form-control"/>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Assign Clinical Staff</label>
-                    <input asp-for="ClinicalStaffName" type="text" class="form-control" disabled />
+                    <input  type="text" class="form-control"/>
                 </div>
 
                 @* Visit details *@
                 <div class="mb-3">
                     <label class="form-label">Visit Type</label>
-                    <select asp-for="VisitType" class="form-select">
+                    <select class="form-select">
                         <option>--Select--</option>
                         <option value="Medical Assessment">Medical Assessment</option>
                         <option value="Emergency Visit">Emergency Visit</option>
@@ -96,13 +94,13 @@
 
                 <div class="mb-3">
                     <label class="form-label">Add Description</label>
-                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
+                    <textarea  class="form-control" rows="3" placeholder="Additional notes..."></textarea>
                 </div>
 
                 @* Footer buttons *@
                 <div class="modal-footer bg-white border-top">
                     <a href="@Url.Action("Index", "Patient")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
-                    <button type="submit" class="btn-custom btn-next m-2" onclick="reloadPage()">Next</button>
+                    <button type="submit" class="btn-custom btn-next m-2">Next</button>
                 </div>
             </form>
         </div>
@@ -112,7 +110,7 @@
 @* ===== CSS for Appointment Card & Date Highlight ===== *@
 <style>
     .appointment {
-        width:60%;
+        width: 60%;
         background-color: white;
         box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);
         border-radius: 6px;

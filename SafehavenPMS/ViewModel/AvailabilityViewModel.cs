@@ -43,5 +43,7 @@
             [Required(ErrorMessage = "End time is required.")]
             [DataType(DataType.Time)]
             public TimeSpan EndTime { get; set; }
+
+            public bool IsAvailable { get; set; }
         }
     }

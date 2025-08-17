@@ -8,11 +8,17 @@ namespace SafehavenPMS.Models
         [Key]
         public int AppointmentId { get; set; }
 
-        // Keep FK for reference
         [Required]
         public int AvailabilityId { get; set; }
-        [ForeignKey("AvailabilityId")]
         public Availability? Availability { get; set; }
+
+        [Required]
+        public int AvailabilityDayId { get; set; }
+        public AvailabilityDay? Day { get; set; }
+
+        [Required]
+        public int TimeSlotId { get; set; }
+        public TimeSlot? TimeSlot { get; set; }
 
         [Required]
         public int ClinicalStaffID { get; set; }

@@ -1,6 +1,189 @@
-﻿<div id="appointmentCalendar"></div>
+﻿@model List<SafehavenPMS.ViewModel.AppointmentPendingApprovalViewModel>
+
+<div class="d-flex position-relative">
+    <!-- Calendar container -->
+    <div id="appointmentCalendar" class="calendar-container flex-grow-1"></div>
+
+    <!-- Notification panel -->
+    <div id="notificationPanel" class="notification-panel rounded p-3 bg-white">
+        <div class="d-flex flex-row justify-content-between">
+            <h5 class="fw-bold text-custom">New Appointments</h5>
+            <button type="button" class="btn-close" id="closeNotifications" aria-label="Close"></button>
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var appointment in Model)
+            {
+                <div class="notification-item card mb-3">
+                    <div class="card-body p-2">
+                        <strong>@appointment.VisitType (@appointment.DayName)</strong>
+                        <small class="d-block mb-2">
+                            @appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")
+                        </small>
+
+                        <div class="d-flex gap-2">
+                            <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" type="button" class="btn-cancel flex-fill">Cancel</button>
+                            <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" type="button" class="btn-next flex-fill">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center">No pending appointments.</div>
+        }
+
+    </div>
+
+    <!-- Toggle button -->
+    <button id="toggleNotifications" class="btn-custom btn-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Show Notifications">&lt;</button>
+</div>
+
+@* Modal to confirm cancellation *@
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to Cancel this Appointment? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <form asp-action="Cancel" asp-controller="Appointment" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="dayIdToDelete" name="id" />
+                    <button type="button" class="btn-cancel btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-next btn-danger">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Modal to confirm Appointment *@
+<div class="modal fade" id="ConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594);">
+                <h5 class="modal-title" id="deleteConfirmLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Do you want to confirm this appointment?
+            </div>
+            <div class="modal-footer">
+                <form asp-action="Confirm" asp-controller="Appointment" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="dayIdToDelete" name="id" />
+                    <button type="button" class="btn-cancel btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-next btn-danger">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* Appointment Details Modal *@
+<div class="modal fade" id="appointmentDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594);">
+                <h5 class="modal-title">Appointment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Visit Type:</strong> <span id="detailVisitType"></span></p>
+                <p><strong>Time:</strong> <span id="detailTime"></span></p>
+                <p><strong>Date:</strong> <span id="detailDate"></span></p>
+                <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <style>
+    /* Calendar container */
+    .calendar-container {
+        width: 100%;
+        transition: width 0.4s ease;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    /* Notification panel */
+    .notification-panel {
+        width: 30%;
+        max-width: 400px;
+        position: fixed;
+        top: 50px; /* adjust as needed */
+        right: -100%; /* start hidden off-screen */
+        height: calc(100% - 60px);
+        overflow-y: auto;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        border-radius: 8px 0 0 8px;
+        transition: right 0.4s ease;
+        z-index: 1050;
+    }
+
+        /* Slide-in state */
+        .notification-panel.show {
+            right: 0;
+        }
+
+    /* Toggle button */
+    #toggleNotifications {
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        z-index: 1060;
+        border-radius: 50% 0 0 50%;
+        width: 30px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: right 0.4s ease;
+    }
+
+        /* When panel is visible, move button off-screen */
+        #toggleNotifications.hide {
+            right: -30px;
+        }
+
+    /* Toggle button styling */
+    .toggle-btn {
+        position: absolute;
+        right: 0;
+        top: 20px;
+        z-index: 20;
+        border-radius: 50% 0 0 50%;
+        width: 30px;
+        height: 60px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #notificationPanel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #notificationPanel::-webkit-scrollbar-thumb {
+        background-color: #b3dfe5;
+        border-radius: 4px;
+    }
     #appointmentCalendar {
         max-width: 100%;
         margin: 0 auto;
@@ -9,7 +192,7 @@
         border-radius: 8px;
     }
 
-    /* Header background and padding */
+    /* Header styling */
     .fc .fc-toolbar.fc-header-toolbar {
         background: linear-gradient(to right, #069FB2, #058594);
         color: white;
@@ -18,108 +201,164 @@
         margin-bottom: 10px;
     }
 
-    /* Title text (e.g., "August 2025") */
     .fc .fc-toolbar-title {
         color: white;
         font-size: 1.25rem;
         font-weight: 600;
     }
 
-    /* Day numbers in dark teal */
     .fc .fc-daygrid-day-number {
         color: #015F6B;
         font-weight: 600;
     }
 
-    /* Grid lines in light teal */
     .fc .fc-scrollgrid,
     .fc .fc-scrollgrid td,
     .fc .fc-daygrid-day {
         border-color: #b3dfe5;
     }
 
-    /* Background for better readability */
     .fc .fc-daygrid-day-frame {
         background-color: #f8fcfc;
     }
 
-    /* Change the color of the day names in the calendar header */
     .fc .fc-col-header-cell-cushion {
-        color: #015F6B; /* Dark teal or your preferred color */
+        color: #015F6B;
         font-weight: 600;
         font-size: 0.95rem;
     }
 </style>
 
 <script>
-    // Wait until the entire HTML document is loaded before running this script
+    // Wait until the DOM is fully loaded before running the script
     document.addEventListener('DOMContentLoaded', function () {
-        // Find the calendar container element by ID
+        // Get the calendar container element by its ID
         var calendarEl = document.getElementById('appointmentCalendar');
 
-        // Create a new FullCalendar instance
+        // Initialize the FullCalendar instance
         var calendar = new FullCalendar.Calendar(calendarEl, {
-            // Set the default calendar view to a full month
-            initialView: 'dayGridMonth',
-            height: 'auto', // Let the calendar adjust its height automatically
+            initialView: 'dayGridMonth', // Show month view initially
+            height: 'auto', // Let the calendar height adjust automatically
 
-            // Load events from your controller (must return JSON)
-            events: '/Appointments/GetAppointments',
+            // Load events from the backend endpoint
+            events: '/Appointment/GetAppointments',
 
-            // Setup header toolbar buttons
-            headerToolbar: {
-                left: 'prev,next today', // navigation buttons
-                center: 'title',         // current month/year title
-                right: 'dayGridMonth,timeGridWeek,timeGridDay' // view toggle buttons
-            },
-
-            selectable: true, // allow selecting dates on the calendar
-
-            // When a calendar day is clicked
-            dateClick: function(info) {
-                const selectedDate = info.dateStr; // the date clicked in YYYY-MM-DD format
-
-                // Initialize Flatpickr on the date input inside the modal
-                const flatpickrInstance = flatpickr("#appointmentDateModal", {
-                    defaultDate: selectedDate,  // pre-fill the clicked date
-                    dateFormat: "Y-m-d"         // keep format consistent with the backend
-                });
-
-                // Manually update Flatpickr to ensure it's using the clicked date
-                flatpickrInstance.setDate(selectedDate, true);
-
-                // Open the Bootstrap modal with ID 'calendar-modal'
-                var modal = new bootstrap.Modal(document.getElementById('calendar-modal'));
-                modal.show();
-            },
-
-            // When an event (appointment) is clicked
             eventClick: function(info) {
-                alert('Appointment: ' + info.event.title); // show the title in a popup
-                // You can replace this with opening an "Edit" modal instead
+            info.jsEvent.preventDefault(); // stop navigation
+
+            // Populate modal fields
+            document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
+            document.getElementById("detailTime").innerText = info.event.extendedProps.time;
+            document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString();
+            document.getElementById("detailStatus").innerText = info.event.extendedProps.status || "Confirmed";
+
+            // Show modal (Bootstrap 5)
+            var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
+            appointmentDetailModal.show();
             },
 
-            // Highlight today's cell in the calendar (in dayGridMonth view)
-            dayCellDidMount: function (info) {
-                const today = new Date();       // get today's date
-                const cellDate = info.date;     // the date for the current cell
+            // Toolbar configuration
+            headerToolbar: {
+                left: 'prev,next today', // Navigation buttons
+                center: 'title',         // Month/Week/Day title
+                right: 'dayGridMonth,timeGridWeek,timeGridDay' // View toggle buttons
+            },
 
-                // Check if this cell is today (compare only year, month, day)
+            selectable: false, // Disable selecting dates on the calendar
+
+            // Customize how events are displayed in the calendar
+                eventContent: function(info) {
+                    let visitType = info.event.extendedProps.visitType;
+                    let time = info.event.extendedProps.time;
+                    let bgColor = "rgba(200, 200, 200, 0.5)"; // Default color
+
+                    // Check each visit type individually
+                    if (visitType === "Medical Assessment") {
+                        bgColor = "rgba(255, 204, 0, 0.5)";
+                    }
+                    if (visitType === "Emergency Visit") {
+                        bgColor = "rgba(253, 175, 134, 0.6)";
+                    }
+                    if (visitType === "Routine Checkup") {
+                        bgColor = "rgba(102, 178, 255, 0.5)";
+                    }
+                    if (visitType === "Follow-up") {
+                        bgColor = "rgba(153, 255, 153, 0.5)";
+                    }
+                    // Any other type will use the default color
+
+                    return {
+                        html: `
+                            <div class="text-center" style="
+                                background-color: ${bgColor};
+                                width: 100%;
+                                box-sizing: border-box;
+                                border-radius: 6px;
+                                white-space: normal;
+                                word-wrap: break-word;
+                                overflow-wrap: break-word;
+                                padding: 2px;
+                            ">
+                                <strong>${visitType}</strong><br/>
+                                <small>${time}</small>
+                            </div>
+                        `
+                    };
+                },
+
+            // Customize the appearance of day cells when the calendar renders
+            dayCellDidMount: function(info) {
+                const today = new Date(); // Get today's date
+                const cellDate = info.date; // Get the date of this cell
+
+                // Highlight the cell if it matches today's date
                 if (
                     cellDate.getFullYear() === today.getFullYear() &&
                     cellDate.getMonth() === today.getMonth() &&
                     cellDate.getDate() === today.getDate()
                 ) {
-                    // Apply custom styles to visually highlight today
-                    info.el.style.backgroundColor = '#fff4e5';  // light teal background
-                    info.el.style.border = '2px solid #00A3B4'; // border to emphasize
-                    info.el.style.borderRadius = '8px';         // rounded corners
+                    info.el.style.backgroundColor = '#fff4e5'; // Light background for today
+                    info.el.style.border = '2px solid #00A3B4'; // Border color for today
+                    info.el.style.borderRadius = '8px'; // Rounded corners
                 }
             }
         });
 
-        // Finally, render the calendar to the page
+        // Render the calendar inside the container
         calendar.render();
     });
 
+
+     var toggleBtn = document.getElementById('toggleNotifications');
+    var notificationPanel = document.getElementById('notificationPanel');
+    var closeBtn = document.getElementById('closeNotifications');
+    var calendar = document.getElementById('appointmentCalendar');
+
+    toggleBtn.addEventListener('click', function() {
+        toggleBtn.classList.add('hide');          // Move button off-screen
+        notificationPanel.classList.add('show'); // Slide panel in
+        calendar.style.width = "70%";             // Shrink calendar
+    });
+
+    closeBtn.addEventListener('click', function() {
+        toggleBtn.classList.remove('hide');      // Show toggle button
+        notificationPanel.classList.remove('show'); // Slide panel out
+        calendar.style.width = "100%";           // Expand calendar
+    });
+
+     // For Cancel modal
+    const cancelModal = document.getElementById('deleteConfirmModal');
+    cancelModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget; // Button that triggered the modal
+        const id = button.getAttribute('data-id'); // Extract info from data-id
+        cancelModal.querySelector('#dayIdToDelete').value = id;
+    });
+
+    // For Confirm modal
+    const confirmModal = document.getElementById('ConfirmModal');
+    confirmModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const id = button.getAttribute('data-id');
+        confirmModal.querySelector('#dayIdToDelete').value = id;
+    });
 </script>

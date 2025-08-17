@@ -17,5 +17,8 @@ namespace SafehavenPMS.ViewModel
         public string? status { get; set; } = Enum.AppointmentEnum.Pending.ToString();
         public int AvailabilityId { get; set; }
         public int TimeSlotId { get; set; }
+        public int StartTime { get; set; }
+        public int EndTime { get; set; }
+        public string? DateName { get; set; }
     }
 }

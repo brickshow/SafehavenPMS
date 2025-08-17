@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
+using SafehavenPMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,12 @@ builder.Services.AddSession(options =>
 //Configure Entity Framework Core with SQL Server
 builder.Services.AddDbContext<SafehavenPMS.Data.SafehavenPMSContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register the background service that will run in the background
+// This service (AppointmentStatusUpdater) will check periodically
+// if any appointments have already ended, and automatically update
+// their status from "Confirmed" to "Done".
+builder.Services.AddHostedService<AppointmentStatusUpdater>();
 
 var app = builder.Build();
 

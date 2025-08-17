@@ -341,6 +341,7 @@ function saveAvailability() {
                 // Remove visibility flag
                 // -------------------------
                 localStorage.removeItem("availability-input-visible");
+                location.reload(true);//Force to refresh the page
 
             } else {
                 const errorMessage = result.message || 'Error saving availability';

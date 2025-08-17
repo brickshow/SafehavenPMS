@@ -1,25 +1,15 @@
-﻿@model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
-
-
-@{
-    var staff = Model.Staffs.FirstOrDefault(); // safely get the first staff member
-    ViewBag.Title = staff != null ? $"{staff.Firstname} {staff.Lastname} - Profile" : "Staff Profile";
-}
-<div class="container-fluid">
+﻿<div class="container-fluid">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
             <a href="@Url.Action("Index", "ClinicalStaff")" class="me-3">
                 <i class="bx bx-reply fs-1 text-custom"></i>
             </a>
-            <img src="@(string.IsNullOrEmpty(staff?.ProfilePictureURL) ? "/Images/default.png" : staff.ProfilePictureURL)"
-                 class="rounded-circle me-3" style="width:60px; height:60px;" />
             <div>
                 <div class="d-flex flex-row justify-content-start align-items-center" style="gap:10px">
-                    <h4 class="mb-0 text-custom">@staff?.Firstname @staff?.Lastname</h4>
-                    <span class="badge bg-success">@(staff.IsActive ? "Active" : "Inactive")</span>
+                    <i class='bx bxs-capsule'></i>
+                    <h4 class="mb-0 text-custom">Medication</h4>
                 </div>
-                <p class="mb-0 text-muted">@staff.Position - @staff.ClinicalStaffID</p>
             </div>
         </div>
         <a href="#" id="availability-button" class="add-availability btn-custom btn-primary text-decoration-none" style="display:none">
@@ -60,10 +50,10 @@
     @* Tab Content *@
     <div class="tab-content" id="staffTabContent">
         <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
-            @await Html.PartialAsync("_OverviewTab", Model)
+          @await Html.PartialAsync("TabContent/_SummaryTab")
         </div>
 
-        <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+      @*   <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
             @await Html.PartialAsync("_PersonalTab", Model)
         </div>
 
@@ -72,39 +62,8 @@
         </div>
 
         <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab">
-            @await Html.PartialAsync("_Availability", Model)
+            @await Html.PartialAsync("_Availability", Model) *@
         </div>
     </div>
 </div>
 
-
-@* Show toast notification *@
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
-    <div id="toast-container" aria-live="polite" aria-atomic="true" class="bg-transparent"></div>
-</div>
-
-
-<style>
-    .card {
-        border: 1px solid #e9ecef;
-        border-radius: 10px;
-    }
-
-    .nav-tabs .nav-link {
-        color: #767676;
-        background-color: transparent;
-        border: none;
-        font-weight: normal;
-    }
-
-        .nav-tabs .nav-link.active {
-            color: #00A3B4;
-            background-color: transparent;
-            border: none;
-            border-bottom: 3px solid #00A3B4;
-            font-weight: bold;
-        }
-
-</style>
-
-<script src="~/js/appointment.js"></script>
