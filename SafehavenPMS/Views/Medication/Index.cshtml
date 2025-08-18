@@ -17,8 +17,11 @@
                 </div>
             </div>
         </div>
-        <a href="@Url.Action("AddMedicine", "Medication")" id="availability-button" class="add-availability btn-custom btn-primary text-decoration-none">
+        <a href="@Url.Action("AddMedicine", "Medication")" id="add-medicine-button" class="add-availability btn-custom btn-primary text-decoration-none" style="display:none">
             + Add Medicine
+        </a>
+        <a href="@Url.Action("AddMedicationOrder", "Medication")" id="add-medication-order-button" class="add-availability btn-custom btn-primary text-decoration-none" style="display:none">
+            + Add Medication Order
         </a>
     </div>
 
@@ -94,20 +97,48 @@
         // Get saved tab from localStorage
         var activeTab = localStorage.getItem('activeTab');
 
-        if (activeTab) {
-            // Activate the saved tab
-            var tabEl = document.getElementById(activeTab);
-            if(tabEl) {
-                var tab = new bootstrap.Tab(tabEl);
-                tab.show();
-            }
+        // Default tab is overview
+        var defaultTabId = "overview-tab";
+        var tabToActivate = activeTab || defaultTabId;
+
+        var tabEl = document.getElementById(tabToActivate);
+        if(tabEl){
+            var tab = new bootstrap.Tab(tabEl);
+            tab.show();
         }
 
-        // Save tab on click
+        // Save tab on click and toggle buttons
         document.querySelectorAll('#staffTab button[data-bs-toggle="tab"]').forEach(function(tabButton) {
             tabButton.addEventListener('shown.bs.tab', function (event) {
-                localStorage.setItem('activeTab', event.target.id);
+                var tabId = event.target.id;
+                localStorage.setItem('activeTab', tabId);
+
+                toggleAddButtons(tabId);
             });
         });
+
+        // Run once on page load to show correct button
+        toggleAddButtons(tabToActivate);
+
+        // Function to show/hide buttons
+        function toggleAddButtons(tabId){
+            var addMedicineBtn = document.getElementById("add-medicine-button");
+            var addMedicationOrderBtn = document.getElementById("add-medication-order-button");
+
+            if(tabId === "documents-tab"){
+                addMedicineBtn.style.display = "flex";
+                addMedicationOrderBtn.style.display = "none";
+            }
+            else if(tabId === "personal-tab"){
+                addMedicationOrderBtn.style.display = "flex";
+                addMedicineBtn.style.display = "none";
+            }
+            else{
+                // Hide both for other tabs
+                addMedicineBtn.style.display = "none";
+                addMedicationOrderBtn.style.display = "none";
+            }
+        }
     });
 </script>
+

@@ -1,0 +1,230 @@
+﻿@model SafehavenPMS.ViewModel.AddMedicationOrderViewModel
+
+@{
+    ViewBag.Title = "Patient Medication Details";
+}
+
+@* Content Header *@
+<div class="header-content">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class="bx bxs-group fs-2 me-2" title="Staff"></i>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+
+
+<div class="container mt-4 w-50">
+    <div class="card">
+        <div class="card-header bg-teal text-white" style="background-color: #058594; font-size: 18px; font-weight: bold;">
+            Patient Medication Details
+        </div>
+        <div class="card-body">
+            <div class="form-group row mb-3">
+                <label for="Patient" class="col-sm-3 col-form-label">Patient</label>
+                <div class="col-sm-9 position-relative">
+                    <input type="text" id="Patient" name="PatientName" class="form-control"
+                           placeholder="Search patient..." autocomplete="off" />
+
+                    @* Bootstrap styled dropdown for suggestions *@
+                    <div id="patientDropdown" class="dropdown-menu w-100"></div>
+
+                    @* Hidden field to store PatientId *@
+                    <input type="hidden" id="PatientId" name="PatientId" />
+                </div>
+            </div>
+
+            <div class="form-group row mb-3">
+                <label for="MedicineName" class="col-sm-3 col-form-label">Medicine Name</label>
+                <div class="col-sm-9">
+                    <form method="get" asp-action="AddMedicationOrder">
+                        <select id="MedicineName" name="MedicineId" class="form-control">
+                            <option value="">Select Medicine</option>
+                            @foreach (var med in Model.Medicines)
+                            {
+                                <option value="@med.MedicineId">
+                                    @med.GenericName - @med.BrandName (@med.Form @med.Strength)
+                                </option>
+                            }
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <div class="form-group row mb-3">
+                <label for="Form" class="col-sm-3 col-form-label">Form</label>
+                <div class="col-sm-9">
+                    <input asp-for="Form" value="@Model.Form" class="form-control" readonly/>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <label  class="col-sm-3 col-form-label">Dose</label>
+                <div class="col-sm-9">
+                    <div class="row g-2">
+                        <!-- Strength value -->
+                        <div class="col-md-8">
+                            <input  type="number" class="form-control" required />
+                            <span  class="text-danger"></span>
+                            <div class="invalid-feedback">Please enter the dosage.</div>
+                        </div>
+
+                        <!-- Strength unit -->
+                        <div class="col-md-4">
+                            <input asp-for="Unit" value="@Model.Unit" class="form-control" readonly />
+                            <span class="text-danger"></span>
+                            <div class="invalid-feedback">Please select a unit.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row mb-3">
+                <label for="Instruction" class="col-sm-3 col-form-label">Instruction</label>
+                <div class="col-sm-9">
+                    <textarea id="Instruction" name="Instruction" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="form-group row mb-3">
+                <label for="Frequency" class="col-sm-3 col-form-label">Frequency</label>
+                <div class="col-sm-9">
+                    <select class="form-control">
+                        <option>Once a Day</option>
+                        <option>Twice a Day</option>
+                        <option>Thrice a Day</option>
+                        <option>Every 6 Hours</option>
+                        <option>Every 8 Hours</option>
+                        <option>PRN</option>
+                        <option>Once a Week</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group row mb-3">
+                <label for="ScheduleType" class="col-sm-3 col-form-label">Start Date</label>
+                <div class="col-sm-9">
+                    <input type="date" id="ScheduleType" name="ScheduleType" class="form-control" value="Daily, Non-Daily, PRN" />
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <label class="col-sm-3 col-form-label">Strength</label>
+                <div class="col-sm-9">
+                    <div class="row g-2">
+                        <!-- Strength value -->
+                        <div class="col-md-6">
+                            <input  type="number" class="form-control" />
+                            <span class="text-danger"></span>
+                            <div class="invalid-feedback">Please enter the dosage.</div>
+                        </div>
+
+                        <!-- Strength unit -->
+                        <div class="col-md-6">
+                            <select class="form-control">
+                                <option value="ml">Days</option>
+                                <option value="mg">Weeks</option>
+                                <option value="g">Months</option>
+                            </select>
+                            <span class="text-danger"></span>
+                            <div class="invalid-feedback">Please select a unit.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons in a horizontal flex container -->
+            <div class="d-flex gap-2">
+                <a href="@Url.Action("Index", "Medication")" class="btn-cancel btn-outline-secondary flex-fill text-decoration-none">Back</a>
+                <button type="submit" class="btn-next btn-primary flex-fill">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+     // Get references to the input field, dropdown container, and hidden field for storing the selected ID
+    const input = document.getElementById("Patient");
+    const dropdown = document.getElementById("patientDropdown");
+    const hiddenId = document.getElementById("PatientId");
+
+    // Add an event listener for typing inside the input field
+    input.addEventListener("input", async function () {
+        // Trim whitespace and get the current search term
+        const term = this.value.trim();
+        // Clear previous dropdown items
+        dropdown.innerHTML = "";
+
+        // If less than 2 characters typed, hide dropdown and exit
+        if (term.length < 2) {
+            dropdown.classList.remove("show");
+            return;
+        }
+
+        try {
+            // Call the backend endpoint to fetch patients that match the term
+            const response = await fetch(`/Medication/SearchPatients?term=${encodeURIComponent(term)}`);
+            // Parse the response JSON (list of patients)
+            const patients = await response.json();
+
+            // If no patients found, hide dropdown and exit
+            if (patients.length === 0) {
+                dropdown.classList.remove("show");
+                return;
+            }
+
+            // Loop through each patient returned from the server
+            patients.forEach(p => {
+                // Create a new button for the dropdown item
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "dropdown-item"; // Bootstrap dropdown style
+                item.textContent = p.name;        // Display patient name
+                item.dataset.id = p.id;           // Store patient id in data attribute
+
+                // When user clicks this item
+                item.addEventListener("click", () => {
+                    input.value = p.name;         // Set input field to selected patient's name
+                    hiddenId.value = p.id;        // Save patient id into hidden field
+                    dropdown.classList.remove("show"); // Hide the dropdown
+                });
+
+                // Add the new item into the dropdown list
+                dropdown.appendChild(item);
+            });
+
+            // Show dropdown after populating it
+            dropdown.classList.add("show");
+        } catch (err) {
+            // Log any error if fetch fails
+            console.error("Error fetching patients:", err);
+        }
+    });
+
+    // Close the dropdown if the user clicks outside of the input box
+    document.addEventListener("click", (e) => {
+        if (!input.parentNode.contains(e.target)) {
+            dropdown.classList.remove("show");
+        }
+    });
+
+      const medicineSelect = document.getElementById("MedicineName");
+    const form = medicineSelect.closest("form");
+
+    // Load saved selection from localStorage on page load
+    document.addEventListener("DOMContentLoaded", function () {
+        const savedValue = localStorage.getItem("selectedMedicineId");
+        if (savedValue) {
+            medicineSelect.value = savedValue;
+        }
+    });
+
+    // Save selection + submit form when changed
+    medicineSelect.addEventListener("change", function () {
+        localStorage.setItem("selectedMedicineId", this.value);
+        form.submit();
+    });
+
+</script>
