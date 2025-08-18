@@ -18,6 +18,7 @@ namespace SafehavenPMS.Data
         public DbSet<AvailabilityDay> AvailabilityDays { get; set; }
         public DbSet<TimeSlot> TimeSlots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<Medicine> Medicines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

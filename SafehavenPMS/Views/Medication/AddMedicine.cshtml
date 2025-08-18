@@ -1,4 +1,6 @@
-﻿@{
+﻿@model SafehavenPMS.ViewModel.MedicineViewModel
+
+@{
     ViewBag.Title = "Add Medicine";
 }
 
@@ -13,32 +15,45 @@
     <hr class="mt-0 mb-2" />
 </div>
 
-<div class="form-container">
-    <div class="header">
-        <h3>Patient Medication Details</h3>
+    <div class="form-container">
+        <form asp-controller="Medication" asp-action="AddMedicine" method="post">
+            <div class="header d-flex justify-content-start">
+                <h3 class="text-custom m-3">Patient Medication Details</h3>
+            </div>
+            <div class="p-5">
+                <div class="form-group">
+                    <label asp-for="MedicineName">Medication Name</label>
+                <input asp-for="MedicineName" type="text" class="form-control" />
+                    <span asp-validation-for="MedicineName"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Form">Form</label>
+                <input asp-for="Form" type="text" class="form-control" />
+                    <span asp-validation-for="Form"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Dosage">Dosage</label>
+                <input asp-for="Dosage" type="text" class="form-control" />
+                    <span asp-validation-for="Dosage"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Price">Price</label>
+                    <input asp-for="Price" type="text" class="form-control" />
+                    <span asp-validation-for="Price"></span>
+                </div>
+
+                <!-- Buttons in a horizontal flex container -->
+                <div class="d-flex gap-2">
+                    <button class="btn-cancel flex-fill" onclick="history.back()">Back</button>
+                    <button type="submit" class="btn-next flex-fill">Add</button>
+                </div>
+            </div>
+        </form>
     </div>
-    <div class="form-group">
-        <label>Medication Name</label>
-        <input type="text" name="MedicationName" />
-    </div>
-    <div class="form-group">
-        <label>Form</label>
-        <input type="text" name="Form" value="tablets/injection/capsules/etc..." readonly />
-    </div>
-    <div class="form-group">
-        <label>Dosage</label>
-        <input type="text" name="Dosage" value="5 ml" />
-    </div>
-    <div class="form-group">
-        <label>Price</label>
-        <input type="text" name="Price" />
-    </div>
-    <button class="add-button">Add</button>
-</div>
 
 <style>
     .form-container {
-        max-width: 400px;
+        max-width: 50%;
         margin: 20px auto;
         border: 1px solid #ccc;
         border-radius: 5px;
@@ -62,29 +77,10 @@
             border-radius: 4px;
         }
 
-            .form-group input[readonly] {
-                background-color: #f9f9f9;
-                color: #ff0000;
-            }
-
     .header {
         background: linear-gradient(to right, #069FB2, #058594);
         color: white;
         border-radius: 5px 5px 0 0;
         text-align: center;
     }
-
-    .add-button {
-        background-color: #1abc9c;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 100%;
-    }
-
-        .add-button:hover {
-            background-color: #16a085;
-        }
 </style>
