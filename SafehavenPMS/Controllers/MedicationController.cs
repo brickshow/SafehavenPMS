@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
@@ -14,9 +15,26 @@ namespace SafehavenPMS.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            // Fetch all medicines from the database
+            var medicines = await _context.Medicines.ToListAsync();
+
+            // Map to ViewModel
+            var model = new MedicationPageViewModel
+            {
+                Medicines = medicines.Select(m => new MedicineViewModel
+                {
+                    MedicineId = m.MedicineId,
+                    MedicineName = m.MedicineName,
+                    Form = m.Form,
+                    Dosage = m.Dosage,
+                    Price = m.Price
+                }).ToList()
+            };
+
+            // Pass the ViewModel to the view
+            return View(model);
         }
 
         //View for Add medicine

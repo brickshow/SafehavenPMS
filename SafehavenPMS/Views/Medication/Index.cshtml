@@ -1,4 +1,6 @@
-﻿@{
+﻿@model SafehavenPMS.ViewModel.MedicationPageViewModel
+
+@{
     ViewBag.Title = "Medication";
 }
 
@@ -56,12 +58,12 @@
           @await Html.PartialAsync("TabContent/_SummaryTab")
         </div>
 
-        @* <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab"> *@
-        @*     @await Html.PartialAsync("_PersonalTab", Model) *@
-        @* </div> *@
+        <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+            @await Html.PartialAsync("TabContent/_MedicationOrderTab")
+        </div>
 
         <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-            @await Html.PartialAsync("TabContent/_MedicineTab")
+            @await Html.PartialAsync("TabContent/_MedicineTab", Model.Medicines)
         </div>
 
         @* <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab"> *@
@@ -87,4 +89,25 @@
         }
 
 </style>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Get saved tab from localStorage
+        var activeTab = localStorage.getItem('activeTab');
 
+        if (activeTab) {
+            // Activate the saved tab
+            var tabEl = document.getElementById(activeTab);
+            if(tabEl) {
+                var tab = new bootstrap.Tab(tabEl);
+                tab.show();
+            }
+        }
+
+        // Save tab on click
+        document.querySelectorAll('#staffTab button[data-bs-toggle="tab"]').forEach(function(tabButton) {
+            tabButton.addEventListener('shown.bs.tab', function (event) {
+                localStorage.setItem('activeTab', event.target.id);
+            });
+        });
+    });
+</script>
