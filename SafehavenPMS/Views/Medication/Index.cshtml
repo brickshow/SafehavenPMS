@@ -1,19 +1,22 @@
-﻿<div class="container-fluid">
+﻿@{
+    ViewBag.Title = "Medication";
+}
+
+<div class="container-fluid">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
             <a href="@Url.Action("Index", "ClinicalStaff")" class="me-3">
-                <i class="bx bx-reply fs-1 text-custom"></i>
             </a>
             <div>
                 <div class="d-flex flex-row justify-content-start align-items-center" style="gap:10px">
-                    <i class='bx bxs-capsule'></i>
+                    <i class='bx bxs-capsule fs-2'></i>
                     <h4 class="mb-0 text-custom">Medication</h4>
                 </div>
             </div>
         </div>
-        <a href="#" id="availability-button" class="add-availability btn-custom btn-primary text-decoration-none" style="display:none">
-            + Add Availability
+        <a href="@Url.Action("AddMedicine", "Medication")" id="availability-button" class="add-availability btn-custom btn-primary text-decoration-none">
+            + Add Medicine
         </a>
     </div>
 
@@ -23,25 +26,25 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview"
                     type="button" role="tab" aria-controls="overview" aria-selected="true">
-                Overview
+                Summary
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal"
                     type="button" role="tab" aria-controls="personal" aria-selected="false">
-                Personal
+                Medication Orders
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents"
                     type="button" role="tab" aria-controls="documents" aria-selected="false">
-                Documents
+                Medicines
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link availability-tab" id="availability-tab" data-bs-toggle="tab" data-bs-target="#availability"
                     type="button" role="tab" aria-controls="documents" aria-selected="false">
-                Availability
+                History
             </button>
         </li>
     </ul>
@@ -53,17 +56,35 @@
           @await Html.PartialAsync("TabContent/_SummaryTab")
         </div>
 
-      @*   <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
-            @await Html.PartialAsync("_PersonalTab", Model)
-        </div>
+        @* <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab"> *@
+        @*     @await Html.PartialAsync("_PersonalTab", Model) *@
+        @* </div> *@
 
         <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-            @await Html.PartialAsync("_DocumentsTab", Model)
+            @await Html.PartialAsync("TabContent/_MedicineTab")
         </div>
 
-        <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab">
-            @await Html.PartialAsync("_Availability", Model) *@
-        </div>
+        @* <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab"> *@
+        @*     @await Html.PartialAsync("_Availability", Model) *@
+        @* @* </div> *@ 
     </div>
 </div>
+
+<style>
+    .nav-tabs .nav-link {
+        color: #767676;
+        background-color: transparent;
+        border: none;
+        font-weight: normal;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #00A3B4;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid #00A3B4;
+            font-weight: bold;
+        }
+
+</style>
 

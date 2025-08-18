@@ -40,6 +40,8 @@ namespace SafehavenPMS.Models
         public string DayName { get; set; } // e.g., "Monday", "Tuesday"
         public bool IsAvailable { get; set; } = true;
 
+        public DateTime Date { get; set; }
+
         // Foreign key
         public int AvailabilityId { get; set; }
 

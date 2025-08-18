@@ -1,0 +1,90 @@
+﻿@{
+    ViewBag.Title = "Add Medicine";
+}
+
+@* Content Header *@
+<div class="header-content">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class="bx bxs-group fs-2 me-2" title="Staff"></i>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+<div class="form-container">
+    <div class="header">
+        <h3>Patient Medication Details</h3>
+    </div>
+    <div class="form-group">
+        <label>Medication Name</label>
+        <input type="text" name="MedicationName" />
+    </div>
+    <div class="form-group">
+        <label>Form</label>
+        <input type="text" name="Form" value="tablets/injection/capsules/etc..." readonly />
+    </div>
+    <div class="form-group">
+        <label>Dosage</label>
+        <input type="text" name="Dosage" value="5 ml" />
+    </div>
+    <div class="form-group">
+        <label>Price</label>
+        <input type="text" name="Price" />
+    </div>
+    <button class="add-button">Add</button>
+</div>
+
+<style>
+    .form-container {
+        max-width: 400px;
+        margin: 20px auto;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+            .form-group input[readonly] {
+                background-color: #f9f9f9;
+                color: #ff0000;
+            }
+
+    .header {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        border-radius: 5px 5px 0 0;
+        text-align: center;
+    }
+
+    .add-button {
+        background-color: #1abc9c;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+        .add-button:hover {
+            background-color: #16a085;
+        }
+</style>

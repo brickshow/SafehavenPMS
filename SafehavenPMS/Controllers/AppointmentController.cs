@@ -9,6 +9,7 @@ using SafehavenPMS.ViewModel;
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SafehavenPMS.Controllers
 {
@@ -78,34 +79,28 @@ namespace SafehavenPMS.Controllers
                 if (bookedSlot == null || day == null)
                     return null;
 
-                // Convert day name string (e.g., "Monday") into DayOfWeek enum
-                if (!System.Enum.TryParse<DayOfWeek>(day.DayName, out var dayOfWeek))
-                    return null;
-
-                // Calculate the actual datetime of the appointment
-                var startDateTime = NextDayOfWeek(dayOfWeek).Date + bookedSlot.StartTime;
-                var endDateTime = NextDayOfWeek(dayOfWeek).Date + bookedSlot.EndTime;
-
                 // Map appointment into calendar event object
+                var startDateTime = day.Date + bookedSlot.StartTime;
+                var endDateTime = day.Date + bookedSlot.EndTime;
+
                 return new
                 {
-                    id = a.AppointmentId,  // Unique identifier
-                    title = a.VisitType,   // Main label shown on calendar
-                    start = startDateTime.ToString("yyyy-MM-ddTHH:mm:ss"), // ISO start
-                    end = endDateTime.ToString("yyyy-MM-ddTHH:mm:ss"),     // ISO end
-                    color = a.Status == Enum.AppointmentEnum.Confirmed.ToString()
-                        ? "#CBE5DC"  // greenish for confirmed
-                        : "#FFD400", // yellow for others (e.g., pending)
+                    id = a.AppointmentId,
+                    title = a.VisitType,
+                    date = day.Date, // actual date
+                    start = startDateTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    end = endDateTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    color = a.Status == Enum.AppointmentEnum.Confirmed.ToString() ? "#CBE5DC" : "#FFD400",
                     extendedProps = new
                     {
-                        visitType = a.VisitType, // Extra details for tooltip/popup
+                        visitType = a.VisitType,
                         time = $"{bookedSlot.StartTime:hh\\:mm} - {bookedSlot.EndTime:hh\\:mm}"
                     }
                 };
             })
-            // Filter out null results (invalid data skipped above)
             .Where(x => x != null)
             .ToList();
+
 
             // 3. Return JSON for calendar frontend (e.g., FullCalendar)
             return Json(calendarData);

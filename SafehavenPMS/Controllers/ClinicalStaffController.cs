@@ -570,43 +570,78 @@ namespace SafehavenPMS.Controllers
             });
         }
 
+        // Helper method to get all dates that match a given day name between start and end dates
+        public List<DateTime> GetDatesForDayName(string dayName, DateTime startDate, DateTime? endDate)
+        {
+            var dates = new List<DateTime>(); // List to store matching dates
+
+            // Convert string day name (e.g., "Monday") to DayOfWeek enum
+            if (!System.Enum.TryParse<DayOfWeek>(dayName, true, out var dayOfWeek))
+                return dates; // If invalid day name, return empty list
+
+            var current = startDate; // Start iterating from StartDate
+            var finalDate = endDate ?? startDate.AddYears(1); // Use EndDate, or default to 1 year later if null
+
+            // Loop from start to end date
+            while (current <= finalDate)
+            {
+                if (current.DayOfWeek == dayOfWeek) // Check if current date matches the requested day
+                    dates.Add(current); // Add matching date to the list
+
+                current = current.AddDays(1); // Move to next day
+            }
+
+            return dates; // Return all matching dates
+        }
+
         [HttpPost]
         public IActionResult SaveAvailabilityJson([FromBody] AvailabilityViewModel model)
         {
             if (model == null)
-                return Json(new { success = false });
+                return Json(new { success = false }); // Return false if no data received
 
+            // Create main Availability entity
             var availability = new Availability
             {
-                ClinicalStaffID = model.ClinicalStaffID,
-                Title = model.Title,
-                StartDate = model.StartDate,
-                EndDate = model.NoEndDate ? null : model.EndDate,
-                NoEndDate = model.NoEndDate,
-                Days = new List<AvailabilityDay>()
+                ClinicalStaffID = model.ClinicalStaffID, // Associate with clinical staff
+                Title = model.Title, // Availability title
+                StartDate = model.StartDate, // Start of availability period
+                EndDate = model.NoEndDate ? null : model.EndDate, // End date, or null if "no end date"
+                NoEndDate = model.NoEndDate, // Flag for open-ended availability
+                Days = new List<AvailabilityDay>() // Initialize list of days
             };
 
+            // Loop through each day submitted in the model
             foreach (var dayVM in model.Days)
             {
-                var dayEntity = new AvailabilityDay
-                {
-                    DayName = dayVM.DayName,
-                    IsAvailable = true, // checked days only
-                    TimeSlots = dayVM.TimeSlots.Select(ts => new TimeSlot
-                    {
-                        StartTime = TimeSpan.Parse(ts.StartTime.ToString(@"hh\:mm")),
-                        EndTime = TimeSpan.Parse(ts.EndTime.ToString(@"hh\:mm"))
-                    }).ToList()
-                };
+                // Generate all actual dates for this day name within start-end range
+                var dayDates = GetDatesForDayName(dayVM.DayName, model.StartDate, model.NoEndDate ? null : model.EndDate);
 
-                availability.Days.Add(dayEntity);
+                // Loop through each date generated
+                foreach (var date in dayDates)
+                {
+                    var dayEntity = new AvailabilityDay
+                    {
+                        DayName = dayVM.DayName, // Store the day name (e.g., "Monday")
+                        IsAvailable = true, // Mark day as available
+                        Date = date, // Save the actual date
+                        TimeSlots = dayVM.TimeSlots.Select(ts => new TimeSlot
+                        {
+                            StartTime = TimeSpan.Parse(ts.StartTime.ToString(@"hh\:mm")), // Parse start time
+                            EndTime = TimeSpan.Parse(ts.EndTime.ToString(@"hh\:mm")) // Parse end time
+                        }).ToList() // Convert all time slots to list
+                    };
+
+                    availability.Days.Add(dayEntity); // Add day entity to Availability
+                }
             }
 
-            _context.Availabilities.Add(availability);
-            _context.SaveChanges();
+            _context.Availabilities.Add(availability); // Add Availability to DB context
+            _context.SaveChanges(); // Persist changes to database
 
-            return Json(new { success = true });
+            return Json(new { success = true }); // Return success response
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
