@@ -19,6 +19,7 @@ namespace SafehavenPMS.Data
         public DbSet<TimeSlot> TimeSlots { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Medicine> Medicines { get; set; }
+        public DbSet<MedicationOrder> MedicationOrders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,6 +80,22 @@ namespace SafehavenPMS.Data
                 .WithOne(a => a.Staff)
                 .HasForeignKey(a => a.ClinicalStaffID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            //Patient to Medication
+            modelBuilder.Entity<MedicationOrder>()
+                .HasOne(p => p.Patient)
+                .WithMany(m => m.MedicationOrders)
+                .HasForeignKey(k => k.PatientId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // Medicine -> MedicationOrders (1-to-many)
+            modelBuilder.Entity<MedicationOrder>()
+                .HasOne(mo => mo.Medicine)
+                .WithMany(m => m.MedicationOrders)
+                .HasForeignKey(mo => mo.MedicineId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Restrict so deleting a medicine doesn’t auto-delete past orders
 
 
             // Global safeguard: Disable all cascade deletes

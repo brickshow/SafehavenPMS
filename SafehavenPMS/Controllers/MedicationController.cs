@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
+using System.Runtime.ConstrainedExecution;
 using System.Threading.Tasks;
 
 namespace SafehavenPMS.Controllers
@@ -16,12 +18,16 @@ namespace SafehavenPMS.Controllers
             _context = context;
         }
 
+
         public async Task<IActionResult> Index()
         {
-            // Fetch all medicines from the database
             var medicines = await _context.Medicines.ToListAsync();
 
-            // Map to ViewModel
+            var medicationOrders = await _context.MedicationOrders
+                                            .Include(m => m.Patient)
+                                            .Include(m => m.Medicine)
+                                            .ToListAsync();
+
             var model = new MedicationPageViewModel
             {
                 Medicines = medicines.Select(m => new MedicineViewModel
@@ -33,12 +39,26 @@ namespace SafehavenPMS.Controllers
                     Strength = m.Strength,
                     Unit = m.Unit,
                     Price = m.Price
+                }).ToList(),
+
+                MedicationOrders = medicationOrders.Select(m => new MedicationOrderViewModel
+                {
+                    MedicationOrderId = m.MedicationOrderId,
+                    PatientId = m.PatientId,
+                    PatientName = m.Patient != null ? m.Patient.Firstname + " " + m.Patient.Lastname : "",
+                    MedicineId = m.MedicineId,
+                    MedicineName = m.Medicine != null ? m.Medicine.GenericName : "",
+                    Dose = m.Dose,
+                    Instruction = m.Instruction,
+                    Frequency = m.Frequency,
+                    StartDate = m.StartDate,
+                    EndDate = m.EndDate
                 }).ToList()
             };
 
-            // Pass the ViewModel to the view
             return View(model);
         }
+
 
         //View for Add medicine
         public IActionResult AddMedicine()
@@ -94,28 +114,34 @@ namespace SafehavenPMS.Controllers
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> AddMedicationOrder(int? medicineId)
-        {
-            // 1. Load all medicines and patients from the database
-            var medicines = await _context.Medicines.ToListAsync();
-            var patients = await _context.ClinicalStaffPatients.ToListAsync();
 
-            // 2. Initialize the ViewModel with the lists and the currently selected medicineId
+        [HttpGet]
+        public async Task<IActionResult> AddMedicationOrder(int? medicineId, int? patientId)
+        {
+            var medicines = await _context.Medicines.ToListAsync();
+            var patients = await _context.Patients.ToListAsync();
+
+            // Build SelectList for ViewBag
+            ViewBag.PatientList = new SelectList(
+                patients.Select(p => new {
+                    PatientId = p.PatientId,
+                    FullName = (p.Firstname ?? "") + " " + (p.Lastname ?? "")
+                }),
+                "PatientId",
+                "FullName",
+                patientId
+            );
+
             var vm = new AddMedicationOrderViewModel
             {
-                Medicines = medicines,
-                Patients = patients,
-                SelectedMedicineId = medicineId
+                Medicines = medicines ?? new List<Medicine>(),
+                SelectedMedicineId = medicineId,
+                SelectedPatientId = patientId
             };
 
-            // 3. If a medicine was selected (medicineId is not null)
             if (medicineId.HasValue)
             {
-                // 3a. Find the medicine record that matches the selected ID
                 var med = medicines.FirstOrDefault(m => m.MedicineId == medicineId.Value);
-
-                // 3b. If found, populate the ViewModel with the medicine’s Form and Unit
                 if (med != null)
                 {
                     vm.Form = med.Form;
@@ -123,20 +149,60 @@ namespace SafehavenPMS.Controllers
                 }
             }
 
-            // 4. Pass the ViewModel to the Razor view
             return View(vm);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> SearchPatients(string term)
-        {
-            var patients = await _context.Patients
-                .Where(p => p.Firstname.Contains(term) || p.Lastname.Contains(term))
-                .Select(p => new { id = p.PatientId, name = p.Firstname + " " + p.Lastname })
-                .Take(10) // return top 10 matches
-                .ToListAsync();
 
-            return Json(patients);
+
+        // ==========================
+        // POST: Add Medication Order
+        // ==========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddMedicationOrder(AddMedicationOrderViewModel vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Log errors
+                foreach (var entry in ModelState)
+                    foreach (var error in entry.Value.Errors)
+                        Console.WriteLine($"Field: {entry.Key} - Error: {error.ErrorMessage}");
+                // Reload lists if validation fails
+                vm.Medicines = await _context.Medicines.ToListAsync();
+                vm.Patients = await _context.Patients.ToListAsync();
+                return View(vm);
+            }
+
+            // Map ViewModel → MedicationOrder entity
+            var order = new MedicationOrder
+            {
+                PatientId = vm.SelectedPatientId.Value,
+                MedicineId = vm.SelectedMedicineId.Value,
+                Dose = vm.Dose,
+                Instruction = vm.Instruction,
+                Frequency = vm.Frequency,
+                StartDate = vm.StartDate.Value,
+                EndDate = vm.EndDate.Value
+            };
+
+            _context.MedicationOrders.Add(order);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Index", "Medication");
         }
+
+
+
+        //[HttpGet]
+        //public async Task<IActionResult> SearchPatients(string term)
+        //{
+        //    var patients = await _context.Patients
+        //        .Where(p => p.Firstname.Contains(term) || p.Lastname.Contains(term))
+        //        .Select(p => new { id = p.PatientId, name = p.Firstname + " " + p.Lastname })
+        //        .Take(10) // return top 10 matches
+        //        .ToListAsync();
+
+        //    return Json(patients);
+        //}
     }
 }

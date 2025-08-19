@@ -56,8 +56,8 @@
                                 <div class="col-6 mb-2">
                                     <label class="d-flex align-items-center">
                                         <input type="hidden" name="AvailabilityId" value="@slot.AvailabilityId" />
-                                        <input type="radio" name="TimeSlotId" value="@slot.TimeSlotId" required />
-                                        @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
+                                        <input type="radio" name="TimeSlotId" value="@slot.TimeSlotId" required class="me-2" />
+                                        <span>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</span>
                                     </label>
                                 </div>
                             }

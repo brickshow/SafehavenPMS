@@ -62,7 +62,7 @@
         </div>
 
         <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
-            @await Html.PartialAsync("TabContent/_MedicationOrderTab")
+            @await Html.PartialAsync("TabContent/_MedicationOrderTab", Model.MedicationOrders)
         </div>
 
         <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">

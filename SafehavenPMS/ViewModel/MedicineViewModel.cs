@@ -21,7 +21,6 @@ namespace SafehavenPMS.ViewModel
 
         [Required(ErrorMessage = "Price is required!")]
         public Decimal Price { get; set; }
-
         public string Status { get; set; } = "Active";
         public DateTime DateAdded { get; set; } = DateTime.Now;
     }

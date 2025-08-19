@@ -11,5 +11,7 @@
         public decimal Price { get; set; }
         public DateTime DateAdded { get; set; }
         public string Status { get; set; } = "Active";
+
+        public ICollection<MedicationOrder> MedicationOrders { get; set; }//Navigation property for Medication
     }
 }

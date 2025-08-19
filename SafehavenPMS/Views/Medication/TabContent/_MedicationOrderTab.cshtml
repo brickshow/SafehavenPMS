@@ -1,4 +1,6 @@
-﻿<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+﻿@model List<SafehavenPMS.ViewModel.MedicationOrderViewModel>
+
+<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     <div class="table-header d-flex justify-content-center align-items-center text-center">
         <h5 class="mb-0">TODAY - @DateTime.Now.ToString("MMMM dd, yyyy")</h5>
     </div>
@@ -32,36 +34,39 @@
                     <th>No.</th>
                     <th>Patient Name</th>
                     <th>Medication</th>
-                    <th>Frequency</th>
-                    <th>Prescribing Doctor</th>
+                    <th>Dose</th>
                     <th>Instruction</th>
-                    <th>Status</th>
+                    <th>Frequency</th>
                     <th>Action</th>
                 </tr>
             </thead>
-            @* <tbody> *@
-            @*     @if (Model == null || !Model.Any()) *@
-            @*     { *@
-            @*         <tr> *@
-            @*             <td colspan="6" class="text-center">No Medicine found.</td> *@
-            @*         </tr> *@
-            @*     } *@
-            @*     else *@
-            @*     { *@
-            @*         int rowNum = 1; *@
-            @*         foreach (var medicine in Model) *@
-            @*         { *@
-            @*             <tr> *@
-            @*                 <td>@rowNum</td> *@
-            @*                 <td>@medicine.MedicineName</td> *@
-            @*                 <td>@medicine.Form</td> *@
-            @*                 <td>@medicine.Price</td> *@
-            @*                 <td>@medicine.DateAdded.ToString("dd/MM/yyyy")</td> *@
-            @*             </tr> *@
-            @*             rowNum++; *@
-            @*         } *@
-            @*     } *@
-            @* </tbody> *@
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr>
+                        <td colspan="10" class="text-center">No medicine orders found.</td>
+                    </tr>
+                }
+                else
+                {
+                    int rowNum = 1;
+                    foreach (var order in Model)
+                    {
+                        <tr>
+                            <td>@rowNum</td>
+                            <td>@order.PatientName</td>
+                            <td>@order.MedicineName - @order.Dose.ToString("F0")/@order.Unit</td>
+                            <td>@order.Dose @order.Unit</td>
+                            <td>@order.Instruction</td>
+                            <td>@order.Frequency</td>
+                            <td>
+                                <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                            </td>
+                        </tr>
+                        rowNum++;
+                    }
+                }
+            </tbody>
         </table>
     </div>
 </div>
@@ -83,6 +88,14 @@
 
     .btn-primary {
         background-color: #26A69A;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+
+    .btn-danger {
+        background-color: #e74c3c;
         color: white;
         border: none;
         padding: 6px 12px;

@@ -5,5 +5,6 @@ namespace SafehavenPMS.ViewModel
     public class MedicationPageViewModel
     {
         public List<MedicineViewModel> Medicines { get; set; }
+        public List<MedicationOrderViewModel> MedicationOrders { get; set; }
     }
 }
