@@ -268,7 +268,7 @@ body {
     margin-left: 240px;
     width: calc(100% - 240px);
     padding: 20px;
-    padding-top: 80px;
+    padding-top: 60px;
     min-height: 100vh;
     background-color: #f8f9fa;
     transition: all 0.3s ease;

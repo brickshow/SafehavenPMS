@@ -17,11 +17,23 @@
             {
                 <div class="notification-item card mb-3">
                     <div class="card-body p-2">
-                        <strong>@appointment.VisitType (@appointment.DayName)</strong>
-                        <small class="d-block mb-2">
-                            @appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")
-                        </small>
-
+                        <div class="col-md-12 d-flex flex-row">
+                            <div class="d-flex col-md-8 flex-column">
+                                <span><strong>Patient:</strong> @appointment.PatientName</span>
+                                <span><strong>Doctor:</strong> @appointment.DoctorName</span>
+                                <span><strong>Visit Type:</strong> @appointment.VisitType</span>
+                                <span><strong>Date :</strong> @appointment.AppointmentDate</span>
+                            </div>
+                            <div class="col-md-4 justify-content-end">
+                                @if(appointment.Status == "Pending")
+                                {
+                                    <div class="justify-content-end text-center" style="background-color:#F0EFBC; border-radius:6px">
+                                        @appointment.Status
+                                    </div>
+                                }
+                               
+                            </div>
+                        </div>  
                         <div class="d-flex gap-2">
                             <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" type="button" class="btn-cancel flex-fill">Cancel</button>
                             <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" type="button" class="btn-next flex-fill">Confirm</button>
@@ -123,7 +135,7 @@
     /* Notification panel */
     .notification-panel {
         width: 30%;
-        max-width: 400px;
+        max-width:500px;
         position: fixed;
         top: 50px; /* adjust as needed */
         right: -100%; /* start hidden off-screen */

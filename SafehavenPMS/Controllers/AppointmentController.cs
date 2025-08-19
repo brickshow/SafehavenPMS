@@ -25,6 +25,8 @@ namespace SafehavenPMS.Controllers
         public async Task<IActionResult> Index()
         {
             var appointments = await _context.Appointments
+                                      .Include(c => c.Staff)
+                                      .Include(p => p.Patient)
                                       .Include(d => d.Day)
                                             .ThenInclude(t => t.TimeSlots)
                                        .Where(s => s.Status == "Pending")
@@ -38,10 +40,11 @@ namespace SafehavenPMS.Controllers
                 PendingAppointments = appointments.Select(a => new AppointmentPendingApprovalViewModel
                 {
                     AppointmentId = a.AppointmentId,
+                    PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
+                    DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
                     VisitType = a.VisitType,
-                    StartTime = a.TimeSlot.StartTime,
-                    EndTime = a.TimeSlot.EndTime,
-                    DayName = a.Day.DayName,
+                    AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
+                    Status = a.Status
                 }).ToList()
             };
 
@@ -158,10 +161,11 @@ namespace SafehavenPMS.Controllers
                     .Select(a => new AppointmentPendingApprovalViewModel
                     {
                         AppointmentId = a.AppointmentId,
+                        PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
+                        DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
                         VisitType = a.VisitType,
-                        StartTime = a.TimeSlot.StartTime,
-                        EndTime = a.TimeSlot.EndTime,
-                        DayName = a.Day.DayName
+                        AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
+                        Status = a.Status
                     })
                     .ToList()
             };
@@ -218,10 +222,11 @@ namespace SafehavenPMS.Controllers
                     .Select(a => new AppointmentPendingApprovalViewModel
                     {
                         AppointmentId = a.AppointmentId,
+                        PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
+                        DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
                         VisitType = a.VisitType,
-                        StartTime = a.TimeSlot.StartTime,
-                        EndTime = a.TimeSlot.EndTime,
-                        DayName = a.Day.DayName
+                        AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
+                        Status = a.Status
                     })
                     .ToList()
             };
@@ -242,14 +247,19 @@ namespace SafehavenPMS.Controllers
         //
         public async Task<IActionResult> PendingAppointments()
         {
+            //Extrct the appointment data and turn to list async
+
+
             var pending = await _context.Appointments
                 .Where(a => a.Status == "Pending")
                 .Select(a => new AppointmentPendingApprovalViewModel
                 {
                     AppointmentId = a.AppointmentId,
+                    PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
+                    DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
                     VisitType = a.VisitType,
-                    StartTime = a.TimeSlot.StartTime,
-                    EndTime = a.TimeSlot.EndTime,
+                    AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
+                    Status = a.Status
                 })
                 .ToListAsync();
 
@@ -366,7 +376,7 @@ namespace SafehavenPMS.Controllers
 
             TempData["ToastMessage"] = "Appointment scheduled successfully!";
             TempData["ToastType"] = "success";
-            return RedirectToAction("Index", "Patient");
+            return RedirectToAction("Index", "Appointment");
         }
 
         // POST: Submit date from calendar
