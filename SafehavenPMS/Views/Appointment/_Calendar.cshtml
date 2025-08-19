@@ -17,7 +17,7 @@
             {
                 <div class="notification-item card mb-3">
                     <div class="card-body p-2">
-                        <div class="col-md-12 d-flex flex-row">
+                        <div class="col-md-12 d-flex flex-row mb-3">
                             <div class="d-flex col-md-8 flex-column">
                                 <span><strong>Patient:</strong> @appointment.PatientName</span>
                                 <span><strong>Doctor:</strong> @appointment.DoctorName</span>
@@ -109,7 +109,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p><strong>Visit Type:</strong> <span id="detailVisitType"></span></p>
+                <p><strong>Visit Type:</strong>@Model</span></p>
                 <p><strong>Time:</strong> <span id="detailTime"></span></p>
                 <p><strong>Date:</strong> <span id="detailDate"></span></p>
                 <p><strong>Status:</strong> <span id="detailStatus"></span></p>
@@ -256,17 +256,19 @@
             events: '/Appointment/GetAppointments',
 
             eventClick: function(info) {
-            info.jsEvent.preventDefault(); // stop navigation
+                info.jsEvent.preventDefault(); // stop navigation
 
-            // Populate modal fields
-            document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
-            document.getElementById("detailTime").innerText = info.event.extendedProps.time;
-            document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString();
-            document.getElementById("detailStatus").innerText = info.event.extendedProps.status || "Confirmed";
+                // Populate modal fields
+                document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
+                document.getElementById("detailTime").innerText = info.event.extendedProps.time;
+                document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString();
+                document.getElementById("detailStatus").innerText = info.event.extendedProps.status || "Pending";
+                document.getElementById("detailDoctor").innerText = info.event.extendedProps.doctorName || "N/A";
+                document.getElementById("detailPatient").innerText = info.event.extendedProps.patientName || "N/A";
 
-            // Show modal (Bootstrap 5)
-            var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
-            appointmentDetailModal.show();
+                // Show modal (Bootstrap 5)
+                var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
+                appointmentDetailModal.show();
             },
 
             // Toolbar configuration
