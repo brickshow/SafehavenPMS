@@ -39,6 +39,26 @@ namespace SafehavenPMS.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Medicines",
+                columns: table => new
+                {
+                    MedicineId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    GenericName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BrandName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Form = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Strength = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Unit = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DateAdded = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Medicines", x => x.MedicineId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Patients",
                 columns: table => new
                 {
@@ -71,23 +91,23 @@ namespace SafehavenPMS.Migrations
                 name: "Availabilities",
                 columns: table => new
                 {
-                    AvailabilityId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    NoEndDate = table.Column<bool>(type: "bit", nullable: false),
-                    ClinicalStaffID = table.Column<int>(type: "int", nullable: false)
+                    ClinicalStaffID = table.Column<int>(type: "int", nullable: false),
+                    Day = table.Column<int>(type: "int", nullable: false),
+                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Availabilities", x => x.AvailabilityId);
+                    table.PrimaryKey("PK_Availabilities", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Availabilities_ClinicalStaffs_ClinicalStaffID",
                         column: x => x.ClinicalStaffID,
                         principalTable: "ClinicalStaffs",
                         principalColumn: "ClinicalStaffID",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -115,6 +135,37 @@ namespace SafehavenPMS.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MedicationOrders",
+                columns: table => new
+                {
+                    MedicationOrderId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    MedicineId = table.Column<int>(type: "int", nullable: false),
+                    Dose = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Instruction = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Frequency = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MedicationOrders", x => x.MedicationOrderId);
+                    table.ForeignKey(
+                        name: "FK_MedicationOrders_Medicines_MedicineId",
+                        column: x => x.MedicineId,
+                        principalTable: "Medicines",
+                        principalColumn: "MedicineId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MedicationOrders_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "PatientId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Appointments",
                 columns: table => new
                 {
@@ -135,8 +186,8 @@ namespace SafehavenPMS.Migrations
                         name: "FK_Appointments_Availabilities_AvailabilityId",
                         column: x => x.AvailabilityId,
                         principalTable: "Availabilities",
-                        principalColumn: "AvailabilityId",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Appointments_ClinicalStaffs_ClinicalStaffID",
                         column: x => x.ClinicalStaffID,
@@ -148,50 +199,7 @@ namespace SafehavenPMS.Migrations
                         column: x => x.PatientId,
                         principalTable: "Patients",
                         principalColumn: "PatientId",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AvailabilityDays",
-                columns: table => new
-                {
-                    DayId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DayName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
-                    AvailabilityId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AvailabilityDays", x => x.DayId);
-                    table.ForeignKey(
-                        name: "FK_AvailabilityDays_Availabilities_AvailabilityId",
-                        column: x => x.AvailabilityId,
-                        principalTable: "Availabilities",
-                        principalColumn: "AvailabilityId",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TimeSlots",
-                columns: table => new
-                {
-                    TimeSlotId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
-                    DayId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TimeSlots", x => x.TimeSlotId);
-                    table.ForeignKey(
-                        name: "FK_TimeSlots_AvailabilityDays_DayId",
-                        column: x => x.DayId,
-                        principalTable: "AvailabilityDays",
-                        principalColumn: "DayId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -215,19 +223,19 @@ namespace SafehavenPMS.Migrations
                 column: "ClinicalStaffID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AvailabilityDays_AvailabilityId",
-                table: "AvailabilityDays",
-                column: "AvailabilityId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ClinicalStaffPatients_ClinicalStaffId",
                 table: "ClinicalStaffPatients",
                 column: "ClinicalStaffId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TimeSlots_DayId",
-                table: "TimeSlots",
-                column: "DayId");
+                name: "IX_MedicationOrders_MedicineId",
+                table: "MedicationOrders",
+                column: "MedicineId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MedicationOrders_PatientId",
+                table: "MedicationOrders",
+                column: "PatientId");
         }
 
         /// <inheritdoc />
@@ -240,16 +248,16 @@ namespace SafehavenPMS.Migrations
                 name: "ClinicalStaffPatients");
 
             migrationBuilder.DropTable(
-                name: "TimeSlots");
-
-            migrationBuilder.DropTable(
-                name: "Patients");
-
-            migrationBuilder.DropTable(
-                name: "AvailabilityDays");
+                name: "MedicationOrders");
 
             migrationBuilder.DropTable(
                 name: "Availabilities");
+
+            migrationBuilder.DropTable(
+                name: "Medicines");
+
+            migrationBuilder.DropTable(
+                name: "Patients");
 
             migrationBuilder.DropTable(
                 name: "ClinicalStaffs");

@@ -9,7 +9,7 @@
         public string Status { get; set; }
         public string DayName { get; set; }
 
-        public string AppointmentDate { get; set; }
+        public DateTime AppointmentDate { get; set; }
         //public DateTime AppointmentDate { get; set; } //TODO
     }
 }

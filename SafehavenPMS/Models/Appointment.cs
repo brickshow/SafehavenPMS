@@ -12,13 +12,6 @@ namespace SafehavenPMS.Models
         public int AvailabilityId { get; set; }
         public Availability? Availability { get; set; }
 
-        [Required]
-        public int AvailabilityDayId { get; set; }
-        public AvailabilityDay? Day { get; set; }
-
-        [Required]
-        public int TimeSlotId { get; set; }
-        public TimeSlot? TimeSlot { get; set; }
 
         [Required]
         public int ClinicalStaffID { get; set; }
@@ -27,6 +20,8 @@ namespace SafehavenPMS.Models
         [Required]
         public int PatientId { get; set; }
         public Patient? Patient { get; set; }
+
+        public DateTime AppointmentDate { get; set; }
 
         public string VisitType { get; set; }
         public string? Description { get; set; }

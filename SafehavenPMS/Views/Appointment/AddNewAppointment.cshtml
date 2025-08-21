@@ -1,10 +1,10 @@
-﻿@model SafehavenPMS.ViewModel.AppointmentViewModel
+﻿@model SafehavenPMS.ViewModel.NewAppointmentViewModel
 
 @{
-    ViewBag.Title = "Appointment";
+    ViewBag.Title = "New Appointment";
 }
 
-<div class="header">
+<div class="header m-2">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
             <i class="bx bxs-calendar-check fs-2 me-2" title="Calendar"></i>
@@ -25,7 +25,7 @@
         <!-- ================= LEFT: Calendar ================= -->
         <div class="col-md-6 border-end">
             @* Calendar Form (submits only selected date) *@
-            <form asp-controller="Appointment" asp-action="SubmitDate" method="post" id="dateForm">
+            <form asp-controller="Appointment" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
                 <span class="d-block mb-2 fw-bold">Select Date</span>
 
                 @* Hidden fields to pass date + context *@
@@ -42,49 +42,51 @@
             @* Appointment Form (submits schedule details) *@
             <form asp-controller="Appointment" asp-action="ScheduleAppointment" method="post" id="appointmentForm">
 
+                @* Available times *@
                 <span class="d-block mb-2 fw-bold">Available Time</span>
                 <div class="d-flex flex-column border rounded p-3 mb-3">
                     <div class="row">
                         <input type="hidden" asp-for="PatientId" />
                         <input type="hidden" asp-for="ClinicalStaffID" />
-                        <input type="hidden" name="SelectedDate" id="selectedDate"
-                               value="@(ViewBag.SelectedDate ?? Model.SelectedDate.ToString("yyyy-MM-dd"))"
-                               asp-for="SelectedDate" />
+                        <input type="hidden" name="SelectedDate" value="@ViewBag.SelectedDate" />
+
                         @if (ViewBag.AvailableTimes != null && ((IEnumerable<object>)ViewBag.AvailableTimes).Cast<dynamic>().Any())
                         {
                             foreach (var slot in (IEnumerable<dynamic>)ViewBag.AvailableTimes)
                             {
                                 <div class="col-6 mb-2">
                                     <label class="d-flex align-items-center">
-                                        <input type="radio" name="AvailabilityId" value="@slot.Id" required />
-                                        <span class="ms-2">@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</span>
+                                        <input type="hidden" name="AvailabilityId" value="@slot.AvailabilityId" />
+                                        <input type="radio" name="TimeSlotId" value="@slot.TimeSlotId" required />
+                                        @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
                                     </label>
                                 </div>
                             }
                         }
                         else
                         {
-                            <div class="text-center text-muted">No Available Time</div>
+                            <div class="text-center">No Available Time</div>
                         }
                     </div>
                 </div>
 
-                <!-- Patient Info -->
+
+                @* Patient Information *@
                 <div class="mb-3">
                     <label class="form-label">Patient Name</label>
-                    <input asp-for="PatientName" type="text" class="form-control" value="@Model.PatientName" disabled />
+                    <input asp-for="PatientName" type="text" class="form-control" />
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Assign Clinical Staff</label>
-                    <input asp-for="ClinicalStaffName" type="text" class="form-control" value="@Model.ClinicalStaffName" disabled />
+                    <input asp-for="ClinicalStaffName" type="text" class="form-control" />
                 </div>
 
-                <!-- Visit Details -->
+                @* Visit details *@
                 <div class="mb-3">
                     <label class="form-label">Visit Type</label>
-                    <select asp-for="VisitType" class="form-select" required>
-                        <option value="">--Select--</option>
+                    <select asp-for="VisitType" class="form-select">
+                        <option>--Select--</option>
                         <option value="Medical Assessment">Medical Assessment</option>
                         <option value="Emergency Visit">Emergency Visit</option>
                         <option value="Follow-Up Treatment">Follow-Up Treatment</option>
@@ -97,10 +99,10 @@
                     <textarea asp-for="Description" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
                 </div>
 
-                <!-- Footer -->
+                @* Footer buttons *@
                 <div class="modal-footer bg-white border-top">
                     <a href="@Url.Action("Index", "Patient")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
-                    <button type="submit" class="btn-custom btn-next m-2">Next</button>
+                    <button type="submit" class="btn-custom btn-next m-2" onclick="reloadPage()">Next</button>
                 </div>
             </form>
         </div>
@@ -110,7 +112,7 @@
 @* ===== CSS for Appointment Card & Date Highlight ===== *@
 <style>
     .appointment {
-        width:60%;
+        width: 60%;
         background-color: white;
         box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);
         border-radius: 6px;

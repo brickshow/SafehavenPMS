@@ -9,98 +9,70 @@
             <h5 class="mb-0">Availability</h5>
         </div>
 
-
-        @* Filters/Search and Date Picker *@
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <form asp-controller="ClinicalStaff" asp-action="FilterByDate" method="get">
-                <div class="form-group d-flex justify-content-center align-items-center gap-2">
-                    <label for="selectedDate" class="form-label m-0">Date</label>
-                    <input type="date" id="selectedDate" name="selectedDate" class="form-control" style="width: 180px;" onchange="this.form.submit()"
-                           value="@(ViewBag.SelectedDate != null ? ((DateTime)ViewBag.SelectedDate).ToString("yyyy-MM-dd") : null)" />
-                    <input type="hidden" name="id" value="@ViewBag.ClinicalStaffId" />
-                </div>
-            </form>
-        </div>
-
         @* Availability Table *@
         <div class="table-responsive">
             <table class="table table-bordered text-center align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Title</th>
-                        <th>Date</th>
                         <th>Day/s</th>
                         <th>Time Slot(s)</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model.Availability == null || !Model.Availability.Any())
+                    @if (Model.Availability != null && Model.Availability.Any())
                     {
-                        <tr><td colspan="5">No Availability Date</td></tr>
-                    }
-                    else
-                    {
-                        foreach (var available in Model.Availability)
+                        var groupedByDay = Model.Availability
+                                            .GroupBy(a => a.Day)
+                                            .OrderBy(g => g.Key);
+
+                        foreach (var dayGroup in groupedByDay)
                         {
-                            // Filter only available days
-                            var availableDays = available.Days.Where(d => d.IsAvailable).ToList();
-
-                            foreach (var day in availableDays)
+                            var slots = dayGroup.ToList();
+                            for (int i = 0; i < slots.Count; i++)
                             {
+                                var slot = slots[i];
                                 <tr>
-                                    <td>@available.Title</td>
+                                    @* First row shows Day with rowspan *@
+                                    @if (i == 0)
+                                    {
+                                        <td rowspan="@slots.Count">@dayGroup.Key</td>
+                                    }
+                                    <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
                                     <td>
-                                        @{
-                                            // Find the correct date for this specific day
-                                            var targetDay = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), day.DayName);
-                                            var date = available.StartDate;
-
-                                            while (date.DayOfWeek != targetDay)
-                                            {
-                                                date = date.AddDays(1);
-                                            }
-                                        }
-                                        @date.ToString("MMM dd yyyy") <!-- Example: Aug 11 2025 -->
+                                        @slot.Status
                                     </td>
-                                    <td>@day.DayName</td>
-                                    <td class="text-center">
-                                        <ul class="list-unstyled mb-0">
-                                            @foreach (var slot in day.TimeSlots.Where(ts => ts.IsAvailable))
-                                            {
-                                                <li class="mb-1">
-                                                    <i class="bx bx-time-five text-success me-1"></i>
-                                                    @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
-                                                </li>
-                                            }
-                                        </ul>
-                                    </td>
-
-                                    <td class="text-center d-flex justify-content-center gap-2">
-                                        <a href="#" data-bs-toggle="modal" data-bs-target="#appointment-modal" class="border rounded px-2 py-1 text-primary hover-fill" title="Edit">
+                                    <td>
+                                        <a href="#" data-bs-toggle="modal"
+                                           data-bs-target="#appointment-modal"
+                                           class="border rounded px-2 py-1 text-primary hover-fill"
+                                           title="Edit">
                                             <i class='bx bx-edit'></i>
-                                        </a>
-                                        <a href="#" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal"
-                                           class="border rounded px-2 py-1 text-danger hover-fill" title="Delete"
-                                           onclick="setDayToDelete(@(day.DayId))">
-                                            <i class='bx bx-trash'></i>
                                         </a>
                                     </td>
                                 </tr>
                             }
                         }
                     }
-
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-muted">No availability found.</td>
+                        </tr>
+                    }
                 </tbody>
+
             </table>
         </div>
+
     </div>
 
     @* Reder partial views *@
-    @await Html.PartialAsync(
+    @* @await Html.PartialAsync(
     "StaffPartialViews/AddAvailabilityPartial",
         Model.NewAvailability
-        )
+        ) *@
 </div>
 
 @* Modal to delete *@

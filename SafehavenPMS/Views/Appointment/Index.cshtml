@@ -4,7 +4,7 @@
     ViewBag.Title = "Appointment Calendar";
 }
 
-<div class="container-fluid mt-0">
+<div class="container-fluid m-2">
     @* Content Header *@
     <div class="header d-flex justify-content-between">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -13,9 +13,9 @@
                 <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
             </div>
         </div>
-        @* <a href="@Url.Action("ScheduleAppointment", "Appointment")" class="btn-custom btn-primary text-decoration-none">
+        <a href="@Url.Action("AddNewAppointment", "Appointment")" class="btn-custom btn-primary text-decoration-none">
             + New Appointment
-        </a> *@
+        </a>
     </div>
     @* Tabs *@
     @* <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">

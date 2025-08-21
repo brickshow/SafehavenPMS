@@ -13,10 +13,9 @@
 
 
     @* Date Range *@
-    <form asp-controller="ClinicalStaff" asp-action="SubmitDate" method="post">
-        @* Hidden Input for staff ID *@
+    @* <form asp-controller="ClinicalStaff" asp-action="SubmitDate" method="post">
         <input type="hidden" asp-for="ClinicalStaffID"/>
-        @* Input Title *@
+
         <div class="col-md-12 d-flex flex-column align-items-start p-2">
             <label asp-for="Title" class="form-label mb-0 me-2 text-nowrap">Title</label>
             <input asp-for="Title" type="text" class="form-control flex-grow-1 uniform-input" id="availability-title" />
@@ -34,7 +33,7 @@
                 <input asp-for="EndDate" type="date" class="form-control uniform-input" id="end-date" onchange="this.form.submit()" />
                 <span asp-for="EndDate" class="text-danger" id="end-date-error"></span>
 
-                @* Added Checkbox below End Date *@
+
                 <div class="form-check mt-2">
                     <input asp-for="NoEndDate" class="form-check-input" type="checkbox" id="availability-checkbox" onchange="this.form.submit()" />
                     <label asp-for="NoEndDate" class="form-check-label" for="availability-checkbox">
@@ -43,11 +42,11 @@
                 </div>
             </div>
         </div>
-    </form>
+    </form> *@
 
 
     @* Populate with available dates *@
-    <div class="row p-2 flex-grow-1 overflow-auto">
+    @* <div class="row p-2 flex-grow-1 overflow-auto">
         <div class="col-12">
             <h6 class="fw-semibold mb-3">Available Days</h6>
             @if(Model.Days == null)
@@ -72,24 +71,58 @@
                         </div>
                     </div>
                 }
-
             }
         </div>
+    </div> *@
+
+    <div class="row p-3">
+        <!-- Select Day -->
+        <div class="col-md-12 mb-3">
+            <label class="form-label fw-semibold">Day</label>
+            <select class="form-select" id="availability-day">
+                <option value="">-- Select Day --</option>
+                <option>Monday</option>
+                <option>Tuesday</option>
+                <option>Wednesday</option>
+                <option>Thursday</option>
+                <option>Friday</option>
+                <option>Saturday</option>
+                <option>Sunday</option>
+            </select>
+        </div>
+
+        <!-- Time inputs in one row -->
+        <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold">Start Time</label>
+            <input type="time" class="form-control" id="availability-start" value="09:00">
+        </div>
+            
+        <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold">End Time</label>
+            <input type="time" class="form-control" id="availability-end" value="12:00">
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label class="form-label fw-semibold">Duration</label>
+            <select class="form-select" id="availability-duration">
+                <option value="30">30 min</option>
+                <option value="60" selected>1 hour</option>
+            </select>
+        </div>
     </div>
+
 
     @* Availability input footer (sticky at bottom) *@
     <div class="mt-auto d-flex justify-content-end gap-2 p-3 border-top bg-white">
         <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn-custom btn-next" onclick="saveAvailability()">Save</button>
-    </div>
-
-   
+    </div>   
 </div>
 <style>
     .availability-inputs {
         width: 60%;
         background-color: white;
-        min-height: 800px;
+        min-height: 100%;
         /* Initially hidden */
         display: none;
         opacity: 0;

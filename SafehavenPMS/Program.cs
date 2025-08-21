@@ -30,7 +30,6 @@ builder.Services.AddDbContext<SafehavenPMS.Data.SafehavenPMSContext>(options =>
 // This service (AppointmentStatusUpdater) will check periodically
 // if any appointments have already ended, and automatically update
 // their status from "Confirmed" to "Done".
-builder.Services.AddHostedService<AppointmentStatusUpdater>();
 
 var app = builder.Build();
 
@@ -57,31 +56,31 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<SafehavenPMSContext>();
-        context.Database.Migrate();
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    try
+//    {
+//        var context = services.GetRequiredService<SafehavenPMSContext>();
+//        context.Database.Migrate();
 
 
-        // Seed Religions
-        var religionPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Religion.json");
-        await DataSeeder.SeedReligionsAsync(context, religionPath);
+//        // Seed Religions
+//        var religionPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Religion.json");
+//        await DataSeeder.SeedReligionsAsync(context, religionPath);
 
-        // Seed Nationalities
-        var nationalityPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Nationality.json");
-        await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
+//        // Seed Nationalities
+//        var nationalityPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Nationality.json");
+//        await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
 
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(ex.ToString());
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-    }
-}
+//    }
+//    catch (Exception ex)
+//    {
+//        Console.WriteLine(ex.ToString());
+//        var logger = services.GetRequiredService<ILogger<Program>>();
+//        logger.LogError(ex, "An error occurred while seeding the database.");
+//    }
+//}
 
 
 

@@ -1,51 +1,25 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SafehavenPMS.Enum;
+using SafehavenPMS.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace SafehavenPMS.ViewModel
 {
     public class AvailabilityViewModel
     {
-        // Availability level
+        public int Id { get; set; }
+
+        // Link to the Doctor
         public int ClinicalStaffID { get; set; }
-        public string? Title { get; set; }
+        public ClinicalStaff ClinicalStaff { get; set; }
 
-        [Required(ErrorMessage = "Start date is required.")]
-        [DataType(DataType.Date)]
-        public DateTime StartDate { get; set; }
+        // Day of the week (Mon-Sun)
+        public DayOfWeek Day { get; set; }
 
-        [DataType(DataType.Date)]
-        public DateTime? EndDate { get; set; }
-        public bool NoEndDate { get; set; }
-
-        // List of days
-        public List<DayAvailabilityViewModel> Days { get; set; } = new();
-    }
-
-    public class DayAvailabilityViewModel
-    {
-        public int DayId { get; set; }
-
-        [Required(ErrorMessage = "Day name is required.")]
-        public string DayName { get; set; }
-
-        public DateTime Date { get; set; }
-
-        public bool IsAvailable { get; set; }
-
-        public List<TimeSlotViewModel> TimeSlots { get; set; } = new();
-    }
-
-    public class TimeSlotViewModel
-    {
-        public int TimeSlotId { get; set; }
-
-        [Required(ErrorMessage = "Start time is required.")]
-        [DataType(DataType.Time)]
+        // Start and End time for slot
         public TimeSpan StartTime { get; set; }
-
-        [Required(ErrorMessage = "End time is required.")]
-        [DataType(DataType.Time)]
         public TimeSpan EndTime { get; set; }
 
-        public bool IsAvailable { get; set; }
+        // Availability status
+        public AvailabilityStatus Status { get; set; } = AvailabilityStatus.Available;
     }
 }

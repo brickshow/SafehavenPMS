@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SafehavenPMS.Data;
+using SafehavenPMS.Enum;
 using SafehavenPMS.Helpers;
 using SafehavenPMS.Models;
 using SafehavenPMS.Services;
@@ -24,100 +25,127 @@ namespace SafehavenPMS.Controllers
 
         public async Task<IActionResult> Index()
         {
+            // Fetch all pending appointments from the database
+            // Include related entities: Staff, Patient, and Availability
             var appointments = await _context.Appointments
-                                      .Include(c => c.Staff)
-                                      .Include(p => p.Patient)
-                                      .Include(d => d.Day)
-                                            .ThenInclude(t => t.TimeSlots)
-                                       .Where(s => s.Status == "Pending")
-                                       .ToListAsync();
+                .Include(a => a.Staff)          // Include doctor/clinical staff info
+                .Include(a => a.Patient)        // Include patient info
+                .Include(a => a.Availability)   // Include availability info (date/time slot)
+                .Where(a => a.Status == "Pending") // Only pending appointments
+                .ToListAsync();
 
+            // Prepare the view model
             var model = new AppointmentPageViewModel
             {
-                Appointments = appointments,
+                Appointments = appointments, // Store all appointments (optional for other uses)
 
-                // Map each Appointment -> AppointmentPendingApprovalViewModel
+                // Map appointments to the simplified PendingAppointments list for display
                 PendingAppointments = appointments.Select(a => new AppointmentPendingApprovalViewModel
                 {
-                    AppointmentId = a.AppointmentId,
-                    PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
-                    DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
-                    VisitType = a.VisitType,
-                    AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
-                    Status = a.Status
+                    AppointmentId = a.AppointmentId, // Appointment unique ID
+                    PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}", // Full patient name
+                    DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",       // Full doctor/staff name
+                    AppointmentDate = a.AppointmentDate,
+                    VisitType = a.VisitType,                                     // Type of visit (consultation, checkup, etc.)
+                    Status = a.Status // Current appointment status (Pending)
                 }).ToList()
+            };
+
+            // Pass the model to the view
+            return View(model);
+        }
+
+
+        public async Task<IActionResult> AddNewAppointment()
+        {
+            var patientList = await _context.Patients.ToListAsync();
+            var staff = await _context.ClinicalStaffs.ToListAsync();
+
+            var model = new NewAppointmentViewModel
+            {
+                Patients = patientList,
+                ClinicalStaffs = staff
             };
 
             return View(model);
         }
 
-        //Action to get pending appointments
+        // Action to show Add New Appointment form
+        public async Task<IActionResult> GetDateAndTimeSlots(DateTime? selectedDate)
+        {
+            var patients = await _context.Patients.ToListAsync();
 
-        // Action to get confirmed appointments for calendar
+            var staffList = await _context.ClinicalStaffs
+                .Include(s => s.Availabilities)
+                .ToListAsync();
+
+            var model = new NewAppointmentViewModel
+            {
+                Patients = patients,
+                ClinicalStaffs = staffList,
+                SelectedDate = selectedDate
+            };
+
+            return View(model);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetAppointments()
         {
-            // 1. Load appointments from DB, include Availability -> Days -> TimeSlots
             var appointments = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Staff)
                 .Include(a => a.Availability)
-                    .ThenInclude(av => av.Days)
-                        .ThenInclude(d => d.TimeSlots)
-                // Only return confirmed appointments
-                .Where(s => s.Status == Enum.AppointmentEnum.Confirmed.ToString())
                 .ToListAsync();
 
-            // 2. Transform appointments into calendar event objects
-            var calendarData = appointments.Select(a =>
-            {
-                // Find the booked timeslot for this appointment
-                var bookedSlot = a.Availability.Days
-                    .SelectMany(d => d.TimeSlots)
-                    .FirstOrDefault(ts => ts.TimeSlotId == a.TimeSlotId);
-
-                // Find the day that contains this booked timeslot
-                var day = a.Availability.Days
-                    .FirstOrDefault(d => d.TimeSlots.Any(ts => ts.TimeSlotId == a.TimeSlotId));
-
-                // If no matching slot or day found, skip this appointment
-                if (bookedSlot == null || day == null)
-                    return null;
-
-                // Map appointment into calendar event object
-                var startDateTime = day.Date + bookedSlot.StartTime;
-                var endDateTime = day.Date + bookedSlot.EndTime;
-
-                return new
+            var calendarData = appointments
+                .Where(a => a.Availability != null && a.AppointmentDate != null)
+                .Select(a =>
                 {
-                    id = a.AppointmentId,
-                    title = a.VisitType,
-                    date = day.Date, // actual date
-                    start = startDateTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    end = endDateTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    color = a.Status == Enum.AppointmentEnum.Confirmed.ToString() ? "#CBE5DC" : "#FFD400",
-                    extendedProps = new
+                    // Use the actual appointment date
+                    DateTime appointmentDate = a.AppointmentDate.Date;
+                    DateTime startDateTime = appointmentDate + a.Availability.StartTime;
+                    DateTime endDateTime = appointmentDate + a.Availability.EndTime;
+
+                    return new
                     {
-                        visitType = a.VisitType,
-                        time = $"{bookedSlot.StartTime:hh\\:mm} - {bookedSlot.EndTime:hh\\:mm}"
-                    }
-                };
-            })
-            .Where(x => x != null)
-            .ToList();
+                        id = a.AppointmentId,
+                        title = a.VisitType,
+                        start = startDateTime.ToString("o"), // ISO 8601
+                        end = endDateTime.ToString("o"),
+                        color = a.Status == Enum.AppointmentEnum.Confirmed.ToString() ? "#CBE5DC" :
+                                a.Status == Enum.AppointmentEnum.Completed.ToString() ? "#AEEBAB" :
+                                "#FFD400",
+                        extendedProps = new
+                        {
+                            visitType = a.VisitType,
+                            status = a.Status,
+                            patientName = a.Patient != null ? $"{a.Patient.Firstname} {a.Patient.Lastname}" : "",
+                            doctorName = a.Staff != null ? $"{a.Staff.Firstname} {a.Staff.Lastname}" : "",
+                            description = a.Description,
+                            date = appointmentDate.ToString("yyyy-MM-dd"), // Include date separately
+                            time = $"{startDateTime:HH:mm} - {endDateTime:HH:mm}"
+                        }
+                    };
+                })
+                .ToList();
 
-
-            // 3. Return JSON for calendar frontend (e.g., FullCalendar)
             return Json(calendarData);
         }
+
+
+
 
 
         // Action to Confirm Appointment
         [HttpPost]
         public async Task<IActionResult> Confirm(int id)
         {
-            // Find the appointment by ID, also load related Day and TimeSlot
+            // Load appointment with related Patient, Staff, and Availability
             var appointment = await _context.Appointments
-                .Include(a => a.Day)        // Eager load Day (to get DayName)
-                .Include(a => a.TimeSlot)   // Eager load TimeSlot (to get Start/End time)
+                .Include(a => a.Patient)
+                .Include(a => a.Staff)
+                .Include(a => a.Availability)
                 .FirstOrDefaultAsync(a => a.AppointmentId == id);
 
             // If no appointment found, return 404
@@ -139,14 +167,17 @@ namespace SafehavenPMS.Controllers
             }
             catch (Exception ex)
             {
-                // Log the error (you can replace Console.WriteLine with proper logging)
-                Console.WriteLine("Error: " + ex);
+                // Log the error
+                Console.WriteLine("Error confirming appointment: " + ex);
+                // Optionally, you can return an error view/message here
+                return StatusCode(500, "Internal server error while confirming appointment.");
             }
 
-            // Get all appointments again after the update
+            // Reload all appointments with related entities
             var appointments = await _context.Appointments
-                .Include(a => a.Day)        // Include Day for each appointment
-                .Include(a => a.TimeSlot)   // Include TimeSlot for each appointment
+                .Include(a => a.Patient)
+                .Include(a => a.Staff)
+                .Include(a => a.Availability)
                 .ToListAsync();
 
             // Build the ViewModel for Index
@@ -157,14 +188,18 @@ namespace SafehavenPMS.Controllers
 
                 // Only "Pending" appointments for notification panel
                 PendingAppointments = appointments
-                    .Where(a => a.Status == Enum.AppointmentEnum.Pending.ToString()) // Filter only pending
+                    .Where(a => a.Status == Enum.AppointmentEnum.Pending.ToString())
                     .Select(a => new AppointmentPendingApprovalViewModel
                     {
                         AppointmentId = a.AppointmentId,
-                        PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
-                        DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
+                        PatientName = a.Patient != null
+                            ? $"{a.Patient.Firstname} {a.Patient.Lastname}"
+                            : "Unknown Patient",
+                        DoctorName = a.Staff != null
+                            ? $"{a.Staff.Firstname} {a.Staff.Lastname}"
+                            : "Unknown Doctor",
                         VisitType = a.VisitType,
-                        AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
+                        AppointmentDate = a.AppointmentDate,
                         Status = a.Status
                     })
                     .ToList()
@@ -174,14 +209,14 @@ namespace SafehavenPMS.Controllers
             return View("Index", model);
         }
 
+
         // Action to Cancel Appointment
         [HttpPost]
         public async Task<IActionResult> Cancel(int id)
         {
             // Find the appointment by ID, include related Day and TimeSlot
             var appointment = await _context.Appointments
-                .Include(a => a.Day)        // Include Day (for display purposes)
-                .Include(a => a.TimeSlot)   // Include TimeSlot (for start/end times)
+                  // Include TimeSlot (for start/end times)
                 .FirstOrDefaultAsync(a => a.AppointmentId == id);
 
             // If no appointment found, return 404
@@ -209,8 +244,7 @@ namespace SafehavenPMS.Controllers
 
             // Reload all appointments after cancellation
             var appointments = await _context.Appointments
-                .Include(a => a.Day)
-                .Include(a => a.TimeSlot)
+            
                 .ToListAsync();
 
             // Build the updated ViewModel
@@ -225,7 +259,6 @@ namespace SafehavenPMS.Controllers
                         PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
                         DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
                         VisitType = a.VisitType,
-                        AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
                         Status = a.Status
                     })
                     .ToList()
@@ -258,7 +291,7 @@ namespace SafehavenPMS.Controllers
                     PatientName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
                     DoctorName = $"{a.Staff.Firstname} {a.Staff.Lastname}",
                     VisitType = a.VisitType,
-                    AppointmentDate = a.Day.Date.ToString("MMMM dd, yyyyy"),
+                    AppointmentDate = a.AppointmentDate,
                     Status = a.Status
                 })
                 .ToListAsync();
@@ -296,75 +329,64 @@ namespace SafehavenPMS.Controllers
             // Return view with model
             return View(vm);
         }
-
         [HttpPost]
         public async Task<IActionResult> ScheduleAppointment(AppointmentViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                // Log errors
-                foreach (var entry in ModelState)
-                    foreach (var error in entry.Value.Errors)
-                        Console.WriteLine($"Field: {entry.Key} - Error: {error.ErrorMessage}");
+                foreach (var state in ModelState)
+                {
+                    var key = state.Key;
+                    foreach (var error in state.Value.Errors)
+                    {
+                        Console.WriteLine($"Field: {key}, Error: {error.ErrorMessage}");
+                    }
+                }
 
-                ViewBag.Error = "Error scheduling an appointment!";
+                ViewBag.Error = "Please correct the errors in the form!";
                 return View(model);
             }
 
-            // Get the selected Availability with its Days and TimeSlots
-            var availability = await _context.Availabilities
-                .Include(a => a.Days)
-                    .ThenInclude(d => d.TimeSlots)
-                .FirstOrDefaultAsync(a => a.AvailabilityId == model.AvailabilityId);
+            // Fetch the availability template
+            var templateAvailability = await _context.Availabilities
+                .FirstOrDefaultAsync(a => a.Id == model.AvailabilityId
+                    && a.Status == AvailabilityStatus.Available.ToString());
 
-            if (availability == null)
+            if (templateAvailability == null)
             {
-                TempData["Error"] = "Selected availability not found!";
+                TempData["Error"] = "Selected availability not found or already booked!";
                 return View(model);
             }
 
-            // Find the Day that contains the selected TimeSlot
-            var selectedDay = availability.Days
-                .FirstOrDefault(d => d.TimeSlots.Any(ts => ts.TimeSlotId == model.TimeSlotId));
-
-            if (selectedDay == null)
+            // Create a new availability for the specific date
+            var bookedAvailability = new Availability
             {
-                TempData["Error"] = "Selected time slot not found!";
-                return View(model);
-            }
+                ClinicalStaffID = templateAvailability.ClinicalStaffID,
+                Day = templateAvailability.Day,
+                StartTime = templateAvailability.StartTime,
+                EndTime = templateAvailability.EndTime,
+                Status = AvailabilityStatus.Booked.ToString(),
+                SlotDate = model.SelectedDate
+            };
 
-            // Get the exact TimeSlot
-            var selectedTimeSlot = selectedDay.TimeSlots
-                .FirstOrDefault(ts => ts.TimeSlotId == model.TimeSlotId);
+            await _context.Availabilities.AddAsync(bookedAvailability);
 
-            if (selectedTimeSlot == null)
-            {
-                TempData["Error"] = "Time slot not found!";
-                return View(model);
-            }
-
-            // Create the Appointment
+            // Create the appointment
             var appointment = new Appointment
             {
                 PatientId = model.PatientId,
                 ClinicalStaffID = model.ClinicalStaffID,
-                AvailabilityId = availability.AvailabilityId,
-                AvailabilityDayId = selectedDay.DayId,   // <-- store the Day FK
-                TimeSlotId = selectedTimeSlot.TimeSlotId, // <-- store the TimeSlot FK
+                AvailabilityId = bookedAvailability.Id, // Link to the new slot
                 VisitType = model.VisitType,
                 Description = model.Description,
                 Status = Enum.AppointmentEnum.Pending.ToString(),
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                AppointmentDate = model.SelectedDate
             };
 
-            // Save Appointment
             await _context.Appointments.AddAsync(appointment);
 
-            // Mark the TimeSlot as unavailable
-            selectedTimeSlot.IsAvailable = false;
-            _context.Update(availability);
-
-            // Change patient status
+            // Update patient status
             var patient = await _context.Patients.FindAsync(model.PatientId);
             if (patient != null)
             {
@@ -376,63 +398,91 @@ namespace SafehavenPMS.Controllers
 
             TempData["ToastMessage"] = "Appointment scheduled successfully!";
             TempData["ToastType"] = "success";
+
             return RedirectToAction("Index", "Appointment");
         }
 
+
+        // POST: Submit date from calendar
         // POST: Submit date from calendar
         [HttpPost]
-        public async Task<IActionResult> SubmitDate(DateTime selectedDate, int patientId)
+        public IActionResult SubmitDate(DateTime SelectedDate, int PatientId, int ClinicalStaffID)
         {
-            // Reload patient info
-            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId);
+            ViewBag.SelectedDate = SelectedDate.ToString("yyyy-MM-dd");
 
-            // Reload staff info linked to patient
-            var staff = await _context.ClinicalStaffPatients
-                            .Where(cp => cp.PatientId == patientId)
-                            .Select(cp => cp.ClinicalStaff)
-                            .FirstOrDefaultAsync();
 
-            // If no patient or staff, return empty model to the view
-            if (patient == null || staff == null)
-                return View("ScheduleAppointment", new AppointmentViewModel());
-
-            // Rebuild view model with patient + staff details
-            var vm = new AppointmentViewModel
+            // Query availabilities for that day
+            var availabilities = _context.Availabilities
+                                .Where(a => a.ClinicalStaffID == ClinicalStaffID
+                                            && (a.SlotDate == SelectedDate || (a.SlotDate == null && a.Day == SelectedDate.DayOfWeek))
+                                            && a.Status == AvailabilityStatus.Available.ToString())
+                                .ToList();
+            // Display slots in console
+            foreach (var a in availabilities)
             {
-                PatientId = patient.PatientId,
-                PatientName = $"{patient.Firstname} {patient.MiddleName} {patient.Lastname}",
-                ClinicalStaffID = staff.ClinicalStaffID,
-                ClinicalStaffName = $"{staff.Firstname} {staff.MiddleName} {staff.Lastname}",
-                // SelectedDate = selectedDate (optional, currently commented out)
+                Console.WriteLine($"AvailabilityId: {a.Id}, Day: {a.Day}, StartTime: {a.StartTime:hh\\:mm}, EndTime: {a.EndTime:hh\\:mm}, Status: {a.Status}");
+            }
+
+            // Get patient and staff names
+            var patient = _context.Patients
+                                  .Where(p => p.PatientId == PatientId)
+                                  .Select(p => new { p.Firstname, p.Lastname })
+                                  .FirstOrDefault();
+
+            var clinicalStaff = _context.ClinicalStaffs
+                                        .Where(c => c.ClinicalStaffID == ClinicalStaffID)
+                                        .Select(c => new { c.Firstname, c.Lastname })
+                                        .FirstOrDefault();
+
+            var model = new AppointmentViewModel
+            {
+                PatientId = PatientId,
+                ClinicalStaffID = ClinicalStaffID,
+                PatientName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "",
+                ClinicalStaffName = clinicalStaff != null ? $"{clinicalStaff.Firstname} {clinicalStaff.Lastname}" : "",
+                SelectedDate = SelectedDate
             };
 
-            // Get the name of the day (e.g., Monday, Tuesday)
-            var dayName = selectedDate.DayOfWeek.ToString();
+            //Return the list of the Availabilities
+            ViewBag.AvailableTimes = availabilities;
 
-            // Query database for available time slots for this date
-            var timeSlots = await _context.Availabilities
-                .Where(a => selectedDate.Date >= a.StartDate.Date &&
-                            (a.NoEndDate || (a.EndDate.HasValue && selectedDate.Date <= a.EndDate.Value.Date)))
-                .SelectMany(a => a.Days
-                    .Where(d => d.DayName == dayName && d.IsAvailable) // Only available days
-                    .SelectMany(d => d.TimeSlots
-                        .Where(tm => tm.IsAvailable)
-                        .Select(ts => new
-                        {
-                            a.AvailabilityId, // Parent availability ID
-                            ts.TimeSlotId,   // Timeslot ID
-                            ts.StartTime,    // Start time
-                            ts.EndTime       // End time
-                })))
-                .OrderBy(ts => ts.StartTime) // Sort slots by time
-                .ToListAsync();
-
-            // Pass selected date and available times to the view
-            ViewBag.SelectedDate = selectedDate;
-            ViewBag.AvailableTimes = timeSlots;
-
-            // Return ScheduleAppointment view with rebuilt model
-            return View("ScheduleAppointment", vm);
+            return View("ScheduleAppointment", model);
         }
+
+
+        // Action to mark Appointment as Completed
+        [HttpPost]
+        public async Task<IActionResult> Completed(int id)
+        {
+            // Find the appointment by ID
+            var appointment = await _context.Appointments.FindAsync(id);
+
+            if (appointment == null)
+            {
+                TempData["Error"] = "Appointment not found!";
+                return RedirectToAction("Index"); // or return a suitable view
+            }
+
+            // Update status
+            appointment.Status = Enum.AppointmentEnum.Completed.ToString();
+
+            try
+            {
+                _context.Appointments.Update(appointment);
+                await _context.SaveChangesAsync();
+
+                TempData["ToastMessage"] = "Appointment marked as completed!";
+                TempData["ToastType"] = "success";
+            }
+            catch (Exception ex)
+            {
+                // Log the exception if needed
+                Console.WriteLine(ex.Message);
+                TempData["Error"] = "Failed to update appointment!";
+            }
+
+            return RedirectToAction("Index"); // Redirect back to appointments list
+        }
+
     }
 }

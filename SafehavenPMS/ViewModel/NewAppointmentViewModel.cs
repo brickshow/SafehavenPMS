@@ -1,0 +1,25 @@
+﻿using SafehavenPMS.Models;
+
+namespace SafehavenPMS.ViewModel
+{
+    public class NewAppointmentViewModel
+    {
+        public int? PatientId { get; set; }
+        public string PatientName { get; set; }
+
+        public int? ClinicalStaffID { get; set; }
+        public string ClinicalStaffName { get; set; }
+
+        public int? AvailabilityId { get; set; }
+        public int? TimeSlotId { get; set; }
+
+        public string VisitType { get; set; }
+        public string Description { get; set; }
+
+        public DateTime? SelectedDate { get; set; }
+
+        // Lists for dropdowns and times
+        public List<Patient> Patients { get; set; }
+        public List<ClinicalStaff> ClinicalStaffs { get; set; }
+    }
+}

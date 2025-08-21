@@ -1,12 +1,14 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SafehavenPMS.Data;
+using SafehavenPMS.Enum;
 using SafehavenPMS.Helpers;
 using SafehavenPMS.Models;
 using SafehavenPMS.Services;
+using SafehavenPMS.StaticData;
 using SafehavenPMS.ViewModel;
+using System;
 using System.Text.Json;
 
 namespace SafehavenPMS.Controllers
@@ -16,6 +18,7 @@ namespace SafehavenPMS.Controllers
         //Inject Context or services if needed
         private readonly SafehavenPMSContext _context;
 
+        //Call out object for Static data seeding
 
         //Call out object for UploadPhotoServices if needed
         private readonly UploadPhotoServices _uploadPhotoServices;
@@ -122,7 +125,6 @@ namespace SafehavenPMS.Controllers
         }
 
         //Action for Profile
-
         [HttpGet]
         public async Task<IActionResult> Profile(int id, DateTime? startDateInput = null, DateTime? endDateInput = null)
         {
@@ -138,36 +140,10 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("Index");
             }
 
-
-            // Map existing availabilities from DB
             var availabilities = await _context.Availabilities
-                .Where(a => a.ClinicalStaffID == id)
-                .Include(a => a.Days)
-                    .ThenInclude(d => d.TimeSlots)
-                .Select(a => new AvailabilityViewModel
-                {
-                    ClinicalStaffID = a.ClinicalStaffID,
-                    Title = a.Title,
-                    StartDate = a.StartDate,
-                    EndDate = a.EndDate,
-                    NoEndDate = a.NoEndDate,
-                    Days = a.Days
-                        .Select(d => new DayAvailabilityViewModel
-                        {
-                            DayId = d.DayId,
-                            DayName = d.DayName,
-                            IsAvailable = d.IsAvailable && d.TimeSlots.Any(ts => ts.IsAvailable)
-                                            && DateTime.Today <= a.StartDate.AddDays(System.Enum.Parse<DayOfWeek>(d.DayName) - a.StartDate.DayOfWeek),
-                            TimeSlots = d.TimeSlots.Select(ts => new TimeSlotViewModel
-                            {
-                                TimeSlotId = ts.TimeSlotId,
-                                StartTime = ts.StartTime,
-                                IsAvailable = ts.IsAvailable,
-                                EndTime = ts.EndTime
-                            }).ToList()
-                        }).ToList()
-                })
-                .ToListAsync();
+                                     .Where(a => a.ClinicalStaffID == id)
+                                     .ToListAsync();
+
 
             // Use inputted dates or default to today + 6 days
             var startDate = startDateInput ?? DateTime.Today;
@@ -178,20 +154,6 @@ namespace SafehavenPMS.Controllers
                                       .Select(offset => startDate.AddDays(offset))
                                       .ToList();
 
-            // Build NewAvailability
-            var newAvailability = new AvailabilityViewModel
-            {
-                ClinicalStaffID = id,
-                StartDate = startDate,
-                EndDate = endDate,
-                Days = dateRange.Select(date => new DayAvailabilityViewModel
-                {
-                    DayName = date.DayOfWeek.ToString(),
-                    IsAvailable = false, // default
-                    TimeSlots = new List<TimeSlotViewModel>() // empty by default
-                }).ToList()
-            };
-
             // Build the view model
             var viewModel = new ClinicalStaffProfileViewModel
             {
@@ -200,8 +162,7 @@ namespace SafehavenPMS.Controllers
                                 .Select(csp => csp.Patient)
                                 .Distinct()
                                 .ToList(),
-                Availability = availabilities,
-                NewAvailability = newAvailability
+                Availability = availabilities
             };
 
             ViewBag.ClinicalStaffId = id;
@@ -215,16 +176,16 @@ namespace SafehavenPMS.Controllers
             //return staff that position == Physician
             return View();
         }
-            
+
         [HttpPost]
         public IActionResult AddNewClinicalStaff(AddClinicalStaffViewModel model)
         {
             // Remove ImageURL from validation since we set it manually later
             ModelState.Remove("Filename");
-            // Check Validation
+
+            // Check validation
             if (!ModelState.IsValid)
             {
-                // Log ModelState errors to console
                 foreach (var entry in ModelState)
                 {
                     var key = entry.Key;
@@ -235,7 +196,7 @@ namespace SafehavenPMS.Controllers
                         Console.WriteLine($"Field: {key} - Error: {error.ErrorMessage}");
                     }
                 }
-                return View(model); // Pass model back to preserve entered data
+                return View(model);
             }
 
             // Check if Hire Date is in the future
@@ -245,16 +206,14 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
 
-            //Locally upload the photo before saving to session
-            model.Filename = _uploadPhotoServices.UploadPhoto(model.ImageProfile);
-
-            //Upload the Photo to cloudinary
-            string tempUrl = string.Empty; // Default image
+            // Locally upload the photo before saving
+            string tempUrl = string.Empty;
             string filename = null;
 
             if (model.ImageProfile != null && model.ImageProfile.Length > 0)
             {
                 filename = _uploadPhotoServices.UploadPhoto(model.ImageProfile);
+
                 if (!string.IsNullOrEmpty(filename))
                 {
                     string localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filename);
@@ -273,52 +232,63 @@ namespace SafehavenPMS.Controllers
                     {
                         Console.WriteLine("Error: " + ex.Message);
                         TempData["Error"] = "Failed to upload profile image: " + ex.Message;
-                        _uploadPhotoServices.DeletePhoto(filename); // Clean up temp file on failure
+                        _uploadPhotoServices.DeletePhoto(filename);
                         return View(model);
                     }
-                    _uploadPhotoServices.DeletePhoto(filename); // Clean up temp file on success
+
+                    _uploadPhotoServices.DeletePhoto(filename); // Clean up temp file
                 }
             }
 
-            //Save Clinical staff to database
+            // Prepare ClinicalStaff entity
+            var staff = new ClinicalStaff
+            {
+                Firstname = model.Firstname,
+                MiddleName = model.MiddleName,
+                Lastname = model.Lastname,
+                Sex = model.Sex,
+                PhoneNumber = model.PhoneNumber,
+                Specialty = model.Specialty,
+                Position = model.Position,
+                ProfilePictureURL = tempUrl,
+                PRC_Licensed = model.RPC_Licensed,
+                Email = model.Email,
+                HireDate = model.HireDate,
+                CreatedAt = DateTime.Now,
+                IsActive = true,
+                Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}"
+            };
+
+            // Use transaction to ensure staff + availability are saved together
+            using var transaction = _context.Database.BeginTransaction();
             try
             {
-                //Add the Clinincal Staff Information
-                var staff = new ClinicalStaff
-                {
-                    Firstname = model.Firstname,
-                    MiddleName = model.MiddleName,
-                    Lastname = model.Lastname,
-                    Sex = model.Sex,
-                    PhoneNumber = model.PhoneNumber,
-                    Specialty = model.Specialty,
-                    Position = model.Position,
-                    ProfilePictureURL = tempUrl,
-                    PRC_Licensed = model.RPC_Licensed,
-                    Email = model.Email,
-                    HireDate = model.HireDate,
-                    CreatedAt = DateTime.Now,
-                    IsActive = true,
-                    Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}"
-                };
-
-                //Save to database
+                // Save staff first to get ID
                 _context.ClinicalStaffs.Add(staff);
                 _context.SaveChanges();
 
+                // Auto-generate availability for Physicians and Psychiatrists
+                if (staff.Position == "Physician" || staff.Position == "Psychiatrist")
+                {
+                    var availabilities = AvailabilityGenerator.GenerateForDoctor(staff.ClinicalStaffID);
+                    _context.Availabilities.AddRange(availabilities);
+                    _context.SaveChanges();
+                }
+
+                transaction.Commit();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine("Error saving patient: " + ex.Message);
-                TempData["Error"] = "There was an error saving the patient.";
-                return View(); // Make sure there's a view for fallback here
+                transaction.Rollback();
+                Console.WriteLine("Error saving staff or availability: " + ex.Message);
+                TempData["Error"] = "There was an error saving the staff.";
+                return View(model);
             }
 
-
-            //Remove the IFormFile in session
+            // Clean up the uploaded file reference in session
             model.ImageProfile = null;
-            TempData["SuccessMessage"] = "Clinical staff added successfully!";
 
+            TempData["SuccessMessage"] = "Clinical staff added successfully!";
             return RedirectToAction("Index");
         }
 
@@ -502,7 +472,6 @@ namespace SafehavenPMS.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            TempData["SuccessMessage"] = $"Patient {staff.Firstname} {staff.Lastname} has been deleted successfully.";
 
 
             return RedirectToAction("Index");
@@ -521,54 +490,40 @@ namespace SafehavenPMS.Controllers
         //{
 
         //}
-        [HttpPost]
-        public IActionResult SubmitDate(AvailabilityViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                Console.WriteLine("=== ModelState Errors ===");
-                foreach (var kvp in ModelState)
-                {
-                    foreach (var error in kvp.Value.Errors)
-                    {
-                        Console.WriteLine($"Field: {kvp.Key} | Error: {error.ErrorMessage}");
-                    }
-                }
+        //[HttpPost]
+        //public IActionResult SubmitDate(DateTime SelectedDate, int PatientId, int ClinicalStaffID)
+        //{
+        //    // Save selected date for view
+        //    ViewBag.SelectedDate = SelectedDate.ToString("yyyy-MM-dd");
 
-                // Optional: return view with model to display validation errors
-                TempData["Error"] = "Some fields are invalid. Check console output.";
-                return RedirectToAction("Profile", new { id = model.ClinicalStaffID });
-            }
+        //    // Get available slots for the selected doctor and day
+        //    var dayOfWeek = SelectedDate.DayOfWeek;
 
-            // Print top-level availability info
-            Console.WriteLine("=== Submitted Availability ===");
-            Console.WriteLine($"ClinicalStaffID: {model.ClinicalStaffID}");
-            Console.WriteLine($"Title: {model.Title}");
-            Console.WriteLine($"StartDate: {model.StartDate:yyyy-MM-dd}");
-            Console.WriteLine($"EndDate: {model.EndDate:yyyy-MM-dd}");
-            Console.WriteLine($"NoEndDate: {model.NoEndDate}");
+        //    var availableTimes = _context.Availabilities
+        //        .Where(a => a.ClinicalStaffID == ClinicalStaffID
+        //                    && a.Day == dayOfWeek
+        //                    && a.Status == AvailabilityStatus.Available.ToString())
+        //        .Select(a => new
+        //        {
+        //            AvailabilityId = a.Id,
+        //            StartTime = a.StartTime,
+        //            EndTime = a.EndTime
+        //        })
+        //        .ToList();
 
-            // Loop through each day
-            foreach (var day in model.Days)
-            {
-                Console.WriteLine($"\nDay: {day.DayName} (IsAvailable: {day.IsAvailable})");
+        //    ViewBag.AvailableTimes = availableTimes;
 
-                // Loop through each time slot
-                foreach (var slot in day.TimeSlots)
-                {
-                    Console.WriteLine($"  TimeSlot: {slot.StartTime:hh\\:mm} - {slot.EndTime:hh\\:mm}");
-                }
-            }
+        //    // Prepare ViewModel for the form
+        //    var model = new AppointmentViewModel
+        //    {
+        //        PatientId = PatientId,
+        //        ClinicalStaffID = ClinicalStaffID,
+        //        SelectedDate = SelectedDate
+        //    };
 
-            TempData["Info"] = "Availability data submitted. Check console output.";
+        //    return View("ScheduleAppointment", model);
+        //}
 
-            return RedirectToAction("Profile", new 
-            { 
-                id = model.ClinicalStaffID, 
-                startDateInput = model.StartDate, 
-                endDateInput = model.EndDate
-            });
-        }
 
         // Helper method to get all dates that match a given day name between start and end dates
         public List<DateTime> GetDatesForDayName(string dayName, DateTime startDate, DateTime? endDate)
@@ -594,175 +549,175 @@ namespace SafehavenPMS.Controllers
             return dates; // Return all matching dates
         }
 
-        [HttpPost]
-        public IActionResult SaveAvailabilityJson([FromBody] AvailabilityViewModel model)
-        {
-            if (model == null)
-                return Json(new { success = false }); // Return false if no data received
+        //[HttpPost]
+        //public IActionResult SaveAvailabilityJson([FromBody] AvailabilityViewModel model)
+        //{
+        //    if (model == null)
+        //        return Json(new { success = false }); // Return false if no data received
 
-            // Create main Availability entity
-            var availability = new Availability
-            {
-                ClinicalStaffID = model.ClinicalStaffID, // Associate with clinical staff
-                Title = model.Title, // Availability title
-                StartDate = model.StartDate, // Start of availability period
-                EndDate = model.NoEndDate ? null : model.EndDate, // End date, or null if "no end date"
-                NoEndDate = model.NoEndDate, // Flag for open-ended availability
-                Days = new List<AvailabilityDay>() // Initialize list of days
-            };
+        //    // Create main Availability entity
+        //    var availability = new Availability
+        //    {
+        //        ClinicalStaffID = model.ClinicalStaffID, // Associate with clinical staff
+        //        Title = model.Title, // Availability title
+        //        StartDate = model.StartDate, // Start of availability period
+        //        EndDate = model.NoEndDate ? null : model.EndDate, // End date, or null if "no end date"
+        //        NoEndDate = model.NoEndDate, // Flag for open-ended availability
+        //        Days = new List<AvailabilityDay>() // Initialize list of days
+        //    };
 
-            // Loop through each day submitted in the model
-            foreach (var dayVM in model.Days)
-            {
-                // Generate all actual dates for this day name within start-end range
-                var dayDates = GetDatesForDayName(dayVM.DayName, model.StartDate, model.NoEndDate ? null : model.EndDate);
+        //    // Loop through each day submitted in the model
+        //    foreach (var dayVM in model.Days)
+        //    {
+        //        // Generate all actual dates for this day name within start-end range
+        //        var dayDates = GetDatesForDayName(dayVM.DayName, model.StartDate, model.NoEndDate ? null : model.EndDate);
 
-                // Loop through each date generated
-                foreach (var date in dayDates)
-                {
-                    var dayEntity = new AvailabilityDay
-                    {
-                        DayName = dayVM.DayName, // Store the day name (e.g., "Monday")
-                        IsAvailable = true, // Mark day as available
-                        Date = date, // Save the actual date
-                        TimeSlots = dayVM.TimeSlots.Select(ts => new TimeSlot
-                        {
-                            StartTime = TimeSpan.Parse(ts.StartTime.ToString(@"hh\:mm")), // Parse start time
-                            EndTime = TimeSpan.Parse(ts.EndTime.ToString(@"hh\:mm")) // Parse end time
-                        }).ToList() // Convert all time slots to list
-                    };
+        //        // Loop through each date generated
+        //        foreach (var date in dayDates)
+        //        {
+        //            var dayEntity = new AvailabilityDay
+        //            {
+        //                DayName = dayVM.DayName, // Store the day name (e.g., "Monday")
+        //                IsAvailable = true, // Mark day as available
+        //                Date = date, // Save the actual date
+        //                TimeSlots = dayVM.TimeSlots.Select(ts => new TimeSlot
+        //                {
+        //                    StartTime = TimeSpan.Parse(ts.StartTime.ToString(@"hh\:mm")), // Parse start time
+        //                    EndTime = TimeSpan.Parse(ts.EndTime.ToString(@"hh\:mm")) // Parse end time
+        //                }).ToList() // Convert all time slots to list
+        //            };
 
-                    availability.Days.Add(dayEntity); // Add day entity to Availability
-                }
-            }
+        //            availability.Days.Add(dayEntity); // Add day entity to Availability
+        //        }
+        //    }
 
-            _context.Availabilities.Add(availability); // Add Availability to DB context
-            _context.SaveChanges(); // Persist changes to database
+        //    _context.Availabilities.Add(availability); // Add Availability to DB context
+        //    _context.SaveChanges(); // Persist changes to database
 
-            return Json(new { success = true }); // Return success response
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAvailability(int id)
-        {
-            var day = await _context.AvailabilityDays
-                            .Include(d => d.TimeSlots) // Include related timeslots
-                                .Include(d => d.Availability)
-                            .FirstOrDefaultAsync(d => d.DayId == id);
-
-            if (day == null)
-                return NotFound();
-
-            try
-            {
-                // Remove all timeslots first
-                _context.TimeSlots.RemoveRange(day.TimeSlots);
-
-                // Then remove the day
-                _context.AvailabilityDays.Remove(day);
-
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-            }
-
-            // Redirect to Profile with the staff id
-            return RedirectToAction("Profile", new { id = day.Availability.ClinicalStaffID });
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> FilterByDate(int id, DateTime? selectedDate)
-        {
-            // Load the staff along with their patients
-            var staff = await _context.ClinicalStaffs
-                .Include(s => s.ClinicalStaffPatients)
-                    .ThenInclude(csp => csp.Patient)
-                .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
-
-            if (staff == null)
-            {
-                TempData["Error"] = "Staff not found"; // Show error if staff does not exist
-                return RedirectToAction("Index");
-            }
-
-            // Load availabilities with days and timeslots
-            var availabilities = await _context.Availabilities
-                .Where(a => a.ClinicalStaffID == id)
-                .Include(a => a.Days)
-                    .ThenInclude(d => d.TimeSlots)
-                .ToListAsync();
-
-            var filteredAvailabilities = availabilities
-                .Select(a =>
-                {
-                    a.Days = a.Days
-                        .Where(d =>
-                        {
-                            // Show all available days if no date selected
-                            if (!selectedDate.HasValue)
-                                return d.IsAvailable;
-
-                            // Convert DayName to DayOfWeek
-                            var dayOfWeek = System.Enum.Parse<DayOfWeek>(d.DayName.Trim(), ignoreCase: true);
-
-                            // Match selected date
-                            bool isMatchingDay = d.IsAvailable && selectedDate?.DayOfWeek == dayOfWeek;
-
-                            // Ensure selected date is within availability range
-                            bool withinRange = selectedDate?.Date >= a.StartDate.Date &&
-                                               (a.NoEndDate || (a.EndDate.HasValue && selectedDate?.Date <= a.EndDate.Value.Date));
-
-                            return isMatchingDay && withinRange;
-                        })
-                        .ToList();
-
-                    return a;
-                })
-                .Where(a => a.Days.Any())
-                .ToList();
+        //    return Json(new { success = true }); // Return success response
+        //}
 
 
-            // Map filtered availabilities to view models
-            var filteredAvailabilityViewModels = filteredAvailabilities
-                .Select(a => new AvailabilityViewModel
-                {
-                    ClinicalStaffID = a.ClinicalStaffID,
-                    Title = a.Title,
-                    StartDate = a.StartDate,
-                    EndDate = a.EndDate,
-                    NoEndDate = a.NoEndDate,
-                    Days = a.Days.Select(d => new DayAvailabilityViewModel
-                    {
-                        DayId = d.DayId,
-                        DayName = d.DayName,
-                        IsAvailable = d.IsAvailable,
-                        TimeSlots = d.TimeSlots.Select(ts => new TimeSlotViewModel
-                        {
-                            TimeSlotId = ts.TimeSlotId,
-                            StartTime = ts.StartTime,
-                            EndTime = ts.EndTime,
-                            IsAvailable = ts.IsAvailable
-                        }).ToList()
-                    }).ToList()
-                })
-                .ToList();
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteAvailability(int id)
+        //{
+        //    var day = await _context.AvailabilityDays
+        //                    .Include(d => d.TimeSlots) // Include related timeslots
+        //                        .Include(d => d.Availability)
+        //                    .FirstOrDefaultAsync(d => d.DayId == id);
 
-            // Build the final view model
-            var viewModel = new ClinicalStaffProfileViewModel
-            {
-                Staffs = new List<ClinicalStaff> { staff }, // Single staff
-                Patients = staff.ClinicalStaffPatients.Select(csp => csp.Patient).Distinct().ToList(),
-                Availability = filteredAvailabilityViewModels
-            };
+        //    if (day == null)
+        //        return NotFound();
 
-            ViewBag.ClinicalStaffId = id;
-            ViewBag.SelectedDate = selectedDate;
-            return View("Profile", viewModel); // Render the Profile view
-        }
+        //    try
+        //    {
+        //        // Remove all timeslots first
+        //        _context.TimeSlots.RemoveRange(day.TimeSlots);
+
+        //        // Then remove the day
+        //        _context.AvailabilityDays.Remove(day);
+
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine("Error: " + ex.Message);
+        //    }
+
+        //    // Redirect to Profile with the staff id
+        //    return RedirectToAction("Profile", new { id = day.Availability.ClinicalStaffID });
+        //}
+
+        //[HttpGet]
+        //public async Task<IActionResult> FilterByDate(int id, DateTime? selectedDate)
+        //{
+        //    // Load the staff along with their patients
+        //    var staff = await _context.ClinicalStaffs
+        //        .Include(s => s.ClinicalStaffPatients)
+        //            .ThenInclude(csp => csp.Patient)
+        //        .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
+
+        //    if (staff == null)
+        //    {
+        //        TempData["Error"] = "Staff not found"; // Show error if staff does not exist
+        //        return RedirectToAction("Index");
+        //    }
+
+        //    // Load availabilities with days and timeslots
+        //    var availabilities = await _context.Availabilities
+        //        .Where(a => a.ClinicalStaffID == id)
+        //        .Include(a => a.Days)
+        //            .ThenInclude(d => d.TimeSlots)
+        //        .ToListAsync();
+
+        //    var filteredAvailabilities = availabilities
+        //        .Select(a =>
+        //        {
+        //            a.Days = a.Days
+        //                .Where(d =>
+        //                {
+        //                    // Show all available days if no date selected
+        //                    if (!selectedDate.HasValue)
+        //                        return d.IsAvailable;
+
+        //                    // Convert DayName to DayOfWeek
+        //                    var dayOfWeek = System.Enum.Parse<DayOfWeek>(d.DayName.Trim(), ignoreCase: true);
+
+        //                    // Match selected date
+        //                    bool isMatchingDay = d.IsAvailable && selectedDate?.DayOfWeek == dayOfWeek;
+
+        //                    // Ensure selected date is within availability range
+        //                    bool withinRange = selectedDate?.Date >= a.StartDate.Date &&
+        //                                       (a.NoEndDate || (a.EndDate.HasValue && selectedDate?.Date <= a.EndDate.Value.Date));
+
+        //                    return isMatchingDay && withinRange;
+        //                })
+        //                .ToList();
+
+        //            return a;
+        //        })
+        //        .Where(a => a.Days.Any())
+        //        .ToList();
+
+
+        //    // Map filtered availabilities to view models
+        //    var filteredAvailabilityViewModels = filteredAvailabilities
+        //        .Select(a => new AvailabilityViewModel
+        //        {
+        //            ClinicalStaffID = a.ClinicalStaffID,
+        //            Title = a.Title,
+        //            StartDate = a.StartDate,
+        //            EndDate = a.EndDate,
+        //            NoEndDate = a.NoEndDate,
+        //            Days = a.Days.Select(d => new DayAvailabilityViewModel
+        //            {
+        //                DayId = d.DayId,
+        //                DayName = d.DayName,
+        //                IsAvailable = d.IsAvailable,
+        //                TimeSlots = d.TimeSlots.Select(ts => new TimeSlotViewModel
+        //                {
+        //                    TimeSlotId = ts.TimeSlotId,
+        //                    StartTime = ts.StartTime,
+        //                    EndTime = ts.EndTime,
+        //                    IsAvailable = ts.IsAvailable
+        //                }).ToList()
+        //            }).ToList()
+        //        })
+        //        .ToList();
+
+        //    // Build the final view model
+        //    var viewModel = new ClinicalStaffProfileViewModel
+        //    {
+        //        Staffs = new List<ClinicalStaff> { staff }, // Single staff
+        //        Patients = staff.ClinicalStaffPatients.Select(csp => csp.Patient).Distinct().ToList(),
+        //        Availability = filteredAvailabilityViewModels
+        //    };
+
+        //    ViewBag.ClinicalStaffId = id;
+        //    ViewBag.SelectedDate = selectedDate;
+        //    return View("Profile", viewModel); // Render the Profile view
+        //}
 
     }
 }
