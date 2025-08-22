@@ -8,7 +8,7 @@ namespace SafehavenPMS.Models
     // Main Availability Entry
     public class Availability
     {
-        public int Id { get; set; }
+        public int AvailabilityId { get; set; }
 
         // Link to the Doctor
         public int ClinicalStaffID { get; set; }

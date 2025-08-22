@@ -116,7 +116,7 @@
                         @* Mark as Completed Form *@
                         <li>
                             <form asp-action="Completed" asp-controller="Appointment" method="post" class="d-inline">
-                                <input type="hidden" name="id" value="@appointment.Id" />
+                                <input type="hidden" name="id" id="ApointmentId" />
                                 <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
                                     Mark as Completed
                                 </button>
@@ -310,6 +310,7 @@
         eventClick: function(info) {
             info.jsEvent.preventDefault();
 
+            document.getElementById("ApointmentId").value = info.event.id; 
             document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
             document.getElementById("detailTime").innerText = info.event.extendedProps.time;
             document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString("en-us", {

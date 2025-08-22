@@ -41,8 +41,26 @@
                                     }
                                     <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
                                     <td>
-                                        @slot.Status
+                                        @if (slot.Status == "Available")
+                                        {
+                                            <span class="text-success">
+                                                <i class="bx bx-check-circle"></i> Available
+                                            </span>
+                                        }
+                                        else if (slot.Status == "Unavailable")
+                                        {
+                                            <span class="text-warning">
+                                                <i class="bx bx-error"></i> Unavailable
+                                            </span>
+                                        }
+                                        else if (slot.Status == "Booked")
+                                        {
+                                            <span class="text-danger">
+                                                <i class="bx bx-x-circle"></i> Booked
+                                            </span>
+                                        }
                                     </td>
+
                                     <td>
                                         <a href="#" data-bs-toggle="modal"
                                            data-bs-target="#appointment-modal"
@@ -69,10 +87,8 @@
     </div>
 
     @* Reder partial views *@
-    @* @await Html.PartialAsync(
-    "StaffPartialViews/AddAvailabilityPartial",
-        Model.NewAvailability
-        ) *@
+    @* @await Html.PartialAsync("StaffPartialViews/AddAvailabilityPartial", Model.Days) *@
+
 </div>
 
 @* Modal to delete *@

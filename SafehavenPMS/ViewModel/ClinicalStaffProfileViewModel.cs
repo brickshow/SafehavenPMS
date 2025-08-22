@@ -7,5 +7,7 @@ namespace SafehavenPMS.ViewModel
         public List<ClinicalStaff> Staffs { get; set; }
         public List<Patient> Patients { get; set; }
         public List<Availability> Availability { get; set; }
+
+        public List<DayAvailabilityViewModel> Days { get; set; }
     }
 }

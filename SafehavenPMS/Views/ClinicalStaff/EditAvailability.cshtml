@@ -1,0 +1,38 @@
+﻿@model List<SafehavenPMS.Models.Availability>
+@{
+    var staffId = ViewBag.StaffId;
+}
+
+<h3>Edit Availability</h3>
+
+<form asp-action="EditAvailability" method="post">
+    <input type="hidden" name="staffId" value="@staffId" />
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Start - End Time</th>
+                <th>Available</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var slot in Model)
+            {
+                <tr>
+                    <td>@slot.Day</td>
+                    <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
+                    <td>
+                        <input type="checkbox"
+                               name="selectedSlots"
+                               value="@slot.AvailabilityId"
+                        @(slot.Status == "Available" ? "checked" : "") />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

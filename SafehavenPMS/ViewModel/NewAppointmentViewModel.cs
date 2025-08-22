@@ -18,8 +18,9 @@ namespace SafehavenPMS.ViewModel
 
         public DateTime? SelectedDate { get; set; }
 
-        // Lists for dropdowns and times
+        // Lists for dropdowns
         public List<Patient> Patients { get; set; }
         public List<ClinicalStaff> ClinicalStaffs { get; set; }
+        public List<Availability> Availabilities { get; set; }
     }
 }

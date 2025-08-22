@@ -22,8 +22,8 @@
                 <p class="mb-0 text-muted">@staff.Position - @staff.ClinicalStaffID</p>
             </div>
         </div>
-        <a href="#" id="availability-button" class="add-availability btn-custom btn-primary text-decoration-none" style="display:none">
-            + Add Availability
+        <a href="@Url.Action("EditAvailability", "ClinicalStaff", new { staffId = staff?.ClinicalStaffID })">
+            Edit Availability
         </a>
     </div>
 

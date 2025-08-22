@@ -347,10 +347,9 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
 
-            // Fetch the availability template
+            // Fetch the template availability (recurring slot)
             var templateAvailability = await _context.Availabilities
-                .FirstOrDefaultAsync(a => a.Id == model.AvailabilityId
-                    && a.Status == AvailabilityStatus.Available.ToString());
+                .FirstOrDefaultAsync(a => a.AvailabilityId == model.AvailabilityId && a.Status == AvailabilityStatus.Available.ToString());
 
             if (templateAvailability == null)
             {
@@ -358,7 +357,7 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
 
-            // Create a new availability for the specific date
+            // Create a new availability entry for the specific selected date
             var bookedAvailability = new Availability
             {
                 ClinicalStaffID = templateAvailability.ClinicalStaffID,
@@ -366,17 +365,19 @@ namespace SafehavenPMS.Controllers
                 StartTime = templateAvailability.StartTime,
                 EndTime = templateAvailability.EndTime,
                 Status = AvailabilityStatus.Booked.ToString(),
-                SlotDate = model.SelectedDate
+                SlotDate = model.SelectedDate // Only this date is booked
             };
 
+            // Save the booked availability to generate Id
             await _context.Availabilities.AddAsync(bookedAvailability);
+            await _context.SaveChangesAsync();
 
-            // Create the appointment
+            // Create the appointment using the booked availability
             var appointment = new Appointment
             {
                 PatientId = model.PatientId,
                 ClinicalStaffID = model.ClinicalStaffID,
-                AvailabilityId = bookedAvailability.Id, // Link to the new slot
+                AvailabilityId = bookedAvailability.AvailabilityId,
                 VisitType = model.VisitType,
                 Description = model.Description,
                 Status = Enum.AppointmentEnum.Pending.ToString(),
@@ -386,7 +387,7 @@ namespace SafehavenPMS.Controllers
 
             await _context.Appointments.AddAsync(appointment);
 
-            // Update patient status
+            // Optionally update patient status
             var patient = await _context.Patients.FindAsync(model.PatientId);
             if (patient != null)
             {
@@ -402,8 +403,6 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index", "Appointment");
         }
 
-
-        // POST: Submit date from calendar
         // POST: Submit date from calendar
         [HttpPost]
         public IActionResult SubmitDate(DateTime SelectedDate, int PatientId, int ClinicalStaffID)
@@ -420,7 +419,7 @@ namespace SafehavenPMS.Controllers
             // Display slots in console
             foreach (var a in availabilities)
             {
-                Console.WriteLine($"AvailabilityId: {a.Id}, Day: {a.Day}, StartTime: {a.StartTime:hh\\:mm}, EndTime: {a.EndTime:hh\\:mm}, Status: {a.Status}");
+                Console.WriteLine($"AvailabilityId: {a.AvailabilityId}, Day: {a.Day}, StartTime: {a.StartTime:hh\\:mm}, EndTime: {a.EndTime:hh\\:mm}, Status: {a.Status}");
             }
 
             // Get patient and staff names
@@ -484,5 +483,10 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index"); // Redirect back to appointments list
         }
 
+        public IActionResult NewAppointment()
+        {
+            var availabilities = 
+            return View();
+        }
     }
 }

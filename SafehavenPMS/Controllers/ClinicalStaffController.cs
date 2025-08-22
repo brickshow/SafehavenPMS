@@ -155,6 +155,18 @@ namespace SafehavenPMS.Controllers
                                       .ToList();
 
             // Build the view model
+            var model = System.Enum.GetValues(typeof(DayOfWeek))
+                         .Cast<DayOfWeek>()
+                         .Select(d => new DayAvailabilityViewModel
+                         {
+                             Day = d,
+                             Slots = new List<AvailabilityViewModel>
+                             {
+                                new AvailabilityViewModel(),
+                                new AvailabilityViewModel()
+                             }
+                         }).ToList();
+
             var viewModel = new ClinicalStaffProfileViewModel
             {
                 Staffs = new List<ClinicalStaff> { staff },
@@ -162,8 +174,10 @@ namespace SafehavenPMS.Controllers
                                 .Select(csp => csp.Patient)
                                 .Distinct()
                                 .ToList(),
-                Availability = availabilities
+                Availability = availabilities,
+                Days = model   // 👈 pass the days here
             };
+
 
             ViewBag.ClinicalStaffId = id;
             return View(viewModel);
@@ -477,12 +491,65 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index");
         }
 
-        //Action for adding new staff availability
+
         [HttpGet]
-        public IActionResult SaveAvailability()
+        public IActionResult EditAvailability(int staffId)
         {
-            return PartialView("_Availability");
+            var availabilities = _context.Availabilities
+                .Where(a => a.ClinicalStaffID == staffId)
+                .OrderBy(a => a.Day)
+                .ThenBy(a => a.StartTime)
+                .ToList();
+
+            if (!availabilities.Any())
+            {
+                TempData["Error"] = "No availability slots found for this staff.";
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.StaffId = staffId;
+
+            return View(availabilities);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> EditAvailability(int staffId, List<int> selectedSlots)
+        {
+            // Get all slots for this staff
+            var availabilities = await _context.Availabilities
+                .Where(a => a.ClinicalStaffID == staffId)
+                .ToListAsync();
+
+            if (!availabilities.Any())
+            {
+                TempData["Error"] = "No availability found.";
+                return RedirectToAction("Index");
+            }
+
+            foreach (var slot in availabilities)
+            {
+                // If slot is checked, mark as Available, otherwise mark as Unavailable
+                if (selectedSlots.Contains(slot.AvailabilityId))
+                    slot.Status = "Available";
+                else
+                    slot.Status = "Unavailable";
+            }
+
+            _context.UpdateRange(availabilities);
+            await _context.SaveChangesAsync();
+
+            TempData["ToastMessage"] = "Availability updated successfully!";
+            TempData["ToastType"] = "success";
+
+            return RedirectToAction("EditAvailability", new { staffId = staffId });
+        }
+
+        ////Action for adding new staff availability
+        //[HttpGet]
+        //public IActionResult SaveAvailability()
+        //{
+        //    return PartialView("_Availability");
+        //}
 
         ////Showing all available days within inside rage date
         //[HttpGet]
@@ -525,29 +592,29 @@ namespace SafehavenPMS.Controllers
         //}
 
 
-        // Helper method to get all dates that match a given day name between start and end dates
-        public List<DateTime> GetDatesForDayName(string dayName, DateTime startDate, DateTime? endDate)
-        {
-            var dates = new List<DateTime>(); // List to store matching dates
+        //// Helper method to get all dates that match a given day name between start and end dates
+        //public List<DateTime> GetDatesForDayName(string dayName, DateTime startDate, DateTime? endDate)
+        //{
+        //    var dates = new List<DateTime>(); // List to store matching dates
 
-            // Convert string day name (e.g., "Monday") to DayOfWeek enum
-            if (!System.Enum.TryParse<DayOfWeek>(dayName, true, out var dayOfWeek))
-                return dates; // If invalid day name, return empty list
+        //    // Convert string day name (e.g., "Monday") to DayOfWeek enum
+        //    if (!System.Enum.TryParse<DayOfWeek>(dayName, true, out var dayOfWeek))
+        //        return dates; // If invalid day name, return empty list
 
-            var current = startDate; // Start iterating from StartDate
-            var finalDate = endDate ?? startDate.AddYears(1); // Use EndDate, or default to 1 year later if null
+        //    var current = startDate; // Start iterating from StartDate
+        //    var finalDate = endDate ?? startDate.AddYears(1); // Use EndDate, or default to 1 year later if null
 
-            // Loop from start to end date
-            while (current <= finalDate)
-            {
-                if (current.DayOfWeek == dayOfWeek) // Check if current date matches the requested day
-                    dates.Add(current); // Add matching date to the list
+        //    // Loop from start to end date
+        //    while (current <= finalDate)
+        //    {
+        //        if (current.DayOfWeek == dayOfWeek) // Check if current date matches the requested day
+        //            dates.Add(current); // Add matching date to the list
 
-                current = current.AddDays(1); // Move to next day
-            }
+        //        current = current.AddDays(1); // Move to next day
+        //    }
 
-            return dates; // Return all matching dates
-        }
+        //    return dates; // Return all matching dates
+        //}
 
         //[HttpPost]
         //public IActionResult SaveAvailabilityJson([FromBody] AvailabilityViewModel model)

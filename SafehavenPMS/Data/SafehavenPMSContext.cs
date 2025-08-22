@@ -11,7 +11,7 @@ namespace SafehavenPMS.Data
         {
         }
 
-         public DbSet<Patient> Patients { get; set; }
+        public DbSet<Patient> Patients { get; set; }
         public DbSet<ClinicalStaff> ClinicalStaffs { get; set; }
         public DbSet<ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
         public DbSet<Availability> Availabilities { get; set; }
