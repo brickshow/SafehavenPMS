@@ -483,10 +483,10 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index"); // Redirect back to appointments list
         }
 
-        public IActionResult NewAppointment()
-        {
-            var availabilities = 
-            return View();
-        }
+        //public IActionResult NewAppointment()
+        //{
+        //    var availabilities = 
+        //    return View();
+        //}
     }
 }
