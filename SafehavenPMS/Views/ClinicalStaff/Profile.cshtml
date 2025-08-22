@@ -22,7 +22,7 @@
                 <p class="mb-0 text-muted">@staff.Position - @staff.ClinicalStaffID</p>
             </div>
         </div>
-        <a href="@Url.Action("EditAvailability", "ClinicalStaff", new { staffId = staff?.ClinicalStaffID })">
+        <a href="@Url.Action("EditAvailability", "ClinicalStaff", new { staffId = staff?.ClinicalStaffID })" class="btn-custom text-decoration-none">
             Edit Availability
         </a>
     </div>

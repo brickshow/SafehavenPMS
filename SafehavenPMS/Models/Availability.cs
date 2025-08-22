@@ -21,6 +21,7 @@ namespace SafehavenPMS.Models
         // Start and End time for slot
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
+        public string? Notes { get; set; }
 
         // Availability status
         public string Status { get; set; } = AvailabilityStatus.Available.ToString();

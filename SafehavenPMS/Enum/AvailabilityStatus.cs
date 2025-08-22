@@ -4,6 +4,5 @@
     {
         Available = 0,
         Unavailable = 1,
-        Booked = 2
     }
 }

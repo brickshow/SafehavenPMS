@@ -364,7 +364,7 @@ namespace SafehavenPMS.Controllers
                 Day = templateAvailability.Day,
                 StartTime = templateAvailability.StartTime,
                 EndTime = templateAvailability.EndTime,
-                Status = AvailabilityStatus.Booked.ToString(),
+                Status = AvailabilityStatus.Unavailable.ToString(),
                 SlotDate = model.SelectedDate // Only this date is booked
             };
 

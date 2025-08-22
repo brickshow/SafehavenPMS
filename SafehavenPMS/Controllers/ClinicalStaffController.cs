@@ -10,6 +10,7 @@ using SafehavenPMS.StaticData;
 using SafehavenPMS.ViewModel;
 using System;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace SafehavenPMS.Controllers
 {
@@ -175,7 +176,7 @@ namespace SafehavenPMS.Controllers
                                 .Distinct()
                                 .ToList(),
                 Availability = availabilities,
-                Days = model   // 👈 pass the days here
+                Days = model   //  pass the days here
             };
 
 
@@ -486,8 +487,6 @@ namespace SafehavenPMS.Controllers
                 await _context.SaveChangesAsync();
             }
 
-
-
             return RedirectToAction("Index");
         }
 
@@ -541,8 +540,31 @@ namespace SafehavenPMS.Controllers
             TempData["ToastMessage"] = "Availability updated successfully!";
             TempData["ToastType"] = "success";
 
-            return RedirectToAction("EditAvailability", new { staffId = staffId });
+            return RedirectToAction("Profile", new { id = staffId });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddNotes(int availabilityId, string notes)
+        {
+            var availability = await _context.Availabilities
+                .FirstOrDefaultAsync(a => a.AvailabilityId == availabilityId);
+
+            if (availability == null)
+            {
+                return NotFound();
+            }
+
+            // Save the notes
+            availability.Notes = notes;   // make sure your Availability model has a Notes property
+            _context.Update(availability);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Notes saved successfully.";
+
+            return RedirectToAction("Profile", "ClinicalStaff", new { id = availability.ClinicalStaffID });
+        }
+
 
         ////Action for adding new staff availability
         //[HttpGet]

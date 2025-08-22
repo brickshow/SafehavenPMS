@@ -1,38 +1,105 @@
 ﻿@model List<SafehavenPMS.Models.Availability>
 @{
     var staffId = ViewBag.StaffId;
+    // Group slots by day
+    var grouped = Model.GroupBy(s => s.Day)
+                       .OrderBy(g => g.Key);
 }
+<div class="availability-container g-4">
+    <div class="d-flex align-items-center">
+        <a href="#" class="me-3" onclick="history.back()">
+            <i class="bx bx-reply fs-1 text-custom"></i>
+        </a>
+        <span class="text-custom fs-4" >Edit Appointment</span>
+    </div>
+    @* Container for Availability Page *@
+    <div class="container-fluid border rounded bg-white p-4" style="width: 100%;">
 
-<h3>Edit Availability</h3>
+        @* Header with Icon and Title *@
+        <div class="table-header d-flex justify-content-center align-items-center text-center">
+            <h5 class="mb-0">Availability</h5>
+        </div>
+        <form asp-action="EditAvailability" method="post">
+            <input type="hidden" name="staffId" value="@staffId" />
 
-<form asp-action="EditAvailability" method="post">
-    <input type="hidden" name="staffId" value="@staffId" />
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Start - End Time</th>
+                        <th>Available</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in grouped)
+                    {
+                        var daySlots = group.ToList();
+                        for (int i = 0; i < daySlots.Count; i++)
+                        {
+                            var slot = daySlots[i];
+                            <tr>
+                                @* Render Day cell only for the first slot of the group *@
+                                @if (i == 0)
+                                {
+                                    <td rowspan="@daySlots.Count" class="text-center align-middle">
+                                        @slot.Day
+                                    </td>
+                                }
+                                <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
+                                <td>
+                                    <input type="checkbox"
+                                           class="custom-checkbox"
+                                           name="selectedSlots"
+                                           value="@slot.AvailabilityId"
+                                           @(slot.Status == "Available" ? "checked" : "") />
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Day</th>
-                <th>Start - End Time</th>
-                <th>Available</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var slot in Model)
-            {
-                <tr>
-                    <td>@slot.Day</td>
-                    <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
-                    <td>
-                        <input type="checkbox"
-                               name="selectedSlots"
-                               value="@slot.AvailabilityId"
-                        @(slot.Status == "Available" ? "checked" : "") />
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+            <div class="d-flex justify-content-end gap-3">
+                <a href="@Url.Action("Profile", "ClinicalStaff", new { id = staffId })" class="btn-cancel text-decoration-none">Cancel</a>
+                <button type="submit" class="btn-custom btn-next">Save</button>
+            </div>
+            
+        </form>
+    </div>
+</div>
 
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
+
+
+<style>
+    .custom-checkbox {
+        width: 24px; /* makes it larger */
+        height: 24px;
+        accent-color: #058594; /* modern browsers (Chrome, Edge, Firefox) */
+        cursor: pointer;
+    }
+
+    .table-header {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
+    .table-header-custom {
+        background-color: #015F6B !important;
+        color: #ffffff !important;
+    }
+
+    .btn-cancel,
+    .btn-custom {
+        padding: 10px 20px; /* button size */
+        font-size: 16px; /* text size */
+        border-radius: 6px; /* rounded corners */
+        min-width: 150px; /* keeps consistent width */
+    }
+
+
+</style>
