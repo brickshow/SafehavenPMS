@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SafehavenPMS.Data;
@@ -58,22 +59,49 @@ namespace SafehavenPMS.Controllers
 
         public async Task<IActionResult> AddNewAppointment()
         {
-            var patientList = await _context.Patients.ToListAsync();
-            var staff = await _context.ClinicalStaffs.ToListAsync();
+            // Create patient dropdown list
+            var patientList = await _context.Patients
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname
+                })
+                .ToListAsync();
 
-            var model = new NewAppointmentViewModel
-            {
-                Patients = patientList,
-                ClinicalStaffs = staff
-            };
+            // Create staff dropdown list
+            var staffList = await _context.ClinicalStaffs
+                .Select(s => new SelectListItem
+                {
+                    Value = s.ClinicalStaffID.ToString(),
+                    Text = s.Firstname + " " + s.Lastname
+                })
+                .ToListAsync();
 
-            return View(model);
+
+            //Return the dta by viewbag
+            ViewBag.PatientList = patientList;
+            ViewBag.StaffList = staffList;
+            return View();
         }
 
-        // Action to show Add New Appointment form
-        public async Task<IActionResult> GetDateAndTimeSlots(DateTime? selectedDate)
+        //Helper for data extraction(this return thr query result)
+        private async Task<List<Availability>> GetStaffAvailability(int clinicalStaffId, DateTime selectedDate)
         {
-            var patients = await _context.Patients.ToListAsync();
+            return await _context.Availabilities
+                           .Where(a => a.ClinicalStaffID == clinicalStaffId
+                                       && (a.SlotDate == selectedDate ||
+                                          (a.SlotDate == null && a.Day == selectedDate.DayOfWeek))
+                                       && a.Status == AvailabilityStatus.Available.ToString())
+                           .ToListAsync();
+        }
+
+
+
+        // Action to show Add New Appointment form
+        [HttpPost]
+        public async Task<IActionResult> GetDateAndTimeSlots(DateTime selectedDate, int StaffId)
+        {
+            var patients = await GetStaffAvailability(StaffId, selectedDate);
 
             var staffList = await _context.ClinicalStaffs
                 .Include(s => s.Availabilities)
@@ -81,7 +109,6 @@ namespace SafehavenPMS.Controllers
 
             var model = new NewAppointmentViewModel
             {
-                Patients = patients,
                 ClinicalStaffs = staffList,
                 SelectedDate = selectedDate
             };
@@ -132,10 +159,6 @@ namespace SafehavenPMS.Controllers
 
             return Json(calendarData);
         }
-
-
-
-
 
         // Action to Confirm Appointment
         [HttpPost]
@@ -482,6 +505,10 @@ namespace SafehavenPMS.Controllers
 
             return RedirectToAction("Index"); // Redirect back to appointments list
         }
+
+      
+
+      
 
         //public IActionResult NewAppointment()
         //{

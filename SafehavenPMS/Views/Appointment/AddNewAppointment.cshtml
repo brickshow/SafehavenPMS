@@ -30,11 +30,17 @@
 
                 @* Hidden fields to pass date + context *@
                 <input type="hidden" name="SelectedDate" id="selectedDate" />
-                <input type="hidden" name="PatientId" value="@Model?.PatientId" />
-                <input type="hidden" name="ClinicalStaffID" value="@Model?.ClinicalStaffID" />
+                <input type="hidden" asp-for="ClinicalStaffID" id="sendIdToCalendar"  />
 
                 <div id="datepicker"></div>
             </form>
+
+            <div class="mb-3">
+                <label class="form-label">Assign Doctor</label>
+                <select asp-for="ClinicalStaffID" asp-items="ViewBag.StaffList" class="form-select" id="doctorSelect">
+                    <option value="">--Select Doctor--</option>
+                </select>
+            </div>
         </div>
 
         <!-- ================= RIGHT: Appointment Details ================= -->
@@ -42,13 +48,15 @@
             @* Appointment Form (submits schedule details) *@
             <form asp-controller="Appointment" asp-action="ScheduleAppointment" method="post" id="appointmentForm">
 
+           
+
                 @* Available times *@
                 <span class="d-block mb-2 fw-bold">Available Time</span>
                 <div class="d-flex flex-column border rounded p-3 mb-3">
                     <div class="row">
                         <input type="hidden" asp-for="PatientId" />
-                        <input type="hidden" asp-for="ClinicalStaffID" />
-                        <input type="hidden" name="SelectedDate" value="@ViewBag.SelectedDate" />
+                        <input type="hidden" asp-for="ClinicalStaffID" id="hiddenStaffId"/>
+                        <input type="hidden" name="SelectedDate" value="@ViewBag.SelectedDate" id="SelectedDate" />
 
                         @if (ViewBag.AvailableTimes != null && ((IEnumerable<object>)ViewBag.AvailableTimes).Cast<dynamic>().Any())
                         {
@@ -77,10 +85,7 @@
                     <input asp-for="PatientName" type="text" class="form-control" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Assign Clinical Staff</label>
-                    <input asp-for="ClinicalStaffName" type="text" class="form-control" />
-                </div>
+              
 
                 @* Visit details *@
                 <div class="mb-3">
@@ -155,5 +160,20 @@
         if (storedDate) {
             document.getElementById("selectedDate").value = storedDate;
         }
+    });
+
+    //Saving staff id to Calendar
+    document.getElementById("doctorSelect").addEventListener("change", function() {
+        const seletedStaffID = this.value; //Get the value of the passed ID
+
+        //assigned data to hidden input
+        document.getElementById("sendIdToCalendar").value = seletedStaffID;
+
+        // If the user already picked a date, submit to refresh available slots
+         const storedDate = localStorage.getItem("selectedDate");
+            if (selectedStaffId && storedDate) {
+                document.getElementById("selectedDate").value = storedDate;
+                document.getElementById("dateForm").submit();
+            }
     });
 </script>
