@@ -124,12 +124,10 @@ namespace SafehavenPMS.Controllers
         {
             return RedirectToAction("Index", new { sortOrder, page = 1, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, status = ViewBag.Status });
         }
-
-        //Action for Profile
         [HttpGet]
         public async Task<IActionResult> Profile(int id, DateTime? startDateInput = null, DateTime? endDateInput = null)
         {
-            // Query staff with address and assigned patients
+            // 1. Get staff
             var staff = await _context.ClinicalStaffs
                 .Include(csp => csp.ClinicalStaffPatients)
                     .ThenInclude(pa => pa.Patient)
@@ -141,21 +139,38 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("Index");
             }
 
+            // 2. Get availabilities (template)
             var availabilities = await _context.Availabilities
                                      .Where(a => a.ClinicalStaffID == id)
                                      .ToListAsync();
 
-
-            // Use inputted dates or default to today + 6 days
+            // 3. Date range
             var startDate = startDateInput ?? DateTime.Today;
             var endDate = endDateInput ?? startDate.AddDays(6);
 
-            // Build date range for new availability
-            var dateRange = Enumerable.Range(0, (endDate - startDate).Days + 1)
-                                      .Select(offset => startDate.AddDays(offset))
-                                      .ToList();
+            // 4. Get appointments for this doctor within the range
+            var appointments = await _context.NewAppointments
+                .Where(appt => appt.ClinicalStaffID == id
+                               && appt.AppointmentDate >= startDate
+                               && appt.AppointmentDate <= endDate
+                               && appt.Status == "Booked")
+                .ToListAsync();
 
-            // Build the view model
+            // 5. Override availability with Booked info
+            foreach (var slot in availabilities)
+            {
+                var bookedMatch = appointments.FirstOrDefault(appt =>
+                    appt.AppointmentDate.DayOfWeek == slot.Day &&
+                    appt.TimeSlot == slot.StartTime);
+
+                if (bookedMatch != null)
+                {
+                    slot.Status = "Unavailable";   // or keep as "Available"
+                    slot.Notes = "Booked";         // so UI shows the difference
+                }
+            }
+
+            // 6. Build VM
             var model = System.Enum.GetValues(typeof(DayOfWeek))
                          .Cast<DayOfWeek>()
                          .Select(d => new DayAvailabilityViewModel
@@ -163,8 +178,8 @@ namespace SafehavenPMS.Controllers
                              Day = d,
                              Slots = new List<AvailabilityViewModel>
                              {
-                                new AvailabilityViewModel(),
-                                new AvailabilityViewModel()
+                        new AvailabilityViewModel(),
+                        new AvailabilityViewModel()
                              }
                          }).ToList();
 
@@ -176,13 +191,13 @@ namespace SafehavenPMS.Controllers
                                 .Distinct()
                                 .ToList(),
                 Availability = availabilities,
-                Days = model   //  pass the days here
+                Days = model
             };
-
 
             ViewBag.ClinicalStaffId = id;
             return View(viewModel);
         }
+
 
         //Action to add a new clinical staff member 
         [HttpGet]

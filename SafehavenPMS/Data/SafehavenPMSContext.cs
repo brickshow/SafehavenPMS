@@ -15,8 +15,8 @@ namespace SafehavenPMS.Data
         public DbSet<ClinicalStaff> ClinicalStaffs { get; set; }
         public DbSet<ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
         public DbSet<Availability> Availabilities { get; set; }
-        public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Medicine> Medicines { get; set; }
+        public DbSet<NewAppointment> NewAppointments { get; set; }
         public DbSet<MedicationOrder> MedicationOrders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,19 +44,14 @@ namespace SafehavenPMS.Data
                 .HasForeignKey(a => a.ClinicalStaffID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Patient → Appointments
-            modelBuilder.Entity<Patient>()
-                .HasMany(p => p.Appointments)
-                .WithOne(a => a.Patient)
-                .HasForeignKey(a => a.PatientId)
+        
+
+            modelBuilder.Entity<ClinicalStaff>()
+                .HasMany(csp => csp.NewAppointments)
+                .WithOne(a => a.ClinicalStaff)
+                .HasForeignKey(a => a.ClinicalStaffID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ClinicalStaff → Appointments
-            modelBuilder.Entity<ClinicalStaff>()
-                .HasMany(s => s.Appointments)
-                .WithOne(a => a.Staff)
-                .HasForeignKey(a => a.ClinicalStaffID)
-                .OnDelete(DeleteBehavior.Restrict); // or .NoAction
 
             // Patient → MedicationOrders
             modelBuilder.Entity<MedicationOrder>()

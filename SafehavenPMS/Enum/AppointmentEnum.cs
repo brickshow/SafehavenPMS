@@ -3,7 +3,7 @@
     public enum AppointmentEnum
     {
         Pending,
-        Confirmed,
+        Booked,
         Cancelled,
         Completed
     }

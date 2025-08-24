@@ -15,101 +15,108 @@
 </div>
 
 <div id="appointment" class="appointment d-flex flex-column justify-content-center m-auto mt-4">
-    @* Section header *@
     <div class="d-flex justify-content-start border-bottom w-100 p-2">
         <i class='bx bx-calendar-check fs-4 me-2 text-primary'></i>
         <h5 class="modal-title fw-bold mb-0">Schedule Appointment</h5>
     </div>
 
     <div class="row align-items-start m-3">
-        <!-- ================= LEFT: Calendar ================= -->
+
+        <!-- ================= LEFT: Doctor & Calendar ================= -->
         <div class="col-md-6 border-end">
-            @* Calendar Form (submits only selected date) *@
-            <form asp-controller="Appointment" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
-                <span class="d-block mb-2 fw-bold">Select Date</span>
 
-                @* Hidden fields to pass date + context *@
-                <input type="hidden" name="SelectedDate" id="selectedDate" />
-                <input type="hidden" asp-for="ClinicalStaffID" id="sendIdToCalendar"  />
-
-                <div id="datepicker"></div>
+            <!-- Step 1: Select doctor -->
+            <form asp-controller="Appointment" asp-action="SelectDoctor" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Assign Doctor</label>
+                    <select asp-for="ClinicalStaffID" asp-items="ViewBag.StaffList" class="form-select" onchange="this.form.submit()">
+                        <option value="">--Select Doctor--</option>
+                    </select>
+                </div>
             </form>
 
-            <div class="mb-3">
-                <label class="form-label">Assign Doctor</label>
-                <select asp-for="ClinicalStaffID" asp-items="ViewBag.StaffList" class="form-select" id="doctorSelect">
-                    <option value="">--Select Doctor--</option>
-                </select>
-            </div>
+            <!-- Step 2: Show calendar only if doctor is selected -->
+            @if (Model.ClinicalStaffID > 0 || Model.ClinicalStaffID == null)
+            {
+                <form asp-controller="Appointment" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
+                    <input type="hidden" asp-for="ClinicalStaffID" />
+                    <input type="hidden" name="SelectedDate" id="selectedDate" />
+
+                    <span class="d-block mb-2 fw-bold">Select Date</span>
+                    <div id="datepicker"></div>
+                </form>
+            }
         </div>
 
         <!-- ================= RIGHT: Appointment Details ================= -->
         <div class="col-md-6">
-            @* Appointment Form (submits schedule details) *@
-            <form asp-controller="Appointment" asp-action="ScheduleAppointment" method="post" id="appointmentForm">
+        <form asp-controller="Appointment" asp-action="AddNewAppointment" method="post">
+            @Html.AntiForgeryToken()
 
-           
+            <!-- Hidden Doctor -->
+            <input type="hidden" asp-for="ClinicalStaffID" />
 
-                @* Available times *@
-                <span class="d-block mb-2 fw-bold">Available Time</span>
-                <div class="d-flex flex-column border rounded p-3 mb-3">
+            <!-- Hidden Date -->
+            <input type="hidden" asp-for="SelectedDate" id="SelectedDate" />
+
+            <!-- Timeslot -->
+            <div class="rounded border p-3">
+                <span class="fw-bold d-block mb-2">Timeslot</span>
+                @if (ViewBag.AvailableTimes is List<SafehavenPMS.Models.Availability> times && times.Any())
+                {
                     <div class="row">
-                        <input type="hidden" asp-for="PatientId" />
-                        <input type="hidden" asp-for="ClinicalStaffID" id="hiddenStaffId"/>
-                        <input type="hidden" name="SelectedDate" value="@ViewBag.SelectedDate" id="SelectedDate" />
-
-                        @if (ViewBag.AvailableTimes != null && ((IEnumerable<object>)ViewBag.AvailableTimes).Cast<dynamic>().Any())
+                        @foreach (var slot in times)
                         {
-                            foreach (var slot in (IEnumerable<dynamic>)ViewBag.AvailableTimes)
-                            {
-                                <div class="col-6 mb-2">
-                                    <label class="d-flex align-items-center">
-                                        <input type="hidden" name="AvailabilityId" value="@slot.AvailabilityId" />
-                                        <input type="radio" name="TimeSlotId" value="@slot.TimeSlotId" required />
+                            <div class="col-6 mb-2">
+                                <label class="d-flex align-items-center">
+                                    <input type="radio" asp-for="TimeSlot" value="@slot.StartTime" required />
+                                    <span class="ms-2">
                                         @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
-                                    </label>
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="text-center">No Available Time</div>
+                                    </span>
+                                </label>
+                            </div>
                         }
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="text-center">No Available Time</div>
+                }
+            </div>
 
+            <!-- Patient Info -->
+            <div class="mb-3">
+                <label asp-for="PatientId" class="form-label"></label>
+                <select asp-for="PatientId" asp-items="ViewBag.PatientList" class="form-select">
+                    <option value="">--Select Patient--</option>
+                </select>
+            </div>
 
-                @* Patient Information *@
-                <div class="mb-3">
-                    <label class="form-label">Patient Name</label>
-                    <input asp-for="PatientName" type="text" class="form-control" />
-                </div>
+            <!-- Visit Type -->
+            <div class="mb-3">
+                <label asp-for="VisitType" class="form-label"></label>
+                <select asp-for="VisitType" class="form-select">
+                    <option>--Select--</option>
+                    <option value="Medical Assessment">Medical Assessment</option>
+                    <option value="Emergency Visit">Emergency Visit</option>
+                    <option value="Follow-Up Treatment">Follow-Up Treatment</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
 
-              
+            <!-- Description -->
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+            </div>
 
-                @* Visit details *@
-                <div class="mb-3">
-                    <label class="form-label">Visit Type</label>
-                    <select asp-for="VisitType" class="form-select">
-                        <option>--Select--</option>
-                        <option value="Medical Assessment">Medical Assessment</option>
-                        <option value="Emergency Visit">Emergency Visit</option>
-                        <option value="Follow-Up Treatment">Follow-Up Treatment</option>
-                        <option value="Others">Others</option>
-                    </select>
-                </div>
+            <!-- Footer -->
+            <div class="modal-footer bg-white border-top">
+                <a href="@Url.Action("Index", "Appointment")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
+                <button type="submit" class="btn-custom btn-next m-2">Next</button>
+            </div>
+        </form>
 
-                <div class="mb-3">
-                    <label class="form-label">Add Description</label>
-                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
-                </div>
-
-                @* Footer buttons *@
-                <div class="modal-footer bg-white border-top">
-                    <a href="@Url.Action("Index", "Appointment")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
-                    <button type="submit" class="btn-custom btn-next m-2" onclick="reloadPage()">Next</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -170,7 +177,7 @@
         document.getElementById("sendIdToCalendar").value = seletedStaffID;
 
         // If the user already picked a date, submit to refresh available slots
-         const storedDate = localStorage.getItem("selectedDate");
+         const storedDate = localStorage.getItem("select  edDate");
             if (selectedStaffId && storedDate) {
                 document.getElementById("selectedDate").value = storedDate;
                 document.getElementById("dateForm").submit();

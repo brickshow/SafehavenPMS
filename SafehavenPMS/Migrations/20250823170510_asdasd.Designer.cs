@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250822001919_ksdjfhksfhskf")]
-    partial class ksdjfhksfhskf
+    [Migration("20250823170510_asdasd")]
+    partial class asdasd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -86,6 +86,9 @@ namespace SafehavenPMS.Migrations
 
                     b.Property<TimeSpan>("EndTime")
                         .HasColumnType("time");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("SlotDate")
                         .HasColumnType("datetime2");
@@ -269,6 +272,53 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("Medicines");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.NewAppointment", b =>
+                {
+                    b.Property<int>("AppointmentID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AppointmentID"));
+
+                    b.Property<DateTime>("AppointmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("BookedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ClinicalStaffID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Day")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeSpan>("TimeSlot")
+                        .HasColumnType("time");
+
+                    b.Property<string>("VisitType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AppointmentID");
+
+                    b.HasIndex("ClinicalStaffID");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("NewAppointments");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
                 {
                     b.Property<int>("PatientId")
@@ -422,6 +472,25 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.NewAppointment", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
+                        .WithMany("NewAppointments")
+                        .HasForeignKey("ClinicalStaffID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClinicalStaff");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
                 {
                     b.Navigation("Appointments");
@@ -429,6 +498,8 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Availabilities");
 
                     b.Navigation("ClinicalStaffPatients");
+
+                    b.Navigation("NewAppointments");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Medicine", b =>

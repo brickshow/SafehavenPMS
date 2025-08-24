@@ -1,27 +1,32 @@
-﻿using SafehavenPMS.Models;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using SafehavenPMS.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace SafehavenPMS.ViewModel
 {
     public class NewAppointmentViewModel
     {
-        public int? PatientId { get; set; }
-        public string PatientName { get; set; }
+        public int AppointmentID { get; set; }
+        [Required(ErrorMessage = "Please add Patient")]
+        public int PatientId { get; set; }
 
-        public int? ClinicalStaffID { get; set; }
-        public string ClinicalStaffName { get; set; }
+        [Required(ErrorMessage = "Please assign a Doctor")]
+        public int ClinicalStaffID { get; set; }//Foreign key
+        public DayOfWeek Day { get; set; }
 
-        public int? AvailabilityId { get; set; }
-        public int? TimeSlotId { get; set; }
+        [Required(ErrorMessage = "Time slot is required")]
+        public TimeSpan TimeSlot { get; set; }
+        public DateTime AppointmentDate { get; set; }
 
+        [Required(ErrorMessage = "Visit type is required")]
         public string VisitType { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
-        public DateTime? SelectedDate { get; set; }
+        public DateTime SelectedDate { get; set; }
 
         // Lists for dropdowns
-        public List<Patient> Patients { get; set; }
-        public List<ClinicalStaff> ClinicalStaffs { get; set; }
-        public List<Availability> Availabilities { get; set; }
+        public List<Patient>? Patients { get; set; }
+        public List<ClinicalStaff>? ClinicalStaffs { get; set; }
+        public List<Availability>? Availabilities { get; set; }
     }
 }
