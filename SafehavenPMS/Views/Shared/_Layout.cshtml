@@ -61,6 +61,12 @@
                     <span class="link_name">Patients</span>
                 </a>
             </li>
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admision" ? "active" : "")">
+                <a asp-controller="Admission" asp-action="Index">
+                    <i class='bx bxs-file'></i>
+                    <span class="link_name">Admision</span>
+                </a>
+            </li>
             <!-- Clinical Staff -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClinicalStaff" ? "active" : "")">
                 <a asp-controller="ClinicalStaff" asp-action="Index">

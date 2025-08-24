@@ -18,6 +18,9 @@ namespace SafehavenPMS.Data
         public DbSet<Medicine> Medicines { get; set; }
         public DbSet<NewAppointment> NewAppointments { get; set; }
         public DbSet<MedicationOrder> MedicationOrders { get; set; }
+        public DbSet<Admission> Admissions { get; set; }
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -66,7 +69,51 @@ namespace SafehavenPMS.Data
                 .WithMany(m => m.MedicationOrders)
                 .HasForeignKey(mo => mo.MedicineId)
                 .OnDelete(DeleteBehavior.Restrict);
-        }
 
+            // ----------------------
+            // New Admission Relationships
+            // ----------------------
+            modelBuilder.Entity<Admission>()
+              .HasOne(a => a.Patient)       // specify navigation property
+              .WithMany()                    // if Patient has a collection of Admissions, put it here
+              .HasForeignKey(a => a.PatientId)
+              .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Admission>()
+                .HasOne<ClinicalStaff>()
+                .WithMany()
+                .HasForeignKey(a => a.PhysicianId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Admission>()
+                .HasOne<ClinicalStaff>()
+                .WithMany()
+                .HasForeignKey(a => a.PsychiatristId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Admission>()
+                .HasOne<ClinicalStaff>()
+                .WithMany()
+                .HasForeignKey(a => a.PsychologistId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Admission>()
+                .HasOne<ClinicalStaff>()
+                .WithMany()
+                .HasForeignKey(a => a.PsychometricianId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Admission>()
+                .HasOne<ClinicalStaff>()
+                .WithMany()
+                .HasForeignKey(a => a.SocialWorkerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Admission>()
+                .HasOne<ClinicalStaff>()
+                .WithMany()
+                .HasForeignKey(a => a.RecoveryCoachId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }

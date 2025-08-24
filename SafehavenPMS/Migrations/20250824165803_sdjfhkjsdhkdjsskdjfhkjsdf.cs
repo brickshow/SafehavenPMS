@@ -6,21 +6,26 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SafehavenPMS.Migrations
 {
     /// <inheritdoc />
-    public partial class asdasd : Migration
+    public partial class sdjfhkjsdhkdjsskdjfhkjsdf : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<DateTime>(
-                name: "BookedAt",
-                table: "NewAppointments",
+                name: "EndDate",
+                table: "Admissions",
                 type: "datetime2",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
-                name: "Status",
-                table: "NewAppointments",
+                name: "Endedby",
+                table: "Admissions",
+                type: "nvarchar(max)",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "status",
+                table: "Admissions",
                 type: "nvarchar(max)",
                 nullable: false,
                 defaultValue: "");
@@ -30,12 +35,16 @@ namespace SafehavenPMS.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "BookedAt",
-                table: "NewAppointments");
+                name: "EndDate",
+                table: "Admissions");
 
             migrationBuilder.DropColumn(
-                name: "Status",
-                table: "NewAppointments");
+                name: "Endedby",
+                table: "Admissions");
+
+            migrationBuilder.DropColumn(
+                name: "status",
+                table: "Admissions");
         }
     }
 }

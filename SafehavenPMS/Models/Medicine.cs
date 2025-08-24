@@ -4,7 +4,7 @@
     {
         public int MedicineId { get; set; }
         public string GenericName { get; set; }
-        public string BrandName { get; set; }
+        public string? BrandName { get; set; } //Accept null
         public string Form { get; set; }
         public decimal Strength { get; set; }
         public string Unit { get; set; }

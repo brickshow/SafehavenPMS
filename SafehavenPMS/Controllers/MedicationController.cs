@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
@@ -110,6 +111,65 @@ namespace SafehavenPMS.Controllers
             {
                 Console.WriteLine(ex.ToString());
             }
+            return RedirectToAction("Index");
+        }
+
+        //Method to edi medicine
+        [HttpGet]
+        public async Task<IActionResult> EditMedicine(int id)
+        {
+            var med = await _context.Medicines.FirstOrDefaultAsync(s => s.MedicineId == id);
+
+            if (med == null)
+            {
+                TempData["Error"] = "No Medicine Found";
+                return View("Index");
+            }
+
+            var vm = new MedicineViewModel
+            {
+                MedicineId = med.MedicineId,
+                GenericName = med.GenericName,
+                BrandName = med.BrandName,
+                Form = med.Form,
+                Strength = med.Strength,
+                Unit = med.Unit,
+                Price = med.Price,
+                Status = med.Status,
+            };
+
+            return View(vm);
+        }
+
+        public async Task<IActionResult> EditMedicine(int id, MedicineViewModel model)
+        {
+            var med = await _context.Medicines.FirstOrDefaultAsync(a => a.MedicineId == id);
+            if (med == null)
+            {
+                TempData["Error"] = "Medicine not found!";
+                return RedirectToAction("Index");
+            }
+
+            // Update fields
+            med.GenericName = model.GenericName;
+            med.BrandName = model.BrandName;
+            med.Form = model.Form;
+            med.Strength = model.Strength;
+            med.Unit = model.Unit;
+            med.Price = model.Price;
+            med.Status = model.Status;
+
+            try
+            {
+                await _context.SaveChangesAsync(); // EF tracks the changes
+                TempData["SuccessMessage"] = "Medicine updated successfully!";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex);
+                TempData["Error"] = "Failed to update medicine.";
+            }
+
             return RedirectToAction("Index");
         }
 

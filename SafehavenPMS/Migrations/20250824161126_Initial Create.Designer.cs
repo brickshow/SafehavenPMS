@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250824040606_ksjhkasf")]
-    partial class ksjhkasf
+    [Migration("20250824161126_Initial Create")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,90 @@ namespace SafehavenPMS.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>
+                {
+                    b.Property<int>("AdmissionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdmissionId"));
+
+                    b.Property<bool>("ActivatePortal")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("AdmissionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FamilyEmail")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FamilyName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("FamilyPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FamilyRelationship")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PhysicianId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PsychiatristId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PsychologistId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PsychometricianId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RecoveryCoachId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SocialWorkerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("AdmissionId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("PhysicianId");
+
+                    b.HasIndex("PsychiatristId");
+
+                    b.HasIndex("PsychologistId");
+
+                    b.HasIndex("PsychometricianId");
+
+                    b.HasIndex("RecoveryCoachId");
+
+                    b.HasIndex("SocialWorkerId");
+
+                    b.ToTable("Admissions");
+                });
 
             modelBuilder.Entity("SafehavenPMS.Models.Availability", b =>
                 {
@@ -349,6 +433,47 @@ namespace SafehavenPMS.Migrations
                     b.HasKey("PatientId");
 
                     b.ToTable("Patients");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                        .WithMany()
+                        .HasForeignKey("PhysicianId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                        .WithMany()
+                        .HasForeignKey("PsychiatristId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                        .WithMany()
+                        .HasForeignKey("PsychologistId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                        .WithMany()
+                        .HasForeignKey("PsychometricianId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                        .WithMany()
+                        .HasForeignKey("RecoveryCoachId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                        .WithMany()
+                        .HasForeignKey("SocialWorkerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Availability", b =>

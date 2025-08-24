@@ -4,6 +4,7 @@
     {
         Pending,
         Booked,
+        Confirmed,
         Cancelled,
         Completed
     }

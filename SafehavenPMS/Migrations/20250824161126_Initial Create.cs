@@ -113,6 +113,77 @@ namespace SafehavenPMS.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Admissions",
+                columns: table => new
+                {
+                    AdmissionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    PhysicianId = table.Column<int>(type: "int", nullable: true),
+                    PsychiatristId = table.Column<int>(type: "int", nullable: true),
+                    PsychologistId = table.Column<int>(type: "int", nullable: true),
+                    PsychometricianId = table.Column<int>(type: "int", nullable: true),
+                    SocialWorkerId = table.Column<int>(type: "int", nullable: true),
+                    RecoveryCoachId = table.Column<int>(type: "int", nullable: true),
+                    FamilyName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
+                    FamilyRelationship = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    FamilyPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    FamilyEmail = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ActivatePortal = table.Column<bool>(type: "bit", nullable: false),
+                    AdmissionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Admissions", x => x.AdmissionId);
+                    table.ForeignKey(
+                        name: "FK_Admissions_ClinicalStaffs_PhysicianId",
+                        column: x => x.PhysicianId,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Admissions_ClinicalStaffs_PsychiatristId",
+                        column: x => x.PsychiatristId,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Admissions_ClinicalStaffs_PsychologistId",
+                        column: x => x.PsychologistId,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Admissions_ClinicalStaffs_PsychometricianId",
+                        column: x => x.PsychometricianId,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Admissions_ClinicalStaffs_RecoveryCoachId",
+                        column: x => x.RecoveryCoachId,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Admissions_ClinicalStaffs_SocialWorkerId",
+                        column: x => x.SocialWorkerId,
+                        principalTable: "ClinicalStaffs",
+                        principalColumn: "ClinicalStaffID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Admissions_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "PatientId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ClinicalStaffPatients",
                 columns: table => new
                 {
@@ -179,7 +250,9 @@ namespace SafehavenPMS.Migrations
                     Day = table.Column<int>(type: "int", nullable: false),
                     AppointmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     VisitType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BookedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -198,58 +271,40 @@ namespace SafehavenPMS.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Appointments",
-                columns: table => new
-                {
-                    AppointmentId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    AvailabilityId = table.Column<int>(type: "int", nullable: false),
-                    ClinicalStaffID = table.Column<int>(type: "int", nullable: false),
-                    PatientId = table.Column<int>(type: "int", nullable: false),
-                    AppointmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    VisitType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Appointments", x => x.AppointmentId);
-                    table.ForeignKey(
-                        name: "FK_Appointments_Availabilities_AvailabilityId",
-                        column: x => x.AvailabilityId,
-                        principalTable: "Availabilities",
-                        principalColumn: "AvailabilityId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Appointments_ClinicalStaffs_ClinicalStaffID",
-                        column: x => x.ClinicalStaffID,
-                        principalTable: "ClinicalStaffs",
-                        principalColumn: "ClinicalStaffID",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Appointments_Patients_PatientId",
-                        column: x => x.PatientId,
-                        principalTable: "Patients",
-                        principalColumn: "PatientId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
-                name: "IX_Appointments_AvailabilityId",
-                table: "Appointments",
-                column: "AvailabilityId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Appointments_ClinicalStaffID",
-                table: "Appointments",
-                column: "ClinicalStaffID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Appointments_PatientId",
-                table: "Appointments",
+                name: "IX_Admissions_PatientId",
+                table: "Admissions",
                 column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Admissions_PhysicianId",
+                table: "Admissions",
+                column: "PhysicianId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Admissions_PsychiatristId",
+                table: "Admissions",
+                column: "PsychiatristId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Admissions_PsychologistId",
+                table: "Admissions",
+                column: "PsychologistId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Admissions_PsychometricianId",
+                table: "Admissions",
+                column: "PsychometricianId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Admissions_RecoveryCoachId",
+                table: "Admissions",
+                column: "RecoveryCoachId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Admissions_SocialWorkerId",
+                table: "Admissions",
+                column: "SocialWorkerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Availabilities_ClinicalStaffID",
@@ -286,7 +341,10 @@ namespace SafehavenPMS.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Appointments");
+                name: "Admissions");
+
+            migrationBuilder.DropTable(
+                name: "Availabilities");
 
             migrationBuilder.DropTable(
                 name: "ClinicalStaffPatients");
@@ -298,16 +356,13 @@ namespace SafehavenPMS.Migrations
                 name: "NewAppointments");
 
             migrationBuilder.DropTable(
-                name: "Availabilities");
-
-            migrationBuilder.DropTable(
                 name: "Medicines");
 
             migrationBuilder.DropTable(
-                name: "Patients");
+                name: "ClinicalStaffs");
 
             migrationBuilder.DropTable(
-                name: "ClinicalStaffs");
+                name: "Patients");
         }
     }
 }

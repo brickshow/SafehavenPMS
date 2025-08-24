@@ -29,7 +29,9 @@
                 <tr>
                     <th>No.</th>
                     <th>Medicine Name</th>
+                    <th>Brand Name</th>
                     <th>Form</th>
+                    <th>Dose</th>
                     <th>Price</th>
                     <th>Status</th>
                     <th class="text-center">Action</th>
@@ -45,37 +47,85 @@
                 else
                 {
                     int rowNum = 1;
-                    foreach (var medicine in Model)
+                    @foreach (var medicine in Model)
                     {
                         <tr>
                             <td>@rowNum</td>
                             <td>@medicine.GenericName</td>
+                            <td>@medicine.BrandName</td>
                             <td>@medicine.Form</td>
+                            <td>@medicine.Strength @medicine.Unit</td>
                             <td>₱ @medicine.Price</td>
                             <td>
-                                @if(medicine.Status == "Active")
+                                @if (medicine.Status == "Active")
                                 {
-                                    <span>@medicine.Status</span>
+                                    <div class="text-center rounded w-75" style="background-color:rgba(147, 218, 151, 0.5)">
+                                        <span>@medicine.Status</span>
+                                    </div>
                                 }
                                 else
                                 {
                                     <span>@medicine.Status</span>
-
                                 }
                             </td>
-                            <td class="text-center">
-                                <a href="#">
-                                    <i class='bx bx-edit fs-4'></i>
-                                </a>
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#medicineDetailsModal-@medicine.MedicineId">
+                                                <span class="badge-dot bg-success"></span>
+                                                View Details
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#medicineDetailsModal"
+                                               data-bs-id="@medicine.MedicineId">
+                                                <span class="badge-dot bg-success"></span>
+                                                View Details
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
-                        rowNum++;
                     }
+
                 }
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- Deactivation Modal -->
+<div class="modal fade" id="deactivateMedicineModal" tabindex="-1" aria-labelledby="deactivateMedicineLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deactivateMedicineLabel">Deactivate Medicine</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Are you sure you want to <strong>deactivate</strong> the medicine <br>
+               
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <form method="post" asp-action="DeactivateMedicine" asp-controller="Medication" asp-route-id="">
+                    <button type="submit" class="btn btn-danger">Yes, Deactivate</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <style>
     .table-header {

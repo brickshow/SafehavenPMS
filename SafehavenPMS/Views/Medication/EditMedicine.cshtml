@@ -1,0 +1,127 @@
+﻿@model SafehavenPMS.ViewModel.MedicineViewModel
+
+@{
+    ViewBag.Title = "Edit Medicine";
+}
+
+@* Content Header *@
+<div class="header-content">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class="bx bxs-group fs-2 me-2" title="Staff"></i>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+<div class="form-container">
+    <form asp-controller="Medication" asp-action="EditMedicine" method="post" class="needs-validation" novalidate>
+        <div class="header d-flex justify-content-start">
+            <h3 class="text-custom m-3">Patient Medication Details</h3>
+        </div>
+        <div class="p-5">
+            <div class="row mb-4">
+                <label asp-for="GenericName" class="col-sm-3 col-form-label">Generic Name</label>
+                <div class="col-sm-9">
+                    <input asp-for="GenericName" type="text" class="form-control" />
+                    <span asp-validation-for="GenericName" class="text-danger"></span>
+                    <div class="invalid-feedback">Please enter a medication name.</div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <label asp-for="BrandName" class="col-sm-3 col-form-label">Brand Name</label>
+                <div class="col-sm-9">
+                    <input asp-for="BrandName" type="text" class="form-control" />
+                    <span asp-validation-for="BrandName" class="text-danger"></span>
+                    <div class="invalid-feedback">Please enter a medication name.</div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <label asp-for="Form" class="col-sm-3 col-form-label">Form</label>
+                <div class="col-sm-9">
+                    <input asp-for="Form" type="text" class="form-control" />
+                    <span asp-validation-for="Form" class="text-danger"></span>
+                    <div class="invalid-feedback">Please enter the form.</div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <label asp-for="Strength" class="col-sm-3 col-form-label">Strength</label>
+                <div class="col-sm-9">
+                    <div class="row g-2">
+                        <!-- Strength value -->
+                        <div class="col-md-8">
+                            <input asp-for="Strength" type="number" class="form-control" />
+                            <span asp-validation-for="Strength" class="text-danger"></span>
+                            <div class="invalid-feedback">Please enter the dosage.</div>
+                        </div>
+
+                        <!-- Strength unit -->
+                        <div class="col-md-4">
+                            <select asp-for="Unit" class="form-control" required>
+                                <option value="ml">ml</option>
+                                <option value="mg">mg</option>
+                                <option value="g">g</option>
+                                <option value="IU">IU</option>
+                            </select>
+                            <span class="text-danger"></span>
+                            <div class="invalid-feedback">Please select a unit.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <label asp-for="Price" class="col-sm-3 col-form-label">Price</label>
+                <div class="col-sm-9">
+                    <input asp-for="Price" type="number" class="form-control" step="0.01" />
+                    <span asp-validation-for="Price" class="text-danger"></span>
+                    <div class="invalid-feedback">Please enter a valid price.</div>
+                </div>
+            </div>
+
+            <!-- Buttons in a horizontal flex container -->
+            <div class="d-flex gap-2">
+                <a href="@Url.Action("Index", "Medication")" class="btn btn-outline-secondary flex-fill text-decoration-none">Back</a>
+                <button type="submit" class="btn btn-custom flex-fill">Save Changes</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<style>
+    .form-container {
+        max-width: 50%;
+        margin: 20px auto;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+    .header {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        border-radius: 5px 5px 0 0;
+        text-align: center;
+    }
+</style>

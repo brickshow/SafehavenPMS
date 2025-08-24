@@ -160,13 +160,19 @@ namespace SafehavenPMS.Controllers
             foreach (var slot in availabilities)
             {
                 var bookedMatch = appointments.FirstOrDefault(appt =>
-                    appt.AppointmentDate.DayOfWeek == slot.Day &&
-                    appt.TimeSlot == slot.StartTime);
+                    // Case 1: Specific slot with date
+                    (slot.SlotDate.HasValue && appt.AppointmentDate.Date == slot.SlotDate.Value.Date
+                                              && appt.TimeSlot == slot.StartTime)
+                    ||
+                    // Case 2: Recurring slot (DayOfWeek match)
+                    (!slot.SlotDate.HasValue && appt.AppointmentDate.DayOfWeek == slot.Day
+                                              && appt.TimeSlot == slot.StartTime)
+                );
 
                 if (bookedMatch != null)
                 {
-                    slot.Status = "Unavailable";   // or keep as "Available"
-                    slot.Notes = "Booked";         // so UI shows the difference
+                    slot.Status = "Unavailable";   // mark slot unavailable in UI
+                    slot.Notes = "Booked";         // extra info
                 }
             }
 

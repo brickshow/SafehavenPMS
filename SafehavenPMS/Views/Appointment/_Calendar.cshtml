@@ -22,6 +22,7 @@
                                 <span><strong>Patient:</strong> @appointment.PatientName</span>
                                 <span><strong>Doctor:</strong> @appointment.DoctorName</span>
                                 <span><strong>Visit Type:</strong> @appointment.VisitType</span>
+                                <span><strong>Visit Type:</strong> @appointment.TimeSlot</span>
                                 <span><strong>Date :</strong> @appointment.AppointmentDate.ToString("MM/dd/yyyy")</span>
                             </div>
                             <div class="col-md-4 justify-content-end">
@@ -49,8 +50,12 @@
 
     </div>
 
-    <!-- Toggle button -->
-    <button id="toggleNotifications" class="btn-custom btn-primary" data-bs-toggle="tooltip" data-bs-placement="left" title="Show Notifications">&lt;</button>
+    <!-- Toggle button --> 
+    <button id="toggleNotifications" class="btn-custom btn-primary" 
+    data-bs-toggle="tooltip" data-bs-placement="left" title="Show Notifications">
+    &lt;
+        <span id="newAppointmentIndicator" class="position-absolute top-0 start-0 translate-middle p-1 bg-danger border border-light rounded-circle d-none"></span>
+    </button>
 </div>
 
 @* Modal to confirm cancellation *@
@@ -117,6 +122,7 @@
                         <li>
                             <form asp-action="Completed" asp-controller="Appointment" method="post" class="d-inline">
                                 <input type="hidden" name="id" id="ApointmentId" />
+                                <input type="hidden" name="patientId" id="patientId" />
                                 <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
                                     Mark as Completed
                                 </button>
@@ -125,17 +131,20 @@
                             <li>
                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Open Assessment Form</a>
                             </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Reschedule Appointment</a>
-                            </li>
+                        <li>
+                            <a id="rescheduleLink" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                               href="#">
+                                Reschedule Appointment
+                            </a>
+                        </li>
                             <li>
                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Cancel Appointment</a>
                             </li>
                  
-                            <li>
+                            @* <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Create New Appointment</a>
                             </li>
-                        
+                         *@
 
                     </ul>
                 </div>
@@ -307,23 +316,27 @@
                 });
         },
 
-        eventClick: function(info) {
-            info.jsEvent.preventDefault();
+                eventClick: function (info) {
+               info.jsEvent.preventDefault();
 
-            document.getElementById("ApointmentId").value = info.event.id; 
-            document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
-            document.getElementById("detailTime").innerText = info.event.extendedProps.time;
-            document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString("en-us", {
-                month: "long", day: "numeric", year: "numeric"
-            });
-            document.getElementById("detailStatus").innerText = info.event.extendedProps.status;
-            document.getElementById("detailPatient").innerText = info.event.extendedProps.patientName;
-            document.getElementById("detailDoctor").innerText = info.event.extendedProps.doctorName;
-            document.getElementById("detailDescription").innerText = info.event.extendedProps.description;
+               document.getElementById("ApointmentId").value = info.event.id;
+               document.getElementById("patientId").value = info.event.extendedProps.patientId;
+               document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
+               document.getElementById("detailTime").innerText = info.event.extendedProps.time;
+               document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString("en-us", {
+                   month: "long", day: "numeric", year: "numeric"
+               });
+               document.getElementById("detailStatus").innerText = info.event.extendedProps.status;
+               document.getElementById("detailPatient").innerText = info.event.extendedProps.patientName;
+               document.getElementById("detailDoctor").innerText = info.event.extendedProps.doctorName;
+               document.getElementById("detailDescription").innerText = info.event.extendedProps.description;
 
-            var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
-            appointmentDetailModal.show();
-        },
+               const rescheduleLink = document.getElementById('rescheduleLink');
+               rescheduleLink.href = `/Appointment/ScheduleAppointment?id=${info.event.extendedProps.patientId}`;
+
+               var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
+               appointmentDetailModal.show();
+           },
 
         headerToolbar: {
             left: 'prev,next today',
@@ -424,4 +437,24 @@
         const id = button.getAttribute('data-id');
         confirmModal.querySelector('#dayIdToDelete').value = id;
     });
+
+        document.addEventListener('DOMContentLoaded', function () {
+        var indicator = document.getElementById('newAppointmentIndicator');
+
+        // Check if there are new appointments
+        var newAppointmentsCount = @Model?.Count(a => a.Status == "Pending") ?? 0;
+
+        if (newAppointmentsCount > 0) {
+            indicator.classList.remove('d-none'); // Show red dot
+        }
+
+        // Optional: hide indicator when the notification panel opens
+        var toggleBtn = document.getElementById('toggleNotifications');
+        var notificationPanel = document.getElementById('notificationPanel');
+
+        toggleBtn.addEventListener('click', function() {
+            indicator.classList.add('d-none'); // Hide dot when opened
+        });
+    });
+
 </script>

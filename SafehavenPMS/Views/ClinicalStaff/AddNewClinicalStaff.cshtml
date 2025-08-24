@@ -80,10 +80,19 @@
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Position" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Position</label>
                             <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Position" type="text" class="form-control flex-grow-1 uniform-input" />
+                                <select asp-for="Position" class="form-select flex-grow-1 uniform-input">
+                                    <option value="">-- Select Position --</option>
+                                    <option value="Physician">Physician</option>
+                                    <option value="Psychiatrist">Psychiatrist</option>
+                                    <option value="Psychologist">Psychologist</option>
+                                    <option value="Psychometrician">Psychometrician</option>
+                                    <option value="Social Worker">Social Worker</option>
+                                    <option value="Recovery Coach">Recovery Coach</option>
+                                </select>
                                 <span asp-validation-for="Position" class="text-danger"></span>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>

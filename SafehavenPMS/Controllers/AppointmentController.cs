@@ -31,8 +31,7 @@ namespace SafehavenPMS.Controllers
             var appointments = await _context.NewAppointments
                 .Include(a => a.ClinicalStaff) // doctor info
                 .Include(a => a.Patient)       // patient info
-                .Where(a => a.Status == "Booked") // ✅ only booked
-                .ToListAsync();
+                .Where(a => a.Status == Enum.AppointmentEnum.Pending.ToString()).ToListAsync();
 
             var model = new AppointmentPageViewModel
             {
@@ -45,6 +44,8 @@ namespace SafehavenPMS.Controllers
                     DoctorName = $"{a.ClinicalStaff.Firstname} {a.ClinicalStaff.Lastname}", // ✅ corrected property name
                     AppointmentDate = a.AppointmentDate,
                     VisitType = a.VisitType,
+                    TimeSlot = $"{DateTime.Today.Add(a.TimeSlot).ToString("h:mm tt")} to " +
+                          $"{DateTime.Today.Add(a.TimeSlot).AddHours(1).ToString("h:mm tt")}",
                     Status = a.Status
                 }).ToList()
             };
@@ -115,7 +116,7 @@ namespace SafehavenPMS.Controllers
         [HttpPost]
         public async Task<IActionResult> GetDateAndTimeSlots(NewAppointmentViewModel model)
         {
-            // Re-fill staff dropdown (always repopulate for the view)
+            // Re-fill staff dropdown
             ViewBag.StaffList = await _context.ClinicalStaffs
                 .Select(s => new SelectListItem
                 {
@@ -124,7 +125,6 @@ namespace SafehavenPMS.Controllers
                 })
                 .ToListAsync();
 
-            // Guard: must have doctor and date
             if (model.ClinicalStaffID == null || model.ClinicalStaffID <= 0 || model.SelectedDate == null)
             {
                 ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
@@ -135,29 +135,40 @@ namespace SafehavenPMS.Controllers
             var date = model.SelectedDate.Date;
             var dow = date.DayOfWeek;
 
-            // 1. Get all availability slots for doctor + date
+            // 1. Get recurring or date-specific availability
             var slots = await _context.Availabilities
                 .Where(a => a.ClinicalStaffID == model.ClinicalStaffID
                             && (
-                                   a.SlotDate == date
-                                   || (a.SlotDate == null && a.Day == dow)
+                                  a.SlotDate == date
+                                  || (a.SlotDate == null && a.Day == dow)
                                )
-                            && a.Status == "Available")
+                            && a.Status == Enum.AvailabilityStatus.Available.ToString())
                 .OrderBy(a => a.StartTime)
                 .ToListAsync();
 
-            // 2. Get all booked appointments for doctor + date
-            var bookedSlots = await _context.NewAppointments
+            // 2. Get all occupied appointments (Pending, Confirmed, Booked)
+            var takenAppointments = await _context.NewAppointments
                 .Where(appt => appt.ClinicalStaffID == model.ClinicalStaffID
                                && appt.AppointmentDate == date
-                               && appt.Status == Enum.AppointmentEnum.Booked.ToString())
-                .Select(appt => appt.TimeSlot)
+                               && (appt.Status == Enum.AppointmentEnum.Pending.ToString()
+                                   || appt.Status == Enum.AppointmentEnum.Confirmed.ToString()
+                                   || appt.Status == Enum.AppointmentEnum.Booked.ToString()))
                 .ToListAsync();
 
-            // 3. Remove booked slots from available slots
+            // 3. Filter out slots that overlap
             var freeSlots = slots
-                .Where(a => !bookedSlots.Contains(a.StartTime))
+                .Where(slot =>
+                    !takenAppointments.Any(appt =>
+                        appt.TimeSlot >= slot.StartTime &&
+                        appt.TimeSlot < slot.EndTime   // falls inside this availability
+                    )
+                )
                 .ToList();
+
+            foreach(var s in freeSlots)
+            {
+                Console.WriteLine(freeSlots);
+            }
 
             // Patient dropdown
             ViewBag.PatientList = await _context.Patients
@@ -168,7 +179,6 @@ namespace SafehavenPMS.Controllers
                 })
                 .ToListAsync();
 
-            // 4. Pass only free slots to view
             ViewBag.AvailableTimes = freeSlots;
             ViewBag.SelectedDate = date.ToString("yyyy-MM-dd");
 
@@ -258,7 +268,7 @@ namespace SafehavenPMS.Controllers
             var appointments = await _context.NewAppointments
                 .Include(a => a.Patient)
                 .Include(a => a.ClinicalStaff)
-                .Where(a => a.Status == Enum.AppointmentEnum.Booked.ToString()) // ✅ only confirmed
+                .Where(a => a.Status != Enum.AppointmentEnum.Pending.ToString()) // ✅ exclude Pending
                 .ToListAsync();
 
             var calendarData = appointments
@@ -273,16 +283,26 @@ namespace SafehavenPMS.Controllers
                     // Assume duration = 1 hour
                     DateTime endDateTime = startDateTime.AddHours(1);
 
+                    // Assign color based on status
+                    string color = a.Status switch
+                    {
+                        "Booked" => "#CBE5DC",
+                        "Cancelled" => "#F8D7DA",
+                        "Completed" => "#D1E7DD",
+                        _ => "#E2E3E5" // default
+                    };
+
                     return new
                     {
                         id = a.AppointmentID,
                         title = a.VisitType,
                         start = startDateTime.ToString("o"),
                         end = endDateTime.ToString("o"),
-                        color = "#CBE5DC", // confirmed
+                        color = color,
                         extendedProps = new
                         {
                             visitType = a.VisitType,
+                            patientId = a.PatientId,
                             status = a.Status,
                             patientName = a.Patient != null ? $"{a.Patient.Firstname} {a.Patient.Lastname}" : "",
                             doctorName = a.ClinicalStaff != null ? $"{a.ClinicalStaff.Firstname} {a.ClinicalStaff.Lastname}" : "",
@@ -294,8 +314,10 @@ namespace SafehavenPMS.Controllers
                 })
                 .ToList();
 
+
             return Json(calendarData);
         }
+
 
 
 
@@ -360,6 +382,8 @@ namespace SafehavenPMS.Controllers
                             ? $"{a.ClinicalStaff.Firstname} {a.ClinicalStaff.Lastname}"
                             : "Unknown Doctor",
                         VisitType = a.VisitType,
+                        TimeSlot = $"{DateTime.Today.Add(a.TimeSlot).ToString("h:mm tt")} to " +
+                                    $"{DateTime.Today.Add(a.TimeSlot).AddHours(1).ToString("h:mm tt")}",
                         AppointmentDate = a.AppointmentDate,
                         Status = a.Status
                     })
@@ -508,7 +532,7 @@ namespace SafehavenPMS.Controllers
 
                 ViewBag.Error = "Please correct the errors in the form!";
                 return View(model);
-            }
+            }   
 
             // Ensure staff exists
             var staffExists = await _context.ClinicalStaffs
@@ -526,7 +550,7 @@ namespace SafehavenPMS.Controllers
                 a.AppointmentDate == model.SelectedDate.Date &&
                 a.TimeSlot == model.TimeSlot &&
                 (a.Status == Enum.AppointmentEnum.Pending.ToString() ||
-                 a.Status == Enum.AppointmentEnum.Booked.ToString())
+                 a.Status == Enum.AppointmentEnum.Confirmed.ToString())
             );
 
             if (slotTaken)
@@ -592,29 +616,29 @@ namespace SafehavenPMS.Controllers
                 .Where(a => !bookedAppointments.Contains(a.StartTime))
                 .ToList();
 
-            // Debug output
-            foreach (var a in freeAvailabilities)
-            {
-                Console.WriteLine($"FREE SLOT: {a.StartTime:hh\\:mm} - {a.EndTime:hh\\:mm}");
-            }
-
-            // Pass free slots to View
             ViewBag.AvailableTimes = freeAvailabilities;
+
+            // ✅ Fetch names again
+            var patient = _context.Patients.FirstOrDefault(p => p.PatientId == PatientId);
+            var doctor = _context.ClinicalStaffs.FirstOrDefault(d => d.ClinicalStaffID == ClinicalStaffID);
 
             var model = new AppointmentViewModel
             {
                 PatientId = PatientId,
                 ClinicalStaffID = ClinicalStaffID,
-                SelectedDate = SelectedDate
+                SelectedDate = SelectedDate,
+                PatientName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "",
+                ClinicalStaffName = doctor != null ? $"{doctor.Firstname} {doctor.Lastname}" : ""
             };
 
             return View("ScheduleAppointment", model);
         }
 
 
+
         // Action to mark Appointment as Completed
         [HttpPost]
-        public async Task<IActionResult> Completed(int id)
+        public async Task<IActionResult> Completed(int id, int patientId)
         {
             // Find the appointment by ID
             var appointment = await _context.NewAppointments.FindAsync(id);
@@ -631,6 +655,15 @@ namespace SafehavenPMS.Controllers
             try
             {
                 _context.NewAppointments.Update(appointment);
+
+                // Update patient status
+                var patient = await _context.Patients.FindAsync(patientId);
+                if (patient != null)
+                {
+                    patient.PatientStatus = Enum.PatientStatusEnum.PendingReview.ToString(); // or use an Enum like PatientStatusEnum
+                    _context.Patients.Update(patient);
+                }
+
                 await _context.SaveChangesAsync();
 
                 TempData["ToastMessage"] = "Appointment marked as completed!";
@@ -642,6 +675,9 @@ namespace SafehavenPMS.Controllers
                 Console.WriteLine(ex.Message);
                 TempData["Error"] = "Failed to update appointment!";
             }
+
+
+        
 
             return RedirectToAction("Index"); // Redirect back to appointments list
         }

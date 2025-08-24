@@ -1,0 +1,334 @@
+﻿@using SafehavenPMS.Enum
+@using SafehavenPMS.ViewModel
+@model List<AdmitPatientViewModel>
+
+@{
+    ViewBag.Title = "Addmision List";
+}
+
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-4">
+            <div class="d-flex justify-content-center align-items-center">
+                <i class='bx bxs-user fs-2 me-2'></i>
+                <h5 class="text-custom mb-0">Admission</h5>
+            </div>
+            <div class="top-content m-2 d-flex justify-content-between align-content-center">
+                <div class="top-left-corner d-flex flex-row align-items-center gap-2">
+                    @* Search bar *@
+                    <form asp-controller="Admission" asp-action="Index" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                        <div class="search-input-wrapper d-flex flex-row gap-2">
+                            <i class='bx bx-search search-icon'></i>
+                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+                        </div>
+                        <button type="submit" class="btn-custom" style="height:30px">Search</button>
+                    </form>
+                    <!-- Filter by status -->
+                    <div class="status">
+                        <form asp-controller="Admission" asp-action="Index" method="get" class="d-flex justify-content-center align-items-center">
+                            <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 10)" />
+                            <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                            <select name="status" class="form-select custom-dropdown" onchange="this.form.submit()">
+                                <option value="">All</option>
+                                <option value="Active" selected="@(ViewBag.Status == "Active")">🟩 Active</option>
+                                <option value="Inactive" selected="@(ViewBag.Status == "Inactive")">🟥 Inactive</option>
+                            </select>
+
+                        </form>
+                    </div>
+                    <!-- Sort by -->
+                    <div class="sort-by d-flex align-items-center">
+                        <form asp-controller="Admission" asp-action="Index" method="get" id="sortForm">
+                            <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
+                                <span class="me-2">Sort by</span>
+                                <div class="number-box d-flex align-items-center gap-1">
+                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
+                                        <span class="number">A</span>
+                                        <span class="number">Z</span>
+                                    </div>
+                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
+                                </div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <a href="@Url.Action("AdmitPatient", "Admission")" class="btn-custom text-decoration-none btn-primary">
+            <i class='bx bx-user-plus me-1'></i>
+            New Admission
+        </a>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+
+<!-- Table Container -->
+<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["SuccessMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" id="errorToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["Error"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="table-header d-flex justify-content-center align-items-center text-center">
+        <h5 class="mb-0">@(ViewBag.TotalPatientCount > 0 ? ViewBag.TotalPatientCount + " Patients" : "No Patients found")</h5>
+    </div>
+
+    @* Print and show number of row section *@
+    <div class="d-flex justify-content-between align-items-center m-2 mt-4">
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Show</span>
+            <form asp-controller="Admission" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                <input type="hidden" name="status" value="@ViewBag.Status" />
+                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
+                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-center">
+            <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
+        </div>
+    </div>
+
+    <div class="table-responsive-custom">
+        <table class="table mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>No.</th>
+                    <th>Case ID</th>
+                    <th>Patient Name</th>
+                    <th>Date Of Admission</th>
+                    <th>Admitted By</th>
+                    <th>End Date</th>
+                    <th>Ended By</th>
+                    <th>Status</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() != true)
+                {
+                    <tr>
+                        <td colspan="9" class="text-center">No patients found.</td>
+                    </tr>
+                }
+                else
+                {
+                    int rowNum = 1;
+                    foreach (var admission in Model)
+                    {
+                        <tr>
+                            <td>@rowNum</td>
+                            <td>CASE-@admission.PatientId-@rowNum</td> @* Example Case ID *@
+                            <td><strong>@admission.FullName</strong></td>
+                            <td>@admission.AdmissionDate.ToString("yyyy-MM-dd")</td>
+                            <td>--Soon--</td>
+                            <td>
+                                @((admission.Status == AdmissionStatus.Active.ToString() || string.IsNullOrEmpty(admission.Status))
+                                                        ? "-"
+                                                        : admission.EndDate?.ToString("MMM dd, yyyy"))
+                                                                                                  </td>
+
+                            <td>
+                                @((admission.Status == AdmissionStatus.Active.ToString() || string.IsNullOrEmpty(admission.Status))
+                                                        ? "-"
+                                                        : admission.EndedBy)
+                            </td>
+                            <td>@admission.Status.ToString()</td>
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("Edit", "Admission", new {id = admission.AdmissionId})">
+                                                <span class="badge-dot bg-danger"></span>
+                                                Edit Admission
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        rowNum++;
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="bot-content py-3">
+        <div class="d-flex justify-content-between align-items-center px-3">
+            <div style="opacity:.5;">
+                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalPatientCount ?? 0)</span>
+            </div>
+            <nav aria-label="Clinical staff list pagination">
+                <ul class="pagination mb-0">
+                    <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1, pageSize = ViewBag.PageSize, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">Prev</a>
+                    </li>
+
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = i, pageSize = ViewBag.PageSize, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1, pageSize = ViewBag.PageSize, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_AddAppointmentModal")
+
+<style>
+    .table-header {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .table-responsive-custom {
+        overflow: visible !important;
+    }
+
+    .dropdown-menu {
+        position: absolute !important;
+        z-index: 1055 !important;
+    }
+
+    .table td, .table th {
+        white-space: nowrap;
+    }
+
+    .dropdown {
+        position: relative;
+        z-index: auto !important;
+    }
+
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
+
+    .print-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        background-color: white;
+        border: 1px solid #e9ecef;
+        color: #495057;
+        transition: background-color 0.3s;
+    }
+
+        .print-button:hover {
+            background-color: #e9ecef;
+        }
+
+    @@media print {
+        .header, .bot-content, .print-button, .top-content {
+            display: none;
+        }
+
+        .table-header-custom {
+            background-color: #015F6B;
+            -webkit-print-color-adjust: exact;
+        }
+    }
+
+    .badge-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .bg-primary {
+        background-color: #7D4CDB;
+    }
+    /* Purple */
+    .bg-warning {
+        background-color: #FF9900;
+    }
+    /* Orange */
+    .bg-success {
+        background-color: #22C55E;
+    }
+    /* Green */
+    .bg-danger {
+        background-color: #F44336;
+    }
+    /* Red */
+
+    .dropdown-menu.dropdown-menu-end {
+        transform: translateX(-10px); /* or try -12px or -8px to adjust the alignment */
+    }
+
+</style>
+
+<script>
+       function setPatientInfo(patientId, patientName, staffName) {
+        console.log('setPatientInfo called with:', patientId, patientName, staffName); // Debug log
+        document.getElementById('modalPatientId').value = patientId;
+        document.querySelector('input[name="PatientName"]').value = patientName;
+        document.querySelector('input[name="StaffName"]').value = staffName;
+    }
+
+        document.addEventListener("DOMContentLoaded", function () {
+        // Success toast
+        var successToastEl = document.getElementById('successToast');
+        if (successToastEl) {
+            var toast = new bootstrap.Toast(successToastEl, { delay: 3000 }); // 3 seconds
+            toast.show();
+        }
+
+        // Error toast
+        var errorToastEl = document.getElementById('errorToast');
+        if (errorToastEl) {
+            var toast = new bootstrap.Toast(errorToastEl, { delay: 3000 }); // 3 seconds
+            toast.show();
+        }
+    });
+</script>

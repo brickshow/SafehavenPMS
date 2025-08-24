@@ -5,6 +5,7 @@
         Waitlisted,
         PendingAssesment,
         PendingApproval,
+        PendingReview,
         Active,
         Inactive,
     }
