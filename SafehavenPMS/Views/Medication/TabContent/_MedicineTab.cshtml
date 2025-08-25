@@ -42,13 +42,13 @@
                 @if (Model == null || !Model.Any())
                 {
                     <tr>
-                        <td colspan="6" class="text-center">No Medicine found.</td>
+                        <td colspan="8" class="text-center">No Medicine found.</td>
                     </tr>
                 }
                 else
                 {
                     int rowNum = 1;
-                    @foreach (var medicine in Model)
+                    foreach (var medicine in Model)
                     {
                         <tr>
                             <td>@rowNum</td>
@@ -78,22 +78,27 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
+
+                                        @* View Details Dropdown *@
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#medicineDetailsModal-@medicine.MedicineId">
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#medicineDetailsModal-@medicine.MedicineId">
                                                 <span class="badge-dot bg-success"></span>
                                                 View Details
                                             </a>
                                         </li>
+
+                                        @* Edit Dropdown *@
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                               href="@Url.Action("EditMedicine", "Medication", new {id = medicine.MedicineId})">
+                                               href="@Url.Action("EditMedicine", "Medication", new { id = medicine.MedicineId })">
                                                 <span class="badge-dot bg-primary"></span>
                                                 Edit
                                             </a>
                                         </li>
 
+                                        @* Deactivate Dropdown *@
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                data-bs-toggle="modal"
@@ -103,11 +108,13 @@
                                                 Deactivate
                                             </a>
                                         </li>
-                                        
+
                                     </ul>
                                 </div>
                             </td>
                         </tr>
+
+                        rowNum++;
                     }
                 }
             </tbody>
@@ -115,12 +122,65 @@
     </div>
 </div>
 
-<!-- Deactivation Modal -->
+@* ------------------------
+   Medicine Details Modals
+   Placed outside table for Bootstrap
+   Each medicine gets its own modal
+   ------------------------- *@
+@foreach (var medicine in Model)
+{
+    <div class="modal fade" id="medicineDetailsModal-@medicine.MedicineId" tabindex="-1" aria-labelledby="medicineDetailsLabel-@medicine.MedicineId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-3 shadow">
+                @* Modal header *@
+                <div class="modal-header text-white" style=" background: linear-gradient(to right, #069FB2, #058594);">
+                    <h5 class="modal-title" id="medicineDetailsLabel-@medicine.MedicineId">Medicine Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                @* Modal body *@
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Generic Name</dt>
+                        <dd class="col-sm-8">@medicine.GenericName</dd>
+
+                        <dt class="col-sm-4">Brand Name</dt>
+                        <dd class="col-sm-8">@medicine.BrandName</dd>
+
+                        <dt class="col-sm-4">Form</dt>
+                        <dd class="col-sm-8">@medicine.Form</dd>
+
+                        <dt class="col-sm-4">Strength</dt>
+                        <dd class="col-sm-8">@medicine.Strength @medicine.Unit</dd>
+
+                        <dt class="col-sm-4">Price</dt>
+                        <dd class="col-sm-8">₱ @medicine.Price</dd>
+
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">@medicine.Status</dd>
+
+                        <dt class="col-sm-4">Date Added</dt>
+                        <dd class="col-sm-8">@medicine.DateAdded.ToString("MMMM dd, yyyy")</dd>
+                    </dl>
+                </div>
+
+                @* Modal footer *@
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* ------------------------
+   Deactivate Medicine Modal
+   ------------------------- *@
 <div class="modal fade" id="deactivateMedicineModal" tabindex="-1" aria-labelledby="deactivateMedicineLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteConfirmLabel">Confirm Deletion</h5>
+                <h5 class="modal-title" id="deleteConfirmLabel">Confirm Deactivation</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -130,13 +190,12 @@
                 <form asp-action="DeactivateMedicine" asp-controller="Medication" method="post">
                     <input type="hidden" id="medicineToDelete" name="id" />
                     <button type="button" class="btn-cancel btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn-next btn-danger">Deactivate</button>
+                    <button type="submit" class="btn-next btn-custom">Deactivate</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
 
 <style>
     .table-header {

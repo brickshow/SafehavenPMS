@@ -1,4 +1,5 @@
-﻿@model IEnumerable<SafehavenPMS.Models.Patient>
+﻿@using SafehavenPMS.Enum
+@model IEnumerable<SafehavenPMS.Models.Patient>
 
 @{
     ViewBag.Title = "Patient List";
@@ -154,28 +155,28 @@
                             <td><strong>@patient.Firstname @patient.Lastname</strong></td>
                             <td>@patient.Sex</td>
                             <td class="p-0 m-0 align-middle">
-                                @if (patient.PatientStatus == "Active")
+                                @if (patient.PatientStatus == PatientStatusEnum.Active.ToString())
                                 {
                                     <div style="background-color:#CBE5DC; border-radius:30px; width:110px; margin:0; padding:0;">
                                         <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
                                     </div>
                                 }
-                                @if (patient.PatientStatus == "Waitlisted")
+                                @if (patient.PatientStatus == PatientStatusEnum.Waitlisted.ToString())
                                 {
                                     <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:110px; margin:0; padding:0;">
                                         <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
                                     </div>
                                 }
-                                @if (patient.PatientStatus == "PendingAssesment")
+                                @if (patient.PatientStatus == PatientStatusEnum.PendingAssesment.ToString())
                                 {
                                     <div style="background-color: rgba(253, 175, 134, 0.6); border-radius:30px; width:200px; margin:0; padding:0;">
                                         <p class="text-center m-0 p-0" style="color:black;">Pending Assessment</p>
                                     </div>
                                 }
-                                @if (patient.PatientStatus == "Pending Approval")
+                                @if (patient.PatientStatus == PatientStatusEnum.PendingReview.ToString())
                                 {
                                     <div style="background-color: rgba(255, 204, 0, 0.33); border-radius:30px; width:110px; margin:0; padding:0;">
-                                        <p class="text-center m-0 p-0" style="color:black;">@patient.PatientStatus</p>
+                                        <p class="text-center m-0 p-0" style="color:black;">Pending Review</p>
                                     </div>
                                 }
 

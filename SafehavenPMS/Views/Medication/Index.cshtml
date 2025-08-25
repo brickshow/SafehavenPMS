@@ -31,7 +31,7 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview"
                     type="button" role="tab" aria-controls="overview" aria-selected="true">
-                Summary
+                Administration Log
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -46,19 +46,13 @@
                 Medicines
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link availability-tab" id="availability-tab" data-bs-toggle="tab" data-bs-target="#availability"
-                    type="button" role="tab" aria-controls="documents" aria-selected="false">
-                History
-            </button>
-        </li>
     </ul>
 
 
     @* Tab Content *@
     <div class="tab-content" id="staffTabContent">
         <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
-          @await Html.PartialAsync("TabContent/_SummaryTab")
+          @await Html.PartialAsync("TabContent/_AdministrationLogTab", Model.AdministrationLogs)
         </div>
 
         <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
+using SafehavenPMS.Enum;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using System.Runtime.ConstrainedExecution;
@@ -18,8 +19,6 @@ namespace SafehavenPMS.Controllers
         {
             _context = context;
         }
-
-
         public async Task<IActionResult> Index()
         {
             var medicines = await _context.Medicines.ToListAsync();
@@ -46,15 +45,63 @@ namespace SafehavenPMS.Controllers
                 MedicationOrders = medicationOrders.Select(m => new MedicationOrderViewModel
                 {
                     MedicationOrderId = m.MedicationOrderId,
+
+                    // Patient
                     PatientId = m.PatientId,
-                    PatientName = m.Patient != null ? m.Patient.Firstname + " " + m.Patient.Lastname : "",
+                    PatientName = m.Patient != null
+                                 ? m.Patient.Firstname + " " + m.Patient.Lastname
+                                 : string.Empty,
+
+                    // Medicine
                     MedicineId = m.MedicineId,
-                    MedicineName = m.Medicine != null ? m.Medicine.GenericName : "",
-                    Dose = m.Dose,
-                    Instruction = m.Instruction,
-                    Frequency = m.Frequency,
+                    MedicineName = m.Medicine != null
+                                    ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Form} {m.Medicine.Unit}"
+                                    : string.Empty,
+                    // Dosage
+                    UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
+                    Note = m.Note,
+                    ScheduledType = m.ScheduledType,
+
+                    // Schedule
+                    // Build schedule string (BF, L, D, BT)
+                    ScheduleTimes = string.Join(", ", new[]
+                                            {
+                                                m.Breakfast ? "BF" : null,
+                                                m.Lunch ? "L" : null,
+                                                m.Dinner ? "D" : null,
+                                                m.Bedtime ? "BT" : null
+                                            }.Where(x => x != null)),
+
+                    DaysInterval = m.DaysInterval,
+                    Breakfast = m.Breakfast,
+                    Lunch = m.Lunch,
+                    Dinner = m.Dinner,
+                    Bedtime = m.Bedtime,
+                    Status = m.Status,
+                    CreatedBy = m.CreatedBy,
+                    
+                    // Dates
                     StartDate = m.StartDate,
-                    EndDate = m.EndDate
+                    DiscontinueDate = m.DiscontinueDate,
+                    NoDiscontinueDate = m.NoDiscontinueDate
+                }).ToList(),
+
+                AdministrationLogs = medicationOrders
+                .GroupBy(a => a.PatientId) // group by patient
+                .Select(g => new AdministrationLogViewModel
+                {
+                    PatientId = g.Key,
+                    PatientName = g.First().Patient != null
+                                    ? $"{g.First().Patient.Firstname} {g.First().Patient.Lastname}"
+                                    : string.Empty,
+                    TotalMeds = g.Count(), // ✅ total meds per patient
+                    ScheduleTimes = string.Join(", ", new[]
+                    {
+                        g.Any(x => x.Breakfast) ? "BF" : null,
+                        g.Any(x => x.Lunch) ? "L" : null,
+                        g.Any(x => x.Dinner) ? "D" : null,
+                        g.Any(x => x.Bedtime) ? "BT" : null
+                    }.Where(x => x != null))
                 }).ToList()
             };
 
@@ -215,7 +262,9 @@ namespace SafehavenPMS.Controllers
         public async Task<IActionResult> AddMedicationOrder(int? medicineId, int? patientId)
         {
             var medicines = await _context.Medicines.ToListAsync();
-            var patients = await _context.Patients.ToListAsync();
+            var patients = await _context.Patients
+                                 .Where(s => s.PatientStatus == Enum.PatientStatusEnum.Active.ToString())
+                                 .ToListAsync();
 
             // Build SelectList for ViewBag
             ViewBag.PatientList = new SelectList(
@@ -228,77 +277,332 @@ namespace SafehavenPMS.Controllers
                 patientId
             );
 
-            var vm = new AddMedicationOrderViewModel
-            {
-                Medicines = medicines ?? new List<Medicine>(),
-                SelectedMedicineId = medicineId,
-                SelectedPatientId = patientId
-            };
+            // Build SelectList for medicines in the format: Generic Name (Brand Name) - Form Strength Unit
+            ViewBag.MedicineList = new SelectList(
+                medicines.Select(m => new {
+                    MedicineId = m.MedicineId,
+                    DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                }),
+                "MedicineId",
+                "DisplayName",
+                medicineId
+            );
 
-            if (medicineId.HasValue)
-            {
-                var med = medicines.FirstOrDefault(m => m.MedicineId == medicineId.Value);
-                if (med != null)
-                {
-                    vm.Form = med.Form;
-                    vm.Unit = med.Unit;
-                }
-            }
 
-            return View(vm);
+            return View(new MedicationOrderViewModel());
         }
 
-
-
-        // ==========================
-        // POST: Add Medication Order
-        // ==========================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddMedicationOrder(AddMedicationOrderViewModel vm)
+        public async Task<IActionResult> AddMedicationOrder(MedicationOrderViewModel model)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                // Log errors
-                foreach (var entry in ModelState)
-                    foreach (var error in entry.Value.Errors)
-                        Console.WriteLine($"Field: {entry.Key} - Error: {error.ErrorMessage}");
-                // Reload lists if validation fails
-                vm.Medicines = await _context.Medicines.ToListAsync();
-                vm.Patients = await _context.Patients.ToListAsync();
-                return View(vm);
+                // 🔹 Custom Validation: DiscontinueDate must be greater than StartDate
+                if (!model.NoDiscontinueDate && model.DiscontinueDate.HasValue)
+                {
+                    if (model.DiscontinueDate.Value.Date <= model.StartDate.Date)
+                    {
+                        ModelState.AddModelError(nameof(model.DiscontinueDate), "Discontinue Date must be later than Start Date.");
+                    }
+                }
+
+                // 1️⃣ If model is invalid → go back to Index instead of staying here
+                if (!ModelState.IsValid)
+                {
+                    ViewBag.PatientList = new SelectList(
+                                          _context.Patients.Select(p => new {
+                                              PatientId = p.PatientId,
+                                              FullName = (p.Firstname ?? "") + " " + (p.Lastname ?? "")
+                                          }),
+                                          "PatientId",
+                                          "FullName"
+                                      );
+
+                    // Build SelectList for medicines in the format: Generic Name (Brand Name) - Form Strength Unit
+                    ViewBag.MedicineList = new SelectList(
+                                            _context.Medicines.Select(m => new {
+                                                MedicineId = m.MedicineId,
+                                                DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                                            }),
+                                            "MedicineId",
+                                            "DisplayName"
+                                        );
+
+
+                    TempData["ErrorMessage"] = "Invalid input. Please check your entries.";
+                    return View(model);
+                }
+
+                // 🔹 Determine Status using simple if/else
+                string status;
+                if (model.StartDate.Date == DateTime.Today)
+                {
+                    status = MedicationOrderStatus.Active.ToString();
+                }
+                else if (model.StartDate.Date > DateTime.Today)
+                {
+                    status = MedicationOrderStatus.NotStarted.ToString();
+                }
+                else
+                {
+                    status = MedicationOrderStatus.Active.ToString();
+                }
+
+                // 2️⃣ Map to entity
+                var medicationOrder = new MedicationOrder
+                {
+                    PatientId = model.PatientId,
+                    MedicineId = model.MedicineId,
+                    UnitPerDose = model.UnitPerDose,
+                    Note = model.Note,
+                    ScheduledType = model.ScheduledType,
+                    DaysInterval = model.ScheduledType == "NonDaily" ? model.DaysInterval : null,
+                    Breakfast = model.Breakfast,
+                    Lunch = model.Lunch,
+                    Dinner = model.Dinner,
+                    Bedtime = model.Bedtime,
+                    StartDate = model.StartDate,
+                    DiscontinueDate = model.NoDiscontinueDate ? null : model.DiscontinueDate,
+                    NoDiscontinueDate = model.NoDiscontinueDate,
+                    CreatedAt = DateTime.Now,
+                    Status = status,
+                    CreatedBy = User.Identity?.Name ?? "System"
+                };
+
+                _context.MedicationOrders.Add(medicationOrder);
+                await _context.SaveChangesAsync();
+
+                // 3️⃣ Success → Redirect to Index
+                TempData["SuccessMessage"] = "Medication order added successfully!";
+                return RedirectToAction("Index");
+            }
+            catch (DbUpdateException dbEx)
+            {
+                Console.WriteLine($"Database error: {dbEx.Message}");
+                TempData["ErrorMessage"] = "An error occurred while saving the medication order. Please try again.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                TempData["ErrorMessage"] = "An unexpected error occurred. Please contact support.";
             }
 
-            // Map ViewModel → MedicationOrder entity
-            var order = new MedicationOrder
+            // 4️⃣ On any failure → Redirect to Index
+            return RedirectToAction("Index");
+        }
+
+        //Action to mark Medication order as Completed
+        public IActionResult Completed(int id)
+        {
+            var medOrder = _context.MedicationOrders.FirstOrDefault(m => m.MedicationOrderId == id);
+
+            if(medOrder == null)
             {
-                PatientId = vm.SelectedPatientId.Value,
-                MedicineId = vm.SelectedMedicineId.Value,
-                Dose = vm.Dose,
-                Instruction = vm.Instruction,
-                Frequency = vm.Frequency,
-                StartDate = vm.StartDate.Value,
-                EndDate = vm.EndDate.Value
+                TempData["Error"] = "Medication Order not found";
+                return RedirectToAction("Index");
+            }
+
+            medOrder.Status = MedicationOrderStatus.Completed.ToString();
+
+            try
+            {
+                _context.Update(medOrder);
+                _context.SaveChanges();
+                TempData["SuccessMessage"] = "Medication order marked as Completed.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex);
+                TempData["Error"] = "Failed to update medication order status.";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // GET: Medication/EditMedicationOrder/5
+        public async Task<IActionResult> EditMedicationOrder(int id)
+        {
+            if (id <= 0)
+            {
+                TempData["Error"] = "Invalid Medication Order ID";
+                return RedirectToAction("Index");
+            }
+
+            var order = await _context.MedicationOrders
+                .Include(m => m.Medicine)
+                .Include(m => m.Patient)
+                .FirstOrDefaultAsync(m => m.MedicationOrderId == id);
+
+            if (order == null)
+            {
+                TempData["Error"] = "Medication Order not found";
+                return RedirectToAction ("Index");
+            }
+
+            // Map entity to ViewModel
+            var viewModel = new MedicationOrderViewModel
+            {
+                MedicationOrderId = order.MedicationOrderId,
+                PatientId = order.PatientId,
+                MedicineId = order.MedicineId,
+                UnitPerDose = order.UnitPerDose,
+                Note = order.Note,
+                ScheduledType = order.ScheduledType,
+                DaysInterval = order.DaysInterval,
+                Breakfast = order.Breakfast,
+                Lunch = order.Lunch,
+                Dinner = order.Dinner,
+                Bedtime = order.Bedtime,
+                StartDate = order.StartDate,
+                DiscontinueDate = order.DiscontinueDate,
+                NoDiscontinueDate = order.NoDiscontinueDate
             };
 
-            _context.MedicationOrders.Add(order);
-            await _context.SaveChangesAsync();
+            // Repopulate dropdowns
+            ViewBag.PatientList = new SelectList(
+                _context.Patients.Select(p => new
+                {
+                    PatientId = p.PatientId,
+                    FullName = (p.Firstname ?? "") + " " + (p.Lastname ?? "")
+                }),
+                "PatientId",
+                "FullName",
+                order.PatientId
+            );
 
-            return RedirectToAction("Index", "Medication");
+            ViewBag.MedicineList = new SelectList(
+                _context.Medicines.Select(m => new
+                {
+                    MedicineId = m.MedicineId,
+                    DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                }),
+                "MedicineId",
+                "DisplayName",
+                order.MedicineId
+            );
+
+            return View(viewModel);
         }
 
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditMedicationOrder(int id,MedicationOrderViewModel model)
+        {
+            try
+            {
+                // 🔹 Custom Validation: DiscontinueDate must be later than StartDate
+                if (!model.NoDiscontinueDate && model.DiscontinueDate.HasValue)
+                {
+                    if (model.DiscontinueDate.Value.Date <= model.StartDate.Date)
+                    {
+                        ModelState.AddModelError(
+                            nameof(model.DiscontinueDate),
+                            "Discontinue Date must be later than Start Date."
+                        );
+                    }
+                }
 
-        //[HttpGet]
-        //public async Task<IActionResult> SearchPatients(string term)
-        //{
-        //    var patients = await _context.Patients
-        //        .Where(p => p.Firstname.Contains(term) || p.Lastname.Contains(term))
-        //        .Select(p => new { id = p.PatientId, name = p.Firstname + " " + p.Lastname })
-        //        .Take(10) // return top 10 matches
-        //        .ToListAsync();
+                // 🔹 Check for general model validation errors
+                if (!ModelState.IsValid)
+                {     // Log ModelState errors to console
+                    foreach (var entry in ModelState)
+                    {
+                        var key = entry.Key;
+                        var errors = entry.Value.Errors;
 
-        //    return Json(patients);
-        //}
+                        foreach (var error in errors)
+                        {
+                            Console.WriteLine($"Field: {key} - Error: {error.ErrorMessage}");
+                        }
+                    }
+
+                    // Repopulate dropdowns so the view can render correctly
+                    ViewBag.PatientList = new SelectList(
+                        _context.Patients.Select(p => new
+                        {
+                            PatientId = p.PatientId,
+                            FullName = (p.Firstname ?? "") + " " + (p.Lastname ?? "")
+                        }),
+                        "PatientId",
+                        "FullName",
+                        model.PatientId
+                    );
+
+                    ViewBag.MedicineList = new SelectList(
+                        _context.Medicines.Select(m => new
+                        {
+                            MedicineId = m.MedicineId,
+                            DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                        }),
+                        "MedicineId",
+                        "DisplayName",
+                        model.MedicineId
+                    );
+
+                    TempData["ErrorMessage"] = "Invalid input. Please check your entries.";
+                    return View(model);
+                }
+
+                // 🔹 Fetch the existing medication order
+                var order = await _context.MedicationOrders.FindAsync(id);
+                if (order == null)
+                {
+                    TempData["ErrorMessage"] = "Medication Order not found.";
+                    return RedirectToAction("Index");
+                }
+
+                // 🔹 Update entity fields from the ViewModel
+                order.PatientId = model.PatientId;
+                order.MedicineId = model.MedicineId;
+                order.UnitPerDose = model.UnitPerDose;
+                order.Note = model.Note;
+                order.ScheduledType = model.ScheduledType;
+                order.DaysInterval = model.ScheduledType == "NonDaily" ? model.DaysInterval : null;
+                order.Breakfast = model.Breakfast;
+                order.Lunch = model.Lunch;
+                order.Dinner = model.Dinner;
+                order.Bedtime = model.Bedtime;
+                order.StartDate = model.StartDate;
+                order.DiscontinueDate = model.NoDiscontinueDate ? null : model.DiscontinueDate;
+                order.NoDiscontinueDate = model.NoDiscontinueDate;
+
+                // 🔹 Update audit fields
+                order.UpdatedAt = DateTime.Now;
+                order.UpdatedBy = User.Identity?.Name ?? "System";
+
+                // 🔹 Save changes to the database
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Medication order updated successfully!";
+                return RedirectToAction("Index");
+            }
+            catch (DbUpdateException dbEx)
+            {
+                // 🔹 Handle database-specific errors
+                Console.WriteLine($"Database error: {dbEx.Message}");
+                TempData["ErrorMessage"] = "An error occurred while updating the medication order. Please try again.";
+
+                // Repopulate dropdowns on error
+                ViewBag.PatientList = new SelectList(_context.Patients, "PatientId", "Firstname", model.PatientId);
+                ViewBag.MedicineList = new SelectList(_context.Medicines, "MedicineId", "GenericName", model.MedicineId);
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                // 🔹 Handle general errors
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                TempData["ErrorMessage"] = "An unexpected error occurred. Please contact support.";
+
+                // Repopulate dropdowns on error
+                ViewBag.PatientList = new SelectList(_context.Patients, "PatientId", "Firstname", model.PatientId);
+                ViewBag.MedicineList = new SelectList(_context.Medicines, "MedicineId", "GenericName", model.MedicineId);
+
+                return View(model);
+            }
+        }
+
     }
 }

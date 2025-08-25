@@ -2,7 +2,7 @@
 
 <div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     <div class="table-header d-flex justify-content-center align-items-center text-center">
-        <h5 class="mb-0">TODAY - @DateTime.Now.ToString("MMMM dd, yyyy")</h5>
+        <h5 class="mb-0">Medication Orders</h5>
     </div>
 
     <div class="d-flex flex-row align-items-center justify-content-between gap-3 w-100 mt-3">
@@ -34,9 +34,11 @@
                     <th>No.</th>
                     <th>Patient Name</th>
                     <th>Medication</th>
-                    <th>Dose</th>
-                    <th>Instruction</th>
-                    <th>Frequency</th>
+                    <th>Unit Per Dose</th>
+                    <th>Schedule Times</th>
+                    <th>Ordering Doctor</th>
+                    <th>Note</th>
+                    <th>Status</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -55,12 +57,50 @@
                         <tr>
                             <td>@rowNum</td>
                             <td>@order.PatientName</td>
-                            <td>@order.MedicineName - @order.Dose.ToString("F0")/@order.Unit</td>
-                            <td>@order.Dose @order.Unit</td>
-                            <td>@order.Instruction</td>
-                            <td>@order.Frequency</td>
-                            <td>
-                                <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                            <td class="text-wrap">@order.MedicineName</td>
+                            <td>@order.UnitPerDoseDisplay</td>
+                            <td>@order.ScheduleTimes</td>
+                            <td>-</td>
+                            <td>@order.Note</td>
+                            <td>@order.Status.ToString()</td>
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+
+                                        @* View Details Dropdown *@
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#medicineDetailsModal-@order.MedicationOrderId">
+                                                <span class="badge-dot bg-success"></span>
+                                                View Details
+                                            </a>
+                                        </li>
+
+                                        @* Edit Dropdown *@
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("EditMedicationOrder", "Medication", new{id = order.MedicationOrderId})">
+                                                <span class="badge-dot bg-primary"></span>
+                                                Edit
+                                            </a>
+                                        </li>
+
+                                        @* Deactivate Dropdown *@
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#markAsCompleted-@order.MedicationOrderId">
+                                                <span class="d-inline-block rounded-circle bg-warning opacity-50" style="width:10px; height:10px;"></span>
+                                                Mark as Completed
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
                         rowNum++;
@@ -70,6 +110,95 @@
         </table>
     </div>
 </div>
+
+@foreach (var order in Model)
+{
+    <div class="modal fade" id="medicineDetailsModal-@order.MedicationOrderId" tabindex="-1" aria-labelledby="medicineDetailsLabel-@order.MedicationOrderId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-3 shadow">
+
+                @* 🔹 Modal Header *@
+                <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594);">
+                    <h5 class="modal-title" id="medicineDetailsLabel-@order.MedicationOrderId">Medicine Order Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                @* 🔹 Modal Body *@
+                <div class="modal-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">@order.Status</dd>
+
+                        <dt class="col-sm-4">Patient Name</dt>
+                        <dd class="col-sm-8">@order.PatientName</dd>
+
+                        <dt class="col-sm-4">Generic Name</dt>
+                        <dd class="col-sm-8">@order.MedicineName</dd>
+
+                        <dt class="col-sm-4">Unit per Dose</dt>
+                        <dd class="col-sm-8">@order.UnitPerDoseDisplay</dd>
+
+                        <dt class="col-sm-4">Instruction / Note</dt>
+                        <dd class="col-sm-8">@order.Note</dd>
+
+                        <dt class="col-sm-4">Schedule Type</dt>
+                        <dd class="col-sm-8">@order.ScheduledType</dd>
+
+                        @if (order.ScheduledType == "NonDaily" && order.DaysInterval.HasValue)
+                        {
+                            <dt class="col-sm-4">Days Interval</dt>
+                            <dd class="col-sm-8">Every [@order.DaysInterval.Value] days</dd>
+                        }
+
+                        <dt class="col-sm-4">Schedule Times</dt>
+                        <dd class="col-sm-8">@order.ScheduleTimes</dd>
+
+                        <dt class="col-sm-4">Start Date</dt>
+                        <dd class="col-sm-8">@order.StartDate.ToString("MMMM dd, yyyy")</dd>
+
+                        <dt class="col-sm-4">Discontinue Date</dt>
+                        <dd class="col-sm-8">
+                            @(order.NoDiscontinueDate ? "Not Set" : order.DiscontinueDate?.ToString("MMMM dd, yyyy"))
+                        </dd>
+
+
+                    </dl>
+                </div>
+
+                @* 🔹 Modal Footer *@
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* 🔹 Mark as Completed Modal (unique per order) *@
+    <div class="modal fade" id="markAsCompleted-@order.MedicationOrderId" tabindex="-1" aria-labelledby="markAsCompletedLabel-@order.MedicationOrderId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
+                    <h5 class="modal-title" id="markAsCompletdLabel-@order.MedicationOrderId">Mark as Completed</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to mark this medication as <strong>Completed</strong>?
+                </div>
+                <div class="modal-footer">
+                    <form asp-action="Completed" asp-controller="Medication" method="post">
+                        <input type="hidden" name="id" value="@order.MedicationOrderId" />
+                        <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-custom btn-next">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
 
 <style>
     .table-header {

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
+using SafehavenPMS.Enum;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using System.Threading.Tasks;
@@ -74,40 +75,14 @@ namespace SafehavenPMS.Controllers
 
         // Step 1: Search for patient with pending review
         [HttpPost]
-        public async Task<IActionResult> SearchPatient(string searchQuery)
+        public async Task<IActionResult> SearchPatient(int searchQuery)
         {
-            if (string.IsNullOrWhiteSpace(searchQuery))
-                return View("AdmitPatient", new AdmitPatientViewModel());
-
-            // If input looks like "101 | John Doe", extract the ID
-            if (searchQuery.Contains("|"))
-                searchQuery = searchQuery.Split('|')[0].Trim();
-
-            // Try match by PatientId first
-            Patient? patient = null;
-            if (int.TryParse(searchQuery, out var patientId))
-            {
-                patient = await _context.Patients
-                    .Include(p => p.ClinicalStaffPatients)
-                        .ThenInclude(csp => csp.ClinicalStaff)
-                    .FirstOrDefaultAsync(p => p.PatientId == patientId &&
-                                              p.PatientStatus == Enum.PatientStatusEnum.PendingReview.ToString());
-            }
-
-            // If not found by ID, fallback to name search
-            if (patient == null)
-            {
-                patient = await _context.Patients
-                    .Include(p => p.ClinicalStaffPatients)
-                        .ThenInclude(csp => csp.ClinicalStaff)
-                    .Where(p =>
-                        (p.Firstname.Contains(searchQuery) ||
-                         p.Lastname.Contains(searchQuery) ||
-                         (p.Firstname + " " + p.Lastname).Contains(searchQuery)) &&
-                        p.PatientStatus == Enum.PatientStatusEnum.PendingReview.ToString()
-                    )
-                    .FirstOrDefaultAsync();
-            }
+            // searchQuery is PatientId from dropdown
+            var patient = await _context.Patients
+                .Include(p => p.ClinicalStaffPatients)
+                    .ThenInclude(csp => csp.ClinicalStaff)
+                .FirstOrDefaultAsync(p => p.PatientId == searchQuery &&
+                                          p.PatientStatus == Enum.PatientStatusEnum.PendingReview.ToString());
 
             if (patient == null)
                 return View("AdmitPatient", new AdmitPatientViewModel());
@@ -130,36 +105,34 @@ namespace SafehavenPMS.Controllers
                 PhysicianName = physician != null ? $"{physician.Firstname} {physician.Lastname}" : ""
             };
 
-
-            // Fetch all staff
             await PopulateClinicalStaffDropdowns();
             return View("AdmitPatient", vm);
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> GetPatientMatches(string query)
+        public async Task<IActionResult> AdmitPatient()
         {
-            if (string.IsNullOrWhiteSpace(query))
-                return Json(new List<object>());
-
-            var matches = await _context.Patients
-                .Where(p => p.Firstname.Contains(query) || p.Lastname.Contains(query))
-                .Select(p => new {
-                    id = p.PatientId,
-                    name = p.Firstname + " " + p.Lastname
-                })
-                .Take(20)
+            // Fetch all patients with PendingReview status
+            var patients = await _context.Patients
+                .Where(p => p.PatientStatus == Enum.PatientStatusEnum.PendingReview.ToString())
                 .ToListAsync();
 
-            return Json(matches);
-        }
+            // Populate ViewBag for dropdown
+            ViewBag.PatientList = new SelectList(
+                patients.Select(p => new
+                {
+                    p.PatientId,
+                    FullName = $"{p.Firstname} {p.Lastname}"
+                }),
+                "PatientId",
+                "FullName"
+            );
 
-        public IActionResult AdmitPatient()
-        {
             // Always provide a non-null model
             return View(new AdmitPatientViewModel());
         }
+
+
         [HttpPost]
         public async Task<IActionResult> AdmitPatient(AdmitPatientViewModel model)
         {
@@ -201,7 +174,21 @@ namespace SafehavenPMS.Controllers
                 status = Enum.AdmissionStatus.Active.ToString()
             };
 
+            var patient = await _context.Patients.FirstOrDefaultAsync(s => s.PatientId == model.PatientId);
+
+            if (patient == null)
+            {
+                ModelState.AddModelError("", "Patient not found.");
+                await PopulateClinicalStaffDropdowns();
+                return View(model);
+            }
+
+
+            //Update patient Status into active
+            patient.PatientStatus = PatientStatusEnum.Active.ToString();
+
             // 3. Save to database
+            _context.Patients.Update(patient);
             _context.Admissions.Add(admission);
             await _context.SaveChangesAsync();
 

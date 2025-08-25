@@ -25,18 +25,13 @@
 
         <form asp-action="SearchPatient" asp-controller="Admission" method="post">
             <div class="row mb-3 justify-content-start m-3">
-                <div class="col-md-6">
-                    <div class="input-group">
-                        <input type="text" name="searchQuery"
-                               id="searchQuery"
-                               class="form-control"
-                               list="patientList"
-                               placeholder="Enter patient name or ID" />
-                        <datalist id="patientList"></datalist>
-
-                        <button type="submit" class="btn btn-custom">
-                            <i class='bx bx-search'></i> Search
-                        </button>
+                <div class="row mb-3 justify-content-start m-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <select id="searchQuery" name="searchQuery" class="form-control" asp-items="ViewBag.PatientList" onchange="this.form.submit()">
+                                <option value="">Select patient</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
