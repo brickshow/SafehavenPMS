@@ -87,22 +87,43 @@ namespace SafehavenPMS.Controllers
                 }).ToList(),
 
                 AdministrationLogs = medicationOrders
-                .GroupBy(a => a.PatientId) // group by patient
+                .GroupBy(a => a.PatientId)
                 .Select(g => new AdministrationLogViewModel
                 {
                     PatientId = g.Key,
                     PatientName = g.First().Patient != null
                                     ? $"{g.First().Patient.Firstname} {g.First().Patient.Lastname}"
                                     : string.Empty,
-                    TotalMeds = g.Count(), // ✅ total meds per patient
+                    TotalMeds = g.Count(),
                     ScheduleTimes = string.Join(", ", new[]
                     {
                         g.Any(x => x.Breakfast) ? "BF" : null,
                         g.Any(x => x.Lunch) ? "L" : null,
                         g.Any(x => x.Dinner) ? "D" : null,
                         g.Any(x => x.Bedtime) ? "BT" : null
-                    }.Where(x => x != null))
+                    }.Where(x => x != null)),
+
+                    // Map the medications for this patient
+                    Medications = g.Select(m => new MedicationOrderViewModel
+                    {
+                        MedicationOrderId = m.MedicationOrderId,
+                        MedicineName = m.Medicine != null
+                                        ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Form} {m.Medicine.Unit}"
+                                        : string.Empty,
+                        UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
+                        Note = m.Note,
+                        ScheduledType = m.ScheduledType,
+                        Breakfast = m.Breakfast,
+                        Lunch = m.Lunch,
+                        Dinner = m.Dinner,
+                        Bedtime = m.Bedtime,
+                        StartDate = m.StartDate,
+                        DiscontinueDate = m.DiscontinueDate,
+                        NoDiscontinueDate = m.NoDiscontinueDate,
+                        Status = m.Status
+                    }).ToList()
                 }).ToList()
+
             };
 
             return View(model);
