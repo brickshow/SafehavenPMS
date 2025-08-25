@@ -39,7 +39,8 @@ namespace SafehavenPMS.Controllers
                     Form = m.Form,
                     Strength = m.Strength,
                     Unit = m.Unit,
-                    Price = m.Price
+                    Price = m.Price,
+                    Status = m.Status
                 }).ToList(),
 
                 MedicationOrders = medicationOrders.Select(m => new MedicationOrderViewModel
@@ -168,6 +169,41 @@ namespace SafehavenPMS.Controllers
             {
                 Console.WriteLine("Error: " + ex);
                 TempData["Error"] = "Failed to update medicine.";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        //Action to delete/deactivate Medicine
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeactivateMedicine(int id)
+        {
+            //Find the medicine from database
+            var med = await _context.Medicines.FindAsync(id);
+
+            if (med == null)
+            {
+                TempData["Error"] = "Medicine not found";
+                return View();
+            }
+
+            //update the database 
+            med.Status = Enum.MedicineStatus.Inactive.ToString();
+
+            try
+            {
+                //Insert to DB
+                _context.Update(med);
+
+                //Save Changes
+                await _context.SaveChangesAsync();
+                TempData["Error"] = "Medicine succesfully Deactivated";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex);
+                TempData["Error"] = "Error Deactivating Medicine! Please try again";
             }
 
             return RedirectToAction("Index");
