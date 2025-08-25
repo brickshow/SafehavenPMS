@@ -26,5 +26,6 @@
         //One -to-Many Relationships
         public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with ClinicalStaff
         public ICollection<MedicationOrder> MedicationOrders { get; set; } // Navigation property for Medication orders
+        public ICollection<AdministrationLog> AdministrationLogs { get; set; } // Navigation property for Medication orders
     }
 }

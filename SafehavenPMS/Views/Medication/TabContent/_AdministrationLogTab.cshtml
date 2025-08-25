@@ -45,35 +45,45 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var log in Model)
+
+                @if (Model == null || !Model.Any())
                 {
                     <tr>
-                        <td>
-                            <img src="~/Images/default.png"
-                                 alt="Patient Photo"
-                                 class="rounded-circle"
-                                 style="width:40px; height:40px; object-fit:cover;" />
-                        </td>
-                        <td>@log.PatientName</td>
-                        <td class="text-center">@log.TotalMeds</td>
-                        <td class="text-center">@log.ScheduleTimes</td>
-                        <td class="text-center">
-                            <div class="d-inline-block w-50 rounded text-center"
-                                 style="background-color: rgba(255, 233, 105, 0.5);">
-                                <span class="badge text-dark">Pending</span>
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            <a href="#"
-                               class="btn btn-sm btn-outline-primary"
-                               data-patientid="@log.PatientId"
-                               data-bs-toggle="modal"
-                               data-bs-target="#administrationLogModal-@log.PatientId">
-                                <i class="bx bx-edit"></i>
-                            </a>
-                        </td>
+                        <td colspan="6" class="text-center">No Medication found.</td>
                     </tr>
                 }
+                else
+                {
+                    @foreach (var log in Model)
+                    {
+
+                        <tr>
+                            <td>
+                                <img src="~/Images/default.png"
+                                     alt="Patient Photo"
+                                     class="rounded-circle"
+                                     style="width:40px; height:40px; object-fit:cover;" />
+                            </td>
+                            <td>@log.PatientName</td>
+                            <td class="text-center">@log.TotalMeds</td>
+                            <td class="text-center">@log.ScheduleTimes</td>
+                            <td class="text-center">
+                                <div class="d-inline-block w-50 rounded text-center"
+                                     style="background-color: rgba(255, 233, 105, 0.5);">
+                                    <span class="badge text-dark">Pending</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <a href="#"
+                                   class="btn btn-sm btn-outline-primary"
+                                   data-patientid="@log.PatientId"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#administrationLogModal-@log.PatientId">
+                                    <i class="bx bx-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }}
             </tbody>
         </table>
     </div>
@@ -82,84 +92,109 @@
 
 @foreach (var log in Model)
 {
-    <!-- Modal for each patient -->
-    <div class="modal fade" id="administrationLogModal-@log.PatientId" tabindex="-1" aria-labelledby="administrationLogLabel-@log.PatientId" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header text-white" style="background-color:#058594">
-                    <h5 class="modal-title" id="administrationLogLabel-@log.PatientId">Administration Log</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+    <form asp-action="SaveAdministrationLog" asp-controller="Medication" method="post">
+        <input type="hidden" name="PatientId" value="@log.PatientId" />
 
-                <div class="modal-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <img src="~/Images/default.png" class="rounded-circle me-3" alt="Patient Photo" style="width:80px">
-                        <div>
-                            <h6 class="mb-0">@log.PatientName <span class="fw-normal"></span></h6>
-                            <small class="text-muted">Patient No. @log.PatientId</small>
-                        </div>
+        <div class="modal fade" id="administrationLogModal-@log.PatientId" tabindex="-1" aria-labelledby="administrationLogLabel-@log.PatientId" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header text-white" style="background-color:#058594">
+                        <h5 class="modal-title" id="administrationLogLabel-@log.PatientId">Administration Log</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
 
-                    <h6 class="text-center mb-3 text-teal fw-bold">
-                        TODAY - @DateTime.Now.ToString("MMMM dd, yyyy")
-                    </h6>
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered text-center align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Medication</th>
-                                    <th>7–8 AM<br><small>Breakfast</small></th>
-                                    <th>12–1 PM<br><small>Lunch</small></th>
-                                    <th>5–6 PM<br><small>Dinner</small></th>
-                                    <th>8–9 PM<br><small>Bedtime</small></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var med in log.Medications)
-                                {
-                                    <tr>
-                                        <td class="text-start">
-                                            <strong>@med.MedicineName</strong><br>
-                                            @med.UnitPerDoseDisplay<br>
-                                            <small class="text-muted">D/C Date: @(med.DiscontinueDate?.ToString("MM-dd-yy") ?? "Not Set")</small><br>
-                                            @if(!string.IsNullOrEmpty(med.Note))
-                                            {
-                                                <small>@med.Note</small>
-                                            }
-                                        </td>
-                                        <td><input type="checkbox" @(med.Breakfast ? "checked" : "") class="larger-checkbox" /></td>
-                                        <td><input type="checkbox" @(med.Lunch ? "checked" : "") class="larger-checkbox" /></td>
-                                        <td><input type="checkbox" @(med.Dinner ? "checked" : "") class="larger-checkbox" /></td>
-                                        <td><input type="checkbox" @(med.Bedtime ? "checked" : "") class="larger-checkbox" /></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Legend -->
-                    <div class="mt-3">
-                        <div class="d-flex gap-4 align-items-center">
-                            <div><i class="bx bx-square"></i> Not yet taken</div>
-                            <div><i class="bx bx-check-square text-success"></i> Taken</div>
+                    <div class="modal-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="~/Images/default.png" class="rounded-circle me-3" alt="Patient Photo" style="width:80px">
                             <div>
-                                <input type="checkbox" disabled class="form-check-input" style="background-color: #e0e0e0; border-color: #ccc;">
-                                <span class="text-muted">Not Scheduled</span>
+                                <h6 class="mb-0">@log.PatientName</h6>
+                                <small class="text-muted">Patient No. @log.PatientId</small>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Modal Footer with Save Button -->
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary">
-                            Save
-                        </button>
+                        <h6 class="text-center mb-3 text-teal fw-bold">
+                            TODAY - @DateTime.Now.ToString("MMMM dd, yyyy")
+                        </h6>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered text-center align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Medication</th>
+                                        <th>7–8 AM<br><small>Breakfast</small></th>
+                                        <th>12–1 PM<br><small>Lunch</small></th>
+                                        <th>5–6 PM<br><small>Dinner</small></th>
+                                        <th>8–9 PM<br><small>Bedtime</small></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < log.Medications.Count; i++)
+                                    {
+                                        var med = log.Medications[i];
+                                        <tr>
+                                            <td class="text-start">
+                                                <strong>@med.MedicineName</strong><br>
+                                                @med.UnitPerDoseDisplay<br>
+                                                <small class="text-muted">D/C Date: @(med.DiscontinueDate?.ToString("MM-dd-yy") ?? "Not Set")</small><br>
+                                                @if (!string.IsNullOrEmpty(med.Note))
+                                                {
+                                                    <small>@med.Note</small>
+                                                }
+                                                <input type="hidden" name="medications[@i].PatientId" value="@med.PatientId" />
+                                                <input type="hidden" name="medications[@i].MedicationOrderId" value="@med.MedicationOrderId" />
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" name="Medications[@i].BreakfastTaken" value="true"
+                                                @(med.Breakfast ? "" : "disabled")
+                                                @(med.BreakfastTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].BreakfastTaken" value="false" />
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" name="Medications[@i].LunchTaken" value="true"
+                                                @(med.Lunch ? "" : "disabled")
+                                                @(med.LunchTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].LunchTaken" value="false" />
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" name="Medications[@i].DinnerTaken" value="true"
+                                                @(med.Dinner ? "" : "disabled")
+                                                @(med.DinnerTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].DinnerTaken" value="false" />
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" name="Medications[@i].BedtimeTaken" value="true"
+                                                @(med.Bedtime ? "" : "disabled")
+                                                @(med.BedtimeTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].BedtimeTaken" value="false" />
+                                            </td>
+
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="d-flex gap-4 align-items-center">
+                                <div><i class="bx bx-square"></i> Not yet taken</div>
+                                <div><i class="bx bx-check-square text-success"></i> Taken</div>
+                                <div>
+                                    <input type="checkbox" disabled class="form-check-input" style="background-color: #e0e0e0; border-color: #ccc;">
+                                    <span class="text-muted">Not Scheduled</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">
+                                Save
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 }
 
 

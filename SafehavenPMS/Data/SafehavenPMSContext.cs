@@ -19,6 +19,7 @@ namespace SafehavenPMS.Data
         public DbSet<NewAppointment> NewAppointments { get; set; }
         public DbSet<MedicationOrder> MedicationOrders { get; set; }
         public DbSet<Admission> Admissions { get; set; }
+        public DbSet<AdministrationLog> AdministrationLogs { get; set; }
 
 
 
@@ -68,6 +69,21 @@ namespace SafehavenPMS.Data
                 .HasOne(mo => mo.Medicine)
                 .WithMany(m => m.MedicationOrders)
                 .HasForeignKey(mo => mo.MedicineId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // MedicationAdministration → Patient
+            modelBuilder.Entity<AdministrationLog>()
+                .HasOne(ma => ma.Patient)
+                .WithMany(p => p.AdministrationLogs) // Add a collection in Patient if not yet
+                .HasForeignKey(ma => ma.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // MedicationAdministration → Medicine
+            // AdministrationLog → Medicine
+            modelBuilder.Entity<AdministrationLog>()
+                .HasOne(ma => ma.Medication)
+                .WithMany(m => m.AdministrationLogs)
+                .HasForeignKey(ma => ma.MedicationOrderId)  // <-- Use the FK property
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ----------------------

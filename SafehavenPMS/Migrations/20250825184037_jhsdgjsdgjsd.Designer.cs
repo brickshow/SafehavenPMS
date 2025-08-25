@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250825184037_jhsdgjsdgjsd")]
+    partial class jhsdgjsdgjsd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,58 +24,6 @@ namespace SafehavenPMS.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("SafehavenPMS.Models.AdministrationLog", b =>
-                {
-                    b.Property<int>("AdministrationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdministrationId"));
-
-                    b.Property<DateTime>("AdministrationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("BedtimeTaken")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("BreakfastTaken")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("DinnerTaken")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("LunchTaken")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MedicationOrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MedicineId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RecordedBy")
-                        .HasColumnType("int");
-
-                    b.HasKey("AdministrationId");
-
-                    b.HasIndex("MedicationOrderId");
-
-                    b.HasIndex("MedicineId");
-
-                    b.HasIndex("PatientId");
-
-                    b.ToTable("AdministrationLogs");
-                });
 
             modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>
                 {
@@ -527,29 +478,6 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("Patients");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.AdministrationLog", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.MedicationOrder", "Medication")
-                        .WithMany("AdministrationLogs")
-                        .HasForeignKey("MedicationOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.Medicine", null)
-                        .WithMany("AdministrationLogs")
-                        .HasForeignKey("MedicineId");
-
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
-                        .WithMany("AdministrationLogs")
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Medication");
-
-                    b.Navigation("Patient");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.Patient", "Patient")
@@ -668,22 +596,13 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("NewAppointments");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.MedicationOrder", b =>
-                {
-                    b.Navigation("AdministrationLogs");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.Medicine", b =>
                 {
-                    b.Navigation("AdministrationLogs");
-
                     b.Navigation("MedicationOrders");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
                 {
-                    b.Navigation("AdministrationLogs");
-
                     b.Navigation("ClinicalStaffPatients");
 
                     b.Navigation("MedicationOrders");

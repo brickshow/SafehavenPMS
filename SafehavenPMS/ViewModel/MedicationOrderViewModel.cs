@@ -47,6 +47,12 @@ namespace SafehavenPMS.ViewModel
         public bool Dinner { get; set; } = true;
         public bool Bedtime { get; set; } = false;
 
+        // New: taken flags from AdministrationLogs
+        public bool BreakfastTaken { get; set; }
+        public bool LunchTaken { get; set; }
+        public bool DinnerTaken { get; set; }
+        public bool BedtimeTaken { get; set; }
+
         // Dates
         [Required(ErrorMessage = "Start date is required")]
         [DataType(DataType.Date)]
