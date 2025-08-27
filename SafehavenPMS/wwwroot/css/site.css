@@ -899,3 +899,86 @@ body {
     max-width: 480px;
     pointer-events: auto;
 }
+
+/* --- Sidebar submenu styles --- */
+.submenu {
+    list-style: none;
+    margin: 8px 0 0 48px;
+    padding: 0;
+    display: none;
+}
+
+.submenu li {
+    padding: 6px 0;
+}
+
+.submenu a {
+    color: #ffffff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.9;
+}
+
+.submenu a:hover {
+    opacity: 1;
+}
+
+/* Show submenu only when active (no hover reveal) */
+.sidebar:not(.close) .nav-links li.navigation.active .submenu {
+    display: block;
+}
+
+/* Collapsed sidebar: positioning retained, but no hover reveal */
+.sidebar.close .nav-links li.navigation {
+    position: relative;
+}
+
+.sidebar.close .nav-links li.navigation .submenu {
+    position: absolute;
+    top: 50%;
+    left: 78px;
+    transform: translateY(-50%);
+    background: #003036;
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    min-width: 180px;
+    display: none;
+    z-index: 1100;
+    margin: 0;
+}
+/* Optional: if you also want click-to-open while collapsed, JS toggles .active */
+.sidebar.close .nav-links li.navigation.active .submenu {
+    display: block;
+}
+
+/* Parent link row spacing and caret */
+.nav-links li.navigation > a.nav-parent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.nav-links li.navigation > a.nav-parent .caret {
+    margin-left: 8px;
+    font-size: 18px;
+    opacity: 0.7;
+    transition: transform 0.25s ease;
+}
+
+.nav-links li.navigation.active > a.nav-parent .caret {
+    transform: rotate(180deg);
+    opacity: 1;
+}
+
+/* Submenu item spacing and subtle divider */
+.submenu li + li {
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.submenu a {
+    padding: 6px 0;
+}

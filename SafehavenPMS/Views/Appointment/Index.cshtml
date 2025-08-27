@@ -83,33 +83,36 @@
                 <button type="button" class="btn-close" id="closeNotifications" aria-label="Close"></button>
             </div>
 
-            @if (Model != null && Model.Appointments.Any())
+            @if (Model != null && Model.WaitlistedPatients.Any())
             {
-                @foreach (var appointment in Model.PendingAppointments)
+                <div class="px-3 py-2 text-muted fst-italic">(@Model.WaitlistedPatients.Count) Patients</div>
+                @foreach (var patient in Model.WaitlistedPatients)
                 {
-                    <div class="notification-item card mb-3">
-                        <div class="card-body p-2">
-                            <div class="col-md-12 d-flex flex-row mb-3">
-                                <div class="d-flex col-md-8 flex-column">
-                                    <span><strong>Patient:</strong> @appointment.PatientName</span>
-                                    <span><strong>Doctor:</strong> @appointment.DoctorName</span>
-                                    <span><strong>Visit Type:</strong> @appointment.VisitType</span>
-                                    <span><strong>Visit Type:</strong> @appointment.TimeSlot</span>
-                                    <span><strong>Date :</strong> @appointment.AppointmentDate.ToString("MM/dd/yyyy")</span>
+                    <div class="card mb-3 border-0 m-2" style="box-shadow: 0 0 0 1px #d6e9ee inset;">
+                        <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:#e9f4f6;color:#6c757d;">
+                                    <i class="bx bxs-user" style="font-size:22px;"></i>
                                 </div>
-                                <div class="col-md-4 justify-content-end">
-                                    @if (appointment.Status == "Pending")
-                                    {
-                                        <div class="justify-content-end text-center" style="background-color:#F0EFBC; border-radius:6px">
-                                            @appointment.Status
-                                        </div>
-                                    }
-
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold">@patient.Firstname @patient.Lastname</span>
+                                    <small class="text-muted">Date Added: @patient.DateOfReferral.ToString("MM-dd-yy")</small>
                                 </div>
                             </div>
-                            <div class="d-flex gap-2">
-                                <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" type="button" class="btn-cancel flex-fill">Cancel</button>
-                                <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" type="button" class="btn-next flex-fill">Confirm</button>
+                            <div class="dropdown">
+                                <a href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 200px;">
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" 
+                                        href="@Url.Action("Profile","Patient", new { id = patient.PatientId })">View Profile</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                         href="@Url.Action("AddNewAppointment","Appointment", new { id = patient.PatientId })">Schedule Assessment</a>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -133,12 +136,10 @@
     @* Modal to confirm cancellation *@
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
+            <div class="modal-contentIndex   PatientProfileiv class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="deleteConfirmLabel">Confirm Deletion</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
+                </divScheduleAppointment<div class="modal-body">
                     Are you sure you want to Cancel this Appointment? This action cannot be undone.
                 </div>
                 <div class="modal-footer">
@@ -563,6 +564,19 @@
         // Optional: hide indicator when the notification panel opens
         var toggleBtn = document.getElementById('toggleNotifications');
         var waitlistedPanel = document.getElementById('waitlistedPanel');
+
+        toggleBtn.addEventListener('click', function() {
+            indicator.classList.add('d-none'); // Hide dot when opened
+        });
+    });
+
+</script>
+
+@* <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> *@
+@* <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> *@
+@* <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> *@
+
+@* <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script> *@
 
         toggleBtn.addEventListener('click', function() {
             indicator.classList.add('d-none'); // Hide dot when opened

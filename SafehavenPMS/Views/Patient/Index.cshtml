@@ -149,6 +149,7 @@
                     <th>Referred By</th>
                     <th>Phone Number</th>
                     <th>Date of Intake</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -171,7 +172,11 @@
                             <td>@patient.ReferredBy</td>
                             <td>@patient.PhoneNumber</td>
                             <td>@patient.CreatedAt.ToString("MMM dd, yyyy")</td>
-
+                            <td>
+                                <a href="@Url.Action("IntakeForm", "Patient", new { id = patient.PatientId })" class="btn btn-primary">
+                                    <i class='bx bx-edit'></i>
+                                </a>
+                            </td>
                         </tr>
                     }
                 }

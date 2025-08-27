@@ -122,19 +122,6 @@ namespace SafehavenPMS.Controllers
             });
         }
 
-        //[HttpGet]
-        //public IActionResult FilterStatus(string status)
-        //{
-        //    return RedirectToAction("Index", new
-        //    {
-        //        status,
-        //        page = 1,
-        //        pageSize = ViewBag.PageSize ?? 10,
-        //        searchQuery = ViewBag.SearchQuery,
-        //        sortOrder = ViewBag.SortOrder
-        //    });
-        //}
-
         [HttpGet]
         public IActionResult SortBy(string sortOrder)
         {
@@ -322,6 +309,11 @@ namespace SafehavenPMS.Controllers
         public IActionResult Edit(int Id)
         {
 
+            return View();
+        }
+
+        public IActionResult IntakeForm()
+        {
             return View();
         }
     }

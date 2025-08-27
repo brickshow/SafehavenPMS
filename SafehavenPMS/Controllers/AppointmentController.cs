@@ -33,6 +33,34 @@ namespace SafehavenPMS.Controllers
                 .Include(a => a.Patient)       // patient info
                 .Where(a => a.Status == Enum.AppointmentEnum.Pending.ToString()).ToListAsync();
 
+            // Fetch patients who are waitlisted
+            var waitlistedPatients = await _context.Patients
+                .Where(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString())
+                .Select(p => new AddNewPatientViewModel
+                {
+                    PatientId = p.PatientId,
+                    Firstname = p.Firstname,
+                    Lastname = p.Lastname,
+                    MiddleName = p.MiddleName,
+                    ContactNumber = p.PhoneNumber,
+                    Sex = p.Sex,
+                    MaritalStatus = p.MaritalStatus,
+                    DateOfBirth = p.DateOfBirth,
+                    DateOfReferral = p.DateOfReferral,
+                    ReferredBy = p.ReferredBy,
+                    ReferredByPhoneNumber = p.ReferredByPhoneNumber,
+                    PhotoUrl = p.PhotoUrl,
+                    PresentingComplaint = p.PresentingComplaint,
+                    // Address fields not in Patient model; set empty
+                    House_Unit = string.Empty,
+                    Street = string.Empty,
+                    Subdivision_Village = string.Empty,
+                    Barangay = string.Empty,
+                    City = string.Empty,
+                    Province = string.Empty,
+                })
+                .ToListAsync();
+
             var model = new AppointmentPageViewModel
             {
                 Appointments = appointments,
@@ -47,14 +75,15 @@ namespace SafehavenPMS.Controllers
                     TimeSlot = $"{DateTime.Today.Add(a.TimeSlot).ToString("h:mm tt")} to " +
                           $"{DateTime.Today.Add(a.TimeSlot).AddHours(1).ToString("h:mm tt")}",
                     Status = a.Status
-                }).ToList()
+                }).ToList(),
+                WaitlistedPatients = waitlistedPatients,
             };
 
             return View(model);
         }
 
 
-        public async Task<IActionResult> AddNewAppointment()
+        public async Task<IActionResult> AddNewAppointment(int? id)
         {
             var vm = new NewAppointmentViewModel();
 
@@ -66,10 +95,27 @@ namespace SafehavenPMS.Controllers
                 })
                 .ToListAsync();
 
+            // Pre-populate patient list with optional preselection
+            ViewBag.PatientList = await _context.Patients
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname,
+                    Selected = id.HasValue && p.PatientId == id.Value
+                })
+                .ToListAsync();
+
+            // If coming from waitlisted quick action, preselect that patient
+            if (id.HasValue && id > 0)
+            {
+                vm.PatientId = id.Value;
+            }
+
             ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+            ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
             ViewBag.SelectedDate = null;
 
-            return View(vm);   // ✅ return the model to the view
+            return View(vm);
         }
 
         [HttpPost]
@@ -85,6 +131,16 @@ namespace SafehavenPMS.Controllers
                         Text = $"{s.Firstname} {s.Lastname}"
                     }).ToListAsync();
 
+                // Preserve patient selection
+                ViewBag.PatientList = await _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.Firstname + " " + p.Lastname,
+                        Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                    })
+                    .ToListAsync();
+
                 return View("AddNewAppointment", model);
             }
 
@@ -99,14 +155,15 @@ namespace SafehavenPMS.Controllers
                     Text = $"{s.Firstname} {s.Lastname}"
                 }).ToListAsync();
 
-
+            // Preserve patient selection
             ViewBag.PatientList = await _context.Patients
-                                        .Select(p => new SelectListItem
-                                        {
-                                            Value = p.PatientId.ToString(),
-                                            Text = p.Firstname + " " + p.Lastname
-                                        })
-                                         .ToListAsync();
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname,
+                    Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                })
+                .ToListAsync();
 
             return View("AddNewAppointment", model);
         }
@@ -128,7 +185,19 @@ namespace SafehavenPMS.Controllers
             if (model.ClinicalStaffID == null || model.ClinicalStaffID <= 0 || model.SelectedDate == null)
             {
                 ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+                ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
                 ViewBag.SelectedDate = model.SelectedDate;
+                
+                // Preserve patient list even when no date is selected
+                ViewBag.PatientList = await _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.Firstname + " " + p.Lastname,
+                        Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                    })
+                    .ToListAsync();
+                
                 return View("AddNewAppointment", model);
             }
 
@@ -170,17 +239,25 @@ namespace SafehavenPMS.Controllers
                 Console.WriteLine(freeSlots);
             }
 
-            // Patient dropdown
+            // Patient dropdown - preserve selection
             ViewBag.PatientList = await _context.Patients
                 .Select(p => new SelectListItem
                 {
                     Value = p.PatientId.ToString(),
-                    Text = p.Firstname + " " + p.Lastname
+                    Text = p.Firstname + " " + p.Lastname,
+                    Selected = model.PatientId > 0 && p.PatientId == model.PatientId
                 })
                 .ToListAsync();
 
             ViewBag.AvailableTimes = freeSlots;
             ViewBag.SelectedDate = date.ToString("yyyy-MM-dd");
+
+            // Generate timeslot dropdown
+            ViewBag.TimeSlotList = freeSlots.Select(s => new SelectListItem
+            {
+                Value = s.StartTime.ToString(),
+                Text = $"{s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm}"
+            }).ToList();
 
             return View("AddNewAppointment", model);
         }

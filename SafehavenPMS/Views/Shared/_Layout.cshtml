@@ -56,10 +56,28 @@
             </li>
             <!-- Patient -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Patient" ? "active" : "")">
-                <a asp-controller="Patient" asp-action="Index">
+                <a href="#" class="nav-parent">
                     <i class='bx bxs-user-detail'></i>
                     <span class="link_name">Patients</span>
+                    <i class='bx bx-chevron-down caret'></i>
                 </a>
+                <ul class="submenu">
+                    <li>
+                        <a asp-controller="Patient" asp-action="Index">
+                            <span>Intake</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Patient" asp-action="Index">
+                            <span>Assessment</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Admission" asp-action="Index">
+                            <span>Admission</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admision" ? "active" : "")">
                 <a asp-controller="Admission" asp-action="Index">

@@ -22,7 +22,7 @@
 
     <div class="row align-items-start m-3">
 
-        <!-- ================= LEFT: Doctor & Calendar ================= -->
+        <!-- ================= LEFT: Doctor & Date ================= -->
         <div class="col-md-6 border-end">
 
             <!-- Step 1: Select doctor -->
@@ -35,15 +35,18 @@
                 </div>
             </form>
 
-            <!-- Step 2: Show calendar only if doctor is selected -->
+            <!-- Step 2: Date picker -->
             @if (Model.ClinicalStaffID > 0 || Model.ClinicalStaffID == null)
             {
                 <form asp-controller="Appointment" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
                     <input type="hidden" asp-for="ClinicalStaffID" />
                     <input type="hidden" name="SelectedDate" id="selectedDate" />
+                    <input type="hidden" name="PatientId" value="@Model.PatientId" />
 
-                    <span class="d-block mb-2 fw-bold">Select Date</span>
-                    <div id="datepicker"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Select Date</label>
+                        <div id="datepicker"></div>
+                    </div>
                 </form>
             }
         </div>
@@ -59,44 +62,45 @@
             <!-- Hidden Date -->
             <input type="hidden" asp-for="SelectedDate" id="SelectedDate" />
 
-            <!-- Timeslot -->
-            <div class="rounded border p-3">
-                <span class="fw-bold d-block mb-2">Timeslot</span>
-                @if (ViewBag.AvailableTimes is List<SafehavenPMS.Models.Availability> times && times.Any())
-                {
-                    <div class="row">
-                        @foreach (var slot in times)
-                        {
-                            <div class="col-6 mb-2">
-                                <label class="d-flex align-items-center">
-                                    <input type="radio" asp-for="TimeSlot" value="@slot.StartTime" required />
-                                    <span class="ms-2">
-                                        @slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")
-                                    </span>
-                                </label>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center">No Available Time</div>
-                }
+            <!-- Timeslot (Dropdown) -->
+            <div class="mb-3">
+                <label class="form-label">Timeslot</label>
+                <select asp-for="TimeSlot" asp-items="ViewBag.TimeSlotList" class="form-select" required>
+                    <option value="">--Select Timeslot--</option>
+                </select>
             </div>
 
             <!-- Patient Info -->
             <div class="mb-3">
-                <label asp-for="PatientId" class="form-label"></label>
-                <select asp-for="PatientId" asp-items="ViewBag.PatientList" class="form-select">
-                    <option value="">--Select Patient--</option>
-                </select>
+                <label asp-for="PatientId" class="form-label">Patient</label>
+                <div id="patientContainer">
+                    @if (Model.PatientId > 0)
+                    {
+                        <!-- Show patient name as read-only when auto-filled -->
+                        <div class="form-control-plaintext bg-light rounded p-2" id="patientDisplay">
+                            @{
+                                var selectedPatient = ViewBag.PatientList as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+                                var patientName = selectedPatient?.FirstOrDefault(p => p.Value == Model.PatientId.ToString())?.Text ?? "Unknown Patient";
+                            }
+                            <span id="patientName">@patientName</span>
+                        </div>
+                        <input type="hidden" asp-for="PatientId" id="patientIdInput" value="@Model.PatientId" />
+                    }
+                    else
+                    {
+                        <!-- Allow selection when not auto-filled -->
+                        <select asp-for="PatientId" asp-items="ViewBag.PatientList" class="form-select" id="patientSelect">
+                            <option value="">--Select Patient--</option>
+                        </select>
+                    }
+                </div>
             </div>
 
             <!-- Visit Type -->
             <div class="mb-3">
-                <label asp-for="VisitType" class="form-label"></label>
+                <label asp-for="VisitType" class="form-label">Visit Type</label>
                 <select asp-for="VisitType" class="form-select">
-                    <option>--Select--</option>
+                    <option value="">--Select Visit Type--</option>
                     <option value="Medical Assessment">Medical Assessment</option>
                     <option value="Emergency Visit">Emergency Visit</option>
                     <option value="Follow-Up Treatment">Follow-Up Treatment</option>
@@ -106,14 +110,14 @@
 
             <!-- Description -->
             <div class="mb-3">
-                <label asp-for="Description" class="form-label"></label>
-                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <label asp-for="Description" class="form-label">Description</label>
+                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter appointment description..."></textarea>
             </div>
 
             <!-- Footer -->
             <div class="modal-footer bg-white border-top">
                 <a href="@Url.Action("Index", "Appointment")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
-                <button type="submit" class="btn-custom btn-next m-2">Next</button>
+                <button type="submit" class="btn-custom btn-next m-2">Save</button>
             </div>
         </form>
 
@@ -136,51 +140,179 @@
         color: white;
     }
 
-        .flatpickr-day.selected:hover {
-            background: #0056b3;
-            border-color: #0056b3;
-        }
+    .flatpickr-day.selected:hover {
+        background: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .flatpickr-calendar {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid #e0e0e0;
+    }
+
+    .flatpickr-day:hover {
+        background: #f8f9fa;
+    }
+
+    .flatpickr-day.today {
+        border-color: #00A3B4;
+        color: #00A3B4;
+    }
+
+    .flatpickr-day.today:hover {
+        background: #00A3B4;
+        color: white;
+    }
+
+    .form-control-plaintext {
+        border: 1px solid #ced4da;
+        background-color: #f8f9fa !important;
+    }
 </style>
 
 @* ===== Calendar Script ===== *@
 <script>
-    flatpickr("#datepicker", {
-        inline: true,
+    // Initialize datepicker
+    const datepicker = flatpickr("#datepicker", {
         dateFormat: "Y-m-d",
         defaultDate: localStorage.getItem("selectedDate") || new Date(),
         minDate: "today",
+        disable: [
+            function(date) {
+                // Disable today's date
+                const today = new Date();
+                return date.getDate() === today.getDate() && 
+                       date.getMonth() === today.getMonth() && 
+                       date.getFullYear() === today.getFullYear();
+            }
+        ],
+        inline: true,
+        clickOpens: false,
         onChange: function (selectedDates, dateStr) {
             // save selected date
             localStorage.setItem("selectedDate", dateStr);
 
             // assign to hidden input
             document.getElementById("selectedDate").value = dateStr;
+            document.getElementById("SelectedDate").value = dateStr;
 
             // submit only the calendar form
             document.getElementById("dateForm").submit();
         }
     });
 
-    // ensure stored date is restored on reload
-    document.addEventListener("DOMContentLoaded", function () {
+    // Patient persistence functionality
+    function savePatientToStorage(patientId, patientName) {
+        if (patientId && patientName) {
+            localStorage.setItem("selectedPatientId", patientId);
+            localStorage.setItem("selectedPatientName", patientName);
+        }
+    }
+
+    function loadPatientFromStorage() {
+        const patientId = localStorage.getItem("selectedPatientId");
+        const patientName = localStorage.getItem("selectedPatientName");
+        
+        if (patientId && patientName) {
+            showPatientAsReadOnly(patientId, patientName);
+        }
+    }
+
+    function showPatientAsReadOnly(patientId, patientName) {
+        const patientContainer = document.getElementById("patientContainer");
+        
+        if (patientContainer) {
+            // Create the read-only display
+            const displayHtml = `
+                <div class="form-control-plaintext bg-light rounded p-2" id="patientDisplay">
+                    <i class="bx bxs-user me-2"></i><span id="patientName">${patientName}</span>
+                </div>
+                <input type="hidden" name="PatientId" id="patientIdInput" value="${patientId}" />
+            `;
+            
+            patientContainer.innerHTML = displayHtml;
+        }
+    }
+
+    function clearPatientStorage() {
+        localStorage.removeItem("selectedPatientId");
+        localStorage.removeItem("selectedPatientName");
+    }
+
+    // Handle patient selection changes
+    document.addEventListener('DOMContentLoaded', function () {
+        const patientSelect = document.getElementById("patientSelect");
+        
+        // If we have a patient select dropdown, add event listener
+        if (patientSelect) {
+            patientSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (this.value) {
+                    savePatientToStorage(this.value, selectedOption.text);
+                    showPatientAsReadOnly(this.value, selectedOption.text);
+                } else {
+                    clearPatientStorage();
+                }
+            });
+        }
+
+        // Check if we have server-side patient data first
+        const serverPatientId = @(Model.PatientId > 0 ? Model.PatientId : 0);
+        const serverPatientName = '@(Model.PatientId > 0 ? (ViewBag.PatientList as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)?.FirstOrDefault(p => p.Value == Model.PatientId.ToString())?.Text ?? "Unknown Patient" : "")';
+        
+        if (serverPatientId > 0 && serverPatientName) {
+            // Server has patient data, save it to localStorage and ensure it's displayed
+            savePatientToStorage(serverPatientId.toString(), serverPatientName);
+            showPatientAsReadOnly(serverPatientId.toString(), serverPatientName);
+        } else {
+            // No server data, try to load from localStorage
+            loadPatientFromStorage();
+        }
+
+        // Load stored date
         const storedDate = localStorage.getItem("selectedDate");
         if (storedDate) {
-            document.getElementById("selectedDate").value = storedDate;
+            const selectedDateInput = document.getElementById("selectedDate");
+            const SelectedDateInput = document.getElementById("SelectedDate");
+            if (selectedDateInput) selectedDateInput.value = storedDate;
+            if (SelectedDateInput) SelectedDateInput.value = storedDate;
         }
     });
 
-    //Saving staff id to Calendar
-    document.getElementById("doctorSelect").addEventListener("change", function() {
-        const seletedStaffID = this.value; //Get the value of the passed ID
-
-        //assigned data to hidden input
-        document.getElementById("sendIdToCalendar").value = seletedStaffID;
-
-        // If the user already picked a date, submit to refresh available slots
-         const storedDate = localStorage.getItem("select  edDate");
-            if (selectedStaffId && storedDate) {
-                document.getElementById("selectedDate").value = storedDate;
-                document.getElementById("dateForm").submit();
+    // Also run patient persistence check when page is fully loaded
+    window.addEventListener('load', function() {
+        // Double-check if we need to restore patient from localStorage
+        const patientDisplay = document.getElementById("patientDisplay");
+        const patientSelect = document.getElementById("patientSelect");
+        
+        // If no patient is currently displayed but we have localStorage data
+        if (!patientDisplay && patientSelect) {
+            const storedPatientId = localStorage.getItem("selectedPatientId");
+            const storedPatientName = localStorage.getItem("selectedPatientName");
+            
+            if (storedPatientId && storedPatientName) {
+                // Find the option in the dropdown and select it
+                for (let i = 0; i < patientSelect.options.length; i++) {
+                    if (patientSelect.options[i].value === storedPatientId) {
+                        patientSelect.value = storedPatientId;
+                        showPatientAsReadOnly(storedPatientId, storedPatientName);
+                        break;
+                    }
+                }
             }
+        }
     });
+
+    // Clear storage when form is submitted successfully
+    const appointmentForm = document.querySelector('form[asp-action="AddNewAppointment"]');
+    if (appointmentForm) {
+        appointmentForm.addEventListener('submit', function() {
+            // Clear patient storage after successful submission
+            setTimeout(() => {
+                clearPatientStorage();
+                localStorage.removeItem("selectedDate");
+            }, 1000);
+        });
+    }
 </script>
