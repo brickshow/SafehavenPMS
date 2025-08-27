@@ -4,7 +4,6 @@
     {
         NotStarted,
         Active,
-        Discontinued,
-        Completed
+        Discontinued
     }
 }

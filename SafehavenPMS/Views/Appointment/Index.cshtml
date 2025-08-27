@@ -17,32 +17,228 @@
             + New Appointment
         </a>
     </div>
-    @* Tabs *@
-    @* <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar"
-                    type="button" role="tab" aria-controls="calendar" aria-selected="true">
-                Calendar
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="availability-tab" data-bs-toggle="tab" data-bs-target="#availability"
-                    type="button" role="tab" aria-controls="availability" aria-selected="false">
-                Availability
-            </button>
-        </li>
-    </ul> *@
 
+    <div class="d-flex position-relative mt-3">
 
-    @* Tab Content *@
-    <div class="tab-content" id="staffTabContent">
-        <div class="tab-pane fade show active" id="calendar" role="tabpanel" aria-labelledby="calendar-tab">
-            @await Html.PartialAsync("_Calendar", Model.PendingAppointments)
+        <div class="bg-white w-25">
+            @* List of Doctors *@
+            <div class="doctor-container p-4">
+                <div class="title" style="color:#015F6B"><strong>Doctors</strong></div>
+
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="all">
+                    <label class="form-check-label" for="all">
+                        All
+                    </label>
+                </div>
+
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="alnajar">
+                    <label class="form-check-label" for="alnajar">
+                        Dr. Alnajar
+                    </label>
+                </div>
+            </div>
+
+            @* Total of each doctor *@
+            <div class="total p-4">
+                <div style="display: flex; justify-content: space-between; color: #015F6B;">
+                    <span><strong>Assigned Patients</strong></span>
+                    <span>23</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #015F6B;">
+                    <span><strong>Appointments</strong></span>
+                    <span>23</span>
+                </div>
+            </div>
+
+            @* Todays Appointment *@
+            <div class="todays-apppointment p-4">
+                <div class="title" style="color:#015F6B"><strong>Today's Appointment</strong></div>
+                <div style="margin-bottom: 5px;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #d3d3d3; border-radius: 50%; margin-right: 10px;"></span>
+                    <span>Sha Sha Ramos</span>
+                    <span style="float: right;">></span>
+                </div>
+                <div style="margin-bottom: 5px;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #d3d3d3; border-radius: 50%; margin-right: 10px;"></span>
+                    <span>Sha Sha Ramos</span>
+                    <span style="float: right;">></span>
+                </div>
+                <div>
+                    <span style="display: inline-block; width: 20px; height: 20px; background: #d3d3d3; border-radius: 50%; margin-right: 10px;"></span>
+                    <span>Sha Sha Ramos</span>
+                    <span style="float: right;">></span>
+                </div>
+            </div>
         </div>
 
-        @* <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab">
-            @await Html.PartialAsync("_Availability")
-        </div> *@
+        <!-- Calendar container -->
+        <div id="appointmentCalendar" class="calendar-container flex-grow-1"></div>
+
+        @* Waitlisted panel *@
+        <div id="waitlistedPanel" class="notification-panel rounded bg-white">
+            <div class="d-flex flex-row justify-content-between p-3" style="background: linear-gradient(to right, #069FB2, #058594);">
+                <h5 class="fw-bold">Waitlisted</h5>
+                <button type="button" class="btn-close" id="closeNotifications" aria-label="Close"></button>
+            </div>
+
+            @if (Model != null && Model.Appointments.Any())
+            {
+                @foreach (var appointment in Model.PendingAppointments)
+                {
+                    <div class="notification-item card mb-3">
+                        <div class="card-body p-2">
+                            <div class="col-md-12 d-flex flex-row mb-3">
+                                <div class="d-flex col-md-8 flex-column">
+                                    <span><strong>Patient:</strong> @appointment.PatientName</span>
+                                    <span><strong>Doctor:</strong> @appointment.DoctorName</span>
+                                    <span><strong>Visit Type:</strong> @appointment.VisitType</span>
+                                    <span><strong>Visit Type:</strong> @appointment.TimeSlot</span>
+                                    <span><strong>Date :</strong> @appointment.AppointmentDate.ToString("MM/dd/yyyy")</span>
+                                </div>
+                                <div class="col-md-4 justify-content-end">
+                                    @if (appointment.Status == "Pending")
+                                    {
+                                        <div class="justify-content-end text-center" style="background-color:#F0EFBC; border-radius:6px">
+                                            @appointment.Status
+                                        </div>
+                                    }
+
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal" type="button" class="btn-cancel flex-fill">Cancel</button>
+                                <button data-id="@appointment.AppointmentId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" type="button" class="btn-next flex-fill">Confirm</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center">No waitlisted</div>
+            }
+
+        </div>
+
+        <!-- Toggle button -->
+        <button id="toggleNotifications" class="btn-custom btn-primary"
+                data-bs-toggle="tooltip" data-bs-placement="left" title="Show Notifications">
+            &lt;
+            <span id="newAppointmentIndicator" class="position-absolute top-0 start-0 translate-middle p-1 bg-danger border border-light rounded-circle d-none"></span>
+        </button>
+    </div>
+
+    @* Modal to confirm cancellation *@
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteConfirmLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to Cancel this Appointment? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <form asp-action="Cancel" asp-controller="Appointment" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="dayIdToDelete" name="id" />
+                        <button type="button" class="btn-cancel btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-next btn-danger">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Modal to confirm Appointment *@
+    <div class="modal fade" id="ConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594);">
+                    <h5 class="modal-title" id="deleteConfirmLabel">Confirm Appointment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Do you want to confirm this appointment?
+                </div>
+                <div class="modal-footer">
+                    <form asp-action="Confirm" asp-controller="Appointment" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="dayIdToDelete" name="id" />
+                        <button type="button" class="btn-cancel btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-next btn-danger">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    @* Appointment Details Modal *@
+    <div class="modal fade" id="appointmentDetailModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header text-white d-flex justify-content-between" style="background: linear-gradient(to right, #069FB2, #058594);">
+                    <h5 class="modal-title">Appointment Details</h5>
+                    <div class="dropdown" data-bs-display="static">
+                        <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                            <li class="px-2 text-muted fw-semibold small">Options</li>
+                            @* Add condition that if current session log is Admin show all *@
+
+                            @* Mark as Completed Form *@
+                            <li>
+                                <form asp-action="Completed" asp-controller="Appointment" method="post" class="d-inline">
+                                    <input type="hidden" name="id" id="ApointmentId" />
+                                    <input type="hidden" name="patientId" id="patientId" />
+                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
+                                        Mark as Completed
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Open Assessment Form</a>
+                            </li>
+                            <li>
+                                <a id="rescheduleLink" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                   href="#">
+                                    Reschedule Appointment
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Cancel Appointment</a>
+                            </li>
+
+                            @* <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Create New Appointment</a>
+                            </li>
+                         *@
+
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        <strong>Status:</strong>
+                        <span class="justify-content-end text-center p-2" style="background-color:#BDDBF4; border-radius:6px" id="detailStatus"></span>
+                    </p>
+                    <p><strong>Patient        :</strong> <span id="detailPatient"></span></p>
+                    <p><strong>Doctor         :</strong> <span id="detailDoctor"></span></p>
+                    <p><strong>Visit Type     :</strong> <span id="detailVisitType"></span></p>
+                    <p><strong>Scheduled Date :</strong> <span id="detailDate"></span></p>
+                    <p><strong>Scheduled Time :</strong> <span id="detailTime"></span></p>
+                    <p><strong>Description :</strong> <span id="detailDescription"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -50,6 +246,28 @@
 
 
 <style>
+    .doctor-container {
+        border: 1px solid #BFBFBF;
+        margin: 20px;
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+
+    .total {
+        border: 1px solid #BFBFBF;
+        margin: 20px;
+        margin-right: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .todays-apppointment{
+        border: 1px solid #BFBFBF;
+        margin: 20px;
+        margin-right: 0;
+        margin-top: 0;
+    }
+
     .nav-tabs .nav-link {
         color: #767676;
         background-color: transparent;
@@ -64,10 +282,297 @@
             border-bottom: 3px solid #00A3B4;
             font-weight: bold;
         }
+
+    /* Calendar container */
+    .calendar-container {
+        width: 100%;
+        transition: width 0.4s ease;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    /* Notification panel */
+    .notification-panel {
+        width: 30%;
+        max-width: 500px;
+        position: fixed;
+        top: 50px; /* adjust as needed */
+        right: -100%; /* start hidden off-screen */
+        height: calc(100% - 60px);
+        overflow-y: auto;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        border-radius: 8px 0 0 8px;
+        transition: right 0.4s ease;
+        z-index: 1050;
+    }
+
+        /* Slide-in state */
+        .notification-panel.show {
+            right: 0;
+        }
+
+    /* Toggle button */
+    #toggleNotifications {
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        z-index: 1060;
+        border-radius: 50% 0 0 50%;
+        width: 30px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: right 0.4s ease;
+    }
+
+        /* When panel is visible, move button off-screen */
+        #toggleNotifications.hide {
+            right: -30px;
+        }
+
+    /* Toggle button styling */
+    .toggle-btn {
+        position: absolute;
+        right: 0;
+        top: 20px;
+        z-index: 20;
+        border-radius: 50% 0 0 50%;
+        width: 30px;
+        height: 60px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #waitlistedPanel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #waitlistedPanel::-webkit-scrollbar-thumb {
+        background-color: #b3dfe5;
+        border-radius: 4px;
+    }
+
+    #appointmentCalendar {
+        max-width: 100%;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    /* Header styling */
+    .fc .fc-toolbar.fc-header-toolbar {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
+    .fc .fc-toolbar-title {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .fc .fc-daygrid-day-number {
+        color: #015F6B;
+        font-weight: 600;
+    }
+
+    .fc .fc-scrollgrid,
+    .fc .fc-scrollgrid td,
+    .fc .fc-daygrid-day {
+        border-color: #b3dfe5;
+    }
+
+    .fc .fc-daygrid-day-frame {
+        background-color: #f8fcfc;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        color: #015F6B;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    // Wait until the DOM is fully loaded before running the script
+    document.addEventListener('DOMContentLoaded', function () {
+        // Get the calendar container element by its ID
+        var calendarEl = document.getElementById('appointmentCalendar');
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+        // Initialize the FullCalendar instance
+          var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+
+        // Load events from backend
+        events: function(fetchInfo, successCallback, failureCallback) {
+            fetch('/Appointment/GetAppointments')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Fetched events:", data);
+                    successCallback(data);
+                })
+                .catch(error => {
+                    console.error("Error fetching events:", error);
+                    failureCallback(error);
+                });
+        },
+
+                eventClick: function (info) {
+               info.jsEvent.preventDefault();
+
+               document.getElementById("ApointmentId").value = info.event.id;
+               document.getElementById("patientId").value = info.event.extendedProps.patientId;
+               document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
+               document.getElementById("detailTime").innerText = info.event.extendedProps.time;
+               document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString("en-us", {
+                   month: "long", day: "numeric", year: "numeric"
+               });
+               document.getElementById("detailStatus").innerText = info.event.extendedProps.status;
+               document.getElementById("detailPatient").innerText = info.event.extendedProps.patientName;
+               document.getElementById("detailDoctor").innerText = info.event.extendedProps.doctorName;
+               document.getElementById("detailDescription").innerText = info.event.extendedProps.description;
+
+               const rescheduleLink = document.getElementById('rescheduleLink');
+               rescheduleLink.href = `/Appointment/ScheduleAppointment?id=${info.event.extendedProps.patientId}`;
+
+               var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
+               appointmentDetailModal.show();
+           },
+
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+
+        selectable: false,
+
+        // Customize event display
+        eventContent: function(info) {
+            let visitType = info.event.extendedProps.visitType;
+            let patient = info.event.extendedProps.patientName;
+            let doctor = info.event.extendedProps.doctorName;
+            let status = info.event.extendedProps.status;
+            let time = info.event.extendedProps.time;
+
+            // Set color based on status
+            let bgColor = "rgba(200, 200, 200, 0.5)";
+            if (status === "Confirmed") bgColor = "#BDDBF4";
+            if (status === "Completed") bgColor = "#AEEBAB";
+
+            return {
+                html: `
+                    <div class="text-center" style="
+                        background-color: ${bgColor};
+                        width: 100%;
+                        box-sizing: border-box;
+                        border-radius: 6px;
+                        white-space: normal;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        padding: 2px;
+                    ">
+                        <strong>${visitType}</strong><br/>
+                        <small>Doctor: ${doctor}</small><br/>
+                        <small>Patient: ${patient}</small><br/>
+                        <small>${time}</small><br/>
+                    </div>
+                `
+            };
+        },
+
+        dayCellDidMount: function(info) {
+            const today = new Date();
+            const cellDate = info.date;
+
+            if (
+                cellDate.getFullYear() === today.getFullYear() &&
+                cellDate.getMonth() === today.getMonth() &&
+                cellDate.getDate() === today.getDate()
+            ) {
+                info.el.style.backgroundColor = '#fff4e5';
+                info.el.style.border = '2px solid #00A3B4';
+                info.el.style.borderRadius = '8px';
+            }
+        }
+    });
+
+    // Render the calendar
+    calendar.render();
+
+
+        // Render the calendar inside the container
+        calendar.render();
+    });
+
+
+     var toggleBtn = document.getElementById('toggleNotifications');
+    var waitlistedPanel = document.getElementById('waitlistedPanel');
+    var closeBtn = document.getElementById('closeNotifications');
+    var calendar = document.getElementById('appointmentCalendar');
+
+    toggleBtn.addEventListener('click', function() {
+        toggleBtn.classList.add('hide');          // Move button off-screen
+        waitlistedPanel.classList.add('show'); // Slide panel in
+        calendar.style.width = "70%";             // Shrink calendar
+    });
+
+    closeBtn.addEventListener('click', function() {
+        toggleBtn.classList.remove('hide');      // Show toggle button
+        waitlistedPanel.classList.remove('show'); // Slide panel out
+        calendar.style.width = "100%";           // Expand calendar
+    });
+
+     // For Cancel modal
+    const cancelModal = document.getElementById('deleteConfirmModal');
+    cancelModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget; // Button that triggered the modal
+        const id = button.getAttribute('data-id'); // Extract info from data-id
+        cancelModal.querySelector('#dayIdToDelete').value = id;
+    });
+
+    // For Confirm modal
+    const confirmModal = document.getElementById('ConfirmModal');
+    confirmModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const id = button.getAttribute('data-id');
+        confirmModal.querySelector('#dayIdToDelete').value = id;
+    });
+
+        document.addEventListener('DOMContentLoaded', function () {
+        var indicator = document.getElementById('newAppointmentIndicator');
+
+        // Check if there are new appointments
+        var newAppointmentsCount = @Model?.Appointments.Count(a => a.Status == "Pending") ?? 0;
+
+        if (newAppointmentsCount > 0) {
+            indicator.classList.remove('d-none'); // Show red dot
+        }
+
+        // Optional: hide indicator when the notification panel opens
+        var toggleBtn = document.getElementById('toggleNotifications');
+        var waitlistedPanel = document.getElementById('waitlistedPanel');
+
+        toggleBtn.addEventListener('click', function() {
+            indicator.classList.add('d-none'); // Hide dot when opened
+        });
+    });
+
+</script>
+
+@* <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> *@
+@* <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> *@
+@* <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> *@
+
+@* <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script> *@

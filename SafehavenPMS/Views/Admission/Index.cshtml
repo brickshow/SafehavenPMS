@@ -128,6 +128,7 @@
                     <th>No.</th>
                     <th>Case ID</th>
                     <th>Patient Name</th>
+                    <th>Assigned Clinical Staff</th>
                     <th>Date Of Admission</th>
                     <th>Admitted By</th>
                     <th>End Date</th>
@@ -152,6 +153,7 @@
                             <td>@rowNum</td>
                             <td>CASE-@admission.PatientId-@rowNum</td> @* Example Case ID *@
                             <td><strong>@admission.FullName</strong></td>
+                            <td>-</td>
                             <td>@admission.AdmissionDate.ToString("yyyy-MM-dd")</td>
                             <td>--Soon--</td>
                             <td>

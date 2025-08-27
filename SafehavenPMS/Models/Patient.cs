@@ -20,6 +20,8 @@
         public string ReferredBy { get; set; }
         public string? Affiliation { get; set; }
         public string PhotoUrl { get; set; }
+        public string ReferredByPhoneNumber { get; set; }
+        public string PresentingComplaint { get; set; }
         public DateTime CreatedAt { get; set; }
 
 

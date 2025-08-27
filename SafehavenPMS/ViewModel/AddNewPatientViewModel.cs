@@ -55,5 +55,8 @@ namespace SafehavenPMS.ViewModel
         [Required(ErrorMessage = "Province is required")]
         public string Province { get; set; }
 
+        [Phone(ErrorMessage = "Invalid phone number format")]
+        public string ReferredByPhoneNumber { get; set; }
+        public string? PresentingComplaint { get; set; }
     }
 }

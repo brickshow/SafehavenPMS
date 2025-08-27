@@ -311,7 +311,7 @@ namespace SafehavenPMS.Controllers
         {
             var medicines = await _context.Medicines.ToListAsync();
             var patients = await _context.Patients
-                                 .Where(s => s.PatientStatus == Enum.PatientStatusEnum.Active.ToString())
+                                 .Where(s => s.PatientStatus == Enum.PatientStatusEnum.Admitted.ToString())
                                  .ToListAsync();
 
             // Build SelectList for ViewBag
@@ -327,7 +327,8 @@ namespace SafehavenPMS.Controllers
 
             // Build SelectList for medicines in the format: Generic Name (Brand Name) - Form Strength Unit
             ViewBag.MedicineList = new SelectList(
-                medicines.Select(m => new {
+                medicines.Where(a => a.Status == Enum.MedicineStatus.Active.ToString())
+                .Select(m => new {
                     MedicineId = m.MedicineId,
                     DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
                 }),
@@ -369,7 +370,9 @@ namespace SafehavenPMS.Controllers
 
                     // Build SelectList for medicines in the format: Generic Name (Brand Name) - Form Strength Unit
                     ViewBag.MedicineList = new SelectList(
-                                            _context.Medicines.Select(m => new {
+                                            _context.Medicines
+                                            .Where(a => a.Status == Enum.MedicineStatus.Active.ToString())
+                                            .Select(m => new {
                                                 MedicineId = m.MedicineId,
                                                 DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
                                             }),
@@ -451,7 +454,7 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("Index");
             }
 
-            medOrder.Status = MedicationOrderStatus.Completed.ToString();
+            medOrder.Status = MedicationOrderStatus.Discontinued.ToString();
 
             try
             {
@@ -520,7 +523,8 @@ namespace SafehavenPMS.Controllers
             );
 
             ViewBag.MedicineList = new SelectList(
-                _context.Medicines.Select(m => new
+                _context.Medicines
+                .Where(a => a.Status == Enum.MedicineStatus.Active.ToString()).Select(m => new
                 {
                     MedicineId = m.MedicineId,
                     DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
@@ -579,7 +583,7 @@ namespace SafehavenPMS.Controllers
                     );
 
                     ViewBag.MedicineList = new SelectList(
-                        _context.Medicines.Select(m => new
+                        _context.Medicines.Where(a => a.Status == Enum.MedicineStatus.Active.ToString()).Select(m => new
                         {
                             MedicineId = m.MedicineId,
                             DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"

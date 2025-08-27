@@ -185,7 +185,7 @@ namespace SafehavenPMS.Controllers
 
 
             //Update patient Status into active
-            patient.PatientStatus = PatientStatusEnum.Active.ToString();
+            patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
 
             // 3. Save to database
             _context.Patients.Update(patient);

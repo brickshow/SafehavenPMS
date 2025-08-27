@@ -13,19 +13,21 @@
     </div>
 
     <div class="d-flex flex-row align-items-center justify-content-between gap-3 w-100 mt-3">
-        <div>
+        <div class="d-flex flex-row">
             <input type="date" class="form-control me-2">
+            <button class="btn-sm btn-cancel">Today</button>
+
         </div>
         <div class="d-flex">
             <div class="d-flex flex-row">
-                <input type="text" class="form-control me-2" placeholder="Search medicine...">
+                <input type="text" class="form-control me-2" placeholder="Search Patient...">
                 <button class="btn-custom btn-sm btn-primary">Search</button>
             </div>
             <div class="d-flex flex-row">
                 <select class="form-select ms-2" style="width: 50%;">
                     <option>Status</option>
-                    <option>Active</option>
-                    <option>Inactive</option>
+                    <option>Pending</option>
+                    <option>Taken</option>
                 </select>
                 <button class="btn-custom btn-sm ms-2" style="background-color: #26a69a; color: white; border: none; border-radius: 6px;">Sort by</button>
             </div>
