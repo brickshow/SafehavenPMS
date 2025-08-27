@@ -111,6 +111,8 @@ namespace SafehavenPMS.Controllers
                 vm.PatientId = id.Value;
             }
 
+            //Pass the ID
+            ViewBag.PatientId = id;
             ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
             ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
             ViewBag.SelectedDate = null;

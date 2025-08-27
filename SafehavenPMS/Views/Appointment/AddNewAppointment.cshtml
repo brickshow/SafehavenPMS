@@ -70,31 +70,33 @@
                 </select>
             </div>
 
-            <!-- Patient Info -->
-            <div class="mb-3">
-                <label asp-for="PatientId" class="form-label">Patient</label>
-                <div id="patientContainer">
-                    @if (Model.PatientId > 0)
-                    {
-                        <!-- Show patient name as read-only when auto-filled -->
-                        <div class="form-control-plaintext bg-light rounded p-2" id="patientDisplay">
-                            @{
-                                var selectedPatient = ViewBag.PatientList as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
-                                var patientName = selectedPatient?.FirstOrDefault(p => p.Value == Model.PatientId.ToString())?.Text ?? "Unknown Patient";
-                            }
-                            <span id="patientName">@patientName</span>
-                        </div>
-                        <input type="hidden" asp-for="PatientId" id="patientIdInput" value="@Model.PatientId" />
-                    }
-                    else
-                    {
-                        <!-- Allow selection when not auto-filled -->
-                        <select asp-for="PatientId" asp-items="ViewBag.PatientList" class="form-select" id="patientSelect">
-                            <option value="">--Select Patient--</option>
-                        </select>
-                    }
+         <!-- Patient Info -->
+                <div class="mb-3">
+                    <label asp-for="PatientId" class="form-label">Patient</label>
+                    <div id="patientContainer">
+                        @if (ViewBag.PatientId != null && ViewBag.PatientId > 0)
+                        {
+
+                            var patients = ViewBag.PatientList as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+                            var patientName = patients?
+                            .FirstOrDefault(p => p.Value == Model.PatientId.ToString())?.Text
+                            ?? "Unknown Patient";
+
+                            <div class="form-control-plaintext bg-light rounded p-2" id="patientDisplay">
+                                @patientName
+                            </div>
+                            <input type="hidden" asp-for="PatientId" id="patientIdInput" value="@Model.PatientId" />
+                        }
+                        else
+                        {
+                            <!-- Allow selection when not auto-filled -->
+                            <select asp-for="PatientId" asp-items="ViewBag.PatientList" class="form-select" id="patientSelect">
+                                <option value="">--Select Patient--</option>
+                            </select>
+                        }
+                    </div>
                 </div>
-            </div>
+
 
             <!-- Visit Type -->
             <div class="mb-3">
@@ -201,118 +203,4 @@
             document.getElementById("dateForm").submit();
         }
     });
-
-    // Patient persistence functionality
-    function savePatientToStorage(patientId, patientName) {
-        if (patientId && patientName) {
-            localStorage.setItem("selectedPatientId", patientId);
-            localStorage.setItem("selectedPatientName", patientName);
-        }
-    }
-
-    function loadPatientFromStorage() {
-        const patientId = localStorage.getItem("selectedPatientId");
-        const patientName = localStorage.getItem("selectedPatientName");
-        
-        if (patientId && patientName) {
-            showPatientAsReadOnly(patientId, patientName);
-        }
-    }
-
-    function showPatientAsReadOnly(patientId, patientName) {
-        const patientContainer = document.getElementById("patientContainer");
-        
-        if (patientContainer) {
-            // Create the read-only display
-            const displayHtml = `
-                <div class="form-control-plaintext bg-light rounded p-2" id="patientDisplay">
-                    <i class="bx bxs-user me-2"></i><span id="patientName">${patientName}</span>
-                </div>
-                <input type="hidden" name="PatientId" id="patientIdInput" value="${patientId}" />
-            `;
-            
-            patientContainer.innerHTML = displayHtml;
-        }
-    }
-
-    function clearPatientStorage() {
-        localStorage.removeItem("selectedPatientId");
-        localStorage.removeItem("selectedPatientName");
-    }
-
-    // Handle patient selection changes
-    document.addEventListener('DOMContentLoaded', function () {
-        const patientSelect = document.getElementById("patientSelect");
-        
-        // If we have a patient select dropdown, add event listener
-        if (patientSelect) {
-            patientSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                if (this.value) {
-                    savePatientToStorage(this.value, selectedOption.text);
-                    showPatientAsReadOnly(this.value, selectedOption.text);
-                } else {
-                    clearPatientStorage();
-                }
-            });
-        }
-
-        // Check if we have server-side patient data first
-        const serverPatientId = @(Model.PatientId > 0 ? Model.PatientId : 0);
-        const serverPatientName = '@(Model.PatientId > 0 ? (ViewBag.PatientList as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)?.FirstOrDefault(p => p.Value == Model.PatientId.ToString())?.Text ?? "Unknown Patient" : "")';
-        
-        if (serverPatientId > 0 && serverPatientName) {
-            // Server has patient data, save it to localStorage and ensure it's displayed
-            savePatientToStorage(serverPatientId.toString(), serverPatientName);
-            showPatientAsReadOnly(serverPatientId.toString(), serverPatientName);
-        } else {
-            // No server data, try to load from localStorage
-            loadPatientFromStorage();
-        }
-
-        // Load stored date
-        const storedDate = localStorage.getItem("selectedDate");
-        if (storedDate) {
-            const selectedDateInput = document.getElementById("selectedDate");
-            const SelectedDateInput = document.getElementById("SelectedDate");
-            if (selectedDateInput) selectedDateInput.value = storedDate;
-            if (SelectedDateInput) SelectedDateInput.value = storedDate;
-        }
-    });
-
-    // Also run patient persistence check when page is fully loaded
-    window.addEventListener('load', function() {
-        // Double-check if we need to restore patient from localStorage
-        const patientDisplay = document.getElementById("patientDisplay");
-        const patientSelect = document.getElementById("patientSelect");
-        
-        // If no patient is currently displayed but we have localStorage data
-        if (!patientDisplay && patientSelect) {
-            const storedPatientId = localStorage.getItem("selectedPatientId");
-            const storedPatientName = localStorage.getItem("selectedPatientName");
-            
-            if (storedPatientId && storedPatientName) {
-                // Find the option in the dropdown and select it
-                for (let i = 0; i < patientSelect.options.length; i++) {
-                    if (patientSelect.options[i].value === storedPatientId) {
-                        patientSelect.value = storedPatientId;
-                        showPatientAsReadOnly(storedPatientId, storedPatientName);
-                        break;
-                    }
-                }
-            }
-        }
-    });
-
-    // Clear storage when form is submitted successfully
-    const appointmentForm = document.querySelector('form[asp-action="AddNewAppointment"]');
-    if (appointmentForm) {
-        appointmentForm.addEventListener('submit', function() {
-            // Clear patient storage after successful submission
-            setTimeout(() => {
-                clearPatientStorage();
-                localStorage.removeItem("selectedDate");
-            }, 1000);
-        });
-    }
 </script>
