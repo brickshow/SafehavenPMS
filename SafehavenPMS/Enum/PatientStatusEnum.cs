@@ -6,7 +6,7 @@
         PendingAssesment,
         PendingApproval,
         PendingReview,
-        Active,
+        Admitted,
         Inactive,
     }
 }

@@ -57,5 +57,7 @@ namespace SafehavenPMS.Models
         [Required]
         [StringLength(20)]
         public string Status { get; set; }
+
+        public ICollection<AdministrationLog> AdministrationLogs { get; set; }//Navigation property for Medication
     }
 }

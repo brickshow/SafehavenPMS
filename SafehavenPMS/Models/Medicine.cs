@@ -12,6 +12,7 @@
         public DateTime DateAdded { get; set; }
         public string Status { get; set; } = "Active";
 
-        public ICollection<MedicationOrder> MedicationOrders { get; set; }//Navigation property for Medication
+        public ICollection<MedicationOrder>? MedicationOrders { get; set; }//Navigation property for Medication
+        public ICollection<AdministrationLog>? AdministrationLogs { get; set; }//Navigation property for Medication
     }
 }

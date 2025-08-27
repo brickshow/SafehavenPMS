@@ -1,7 +1,7 @@
 ﻿@model SafehavenPMS.ViewModel.AddNewPatientViewModel
 
 @{
-    ViewBag.Title = "Add Patient";
+    ViewBag.Title = "Add Patient Intake";
 }
 
 
@@ -14,15 +14,28 @@
             <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
         </div>
     </div>
-    <hr class="mt-0 mb-2" />
+    <hr class="mt-0 mb-3" />
 </div>
 
 <div class="add-satff-content">
-    <div class="align-items-center">
-        <div class="left-panel d-flex flex-row align-items-center p-2">
-            <span class="mb-0 fs-4" style="color:#015F6B">Personal Information</span>
+    <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+        Find Old Patient
+    </div>
+    <div class="row mb-3 justify-content-start m-3">
+        <div class="col-md-6">
+            <div class="mb-2">
+                <label class="form-label"></label>
+                <select  class="form-select" >
+                    <option value="">Select patient</option>
+                </select>
+                <span a" class="text-danger"></span>
+            </div>
         </div>
-        <hr class="mt-0 mb-2" />
+    </div>
+    <div class="align-items-center">
+        <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+            Personal Information
+        </div>
     </div>
     <form asp-controller="Patient" asp-action="AddNewPatient" method="post" enctype="multipart/form-data">
 
@@ -153,11 +166,8 @@
 
 
         @* Home Address Section *@
-        <div class="align-items-center">
-            <div class="left-panel d-flex flex-row align-items-center p-2">
-                <span class="mb-0 fs-4" style="color:#015F6B">Home Address</span>
-            </div>
-            <hr class="mt-0 mb-2" />
+        <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+            Home Address
         </div>
 
         <div class="staff-form-container p-3">
@@ -216,11 +226,8 @@
         </div>
 
         @* Intake Details Section *@
-        <div class="align-items-center">
-            <div class="left-panel d-flex flex-row align-items-center p-2">
-                <span class="mb-0 fs-4" style="color:#015F6B">Intake Details</span>
-            </div>
-            <hr class="mt-0 mb-2" />
+        <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+            Intake Details
         </div>
 
         <div class="staff-form-container p-3">
@@ -253,19 +260,26 @@
                             </div>
                         </div>
                     </div>
-
-                    @* Physician Dropdown *@
-                    <div class="row mb-3">
-                        <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
-                            <label asp-for="ClinicalStaff" class="form-label mb-0 me-2" style="width: 110px;">Assigned Physician</label>
-                            <div class="d-flex flex-column uniform-input flex-grow-1">
-                                <select id="physicianSelect" asp-for="ClinicalStaff" class="form-control uniform-input" asp-items="@ViewBag.Physicians">
-                                    <option value="">-- Select Physician --</option>
-                                </select>
-                                <span asp-validation-for="ClinicalStaff" class="text-danger"></span>
+                    <div class="row mb-3 justify-content-center">
+                        @* Intake Fields *@
+                        <div class="row mb-3 justify-content-center">
+                            <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
+                                <label asp-for="ReferredByPhoneNumber" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Phone Number</label>
+                                <div class="d-flex flex-column uniform-input flex-grow-1">
+                                    <input asp-for="ReferredByPhoneNumber" type="text" class="form-control flex-grow-1 uniform-input" />
+                                    <span asp-validation-for="ReferredByPhoneNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-8 d-flex align-items-center mb-3 pe-3">
+                                <label asp-for="PresentingComplaint" class="form-label mb-0 me-2" style="width: 110px;">Presenting Complaint</label>
+                                <div class="d-flex flex-column uniform-input flex-grow-1">
+                                    <input asp-for="PresentingComplaint" type="text" class="form-control flex-grow-1 uniform-input" />
+                                    <span asp-validation-for="PresentingComplaint" class="text-danger"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    
                 </div>
             </div>
         </div>

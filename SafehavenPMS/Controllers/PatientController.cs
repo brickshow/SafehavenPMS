@@ -37,52 +37,51 @@ namespace SafehavenPMS.Controllers
             );
         }
 
-        public async Task<IActionResult> Index(int? page = 1, int? pageSize = 10, string searchQuery = null, string status = null, string sortOrder = null)
+        public async Task<IActionResult> Index(
+            int? page = 1,
+            int? pageSize = 10,
+            string searchQuery = null,
+            string status = null,
+            string sortOrder = null)
         {
             var query = _context.Patients
                 .Include(c => c.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
                 .AsQueryable();
 
-            // Total count (unfiltered)
-            int totalPatientCount = await _context.Patients.CountAsync();
-            ViewBag.TotalPatientCount = totalPatientCount;
+            // Counts for each status
+            ViewBag.TotalPatientCount = await _context.Patients.CountAsync();
+            ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Waitlisted");
+            ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Pending Assessment");
+            ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Pending Approval");
+            ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
+            ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
+            ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
+
+            // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
             ViewBag.PageSize = pageSize ?? 10;
             ViewBag.SearchQuery = searchQuery;
             ViewBag.Status = status;
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
 
-            // Apply search
+            // 🔎 Apply search filter
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 searchQuery = searchQuery.ToLower();
                 query = query.Where(p =>
                     p.Firstname.ToLower().Contains(searchQuery) ||
                     p.Lastname.ToLower().Contains(searchQuery) ||
-                    p.PatientId.ToString().Contains(searchQuery)); // Optional
+                    p.PatientId.ToString().Contains(searchQuery));
             }
 
-            // Apply status filter
-            if (!string.IsNullOrEmpty(status))
+            // ✅ Apply status filter (default = All)
+            if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
-                if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(p => p.PatientStatus == "Active");
-                else if (status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(p => p.PatientStatus == "Inactive");
-                else if (status.Equals("Waitlisted", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(p => p.PatientStatus == "Waitlisted");
-                else if (status.Equals("Pending Assesment", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(p => p.PatientStatus == "Pending Assesment");
-                else if (status.Equals("Pending Approval", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(p => p.PatientStatus == "Pending Approval");
-                else if (status.Equals("Admitted", StringComparison.OrdinalIgnoreCase))
-                    query = query.Where(p => p.PatientStatus == "Admitted");
-
+                query = query.Where(p => p.PatientStatus == status);
             }
 
-            // Apply sorting
-            // Apply sorting
+            // 🔃 Apply sorting
             if (sortOrder == null)
             {
                 query = query.OrderByDescending(p => p.CreatedAt);
@@ -94,8 +93,7 @@ namespace SafehavenPMS.Controllers
                     : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
             }
 
-
-            // Pagination logic
+            // 📄 Pagination
             int totalItems = await query.CountAsync();
             int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
             ViewBag.TotalPages = totalPages;
@@ -124,18 +122,18 @@ namespace SafehavenPMS.Controllers
             });
         }
 
-        [HttpGet]
-        public IActionResult FilterStatus(string status)
-        {
-            return RedirectToAction("Index", new
-            {
-                status,
-                page = 1,
-                pageSize = ViewBag.PageSize ?? 10,
-                searchQuery = ViewBag.SearchQuery,
-                sortOrder = ViewBag.SortOrder
-            });
-        }
+        //[HttpGet]
+        //public IActionResult FilterStatus(string status)
+        //{
+        //    return RedirectToAction("Index", new
+        //    {
+        //        status,
+        //        page = 1,
+        //        pageSize = ViewBag.PageSize ?? 10,
+        //        searchQuery = ViewBag.SearchQuery,
+        //        sortOrder = ViewBag.SortOrder
+        //    });
+        //}
 
         [HttpGet]
         public IActionResult SortBy(string sortOrder)
@@ -158,26 +156,8 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AddNewPatient()
+        public  IActionResult AddNewPatient()
         {
-            // Extract Physicians from ClinicalStaffs table where Position is "Physician"
-            var physicians = await _context.ClinicalStaffs
-                .Where(p => p.Position == "Physician") // Corrected filter
-                .Select(p => new SelectListItem
-                {
-                    Value = p.ClinicalStaffID.ToString(), // ClinicalStaffID is the primary key
-                    Text = $"{p.Firstname} {p.Lastname}" // Name (or FullName) for display
-                })
-                .ToListAsync();
-
-            // Check if any physicians were found
-            if (!physicians.Any())
-            {
-                TempData["Message"] = "No Physicians are Listed";
-            }
-
-            // Pass the physicians to the view as a SelectList
-            ViewBag.Physicians = new SelectList(physicians, "Value", "Text");
             return View();
         }
 
@@ -202,18 +182,6 @@ namespace SafehavenPMS.Controllers
                         Console.WriteLine($"Field: {key} - Error: {error.ErrorMessage}");
                     }
                 }
-
-                // Reload physician list for dropdown if validation fails
-                var physicians = await _context.ClinicalStaffs
-                    .Where(p => p.Position == "Physician")
-                    .Select(p => new SelectListItem
-                    {
-                        Value = p.ClinicalStaffID.ToString(),
-                        Text = $"{p.Firstname} {p.Lastname}"
-                    })
-                    .ToListAsync();
-
-                ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
                 return View(model);
             }
 
@@ -227,67 +195,22 @@ namespace SafehavenPMS.Controllers
             string filename = null;
             string tempUrl = string.Empty;
 
-            // Upload photo locally if provided
-            if (model.Filename != null)
+            if (model.Filename != null && model.Filename.Length > 0)
             {
-                filename = _uploadPhotoServices.UploadPhoto(model.Filename);
-            }
-
-            // Upload photo to Cloudinary if a valid local file exists
-            if (!string.IsNullOrEmpty(filename))
-            {
-                string localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", filename.TrimStart('/'));
-
-                // If local file not found, return with error
-                if (!System.IO.File.Exists(localPath))
-                {
-                    TempData["Error"] = "Profile image file not found. Please upload a valid image.";
-
-                    // Reload physician list and return view
-                    var physicians = await _context.ClinicalStaffs
-                        .Where(p => p.Position == "Physician")
-                        .Select(p => new SelectListItem
-                        {
-                            Value = p.ClinicalStaffID.ToString(),
-                            Text = $"{p.Firstname} {p.Lastname}"
-                        })
-                        .ToListAsync();
-
-                    ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
-                    return View(model);
-                }
-
-                // Attempt to upload to Cloudinary
                 try
                 {
-                    using (var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+                    using (var stream = model.Filename.OpenReadStream())
                     {
-                        tempUrl = await _cloudinaryServices.UploadImageAsync(fileStream, Path.GetFileName(localPath));
+                        tempUrl = await _cloudinaryServices.UploadImageAsync(stream, model.Filename.FileName);
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error uploading to Cloudinary: {ex.Message}");
                     TempData["Error"] = $"Failed to upload profile image: {ex.Message}";
-
-                    // Reload physician list and return view
-                    var physicians = await _context.ClinicalStaffs
-                        .Where(p => p.Position == "Physician")
-                        .Select(p => new SelectListItem
-                        {
-                            Value = p.ClinicalStaffID.ToString(),
-                            Text = $"{p.Firstname} {p.Lastname}"
-                        })
-                        .ToListAsync();
-
-                    ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
                     return View(model);
                 }
             }
-
-       
-
-           
 
             try
             {
@@ -301,7 +224,7 @@ namespace SafehavenPMS.Controllers
                     PhoneNumber = model.ContactNumber,
                     Sex = model.Sex,
                     Occupation = model.Occupation,
-                    PatientStatus = "Waitlisted",
+                    PatientStatus = Enum.PatientStatusEnum.Waitlisted.ToString(),
                     Education = model.Education,
                     Religion = model.Religion,
                     MaritalStatus = model.MaritalStatus,
@@ -311,6 +234,9 @@ namespace SafehavenPMS.Controllers
                     PhotoUrl = tempUrl,
                     Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}",
                     CreatedAt = DateTime.Now,
+
+                    ReferredByPhoneNumber = model.ReferredByPhoneNumber,
+                    PresentingComplaint = model.PresentingComplaint
                 };
 
                 // Save patient to database
