@@ -33,6 +33,10 @@
                         <option value="">--Select Doctor--</option>
                     </select>
                 </div>
+
+                <!-- ✅ carry patient info when doctor is changed -->
+                <input type="hidden" asp-for="PatientId" />
+                <input type="hidden" asp-for="PatientFullname" />
             </form>
 
             <!-- Step 2: Date picker -->

@@ -2,11 +2,19 @@
 {
     public enum PatientStatusEnum
     {
-        Waitlisted,
-        PendingAssesment,
-        PendingApproval,
-        PendingReview,
+        NewReferral,
+        IntakeInProgress,
+        Scheduled,
+        OnAssessment,
         Admitted,
+        InTreatment,
+        Closed,
+        Relapsed,
+        Discharged,
+        Waitlisted,
+        PendingApproval,
+        PendingAssessment,
+        PendingReview,
         Inactive,
     }
 }

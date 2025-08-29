@@ -9,6 +9,7 @@ namespace SafehavenPMS.ViewModel
         public int AppointmentID { get; set; }
         [Required(ErrorMessage = "Please add Patient")]
         public int PatientId { get; set; }
+        public string? PatientFullname { get; set; }
 
         [Required(ErrorMessage = "Please assign a Doctor")]
         public int ClinicalStaffID { get; set; }//Foreign key

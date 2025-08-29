@@ -23,7 +23,11 @@
         <div class="bg-white w-25">
             @* List of Doctors *@
             <div class="doctor-container p-4">
-                <div class="title" style="color:#015F6B"><strong>Doctors</strong></div>
+                <div class="title" style="color:#015F6B">
+                    <strong>Doctors</strong>
+                </div>
+
+                @* "Select All" checkbox *@
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" id="all">
                     <label class="form-check-label" for="all">
@@ -31,13 +35,22 @@
                     </label>
                 </div>
 
-                <div class="form-check mb-2">
-                    <input class="form-check-input" type="checkbox" id="alnajar">
-                    <label class="form-check-label" for="alnajar">
-                        Dr. Alnajar
-                    </label>
-                </div>
+                @* Dynamic doctor list *@
+                @foreach (var doctor in ViewBag.Doctors)
+                {
+                    <div class="form-check mb-2">
+                        <input class="form-check-input doctor-filter" type="checkbox"
+                               id="doctor_@doctor.ClinicalStaffID"
+                               value="@doctor.ClinicalStaffID"
+                               name="SelectedDoctors">
+                        <label class="form-check-label" for="doctor_@doctor.ClinicalStaffID">
+                            Dr. @doctor.Firstname @doctor.Lastname
+                        </label>
+                    </div>
+                }
+
             </div>
+
 
             @* Total of each doctor *@
             <div class="total p-4">
@@ -128,7 +141,11 @@
         <button id="toggleNotifications" class="btn-custom btn-primary"
                 data-bs-toggle="tooltip" data-bs-placement="left" title="Show Notifications">
             &lt;
-            <span id="newAppointmentIndicator" class="position-absolute top-0 start-0 translate-middle p-1 bg-danger border border-light rounded-circle d-none"></span>
+            <span id="newAppointmentIndicator"
+                  class="position-absolute top-0 start-0 translate-middle bg-danger border border-light rounded-circle d-flex align-items-center justify-content-center"
+                  style="width:18px; height:18px; font-size:12px;">
+                @Model?.WaitlistedPatients.Count
+            </span>
         </button>
     </div>
 
@@ -404,169 +421,150 @@
 </style>
 
 <script>
-    // Wait until the DOM is fully loaded before running the script
     document.addEventListener('DOMContentLoaded', function () {
-        // Get the calendar container element by its ID
         var calendarEl = document.getElementById('appointmentCalendar');
+        var selectedDoctors = []; // store selected doctor IDs
 
-        // Initialize the FullCalendar instance
-          var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        height: 'auto',
+        // Initialize FullCalendar
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 'auto',
 
-        // Load events from backend
-        events: function(fetchInfo, successCallback, failureCallback) {
-            fetch('/Appointment/GetAppointments')
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Fetched events:", data);
-                    successCallback(data);
-                })
-                .catch(error => {
-                    console.error("Error fetching events:", error);
-                    failureCallback(error);
+            // Load events with filtering
+            events: function (fetchInfo, successCallback, failureCallback) {
+                fetch('/Appointment/GetAppointments')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Filter by selected doctors
+                        if (selectedDoctors.length > 0) {
+                            data = data.filter(ev =>
+                                selectedDoctors.includes(ev.extendedProps.doctorId.toString())
+                            );
+                        }
+                        successCallback(data);
+                    })
+                    .catch(error => {
+                        console.error("Error fetching events:", error);
+                        failureCallback(error);
+                    });
+            },
+
+            eventClick: function (info) {
+                info.jsEvent.preventDefault();
+
+                document.getElementById("ApointmentId").value = info.event.id;
+                document.getElementById("patientId").value = info.event.extendedProps.patientId;
+                document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
+                document.getElementById("detailTime").innerText = info.event.extendedProps.time;
+                document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString("en-us", {
+                    month: "long", day: "numeric", year: "numeric"
                 });
-        },
+                document.getElementById("detailStatus").innerText = info.event.extendedProps.status;
+                document.getElementById("detailPatient").innerText = info.event.extendedProps.patientName;
+                document.getElementById("detailDoctor").innerText = info.event.extendedProps.doctorName;
+                document.getElementById("detailDescription").innerText = info.event.extendedProps.description;
 
-                eventClick: function (info) {
-               info.jsEvent.preventDefault();
+                const rescheduleLink = document.getElementById('rescheduleLink');
+                rescheduleLink.href = `/Appointment/ScheduleAppointment?id=${info.event.extendedProps.patientId}`;
 
-               document.getElementById("ApointmentId").value = info.event.id;
-               document.getElementById("patientId").value = info.event.extendedProps.patientId;
-               document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
-               document.getElementById("detailTime").innerText = info.event.extendedProps.time;
-               document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString("en-us", {
-                   month: "long", day: "numeric", year: "numeric"
-               });
-               document.getElementById("detailStatus").innerText = info.event.extendedProps.status;
-               document.getElementById("detailPatient").innerText = info.event.extendedProps.patientName;
-               document.getElementById("detailDoctor").innerText = info.event.extendedProps.doctorName;
-               document.getElementById("detailDescription").innerText = info.event.extendedProps.description;
+                var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
+                appointmentDetailModal.show();
+            },
 
-               const rescheduleLink = document.getElementById('rescheduleLink');
-               rescheduleLink.href = `/Appointment/ScheduleAppointment?id=${info.event.extendedProps.patientId}`;
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
 
-               var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
-               appointmentDetailModal.show();
-           },
+            eventContent: function (info) {
+                let visitType = info.event.extendedProps.visitType;
+                let patient = info.event.extendedProps.patientName;
+                let doctor = info.event.extendedProps.doctorName;
+                let status = info.event.extendedProps.status;
+                let time = info.event.extendedProps.time;
 
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
+                let bgColor = "rgba(200,200,200,0.5)";
+                if (status === "Confirmed") bgColor = "#BDDBF4";
+                if (status === "Completed") bgColor = "#AEEBAB";
 
-        selectable: false,
-
-        // Customize event display
-        eventContent: function(info) {
-            let visitType = info.event.extendedProps.visitType;
-            let patient = info.event.extendedProps.patientName;
-            let doctor = info.event.extendedProps.doctorName;
-            let status = info.event.extendedProps.status;
-            let time = info.event.extendedProps.time;
-
-            // Set color based on status
-            let bgColor = "rgba(200, 200, 200, 0.5)";
-            if (status === "Confirmed") bgColor = "#BDDBF4";
-            if (status === "Completed") bgColor = "#AEEBAB";
-
-            return {
-                html: `
-                    <div class="text-center" style="
-                        background-color: ${bgColor};
-                        width: 100%;
-                        box-sizing: border-box;
-                        border-radius: 6px;
-                        white-space: normal;
-                        word-wrap: break-word;
-                        overflow-wrap: break-word;
-                        padding: 2px;
-                    ">
-                        <strong>${visitType}</strong><br/>
-                        <small>Doctor: ${doctor}</small><br/>
-                        <small>Patient: ${patient}</small><br/>
-                        <small>${time}</small><br/>
-                    </div>
-                `
-            };
-        },
-
-        dayCellDidMount: function(info) {
-            const today = new Date();
-            const cellDate = info.date;
-
-            if (
-                cellDate.getFullYear() === today.getFullYear() &&
-                cellDate.getMonth() === today.getMonth() &&
-                cellDate.getDate() === today.getDate()
-            ) {
-                info.el.style.backgroundColor = '#fff4e5';
-                info.el.style.border = '2px solid #00A3B4';
-                info.el.style.borderRadius = '8px';
+                return {
+                    html: `
+                        <div class="text-center" style="
+                            background-color: ${bgColor};
+                            width: 100%;
+                            box-sizing: border-box;
+                            border-radius: 6px;
+                            white-space: normal;
+                            word-wrap: break-word;
+                            overflow-wrap: break-word;
+                            padding: 2px;
+                        ">
+                            <strong>${visitType}</strong><br/>
+                            <small>Doctor: ${doctor}</small><br/>
+                            <small>Patient: ${patient}</small><br/>
+                            <small>${time}</small><br/>
+                        </div>
+                    `
+                };
             }
-        }
-    });
+        });
 
-    // Render the calendar
-    calendar.render();
-
-
-        // Render the calendar inside the container
         calendar.render();
-    });
 
+        // --- Checkbox filtering ---
+        document.querySelectorAll('.doctor-filter').forEach(cb => {
+            cb.addEventListener('change', function () {
+                selectedDoctors = Array.from(
+                    document.querySelectorAll('.doctor-filter:checked')
+                ).map(c => c.value);
+                calendar.refetchEvents(); // reload calendar events
+            });
+        });
 
-     var toggleBtn = document.getElementById('toggleNotifications');
-    var waitlistedPanel = document.getElementById('waitlistedPanel');
-    var closeBtn = document.getElementById('closeNotifications');
-    var calendar = document.getElementById('appointmentCalendar');
+        // --- "Select All" checkbox ---
+        document.getElementById('all').addEventListener('change', function () {
+            let allChecked = this.checked;
+            document.querySelectorAll('.doctor-filter').forEach(cb => {
+                cb.checked = allChecked;
+            });
+            selectedDoctors = allChecked
+                ? Array.from(document.querySelectorAll('.doctor-filter')).map(c => c.value)
+                : [];
+            calendar.refetchEvents();
+        });
 
-    toggleBtn.addEventListener('click', function() {
-        toggleBtn.classList.add('hide');          // Move button off-screen
-        waitlistedPanel.classList.add('show'); // Slide panel in
-        calendar.style.width = "70%";             // Shrink calendar
-    });
-
-    closeBtn.addEventListener('click', function() {
-        toggleBtn.classList.remove('hide');      // Show toggle button
-        waitlistedPanel.classList.remove('show'); // Slide panel out
-        calendar.style.width = "100%";           // Expand calendar
-    });
-
-     // For Cancel modal
-    const cancelModal = document.getElementById('deleteConfirmModal');
-    cancelModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget; // Button that triggered the modal
-        const id = button.getAttribute('data-id'); // Extract info from data-id
-        cancelModal.querySelector('#dayIdToDelete').value = id;
-    });
-
-    // For Confirm modal
-    const confirmModal = document.getElementById('ConfirmModal');
-    confirmModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const id = button.getAttribute('data-id');
-        confirmModal.querySelector('#dayIdToDelete').value = id;
-    });
-
-        document.addEventListener('DOMContentLoaded', function () {
-        var indicator = document.getElementById('newAppointmentIndicator');
-
-        // Check if there are new appointments
-        var newAppointmentsCount = @Model?.Appointments.Count(a => a.Status == "Pending") ?? 0;
-
-        if (newAppointmentsCount > 0) {
-            indicator.classList.remove('d-none'); // Show red dot
-        }
-
-        // Optional: hide indicator when the notification panel opens
+        // --- Toggle Notifications Panel ---
         var toggleBtn = document.getElementById('toggleNotifications');
         var waitlistedPanel = document.getElementById('waitlistedPanel');
+        var closeBtn = document.getElementById('closeNotifications');
+        var indicator = document.getElementById('newAppointmentIndicator');
 
-        toggleBtn.addEventListener('click', function() {
-            indicator.classList.add('d-none'); // Hide dot when opened
+        // Always show indicator initially (even if count = 0)
+        if (indicator) {
+            indicator.classList.remove('d-none');
+        }
+
+        toggleBtn.addEventListener('click', function () {
+            toggleBtn.classList.add('hide');          // Move button off-screen
+            waitlistedPanel.classList.add('show');    // Slide panel in
+            calendarEl.style.width = "70%";           // Shrink calendar
+
+            if (indicator) {
+                indicator.style.display = "none";     // Hide indicator when panel opens
+            }
+        });
+
+        closeBtn.addEventListener('click', function () {
+            toggleBtn.classList.remove('hide');       // Show toggle button
+            waitlistedPanel.classList.remove('show'); // Slide panel out
+            calendarEl.style.width = "100%";          // Expand calendar
+
+            if (indicator) {
+                indicator.style.display = "inline-block"; // Show indicator again when panel closes
+            }
         });
     });
-
 </script>
+
+

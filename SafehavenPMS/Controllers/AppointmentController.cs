@@ -79,6 +79,10 @@ namespace SafehavenPMS.Controllers
                 WaitlistedPatients = waitlistedPatients,
             };
 
+            //Return all doctors TODO add more doctors
+            ViewBag.Doctors = await _context.ClinicalStaffs
+                                    .Where(a => a.Position == "Physician").ToListAsync();
+
             return View(model);
         }
 
@@ -148,6 +152,19 @@ namespace SafehavenPMS.Controllers
 
             // Put the selected doctor back into the model
             model.ClinicalStaffID = model.ClinicalStaffID;
+
+            // Make sure PatientFullname is set again
+            if (model.PatientId > 0)
+            {
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == model.PatientId)
+                    .Select(p => new { p.Firstname, p.Lastname })
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                    model.PatientFullname = $"{patient.Firstname} {patient.Lastname}";
+            }
+
 
             // Fill doctor list again
             ViewBag.StaffList = await _context.ClinicalStaffs
@@ -241,6 +258,18 @@ namespace SafehavenPMS.Controllers
                 Console.WriteLine(freeSlots);
             }
 
+            // ✅ Preserve patient fullname
+            if (model.PatientId > 0)
+            {
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == model.PatientId)
+                    .Select(p => new { p.Firstname, p.Lastname })
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                    model.PatientFullname = $"{patient.Firstname} {patient.Lastname}";
+            }
+
             // Patient dropdown - preserve selection
             ViewBag.PatientList = await _context.Patients
                 .Select(p => new SelectListItem
@@ -318,19 +347,21 @@ namespace SafehavenPMS.Controllers
                 Description = model.Description
             };
 
+            //Find Patient
+            var patient = await _context.Patients.FirstOrDefaultAsync(s => s.PatientId == model.PatientId);
+
             try
             {
                 //Save model to database 
                 await _context.NewAppointments.AddAsync(NewAppointment);
                 await _context.SaveChangesAsync();
 
-                //if (availability != null)
-                //{
-                //    availability.Status = AvailabilityStatus.Unavailable.ToString();
-                //    availability.Notes = "Booked";
-                //    _context.Availabilities.Update(availability);
-                //    await _context.SaveChangesAsync();
-                //}
+                if (NewAppointment.VisitType == "Medical Assessment")
+                {
+                    patient.PatientStatus = Enum.PatientStatusEnum.PendingAssessment.ToString();
+                    _context.Patients.Update(patient);
+                    await _context.SaveChangesAsync();
+                }
             }
             catch(Exception ex)
             {
@@ -380,6 +411,7 @@ namespace SafehavenPMS.Controllers
                         color = color,
                         extendedProps = new
                         {
+                            doctorId = a.ClinicalStaffID,
                             visitType = a.VisitType,
                             patientId = a.PatientId,
                             status = a.Status,
@@ -647,7 +679,7 @@ namespace SafehavenPMS.Controllers
                 TimeSlot = model.TimeSlot, // ✅ TimeSpan
                 VisitType = model.VisitType,
                 Description = model.Description,
-                Status = Enum.AppointmentEnum.Pending.ToString(),
+                Status = Enum.AppointmentEnum.Confirmed.ToString(),
             };
 
             await _context.NewAppointments.AddAsync(appointment);
@@ -656,7 +688,7 @@ namespace SafehavenPMS.Controllers
             var patient = await _context.Patients.FindAsync(model.PatientId);
             if (patient != null)
             {
-                patient.PatientStatus = Enum.PatientStatusEnum.PendingAssesment.ToString();
+                patient.PatientStatus = Enum.PatientStatusEnum.PendingAssessment.ToString();
                 _context.Update(patient);
             }
 

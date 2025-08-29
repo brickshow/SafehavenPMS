@@ -51,9 +51,9 @@ namespace SafehavenPMS.Controllers
 
             // Counts for each status
             ViewBag.TotalPatientCount = await _context.Patients.CountAsync();
-            ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Waitlisted");
-            ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Pending Assessment");
-            ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Pending Approval");
+            ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
+            ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
+            ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
             ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
             ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
             ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
@@ -315,6 +315,17 @@ namespace SafehavenPMS.Controllers
         public IActionResult IntakeForm()
         {
             return View();
+        }
+
+        public async Task<IActionResult> PatientMasterList()
+        {
+            ViewBag.TotalPatientCount = await _context.Patients.CountAsync();
+            var patients = await _context.Patients
+                .Include(p => p.ClinicalStaffPatients)
+                    .ThenInclude(csp => csp.ClinicalStaff)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+            return View(patients);
         }
     }
 }

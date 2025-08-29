@@ -118,8 +118,8 @@ body {
                 transition: 0.3s ease;
             }
 
-        .nav-links li.active,
-        .nav-links li:hover {
+        .nav-links > li.navigation.active,
+        .nav-links > li.navigation:hover {
             background-color: rgba(255, 255, 255, 0.1);
             width: 90%;
             border-start-end-radius: 10px;
@@ -127,8 +127,8 @@ body {
             border-left: 4px solid #fff;
         }
 
-            .nav-links li.active a i,
-            .nav-links li:hover a i {
+            .nav-links > li.navigation.active a i,
+            .nav-links > li.navigation:hover a i {
                 opacity: 1;
             }
 
@@ -948,6 +948,10 @@ body {
     display: none;
     z-index: 1100;
     margin: 0;
+}
+/* Reveal submenu on hover when sidebar is collapsed */
+.sidebar.close .nav-links li.navigation:hover .submenu {
+    display: block;
 }
 /* Optional: if you also want click-to-open while collapsed, JS toggles .active */
 .sidebar.close .nav-links li.navigation.active .submenu {

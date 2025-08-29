@@ -1,7 +1,7 @@
 ﻿@model SafehavenPMS.ViewModel.AddNewPatientViewModel
 
 @{
-    ViewBag.Title = "Add Patient Intake";
+    ViewBag.Title = "Patient Registration";
 }
 
 
@@ -10,7 +10,9 @@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
-            <i class="bx bxs-group fs-2 me-2" title="Staff"></i>
+            <a href="javascript:history.back()" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
             <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
         </div>
     </div>
@@ -264,7 +266,7 @@
                         @* Intake Fields *@
                         <div class="row mb-3 justify-content-center">
                             <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
-                                <label asp-for="ReferredByPhoneNumber" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Phone Number</label>
+                                <label asp-for="ReferredByPhoneNumber" class="form-label mb-0 me-2" style="width: 110px;">Phone Number</label>
                                 <div class="d-flex flex-column uniform-input flex-grow-1">
                                     <input asp-for="ReferredByPhoneNumber" type="text" class="form-control flex-grow-1 uniform-input" />
                                     <span asp-validation-for="ReferredByPhoneNumber" class="text-danger"></span>

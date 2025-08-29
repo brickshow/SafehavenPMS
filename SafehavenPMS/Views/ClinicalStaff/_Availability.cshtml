@@ -17,7 +17,6 @@
                         <th>Day/s</th>
                         <th>Time Slot(s)</th>
                         <th>Status</th>
-                        <th>Notes</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -30,95 +29,67 @@
 
                         foreach (var dayGroup in groupedByDay)
                         {
-                            var slots = dayGroup.ToList();
-                            for (int i = 0; i < slots.Count; i++)
+                            var slots = dayGroup
+                            .OrderBy(s => s.StartTime)
+                            .ToList();
+
+                            // Merge continuous time slots
+                            var mergedRanges = new List<string>();
+                            var currentStart = slots[0].StartTime;
+                            var currentEnd = slots[0].EndTime;
+
+                            for (int i = 1; i < slots.Count; i++)
                             {
-                                var slot = slots[i];
-                                <tr>
-                                    @* First row shows Day with rowspan *@
-                                    @if (i == 0)
-                                    {
-                                        <td rowspan="@slots.Count">@dayGroup.Key</td>
-                                    }
-                                    <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
-                                    <td>
-                                        @if (slot.Status == "Available")
-                                        {
-                                            <span class="text-success">
-                                                <i class="bx bx-check-circle"></i> Available
-                                            </span>
-                                        }
-                                        else if (slot.Status == "Unavailable")
-                                        {
-                                            <span class="text-warning">
-                                                <i class="bx bx-error"></i> Unavailable
-                                            </span>
-                                        }
-                                        else if (slot.Status == "Booked")
-                                        {
-                                            <span class="text-danger">
-                                                <i class="bx bx-x-circle"></i> Booked
-                                            </span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if(slot.Notes == null)
-                                        {
-                                            <span>-</span>
-                                        }
-                                        else
-                                        {
-                                            <span>@slot.Notes</span>
-                                        }
-                                    </td>
-
-                                    <td>
-                                        <a href="#" data-bs-toggle="modal"
-                                           data-bs-target="#addNotes-@slot.AvailabilityId"
-                                           class="border rounded px-2 py-1 text-primary hover-fill"
-                                           title="Edit">
-                                            <i class='bx bx-edit'></i>
-                                        </a>
-
-                                        <!-- Modal for this slot -->
-                                        <div class="modal fade" id="addNotes-@slot.AvailabilityId" tabindex="-1"
-                                             aria-labelledby="addNotesLabel-@slot.AvailabilityId" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-primary text-white">
-                                                        <h5 class="modal-title" id="addNotesLabel-@slot.AvailabilityId">Add Notes</h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <form asp-action="AddNotes" asp-controller="ClinicalStaff" method="post">
-                                                        @Html.AntiForgeryToken()
-                                                        <div class="modal-body">
-                                                            <input type="hidden" name="availabilityId" value="@slot.AvailabilityId" />
-
-                                                            <div class="mb-3">
-                                                                <label for="notes-@slot.AvailabilityId" class="form-label">Notes</label>
-                                                                <textarea id="notes-@slot.AvailabilityId" name="notes" class="form-control" rows="4">@slot.Notes</textarea>
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn-cancel btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                            <button type="submit" class="btn-next btn-primary">Save Notes</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                if (slots[i].StartTime <= currentEnd) // overlapping or continuous
+                                {
+                                    // extend current range
+                                    currentEnd = slots[i].EndTime > currentEnd ? slots[i].EndTime : currentEnd;
+                                }
+                                else
+                                {
+                                    // close current range and start a new one
+                                    mergedRanges.Add($"{currentStart:hh\\:mm} - {currentEnd:hh\\:mm}");
+                                    currentStart = slots[i].StartTime;
+                                    currentEnd = slots[i].EndTime;
+                                }
                             }
+
+                            // Add the final range
+                            mergedRanges.Add($"{currentStart:hh\\:mm} - {currentEnd:hh\\:mm}");
+
+                            // Summarize statuses
+                            var statusSummary = string.Join(", ", dayGroup
+                            .GroupBy(s => s.Status)
+                            .Select(g => $"{g.Key} ({g.Count()})"));
+
+                            // Merge notes
+                            var notes = string.Join("; ", dayGroup
+                            .Where(s => !string.IsNullOrWhiteSpace(s.Notes))
+                            .Select(s => s.Notes));
+
+                            <tr>
+                                <td>@dayGroup.Key</td>
+                                <td>@string.Join(", ", mergedRanges)</td>
+                                <td>@statusSummary</td>
+                                <td>
+                                    <a href="#" data-bs-toggle="modal"
+                                       data-bs-target="#editNotes-@dayGroup.Key"
+                                       class="border rounded px-2 py-1 text-primary hover-fill"
+                                       title="Edit">
+                                        <i class='bx bx-edit'></i>
+                                    </a>
+                                </td>
+                            </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="4" class="text-muted">No availability found.</td>
+                            <td colspan="5" class="text-muted">No availability found.</td>
                         </tr>
                     }
                 </tbody>
+
 
             </table>
         </div>
