@@ -16,16 +16,12 @@
         public string Education { get; set; }
         public string Religion { get; set; }
         public string MaritalStatus { get; set; }
-        public DateTime DateOfReferral { get; set; }
-        public string ReferredBy { get; set; }
-        public string? Affiliation { get; set; }
         public string PhotoUrl { get; set; }
-        public string ReferredByPhoneNumber { get; set; }
-        public string PresentingComplaint { get; set; }
         public DateTime CreatedAt { get; set; }
 
 
         //One -to-Many Relationships
+        public PatientIntake PatientIntake { get; set; }
         public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with ClinicalStaff
         public ICollection<MedicationOrder> MedicationOrders { get; set; } // Navigation property for Medication orders
         public ICollection<AdministrationLog> AdministrationLogs { get; set; } // Navigation property for Medication orders

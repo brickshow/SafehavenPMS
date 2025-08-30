@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Newtonsoft.Json.Serialization;
 using SafehavenPMS.Data;
+using SafehavenPMS.Enum;
 using SafehavenPMS.Helpers;
 using SafehavenPMS.Models;
 using SafehavenPMS.Services;
@@ -153,13 +154,10 @@ namespace SafehavenPMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddNewPatient(AddNewPatientViewModel model)
         {
-            // Remove ImageURL from validation since it's handled manually
             ModelState.Remove("PhotoUrl");
 
-            // Check model validation
             if (!ModelState.IsValid)
             {
-                // Log validation errors to console
                 foreach (var entry in ModelState)
                 {
                     var key = entry.Key;
@@ -172,15 +170,13 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
 
-            //Ensuring BOD not a future 
-            if(model.DateOfBirth > DateTime.Now)
+            if (model.DateOfBirth > DateTime.Now)
             {
                 TempData["Message"] = "Please provide a valid Birthdate";
                 return View();
             }
 
-            string filename = null;
-            string tempUrl = string.Empty;
+            string? tempUrl = null;
 
             if (model.Filename != null && model.Filename.Length > 0)
             {
@@ -201,33 +197,42 @@ namespace SafehavenPMS.Controllers
 
             try
             {
-                // Create new patient object
+                // Create and save patient first
                 var patient = new Patient
                 {
                     Firstname = model.Firstname,
-                    MiddleName = model.MiddleName,
+                    MiddleName = model.MiddleName ?? string.Empty,
                     Lastname = model.Lastname,
                     DateOfBirth = model.DateOfBirth,
                     PhoneNumber = model.ContactNumber,
                     Sex = model.Sex,
-                    Occupation = model.Occupation,
-                    PatientStatus = Enum.PatientStatusEnum.Waitlisted.ToString(),
-                    Education = model.Education,
-                    Religion = model.Religion,
+                    Occupation = model.Occupation ?? string.Empty,
+                    PatientStatus = Enum.PatientStatusEnum.NewReferral.ToString(),
+                    Education = model.Education ?? string.Empty,
+                    Religion = model.Religion ?? string.Empty,
                     MaritalStatus = model.MaritalStatus,
-                    DateOfReferral = model.DateOfReferral,
-                    ReferredBy = model.ReferredBy,
-                    Affiliation = model.Affiliation,
-                    PhotoUrl = tempUrl,
+                    PhotoUrl = tempUrl ?? string.Empty,
                     Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}",
                     CreatedAt = DateTime.Now,
-
-                    ReferredByPhoneNumber = model.ReferredByPhoneNumber,
-                    PresentingComplaint = model.PresentingComplaint
                 };
 
-                // Save patient to database
-                _context.Patients.Add(patient);
+                await _context.Patients.AddAsync(patient);
+                await _context.SaveChangesAsync();
+
+                // Now create and save the intake with the new PatientId
+                var intake = new PatientIntake
+                {
+                    PatientId = patient.PatientId,
+                    DateOfReferral = model.DateOfReferral,
+                    ReferredBy = model.ReferredBy ?? string.Empty,
+                    Affiliation = model.Affiliation,
+                    PhoneNumber = model.ReferredByPhoneNumber,
+                    PresentingComplaint = model.PresentingComplaint,
+                    IntakeStatus = IntakeStatus.Pending.ToString(),
+                    CreatedAt = DateTime.Now
+                };
+
+                await _context.PatientIntakes.AddAsync(intake);
                 await _context.SaveChangesAsync();
 
                 // Save physician-patient relationship if selected
@@ -240,15 +245,16 @@ namespace SafehavenPMS.Controllers
                     };
 
                     _context.ClinicalStaffPatients.Add(clinicalStaffPatient);
-                    await _context.SaveChangesAsync(); // Save the relationship
+                    await _context.SaveChangesAsync();
                 }
+
+                return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error saving patient: {ex.Message}");
                 TempData["Error"] = "There was an error saving the patient.";
 
-                // Reload physician list and return view
                 var physicians = await _context.ClinicalStaffs
                     .Where(p => p.Position == "Physician")
                     .Select(p => new SelectListItem
@@ -261,15 +267,6 @@ namespace SafehavenPMS.Controllers
                 ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
                 return View(model);
             }
-
-            // Delete temp local photo after successful upload
-            if (!string.IsNullOrEmpty(filename))
-            {
-                _uploadPhotoServices.DeletePhoto(filename);
-            }
-
-            // Redirect to patient index on success
-            return RedirectToAction("Index");
         }
 
         //Action to proceed Profile

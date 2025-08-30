@@ -46,11 +46,7 @@ namespace SafehavenPMS.Controllers
                     Sex = p.Sex,
                     MaritalStatus = p.MaritalStatus,
                     DateOfBirth = p.DateOfBirth,
-                    DateOfReferral = p.DateOfReferral,
-                    ReferredBy = p.ReferredBy,
-                    ReferredByPhoneNumber = p.ReferredByPhoneNumber,
                     PhotoUrl = p.PhotoUrl,
-                    PresentingComplaint = p.PresentingComplaint,
                     // Address fields not in Patient model; set empty
                     House_Unit = string.Empty,
                     Street = string.Empty,

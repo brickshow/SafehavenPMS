@@ -1,8 +1,7 @@
 @using SafehavenPMS.Enum
-@model IEnumerable<SafehavenPMS.Models.Patient>
-
+@model List<SafehavenPMS.ViewModel.IntakeViewModel>
 @{
-    ViewBag.Title = "Patients";
+    ViewBag.Title = "Intake";
 }
 
 <div class="header">
@@ -55,23 +54,23 @@
         <form asp-action="Index" method="get">
             <input type="hidden" name="status" value="Waitlisted" />
             <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
-                Waitlisted (@ViewBag.WaitlistedCount)
+                New Referral (@ViewBag.Pending)
             </button>
         </form>
 
-        <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="PendingAssessment" />
-            <button type="submit" class="btn custom-btn @(ViewBag.Status == "PendingAssessment" ? "active" : "")">
-                Pending Assessment (@ViewBag.PendingAssessmentCount)
-            </button>
-        </form>
+        @* <form asp-action="Index" method="get"> *@
+        @*     <input type="hidden" name="status" value="PendingAssessment" /> *@
+        @*     <button type="submit" class="btn custom-btn @(ViewBag.Status == "PendingAssessment" ? "active" : "")"> *@
+        @*         Pending Assessment (@ViewBag.PendingAssessmentCount) *@
+        @*     </button> *@
+        @* </form> *@
 
-        <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="Pending Approval" />
-            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Pending Approval" ? "active" : "")">
-                Pending Approval (@ViewBag.PendingApprovalCount)
-            </button>
-        </form>
+        @* <form asp-action="Index" method="get"> *@
+        @*     <input type="hidden" name="status" value="Pending Approval" /> *@
+        @*     <button type="submit" class="btn custom-btn @(ViewBag.Status == "Pending Approval" ? "active" : "")"> *@
+        @*         Pending Approval (@ViewBag.PendingApprovalCount) *@
+        @*     </button> *@
+        @* </form> *@
 
         @* <form asp-action="Index" method="get"> *@
         @*     <input type="hidden" name="status" value="All" /> *@
@@ -143,42 +142,60 @@
         <table class="table mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Intake No.</th>
-                    <th>Name</th>
-                    <th>Date Of Birth</th>
+                    <th>No.</th>
+                    <th>Patient</th>
                     <th>Referred By</th>
-                    <th>Phone Number</th>
-                    <th>Date of Intake</th>
-                    <th>Action</th>
+                    <th>Referral Phone No.</th>
+                    <th>Intake Officer</th>
+                    <th>Intake Date</th>
+                    <th class="text-center">Intake Status</th>
+                    <th class="text-center">Action</th>
                 </tr>
             </thead>
             <tbody>
-                @if (Model?.Any() != true)
+                @if (Model == null || !Model.Any())
                 {
                     <tr>
-                        <td colspan="9" class="text-center">No patients found.</td>
+                        <td colspan="8" class="text-center">No patients found.</td>
                     </tr>
                 }
                 else
                 {
-                    foreach(var patient in Model)
+                    var row = 1;
+                    foreach (var intake in Model)
                     {
-                        int row = 1;
-
                         <tr>
                             <td>@row</td>
-                            <td>@patient.Firstname @patient.Lastname</td>
-                            <td>@patient.DateOfBirth.ToString("MMM dd, yyyy")</td>
-                            <td>@patient.ReferredBy</td>
-                            <td>@patient.PhoneNumber</td>
-                            <td>@patient.CreatedAt.ToString("MMM dd, yyyy")</td>
-                            <td>
-                                <a href="@Url.Action("IntakeForm", "Patient", new { id = patient.PatientId })" class="btn btn-primary">
-                                    <i class='bx bx-edit'></i>
-                                </a>
+                            <td>@intake.FullName</td>
+                            <td>@intake.ReferredBy</td>
+                            <td>@intake.ReferredByPhoneNumber</td>
+                            <td>@intake.IntakeOfficer</td>
+                            <td>@intake.IntakeDate?.ToString("MMM dd, yyyy")</td>
+                            <td class="text-center">
+                                <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                    @intake.IntakeStatus
+                                </div>
+                            </td>
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="#">
+                                                <span class="badge-dot bg-primary"></span>
+                                                Edit Intake Form
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
-                    }
+                        row++;
+                    }   
                 }
             </tbody>
         </table>

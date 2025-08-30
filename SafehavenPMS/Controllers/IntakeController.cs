@@ -9,6 +9,7 @@ using SafehavenPMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SafehavenPMS.ViewModel;
 
 
 namespace SafehavenPMS.Controllers
@@ -21,14 +22,15 @@ namespace SafehavenPMS.Controllers
             _context = context;
         }
 
- public async Task<IActionResult> Index(
-            int? page = 1,
-            int? pageSize = 10,
-            string searchQuery = null,
-            string status = null,
-            string sortOrder = null)
+        public async Task<IActionResult> Index(
+                   int? page = 1,
+                   int? pageSize = 10,
+                   string searchQuery = null,
+                   string status = null,
+                   string sortOrder = null)
         {
             var query = _context.Patients
+                .Include(i => i.PatientIntake)
                 .Include(c => c.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
                 .AsQueryable();
@@ -59,13 +61,13 @@ namespace SafehavenPMS.Controllers
                     p.PatientId.ToString().Contains(searchQuery));
             }
 
-            // ✅ Apply status filter (default = All)
+            // Apply status filter (default = All)
             if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
                 query = query.Where(p => p.PatientStatus == status);
             }
 
-            // 🔃 Apply sorting
+            //Apply sorting
             if (sortOrder == null)
             {
                 query = query.OrderByDescending(p => p.CreatedAt);
@@ -77,7 +79,7 @@ namespace SafehavenPMS.Controllers
                     : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
             }
 
-            // 📄 Pagination
+            // Pagination
             int totalItems = await query.CountAsync();
             int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
             ViewBag.TotalPages = totalPages;
@@ -90,7 +92,26 @@ namespace SafehavenPMS.Controllers
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
 
-            return View(patientList);
+            // Project to IntakeViewModel
+            var intakeViewModels = patientList.Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
+            {
+                IntakeId = p.PatientIntake?.PatientIntakeId ?? 0,
+                FullName = $"{p.Firstname} {p.Lastname}",
+                ReferredBy = p.PatientIntake?.ReferredBy ?? "-",
+                ReferredByPhoneNumber = p.PhoneNumber,
+                IntakeOfficer = "-", // Populate if you have this info
+                IntakeDate = p.PatientIntake?.CreatedAt ?? p.CreatedAt,
+                CompletedDate = "-", // Populate if you have this info
+                IntakeStatus = p.PatientIntake?.IntakeStatus.ToString() ?? "-"
+            }).ToList();
+
+            //Return Total number of new referral
+            var Pending = await _context.PatientIntakes
+                                    .Where(p => p.IntakeStatus == Enum.IntakeStatus.Pending.ToString())
+                                    .ToListAsync();
+
+            ViewBag.Pending = Pending.Count();
+            return View(intakeViewModels);
         }
 
         [HttpGet]
@@ -117,6 +138,23 @@ namespace SafehavenPMS.Controllers
                 searchQuery = ViewBag.SearchQuery,
                 status = ViewBag.Status
             });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditIntakeForm(int id)
+        {
+            var intake = await _context.PatientIntakes
+                                .Include(p => p.Patient)
+                                .Where(i => i.PatientIntakeId == id)
+                                .ToListAsync();
+
+            //Map to viewmodel
+            //var vm = new IntakeViewModel
+            //{
+            //    FullName
+            //};
+
+            return View();
         }
     }
 }

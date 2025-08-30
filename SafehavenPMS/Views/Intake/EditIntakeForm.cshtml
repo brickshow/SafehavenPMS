@@ -1,0 +1,87 @@
+﻿@model SafehavenPMS.ViewModel.IntakeViewModel
+
+<div class="patient-header-card mb-4">
+    <div class="d-flex align-items-center">
+        <img src="~/Images/default.png" alt="Patient Photo" class="patient-photo" />
+        <div class="ms-4">
+            <div class="fw-bold fs-4">-</div>
+            <div class="text-muted fs-5">Patient No. @Model.IntakeId</div>
+        </div>
+        <div class="ms-auto d-flex flex-row gap-5">
+            <div>
+                <span class="fw-bold text-teal">Age</span> <span class="ms-2">-</span>
+            </div>
+            <div>
+                <span class="fw-bold text-teal">Sex</span> <span class="ms-2">-</span>
+            </div>
+            <div>
+                <span class="fw-bold text-teal">Sex</span> <span class="ms-2">-</span>
+            </div>
+            <div>
+                <span class="fw-bold text-teal">Address</span> <span class="ms-2">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="intake-form-card p-4">
+    <form>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Date of Intake:</label>
+                <input type="text" class="form-control intake-input" value="@Model.FullName" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Date of Referral:</label>
+                <input type="text" class="form-control intake-input" value="@Model.CompletedDate" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Referred by:</label>
+                <input type="text" class="form-control intake-input" value="@Model.ReferredBy" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Contact No.</label>
+                <input type="text" class="form-control intake-input" value="@Model.ReferredByPhoneNumber" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-12">
+                <label class="form-label fw-bold">Reason for Intake:</label>
+                <input type="text" class="form-control intake-input" value="@Model.IntakeStatus" />
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+.patient-header-card {
+    background: #f8f8f8;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+}
+.patient-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e9ecef;
+}
+.text-teal {
+    color: #015F6B;
+}
+.intake-form-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.intake-input {
+    background: #f4efef;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+}
+</style>

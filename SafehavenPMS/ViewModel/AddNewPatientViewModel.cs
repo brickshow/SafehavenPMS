@@ -5,7 +5,7 @@ namespace SafehavenPMS.ViewModel
     public class AddNewPatientViewModel
     {
         //Optional identity for existing patients
-        public int? PatientId { get; set; }
+        public int PatientId { get; set; }
         //Foreign Keys
         public int AddressID { get; set; }
         public int ClinicalStaff { get; set; }

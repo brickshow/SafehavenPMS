@@ -462,16 +462,10 @@ namespace SafehavenPMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Affiliation")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DateOfReferral")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Education")
@@ -510,18 +504,6 @@ namespace SafehavenPMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PresentingComplaint")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ReferredBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ReferredByPhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Religion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -533,6 +515,49 @@ namespace SafehavenPMS.Migrations
                     b.HasKey("PatientId");
 
                     b.ToTable("Patients");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.PatientIntake", b =>
+                {
+                    b.Property<int>("PatientIntakeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PatientIntakeId"));
+
+                    b.Property<string>("Affiliation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateOfReferral")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IntakeStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PresentingComplaint")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReferredBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PatientIntakeId");
+
+                    b.HasIndex("PatientId")
+                        .IsUnique();
+
+                    b.ToTable("PatientIntakes");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.AdministrationLog", b =>
@@ -667,6 +692,17 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.PatientIntake", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                        .WithOne("PatientIntake")
+                        .HasForeignKey("SafehavenPMS.Models.PatientIntake", "PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
                 {
                     b.Navigation("Availabilities");
@@ -695,6 +731,9 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("ClinicalStaffPatients");
 
                     b.Navigation("MedicationOrders");
+
+                    b.Navigation("PatientIntake")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
