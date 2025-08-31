@@ -128,33 +128,42 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpGet]
-        public IActionResult SortBy(string sortOrder)
-        {
-            return RedirectToAction("Index", new
-            {
-                sortOrder,
-                page = 1,
-                pageSize = ViewBag.PageSize ?? 10,
-                searchQuery = ViewBag.SearchQuery,
-                status = ViewBag.Status
-            });
-        }
-
-        [HttpGet]
         public async Task<IActionResult> EditIntakeForm(int id)
         {
             var intake = await _context.PatientIntakes
-                                .Include(p => p.Patient)
-                                .Where(i => i.PatientIntakeId == id)
-                                .ToListAsync();
-
-            //Map to viewmodel
-            //var vm = new IntakeViewModel
-            //{
-            //    FullName
-            //};
-
-            return View();
+                .Include(p => p.Patient)
+                .FirstOrDefaultAsync(i => i.PatientIntakeId == id);
+        
+            if (intake == null)
+                return NotFound();
+        
+            // Calculate age from DoB
+            string age = "-";
+            if (intake.Patient?.DateOfBirth != null)
+            {
+                var today = DateTime.Today;
+                var dob = intake.Patient.DateOfBirth;
+                age = (today.Year - dob.Year - (dob.Date > today.AddYears(- (today.Year - dob.Year)) ? 1 : 0)).ToString();
+            }
+        
+            var vm = new IntakeViewModel
+            {
+                IntakeId = intake.PatientIntakeId,
+                FullName = $"{intake.Patient?.Firstname} {intake.Patient?.Lastname}",
+                Age = age,
+                Sex = intake.Patient?.Sex ?? "-",
+                Address = intake.Patient?.Address ?? "-",
+                ReferredBy = intake.ReferredBy,
+                ReferredByPhoneNumber = intake.Patient?.PhoneNumber,
+                IntakeOfficer = "-", // Fill if available
+                IntakeDate = intake.CreatedAt,
+                DateOfReferral = intake.DateOfReferral,
+                Occupation = intake.Patient?.Occupation ?? "-",
+                ReasonForIntake = intake.PresentingComplaint,
+                IntakeStatus = intake.IntakeStatus.ToString()
+            };
+        
+            return View(vm);
         }
     }
 }

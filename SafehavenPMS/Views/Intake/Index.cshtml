@@ -176,20 +176,60 @@
                                     @intake.IntakeStatus
                                 </div>
                             </td>
-                            <td class="position-relative text-center">
+                                                       <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bx bx-dots-vertical fs-5 text-muted"></i>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                        <li>
-                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                               href="#">
-                                                <span class="badge-dot bg-primary"></span>
-                                                Edit Intake Form
-                                            </a>
-                                        </li>
+                                        @if (intake.IntakeStatus == "Pending")
+                                        {
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    View Profile
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    Edit Intake Form
+                                                </a>
+                                            </li>
+                                        }
+                                        else if (intake.IntakeStatus == "In Progress")
+                                        {
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    View Profile
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" 
+                                                href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    Edit Intake Form
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                    <span class="badge-dot bg-success"></span>
+                                                    Submit Intake
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    View Profile
+                                                </a>
+                                            </li>
+                                        }
                                     </ul>
                                 </div>
                             </td>

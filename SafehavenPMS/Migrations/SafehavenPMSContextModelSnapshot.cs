@@ -288,6 +288,80 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("ClinicalStaffPatients");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.CounselorImpression", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("IntakeFormId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IntakeFormId");
+
+                    b.ToTable("CounselorImpressions");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.FamilyMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Age")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("IntakeFormId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Relationship")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IntakeFormId");
+
+                    b.ToTable("FamilyMembers");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.IntakeForm", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OtherFamilyDetails")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IntakeForms");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.MedicationOrder", b =>
                 {
                     b.Property<int>("MedicationOrderId")
@@ -560,6 +634,27 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("PatientIntakes");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.PresentingProblem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("IntakeFormId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IntakeFormId");
+
+                    b.ToTable("PresentingProblems");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.AdministrationLog", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.MedicationOrder", "Medication")
@@ -654,6 +749,23 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.CounselorImpression", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.IntakeForm", null)
+                        .WithMany("CounselorImpressions")
+                        .HasForeignKey("IntakeFormId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.FamilyMember", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.IntakeForm", null)
+                        .WithMany("FamilyMembers")
+                        .HasForeignKey("IntakeFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.MedicationOrder", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.Medicine", "Medicine")
@@ -703,6 +815,14 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.PresentingProblem", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.IntakeForm", null)
+                        .WithMany("PresentingProblems")
+                        .HasForeignKey("IntakeFormId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
                 {
                     b.Navigation("Availabilities");
@@ -710,6 +830,15 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("ClinicalStaffPatients");
 
                     b.Navigation("NewAppointments");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.IntakeForm", b =>
+                {
+                    b.Navigation("CounselorImpressions");
+
+                    b.Navigation("FamilyMembers");
+
+                    b.Navigation("PresentingProblems");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.MedicationOrder", b =>
