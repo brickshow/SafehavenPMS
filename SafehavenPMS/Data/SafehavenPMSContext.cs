@@ -12,7 +12,6 @@ namespace SafehavenPMS.Data
         }
 
         public DbSet<Patient> Patients { get; set; }
-        public DbSet<PatientIntake> PatientIntakes { get; set; }
         public DbSet<ClinicalStaff> ClinicalStaffs { get; set; }
         public DbSet<ClinicalStaffPatient> ClinicalStaffPatients { get; set; }
         public DbSet<Availability> Availabilities { get; set; }
@@ -31,13 +30,6 @@ namespace SafehavenPMS.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<PatientIntake>()
-                .HasOne(i => i.Patient)
-                .WithOne(p => p.PatientIntake)
-                .HasForeignKey<PatientIntake>(i => i.PatientId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-
             // Many-to-many: Patient ↔ ClinicalStaff
             modelBuilder.Entity<ClinicalStaffPatient>()
                 .HasKey(cp => new { cp.PatientId, cp.ClinicalStaffId });

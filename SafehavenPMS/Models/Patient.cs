@@ -21,9 +21,9 @@
 
 
         //One -to-Many Relationships
-        public PatientIntake PatientIntake { get; set; }
-        public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with ClinicalStaff
-        public ICollection<MedicationOrder> MedicationOrders { get; set; } // Navigation property for Medication orders
-        public ICollection<AdministrationLog> AdministrationLogs { get; set; } // Navigation property for Medication orders
+        public IntakeForm IntakeForm { get; set; } = new IntakeForm(); // One-to-one with IntakeForm
+        public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } = new List<ClinicalStaffPatient>(); // Many-to-many with ClinicalStaff
+        public ICollection<MedicationOrder> MedicationOrders { get; set; } = new List<MedicationOrder>(); // Navigation property for Medication orders
+        public ICollection<AdministrationLog> AdministrationLogs { get; set; } = new List<AdministrationLog>(); // Navigation property for Medication orders
     }
 }

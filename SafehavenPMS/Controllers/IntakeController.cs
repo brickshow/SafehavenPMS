@@ -30,7 +30,7 @@ namespace SafehavenPMS.Controllers
                    string sortOrder = null)
         {
             var query = _context.Patients
-                .Include(i => i.PatientIntake)
+                .Include(i => i.IntakeForm)
                 .Include(c => c.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
                 .AsQueryable();
@@ -95,18 +95,18 @@ namespace SafehavenPMS.Controllers
             // Project to IntakeViewModel
             var intakeViewModels = patientList.Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
             {
-                IntakeId = p.PatientIntake?.PatientIntakeId ?? 0,
+                IntakeId = p.IntakeForm?.IntakeFormsId ?? 0,
                 FullName = $"{p.Firstname} {p.Lastname}",
-                ReferredBy = p.PatientIntake?.ReferredBy ?? "-",
+                ReferredBy = p.IntakeForm?.ReferredBy ?? "-",
                 ReferredByPhoneNumber = p.PhoneNumber,
                 IntakeOfficer = "-", // Populate if you have this info
-                IntakeDate = p.PatientIntake?.CreatedAt ?? p.CreatedAt,
+                IntakeDate = p.IntakeForm?.CreatedAt ?? p.CreatedAt,
                 CompletedDate = "-", // Populate if you have this info
-                IntakeStatus = p.PatientIntake?.IntakeStatus.ToString() ?? "-"
+                IntakeStatus = p.IntakeForm?.IntakeStatus.ToString() ?? "-"
             }).ToList();
 
             //Return Total number of new referral
-            var Pending = await _context.PatientIntakes
+            var Pending = await _context.IntakeForms
                                     .Where(p => p.IntakeStatus == Enum.IntakeStatus.Pending.ToString())
                                     .ToListAsync();
 
@@ -130,25 +130,25 @@ namespace SafehavenPMS.Controllers
         [HttpGet]
         public async Task<IActionResult> EditIntakeForm(int id)
         {
-            var intake = await _context.PatientIntakes
+            var intake = await _context.IntakeForms
                 .Include(p => p.Patient)
-                .FirstOrDefaultAsync(i => i.PatientIntakeId == id);
-        
+                .FirstOrDefaultAsync(i => i.IntakeFormsId == id);
+
             if (intake == null)
                 return NotFound();
-        
+
             // Calculate age from DoB
             string age = "-";
             if (intake.Patient?.DateOfBirth != null)
             {
                 var today = DateTime.Today;
                 var dob = intake.Patient.DateOfBirth;
-                age = (today.Year - dob.Year - (dob.Date > today.AddYears(- (today.Year - dob.Year)) ? 1 : 0)).ToString();
+                age = (today.Year - dob.Year - (dob.Date > today.AddYears(-(today.Year - dob.Year)) ? 1 : 0)).ToString();
             }
-        
+
             var vm = new IntakeViewModel
             {
-                IntakeId = intake.PatientIntakeId,
+                IntakeId = intake.PatientId,
                 FullName = $"{intake.Patient?.Firstname} {intake.Patient?.Lastname}",
                 Age = age,
                 Sex = intake.Patient?.Sex ?? "-",
@@ -162,8 +162,15 @@ namespace SafehavenPMS.Controllers
                 ReasonForIntake = intake.PresentingComplaint,
                 IntakeStatus = intake.IntakeStatus.ToString()
             };
-        
+
             return View(vm);
         }
+
+        //POst action to add new Family
+        //[HttpPost]
+        //public IActionResult EditIntakeForm(IntakeForm model)
+        //{
+
+        //}
     }
 }

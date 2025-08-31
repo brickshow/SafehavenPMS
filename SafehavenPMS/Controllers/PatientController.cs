@@ -220,7 +220,7 @@ namespace SafehavenPMS.Controllers
                 await _context.SaveChangesAsync();
 
                 // Now create and save the intake with the new PatientId
-                var intake = new PatientIntake
+                var intake = new IntakeForm
                 {
                     PatientId = patient.PatientId,
                     DateOfReferral = model.DateOfReferral,
@@ -232,9 +232,9 @@ namespace SafehavenPMS.Controllers
                     CreatedAt = DateTime.Now
                 };
 
-                await _context.PatientIntakes.AddAsync(intake);
+                await _context.IntakeForms.AddAsync(intake ?? new IntakeForm());
                 await _context.SaveChangesAsync();
-
+    
                 // Save physician-patient relationship if selected
                 if (model.ClinicalStaff > 0)
                 {

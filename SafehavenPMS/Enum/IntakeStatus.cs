@@ -2,7 +2,7 @@
 {
     public enum IntakeStatus
     {
-        Pending = Enum.PatientStatusEnum.NewReferral,
+        Pending,
         InProgress,
         Completed
     }
