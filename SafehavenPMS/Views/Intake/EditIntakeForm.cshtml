@@ -4,47 +4,60 @@
     ViewBag.Title = "Edit Intake Form";
 }
 
-<form asp-action="EditIntakeForm" method="post" class="container-fluid py-3">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="IntakeId" value="@Model.IntakeId" />
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="@Url.Action("Index")" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
 
-    <!-- Header spans full width above the tablature -->
-    <div class="card shadow-sm mb-4" style="border-radius:6px;">
-        <div class="card-body p-4">
-            <div class="d-flex align-items-center mb-3">
-                <div class="me-3 position-relative">
-                    <div class="rounded-circle bg-secondary" style="width:58px;height:58px;overflow:hidden;">
-                        <img src="~/Images/default.png" alt="Patient Photo" style="width:100%;height:100%;object-fit:cover;" />
-                    </div>
-                    <div class="position-absolute bottom-0 end-0 rounded-circle bg-success d-flex align-items-center justify-content-center"
-                         style="width:20px;height:20px;">
-                        <i class="bx bx-smile text-white" style="font-size:12px;"></i>
-                    </div>
-                </div>
-
-                <div class="flex-grow-1">
-                    <div class="d-flex align-items-start justify-content-between flex-column flex-md-row">
+<!-- Header spans full width above the tablature -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4" style="border-radius:6px;">
+            <div class="card-body p-4">
+                <div class="row g-0 align-items-center justify-content-between">
+                    <!-- Photo + Name -->
+                    <div class="col-auto d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <div class="rounded-circle bg-secondary" style="width:58px;height:58px;overflow:hidden;">
+                                <img src="~/Images/default.png" alt="Patient Photo" style="width:100%;height:100%;object-fit:cover;" />
+                            </div>
+                            <div class="position-absolute bottom-0 end-0 rounded-circle bg-success d-flex align-items-center justify-content-center"
+                                 style="width:20px;height:20px;">
+                                <i class="bx bx-smile text-white" style="font-size:12px;"></i>
+                            </div>
+                        </div>
                         <div>
                             <h5 class="mb-0">@Model.FullName</h5>
                             <small class="text-muted">Patient No. @Model.IntakeId</small>
                         </div>
+                    </div>
 
-                        <div class="mt-3 mt-md-0 d-flex gap-4">
-                            <div>
+                    <!-- Patient Info Grid -->
+                    <div class="col">
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
                                 <div class="text-muted small">Age</div>
-                                <div class="fw-semibold">@Model.Age ?? "—"</div>
+                                <div class="fw-semibold">@Model.Age</div>
                             </div>
-                            <div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
                                 <div class="text-muted small">Sex</div>
-                                <div class="fw-semibold">@Model.Sex ?? "—"</div>
+                                <div class="fw-semibold">@Model.Sex</div>
                             </div>
-                            <div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
                                 <div class="text-muted small">Occupation</div>
                                 <div class="fw-semibold">@Model.Occupation</div>
                             </div>
-                            <div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
                                 <div class="text-muted small">Address</div>
-                                <div class="fw-semibold">@Model.Address ?? "—"</div>
+                                <div class="fw-semibold">@Model.Address</div>
                             </div>
                         </div>
                     </div>
@@ -52,174 +65,74 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div class="row gx-4">
-        <!-- Left navigation (Bootstrap pills vertical) -->
-        <div class="col-md-3">
-            <div class="nav flex-column nav-pills mb-3" id="leftTabs" role="tablist" aria-orientation="vertical" style="border-radius:6px; overflow:hidden;">
-                <a class=" nav-link" id="tab-family-link" data-bs-toggle="pill" href="#tab-family" role="tab" aria-controls="tab-family" aria-selected="false">
-                    Family Constellation
-                </a>
-                <a class="nav-link active" id="tab-problems-link" data-bs-toggle="pill" href="#tab-problems" role="tab" aria-controls="tab-problems" aria-selected="true" style="background:#0f7b7f; border-color:#0f7b7f; color:#fff;">
-                    Presenting Problems
-                </a>
-                <a class="nav-link" id="tab-impressions-link" data-bs-toggle="pill" href="#tab-impressions" role="tab" aria-controls="tab-impressions" aria-selected="false">
-                    Counselor's / Case Worker's Impression
-                </a>
+<!-- Additional Information Card -->
+<div class="card shadow-sm mb-4" style="border-radius:6px;">
+    <form>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Date of Intake:</label>
+                    <input type="date" class="form-control" value="@Model.IntakeDate?.ToString("MMM dd, yyyy")" disabled/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Date of Referral:</label>
+                    <input type="date" class="form-control" value="@Model.DateOfReferral?.ToString("MMM dd, yyyy")" disabled/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Referred by:</label>
+                    <input type="text" class="form-control" value="@Model.ReferredBy" disabled/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Contact No.:</label>
+                    <input type="text" class="form-control" value="@Model.ReferredByPhoneNumber" disabled/>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Reason for Intake:</label>
+                    <input type="text" class="form-control" value="@Model.ReasonForIntake" disabled/>
+                </div>
             </div>
         </div>
+    </form>
+</div>
 
-        <!-- Right content -->
-        <div class="col-md-9">
-            <div class="tab-content" id="tabContentWrapper">
-                <!-- Family Constellation tab -->
-                <div class="tab-pane fade" id="tab-family" role="tabpanel" aria-labelledby="tab-family-link">
-                    <div class="card shadow-sm mb-4" style="border-radius:6px;">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <h5 class="mb-0" style="color:#0f7b7f; font-weight:700;">FAMILY CONSTELLATION</h5>
-                                <small class="text-muted fst-italic ms-3">(Indicate whether parents are natural or adoptive; include siblings and other significant persons)</small>
-                            </div>
+<div class="row g-1">
+    <!-- Left navigation (Bootstrap pills vertical) -->
+    <div class="col-md-3">
+        <div class="nav flex-column nav-pills mb-3" id="leftTabs" role="tablist" aria-orientation="vertical">
+            <a class="nav-link active" id="tab-family-link" data-bs-toggle="pill" href="#tab-family" role="tab"
+               aria-controls="tab-family" aria-selected="true">
+                Family Constellation
+            </a>
+            <a class="nav-link" id="tab-problems-link" data-bs-toggle="pill" href="#tab-problems" role="tab"
+               aria-controls="tab-problems" aria-selected="false">
+                Presenting Problems
+            </a>
+            <a class="nav-link" id="tab-impressions-link" data-bs-toggle="pill" href="#tab-impressions" role="tab"
+               aria-controls="tab-impressions" aria-selected="false">
+                Counselor's / Case Worker's Impression
+            </a>
+        </div>
+    </div>
+    <!-- In the tab content section -->
+    <div class="col-md-9">
+        <div class="tab-content" id="tabContentWrapper">
+            <div class="tab-pane fade show active" id="tab-family" role="tabpanel" aria-labelledby="tab-family-link">
+                @await Html.PartialAsync("IntakeFormTabs/FamilyTab", Model)
+            </div>
 
-                            <div class="table-responsive">
-                                <table class="table align-middle table-borderless" id="familyTable">
-                                    <thead>
-                                        <tr style="border-bottom:1px solid #e9ecef;">
-                                            <th style="width:30%; color:#4b5563; font-weight:700;">Family Member</th>
-                                            <th style="width:10%; color:#4b5563; font-weight:700;">Age</th>
-                                            <th style="width:20%; color:#4b5563; font-weight:700;">Relationship</th>
-                                            <th style="width:35%; color:#4b5563; font-weight:700;">Comments</th>
-                                            <th style="width:5%;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @for (int i = 0; i < Model.FamilyMembers.Count; i++)
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <input type="text" name="FamilyMembers[@i].Name" class="form-control form-control-sm" value="@Model.FamilyMembers[i].Name" />
-                                                </td>
-                                                <td>
-                                                    <input type="number" name="FamilyMembers[@i].Age" class="form-control form-control-sm" value="@Model.FamilyMembers[i].Age" />
-                                                </td>
-                                                <td>
-                                                    <input type="text" name="FamilyMembers[@i].Relationship" class="form-control form-control-sm" value="@Model.FamilyMembers[i].Relationship" />
-                                                </td>
-                                                <td>
-                                                    <input type="text" name="FamilyMembers[@i].Comments" class="form-control form-control-sm" value="@Model.FamilyMembers[i].Comments" />
-                                                </td>
-                                                <td class="text-center">
-                                                    <button type="button" class="btn btn-outline-danger btn-sm" title="Remove">
-                                                        <i class="bx bx-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        }
+            <div class="tab-pane fade" id="tab-problems" role="tabpanel" aria-labelledby="tab-problems-link">
+                @await Html.PartialAsync("IntakeFormTabs/ProblemsTab", Model)
+            </div>
 
-                                        <!-- Hidden template row (UI only) -->
-                                        <tr id="familyTemplateRow" style="display:none;">
-                                            <td><input type="text" class="form-control form-control-sm" /></td>
-                                            <td><input type="number" class="form-control form-control-sm" /></td>
-                                            <td><input type="text" class="form-control form-control-sm" /></td>
-                                            <td><input type="text" class="form-control form-control-sm" /></td>
-                                            <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm"><i class="bx bx-trash"></i></button></td>
-                                        </tr>
-
-                                        <!-- Control row for inline add UI (visual only) -->
-                                        <tr>
-                                            <td colspan="5" class="pt-4">
-                                                <div class="row gx-2 align-items-center">
-                                                    <div class="col-12 col-lg-4 mb-2 mb-lg-0">
-                                                        <input id="newFamilyName" class="form-control" placeholder="Enter name" />
-                                                    </div>
-                                                    <div class="col-4 col-lg-1 mb-2 mb-lg-0">
-                                                        <input id="newFamilyAge" class="form-control" placeholder="Age" />
-                                                    </div>
-                                                    <div class="col-8 col-lg-3 mb-2 mb-lg-0">
-                                                        <input id="newFamilyRelationship" class="form-control" placeholder="Relationship" />
-                                                    </div>
-                                                    <div class="col-12 col-lg-4">
-                                                        <input id="newFamilyComments" class="form-control" placeholder="Comments" />
-                                                    </div>
-                                                </div>
-
-                                                <div class="d-flex justify-content-center mt-3">
-                                                    <button id="addFamilyBtn" type="button" class="btn" style="background:#0f7b7f; color:#fff; padding:10px 26px; border-radius:6px;">
-                                                        <i class="bx bx-plus me-1"></i> Add Family Member
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="mt-4">
-                                <label class="form-label text-muted">Other family details</label>
-                                <textarea name="OtherFamilyDetails" class="form-control" rows="3">@Model.OtherFamilyDetails</textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Presenting Problems tab (active by default) -->
-                <div class="tab-pane fade show active" id="tab-problems" role="tabpanel" aria-labelledby="tab-problems-link">
-                    <div class="card shadow-sm mb-4" style="border-radius:6px;">
-                        <div class="card-body p-4">
-                            <h6 class="text-uppercase" style="color:#0f7b7f; font-weight:700;">Presenting Problems/Complaints</h6>
-                            <div class="mb-3 mt-3">
-                                <div class="d-flex gap-2">
-                                    <input id="newProblemInput" type="text" class="form-control" placeholder="Write here..." />
-                                    <button id="addProblemBtn" type="button" class="btn" style="background:#0f7b7f; color:#fff;">Add</button>
-                                </div>
-                            </div>
-
-                            <div id="problemsContainer" class="mb-2">
-                                @for (int i = 0; i < Model.PresentingProblems.Count; i++)
-                                {
-                                    <div class="d-flex align-items-center mb-2">
-                                        <input name="PresentingProblems[@i].Description" class="form-control me-2" value="@Model.PresentingProblems[i].Description" />
-                                        <button type="button" class="btn btn-outline-danger btn-sm"><i class="bx bx-trash"></i></button>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Impressions tab -->
-                <div class="tab-pane fade" id="tab-impressions" role="tabpanel" aria-labelledby="tab-impressions-link">
-                    <div class="card shadow-sm mb-4" style="border-radius:6px;">
-                        <div class="card-body p-4">
-                            <h6 class="text-uppercase" style="color:#0f7b7f; font-weight:700;">Counselor's / Case Worker's Impression</h6>
-                            <div class="mb-3 mt-3">
-                                <div class="d-flex gap-2">
-                                    <input id="newImpressionInput" type="text" class="form-control" placeholder="Write here..." />
-                                    <button id="addImpressionBtn" type="button" class="btn" style="background:#0f7b7f; color:#fff;">Add</button>
-                                </div>
-                            </div>
-
-                            <div id="impressionsContainer" class="mb-2">
-                                @for (int i = 0; i < Model.CounselorImpressions.Count; i++)
-                                {
-                                    <div class="d-flex align-items-center mb-2">
-                                        <input name="CounselorImpressions[@i].Description" class="form-control me-2" value="@Model.CounselorImpressions[i].Description" />
-                                        <button type="button" class="btn btn-outline-danger btn-sm"><i class="bx bx-trash"></i></button>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div> <!-- /tabContentWrapper -->
-            <!-- Save button (posts the form) -->
-            <div class="text-center mb-5">
-                <button type="submit" class="btn" style="width:160px; background:#0f7b7f; color:#fff; padding:10px 22px; border-radius:6px;">Save</button>
+            <div class="tab-pane fade" id="tab-impressions" role="tabpanel" aria-labelledby="tab-impressions-link">
+                @await Html.PartialAsync("IntakeFormTabs/ImpressionsTab", Model)
             </div>
         </div>
     </div>
-</form>
+</div>
+
 
 <style>
     /* Visual adjustments to mimic the tablature look */
@@ -253,10 +166,36 @@
         font-weight: 600;
     }
 
-    /* Make active pill look like the teal theme */
-    .nav-pills .nav-link.active {
-        background: #0f7b7f;
-        color: #fff;
-        border-color: #0f7b7f;
+    /* Updated styling for navigation pills */
+    .nav-pills .nav-link {
+        color: #333;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0;
+        margin-bottom: -1px;
+        padding: 12px 20px;
+        transition: all 0.2s ease;
     }
+
+        .nav-pills .nav-link:hover {
+            background-color: #f8f9fa;
+        }
+
+        .nav-pills .nav-link.active {
+            color: #fff;
+            background-color: #006d77;
+            border-color: #006d77;
+        }
+
+        /* Remove border radius from first and last items */
+        .nav-pills .nav-link:first-child {
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+
+        .nav-pills .nav-link:last-child {
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            margin-bottom: 0;
+        }
 </style>

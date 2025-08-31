@@ -24,8 +24,6 @@ namespace SafehavenPMS.Data
         //Intake forms Entities
         public DbSet<IntakeForm> IntakeForms { get; set; }
         public DbSet<FamilyMember> FamilyMembers { get; set; }
-        public DbSet<PresentingProblem> PresentingProblems { get; set; }
-        public DbSet<CounselorImpression> CounselorImpressions { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -141,18 +139,6 @@ namespace SafehavenPMS.Data
                 .WithMany(i => i.FamilyMembers)
                 .HasForeignKey(f => f.IntakeFormId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<PresentingProblem>()
-            .HasOne<IntakeForm>()
-            .WithMany(i => i.PresentingProblems)
-            .HasForeignKey(p => p.IntakeFormId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<CounselorImpression>()
-            .HasOne<IntakeForm>()
-            .WithMany(i => i.CounselorImpressions)
-            .HasForeignKey(c => c.IntakeFormId)
-            .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

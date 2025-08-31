@@ -1,15 +1,15 @@
-@using SafehavenPMS.Enum
+﻿@using SafehavenPMS.Enum
 @model List<SafehavenPMS.ViewModel.IntakeViewModel>
 @{
-    ViewBag.Title = "Intake";
+    ViewBag.Title = "Scheduling";
 }
 
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center g-4">
             <div class="d-flex justify-content-center align-items-center">
-                <i class='bx bxs-user fs-2 me-2'></i>
-                <h5 class="text-custom mb-0">Patients</h5>
+                <i class='bx bxs-calendar fs-2 me-2'></i>
+                <h5 class="text-custom mb-0">Scheduling</h5>
             </div>
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
@@ -53,8 +53,10 @@
     <div class="waitlisted d-flex flex-row flex-wrap gap-2">
         <form asp-action="Index" method="get">
             <input type="hidden" name="status" value="Waitlisted" />
+            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
             <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
-                New Referral (@ViewBag.Pending)
+                Waitlisted (@ViewBag.WaitlistedCount)
             </button>
         </form>
     </div>
@@ -150,7 +152,7 @@
                             <td>@intake.IntakeOfficer</td>
                             <td>@intake.IntakeDate?.ToString("MMM dd, yyyy")</td>
                             <td class="text-center">
-                                @if(intake.IntakeStatus == IntakeStatus.Pending.ToString())
+                                @if (intake.IntakeStatus == IntakeStatus.Pending.ToString())
                                 {
                                     <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Pending
@@ -168,9 +170,9 @@
                                         Completed
                                     </div>
                                 }
-                              
+
                             </td>
-                                <td class="position-relative text-center">
+                            <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bx bx-dots-vertical fs-5 text-muted"></i>
@@ -185,12 +187,12 @@
                                                     View Profile
                                                 </a>
                                             </li>
-                                          <li>
+                                            <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                href="#"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#submitIntakeModal"
-                                                onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#submitIntakeModal"
+                                                   onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
                                                     <span class="badge-dot bg-success"></span>
                                                     Submit Intake
                                                 </a>
@@ -211,12 +213,12 @@
                                                     Edit Intake Form
                                                 </a>
                                             </li>
-                                           <li>
+                                            <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                href="#"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#submitIntakeModal"
-                                                onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#submitIntakeModal"
+                                                   onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
                                                     <span class="badge-dot bg-success"></span>
                                                     Submit Intake
                                                 </a>
@@ -236,7 +238,7 @@
                             </td>
                         </tr>
                         row++;
-                    }   
+                    }
                 }
             </tbody>
         </table>
@@ -321,6 +323,7 @@
             color: white !important;
             box-shadow: none;
         }
+
     .table-header {
         width: 100%;
         height: 50px;
@@ -339,6 +342,7 @@
         position: absolute !important;
         z-index: 1055 !important;
     }
+
     .table td, .table th {
         white-space: nowrap;
     }

@@ -1,0 +1,68 @@
+@model SafehavenPMS.ViewModel.IntakeViewModel
+
+<form asp-action="SaveProblems" asp-controller="Intake" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="IntakeId" value="@Model.IntakeId" />
+    <div class="card shadow-sm mb-4" style="border-radius:6px;">
+        <div class="card-body p-4">
+            <h6 class="text-uppercase" style="color:#0f7b7f; font-weight:700;">Presenting Problems/Complaints</h6>
+
+            <div id="problemsContainer" class="mb-2">
+                <textarea class="form-control auto-expand"
+                          id="problemsTextArea"
+                          asp-for="ProblemPresentation"
+                          placeholder="Please describe all presenting problems in detail...">@Model.ProblemPresentation</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="d-flex justify-content-end mt-4 mb-4">
+        <button type="submit" class="btn btn-custom">
+            <i class="bx bx-save me-2"></i>Save
+        </button>
+    </div>
+</form>
+
+<style>
+    .auto-expand {
+        min-height: 100px;
+        overflow-y: hidden;
+        resize: none;
+        padding: 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        transition: height 0.2s ease;
+    }
+
+        .auto-expand:focus {
+            border-color: #0f7b7f;
+            box-shadow: 0 0 0 0.2rem rgba(15, 123, 127, 0.25);
+            outline: none;
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.getElementById('problemsTextArea');
+
+        // Initial adjustment
+        adjustHeight(textarea);
+
+        // Adjust height on input
+        textarea.addEventListener('input', function() {
+            adjustHeight(this);
+        });
+
+        function adjustHeight(element) {
+            // Reset height to allow shrinking
+            element.style.height = 'auto';
+
+            // Set new height based on scrollHeight
+            const newHeight = Math.max(100, element.scrollHeight);
+            element.style.height = newHeight + 'px';
+        }
+    });
+</script>

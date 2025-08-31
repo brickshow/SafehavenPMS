@@ -3,6 +3,7 @@
     public enum PatientStatusEnum
     {
         NewReferral,
+        Pending,
         Waitlisted,
         PendingAssessment,
         PendingApproval,

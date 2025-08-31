@@ -1,4 +1,6 @@
-﻿namespace SafehavenPMS.Models
+﻿using SafehavenPMS.Enum;
+
+namespace SafehavenPMS.Models
 {
     public class Patient
     {

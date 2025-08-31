@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250831111902_ksdhjsdgfjhsdf")]
+    partial class ksdhjsdgfjhsdf
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -308,6 +311,9 @@ namespace SafehavenPMS.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("OtherFamilyDetails")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("PatientIntakeIntakeFormsId")
                         .HasColumnType("int");
 
@@ -348,9 +354,6 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("IntakeStatus")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OtherFamilyDetails")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PatientId")

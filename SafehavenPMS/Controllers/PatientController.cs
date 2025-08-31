@@ -55,9 +55,9 @@ namespace SafehavenPMS.Controllers
             ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
             ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
             ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
-            ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
-            ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
-            ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
+            //ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
+            //ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
+            //ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -79,7 +79,7 @@ namespace SafehavenPMS.Controllers
             // ✅ Apply status filter (default = All)
             if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(p => p.PatientStatus == status);
+                query = query.Where(p => p.PatientStatus.ToString() == status);
             }
 
             // 🔃 Apply sorting

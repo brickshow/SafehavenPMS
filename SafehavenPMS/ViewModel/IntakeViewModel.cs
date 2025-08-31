@@ -3,6 +3,7 @@
     public class IntakeViewModel
     {
         public int IntakeId { get; set; }
+        public int PatientId { get; set; }
         public string? FullName { get; set; }
         public string? Age { get; set; }
         public string? Sex { get; set; }
@@ -17,14 +18,15 @@
         public string? Occupation { get; set; }
         public string? IntakeStatus { get; set; }
 
+        //Presentinf problem
+        public string? ProblemPresentation { get; set; }
+        public string? CouncilorImpression { get; set; }
+        public string? OtherFamilyDetails { get; set; } = string.Empty;
+
         // Family section
         public List<FamilyMemberVm> FamilyMembers { get; set; } = new();
+        public FamilyMemberVm NewFamilyMember { get; set; } = new(); 
 
-        public string OtherFamilyDetails { get; set; } = string.Empty;
-
-        // Presenting problems and impressions
-        public List<PresentingProblemVm> PresentingProblems { get; set; } = new();
-        public List<CounselorImpressionVm> CounselorImpressions { get; set; } = new();
     }
 
     public class FamilyMemberVm
@@ -33,15 +35,6 @@
         public int? Age { get; set; }
         public string? Relationship { get; set; }
         public string? Comments { get; set; }
-    }
 
-    public class PresentingProblemVm
-    {
-        public string? Description { get; set; }
-    }
-
-    public class CounselorImpressionVm
-    {
-        public string? Description { get; set; }
     }
 }

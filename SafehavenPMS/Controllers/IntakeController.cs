@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SafehavenPMS.ViewModel;
+using System.Reflection.Metadata.Ecma335;
 
 
 namespace SafehavenPMS.Controllers
@@ -40,9 +41,9 @@ namespace SafehavenPMS.Controllers
             ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
             ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
             ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
-            ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
-            ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
-            ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
+            //ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
+            //ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
+            //ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -64,7 +65,7 @@ namespace SafehavenPMS.Controllers
             // Apply status filter (default = All)
             if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(p => p.PatientStatus == status);
+                query = query.Where(p => p.PatientStatus.ToString() == status);
             }
 
             //Apply sorting
@@ -132,6 +133,7 @@ namespace SafehavenPMS.Controllers
         {
             var intake = await _context.IntakeForms
                 .Include(p => p.Patient)
+                .Include(i => i.FamilyMembers) // Add this line
                 .FirstOrDefaultAsync(i => i.IntakeFormsId == id);
 
             if (intake == null)
@@ -148,29 +150,222 @@ namespace SafehavenPMS.Controllers
 
             var vm = new IntakeViewModel
             {
-                IntakeId = intake.PatientId,
+                IntakeId = intake.IntakeFormsId,
                 FullName = $"{intake.Patient?.Firstname} {intake.Patient?.Lastname}",
                 Age = age,
                 Sex = intake.Patient?.Sex ?? "-",
                 Address = intake.Patient?.Address ?? "-",
                 ReferredBy = intake.ReferredBy,
                 ReferredByPhoneNumber = intake.Patient?.PhoneNumber,
-                IntakeOfficer = "-", // Fill if available
+                IntakeOfficer = "-",
                 IntakeDate = intake.CreatedAt,
                 DateOfReferral = intake.DateOfReferral,
                 Occupation = intake.Patient?.Occupation ?? "-",
                 ReasonForIntake = intake.PresentingComplaint,
-                IntakeStatus = intake.IntakeStatus.ToString()
+                IntakeStatus = intake.IntakeStatus?.ToString(),
+                CouncilorImpression = intake.CouncilorImpression,
+                ProblemPresentation = intake.ProblemPresentation,
+                OtherFamilyDetails = intake.OtherFamilyDetails,
+
+
+                // Add this: Load existing family members
+                FamilyMembers = intake.FamilyMembers?.Select(fm => new FamilyMemberVm
+                {
+                    Name = fm.Name,
+                    Age = fm.Age,
+                    Relationship = fm.Relationship,
+                    Comments = fm.Comments,
+
+                }).ToList() ?? new List<FamilyMemberVm>(),
             };
 
             return View(vm);
         }
+        // POST: Save all family data using IFormCollection
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveFamilyData([FromForm] IntakeViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Return to EditIntakeForm with the current model
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
 
-        //POst action to add new Family
-        //[HttpPost]
-        //public IActionResult EditIntakeForm(IntakeForm model)
-        //{
+            var intakeForm = await _context.IntakeForms
+                .Include(i => i.FamilyMembers)
+                .FirstOrDefaultAsync(i => i.IntakeFormsId == model.IntakeId);
 
-        //}
+            if (intakeForm == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                // Remove existing family members
+                _context.FamilyMembers.RemoveRange(intakeForm.FamilyMembers);
+
+                // Add family members from the model
+                if (model.FamilyMembers != null)
+                {
+                    foreach (var familyMember in model.FamilyMembers.Where(fm => !string.IsNullOrWhiteSpace(fm.Name)))
+                    {
+                        intakeForm.FamilyMembers.Add(new FamilyMember
+                        {
+                            Name = familyMember.Name,
+                            Age = familyMember.Age,
+                            Relationship = familyMember.Relationship,
+                            Comments = familyMember.Comments,
+                            IntakeFormId = intakeForm.IntakeFormsId
+                        });
+                    }
+                }
+
+                // Update other family details
+                intakeForm.IntakeStatus = IntakeStatus.InProgress.ToString();
+                intakeForm.OtherFamilyDetails = model.OtherFamilyDetails;
+                // Update status
+                await UpdatePatientStatus(intakeForm.PatientId);
+
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Family information saved successfully. Added {intakeForm.FamilyMembers.Count} family members.";
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                TempData["ErrorMessage"] = "An error occurred while saving family information.";
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
+
+            return RedirectToAction("EditIntakeForm", new { id = intakeForm.IntakeFormsId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveProblems(IntakeViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
+
+            var intakeForm = await _context.IntakeForms
+                .FirstOrDefaultAsync(i => i.IntakeFormsId == model.IntakeId);
+
+            if (intakeForm == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                // Update presenting problems
+                intakeForm.ProblemPresentation = model.ProblemPresentation;
+                intakeForm.IntakeStatus = IntakeStatus.InProgress.ToString();
+                _context.IntakeForms.Update(intakeForm);
+
+                // Update status
+                await UpdatePatientStatus(intakeForm.PatientId);
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Presenting problems saved successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while saving presenting problems.";
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
+
+            return RedirectToAction("EditIntakeForm", new { id = intakeForm.IntakeFormsId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveImpressions(IntakeViewModel model)
+        {
+
+
+
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
+
+            var intakeForm = await _context.IntakeForms
+                .Include(p => p.Patient)
+                .FirstOrDefaultAsync(i => i.IntakeFormsId == model.IntakeId);
+
+            //TODO RETURN TEMDATA
+            if (intakeForm == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                // Update counselor impressions
+                intakeForm.CouncilorImpression = model.CouncilorImpression;
+                intakeForm.IntakeStatus = IntakeStatus.InProgress.ToString();
+                _context.IntakeForms.Update(intakeForm);
+
+                // Update status
+                await UpdatePatientStatus(intakeForm.PatientId);
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Counselor impressions saved successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while saving counselor impressions.";
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
+
+            return RedirectToAction("EditIntakeForm", new { id = intakeForm.IntakeFormsId });
+        }
+
+        //Helper method to update patient status
+        private async Task UpdatePatientStatus(int id)
+        {
+            var patient = await _context.Patients.FirstOrDefaultAsync(i => i.PatientId == id);
+
+            if (patient == null)
+                return;
+
+            // All sections completed
+            if (patient.PatientStatus == PatientStatusEnum.NewReferral.ToString())
+            {
+                patient.PatientStatus = PatientStatusEnum.Pending.ToString();
+            }
+            if (patient.PatientStatus == PatientStatusEnum.Pending.ToString())
+            {
+                patient.PatientStatus = PatientStatusEnum.Waitlisted.ToString();
+            } 
+         
+            await _context.SaveChangesAsync();
+
+        }
+
+        //Action to Submit Intake form for assessment
+        public async Task<IActionResult> SubmitIntakeForm(int IntakeId)
+        {
+            // Logic to submit the intake form for assessment
+            var intakeForm = await _context.IntakeForms.FindAsync(IntakeId);
+            if (intakeForm == null)
+            {
+                return NotFound();
+            }
+
+            // Update the status to submitted
+            intakeForm.IntakeStatus = IntakeStatus.Completed.ToString();
+            _context.IntakeForms.Update(intakeForm);
+
+            //update patient status
+            await UpdatePatientStatus(intakeForm.PatientId);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Index");
+        }
     }
 }
