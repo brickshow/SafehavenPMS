@@ -52,8 +52,8 @@
 <div class="status">
     <div class="waitlisted d-flex flex-row flex-wrap gap-2">
         <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="Waitlisted" />
-            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
+            <input type="hidden" name="status" value="Pending" />
+            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Pending" ? "active" : "")">
                 New Referral (@ViewBag.Pending)
             </button>
         </form>
