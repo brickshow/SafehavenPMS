@@ -285,9 +285,6 @@ namespace SafehavenPMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveImpressions(IntakeViewModel model)
         {
-
-
-
             if (!ModelState.IsValid)
             {
                 return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
@@ -348,6 +345,7 @@ namespace SafehavenPMS.Controllers
         }
 
         //Action to Submit Intake form for assessment
+        [HttpPost]
         public async Task<IActionResult> SubmitIntakeForm(int IntakeId)
         {
             // Logic to submit the intake form for assessment
@@ -365,6 +363,24 @@ namespace SafehavenPMS.Controllers
             await UpdatePatientStatus(intakeForm.PatientId);
             await _context.SaveChangesAsync();
 
+            try
+            {
+                //pre populate scheduling tables
+                var scheduling = new Scheduling
+                {
+                    PatientId = intakeForm.PatientId,
+                    Type = "Initial Assessment",
+                    Status = SchedulingStatus.Pending.ToString()
+                };
+                await _context.Schedulings.AddAsync(scheduling);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Intake form submitted for assessment successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while submitting the intake form.";
+                return RedirectToAction("EditIntakeForm", new { id = IntakeId });
+            }
             return RedirectToAction("Index");
         }
     }

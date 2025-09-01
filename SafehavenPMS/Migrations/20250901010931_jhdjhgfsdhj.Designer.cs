@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250901010931_jhdjhgfsdhj")]
+    partial class jhdjhgfsdhj
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -615,14 +618,14 @@ namespace SafehavenPMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScheduleId"));
 
-                    b.Property<int?>("ClinicalStaffID")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
@@ -630,10 +633,11 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("ScheduleDate")
+                    b.Property<DateTime>("ScheduleDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ScheduleTime")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
@@ -646,7 +650,7 @@ namespace SafehavenPMS.Migrations
 
                     b.HasKey("ScheduleId");
 
-                    b.HasIndex("ClinicalStaffID");
+                    b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
 
@@ -813,10 +817,11 @@ namespace SafehavenPMS.Migrations
 
             modelBuilder.Entity("SafehavenPMS.Models.Scheduling", b =>
                 {
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "Doctor")
                         .WithMany("Schedulings")
-                        .HasForeignKey("ClinicalStaffID")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("SafehavenPMS.Models.Patient", "Patient")
                         .WithMany("Schedulings")
@@ -824,7 +829,7 @@ namespace SafehavenPMS.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ClinicalStaff");
+                    b.Navigation("Doctor");
 
                     b.Navigation("Patient");
                 });

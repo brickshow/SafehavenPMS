@@ -1,5 +1,5 @@
 ﻿@using SafehavenPMS.Enum
-@model List<SafehavenPMS.ViewModel.IntakeViewModel>
+@model List<SafehavenPMS.ViewModel.SchedulingViewModel>
 @{
     ViewBag.Title = "Scheduling";
 }
@@ -124,11 +124,11 @@
                 <tr>
                     <th>No.</th>
                     <th>Patient</th>
-                    <th>Referred By</th>
-                    <th>Referral Phone No.</th>
-                    <th>Intake Officer</th>
-                    <th>Intake Date</th>
-                    <th class="text-center">Intake Status</th>
+                    <th>Type</th>
+                    <th>Dotor</th>
+                    <th>Scheduled Date</th>
+                    <th>Scheduled Time</th>
+                    <th class="text-center">Status Status</th>
                     <th class="text-center">Action</th>
                 </tr>
             </thead>
@@ -142,32 +142,38 @@
                 else
                 {
                     var row = 1;
-                    foreach (var intake in Model)
+                    foreach (var sched in Model)
                     {
                         <tr>
                             <td>@row</td>
-                            <td>@intake.FullName</td>
-                            <td>@intake.ReferredBy</td>
-                            <td>@intake.ReferredByPhoneNumber</td>
-                            <td>@intake.IntakeOfficer</td>
-                            <td>@intake.IntakeDate?.ToString("MMM dd, yyyy")</td>
+                            <td>@(sched.PatientName ?? "-")</td>
+                            <td>@(sched.Type ?? "-")</td>
+                            <td>@(sched.ClinicalStaffName ?? "-")</td>
+                            <td>@(sched.ScheduleDate?.ToString("MMM dd, yyyy") ?? "-")</td>
+                            <td>@(sched.ScheduleTime ?? "-")</td>
                             <td class="text-center">
-                                @if (intake.IntakeStatus == IntakeStatus.Pending.ToString())
+                                @if (sched.Status == SchedulingStatus.Pending.ToString())
                                 {
                                     <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Pending
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == IntakeStatus.InProgress.ToString())
+                                @if (sched.Status == SchedulingStatus.Scheduled.ToString())
                                 {
-                                    <div style="background-color: #F9BE8C; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                    <div style="background-color: #9FE2FB; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         In Progress
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == IntakeStatus.Completed.ToString())
+                                @if (sched.Status == SchedulingStatus.Completed.ToString())
                                 {
                                     <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Completed
+                                    </div>
+                                }
+                                @if (sched.Status == SchedulingStatus.Canceled.ToString())
+                                {
+                                    <div style="background-color: rgba(255, 0, 0, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Canceled
                                     </div>
                                 }
 
@@ -179,7 +185,7 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                        @if (intake.IntakeStatus == "Pending")
+                                        @if (sched.Status == "Pending")
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -189,16 +195,13 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="#"
-                                                   data-bs-toggle="modal"
-                                                   data-bs-target="#submitIntakeModal"
-                                                   onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                   href="@Url.Action("ScheduleAppointment", "Scheduling", new { id = sched.PatientId })">
                                                     <span class="badge-dot bg-success"></span>
-                                                    Submit Intake
+                                                    Schedule
                                                 </a>
                                             </li>
                                         }
-                                        else if (intake.IntakeStatus == IntakeStatus.InProgress.ToString())
+                                        else if (sched.Status == SchedulingStatus.Scheduled.ToString())
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -208,9 +211,9 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
+                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = sched.ScheduleId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Intake Form
+                                                    Reschedule
                                                 </a>
                                             </li>
                                             <li>
@@ -218,9 +221,9 @@
                                                    href="#"
                                                    data-bs-toggle="modal"
                                                    data-bs-target="#submitIntakeModal"
-                                                   onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                   onclick="document.getElementById('modalIntakeId').value='@sched.ScheduleId'">
                                                     <span class="badge-dot bg-success"></span>
-                                                    Submit Intake
+                                                    Cancel
                                                 </a>
                                             </li>
                                         }
