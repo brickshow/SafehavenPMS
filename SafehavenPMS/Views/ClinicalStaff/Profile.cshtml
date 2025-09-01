@@ -60,19 +60,19 @@
     @* Tab Content *@
     <div class="tab-content" id="staffTabContent">
         <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
-            @await Html.PartialAsync("_OverviewTab", Model)
+            @await Html.PartialAsync("ClinicalStaffTabs/_OverviewTab", Model)
         </div>
 
         <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
-            @await Html.PartialAsync("_PersonalTab", Model)
+            @await Html.PartialAsync("ClinicalStaffTabs/_PersonalTab", Model)
         </div>
 
         <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
-            @await Html.PartialAsync("_DocumentsTab", Model)
+            @await Html.PartialAsync("ClinicalStaffTabs/_DocumentsTab", Model)
         </div>
 
         <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab">
-            @await Html.PartialAsync("_Availability", Model)
+            @await Html.PartialAsync("ClinicalStaffTabs/_Availability", Model)
         </div>
     </div>
 </div>

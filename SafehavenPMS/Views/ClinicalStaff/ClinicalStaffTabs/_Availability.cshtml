@@ -1,0 +1,315 @@
+﻿@model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
+@{
+    // Set isEditMode to false by default, or bind to your actual edit mode logic
+    var isEditMode = false;
+}
+
+<div class="availability-container g-4">
+    <div class="container-fluid border rounded bg-white p-4" style="width: 100%;">
+        <!-- Header with title and edit button -->
+        <div class="table-header d-flex justify-content-center align-items-center text-center">
+            <h5 class="mb-0">Availability</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle" id="availabilityTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Time of Day</th>
+                        @for (int hour = 9; hour <= 17; hour++)
+                        {
+                            <th>@(hour < 12 ? $"{hour} AM" : (hour == 12 ? "12 PM" : $"{hour - 12} PM"))</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Availability == null || !Model.Availability.Any())
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">
+                                <i class="bx bx-info-circle"></i> No availability set yet.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        // Only show days that have at least one slot AND not all slots for that day are "Unavailable"
+                        var daysOfWeek = new[] { "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY" };
+
+                        foreach (var day in daysOfWeek)
+                        {
+                            // Gather slots for this day
+                            var daySlots = Model.Availability
+                                .Where(a => a.Day.ToString().ToUpperInvariant() == day)
+                                .ToList();
+
+                            // Skip day if there are no slots OR if all slots are Unavailable
+                            if (!daySlots.Any() || daySlots.All(s => (s.Status ?? "Available") == "Unavailable"))
+                            {
+                                continue;
+                            }
+
+                            <tr>
+                                <td class="fw-bold">@day</td>
+                                @for (int hour = 9; hour <= 17; hour++)
+                                {
+                                    // Find slot for this day/hour from the day's slots
+                                    var slot = daySlots.FirstOrDefault(a => a.StartTime.Hours == hour);
+
+                                    if (slot != null)
+                                    {
+                                        string status = slot.Status ?? "Available";
+                                        string colorClass = status == "Available" ? "btn-available"
+                                            : status == "Scheduled" ? "btn-scheduled"
+                                            : status == "Unavailable" ? "btn-unavailable"
+                                            : "btn-default";
+                                        bool isBooked = status == "Scheduled";
+                                        <td>
+                                            <button type="button"
+                                                    class="availability-btn @colorClass"
+                                                    disabled="@(isBooked ? "disabled" : !isEditMode ? "disabled" : null)">
+                                                @if (isBooked)
+                                                {
+                                                    <i class="bx bx-lock"></i>
+                                                }
+                                            </button>
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        // No slot in DB for this cell, show empty/default
+                                        <td>
+                                            <button type="button"
+                                                    class="availability-btn btn-default"
+                                                    disabled>
+                                            </button>
+                                        </td>
+                                    }
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Legend and Action Buttons Section -->
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-4 mt-3">
+                <!-- Color legend for availability statuses -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="btn-legend btn-available"></span>
+                    <span>Available</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="btn-legend btn-scheduled"></span>
+                    <span>Scheduled</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="btn-legend btn-unavailable"></span>
+                    <span>Unavailable</span>
+                </div>
+            </div>
+
+            <!-- Action buttons for editing and adding availability -->
+            <div class="d-flex justify-content-end mt-3">
+                <!-- Edit button: enables table buttons for editing -->
+                <button type="button" class="btn btn-outline-primary" id="editAvailabilityBtn">Edit</button>
+                <!-- Add Availability button: opens sliding panel -->
+                <button type="button" class="btn btn-success ms-2" id="addAvailabilityBtn">Add Availability</button>
+            </div>
+        </div>
+       
+    </div>
+
+     <!-- Sliding Panel for Adding Availability -->
+    <div id="addAvailabilityPanel" class="slide-panel">
+        <div class="slide-panel-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Add Availability</h5>
+            <button type="button" class="btn-close" id="closePanelBtn" aria-label="Close"></button>
+        </div>
+        <form asp-action="AddAvailability" method="post">
+            <input type="hidden" name="ClinicalStaffID" value="@Model.Staffs.FirstOrDefault()?.ClinicalStaffID" />
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Select Day(s):</label>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" })
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="days" value="@day" id="day_@day">
+                            <label class="form-check-label" for="day_@day">@day</label>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Select Time Range:</label>
+                <div class="d-flex gap-2 align-items-center">
+                    <select class="form-select" name="startTime" id="startTime">
+                        @for (int hour = 9; hour <= 17; hour++)
+                        {
+                            <option value="@hour">@((hour < 12 ? $"{hour} AM" : (hour == 12 ? "12 PM" : $"{hour - 12} PM")))</option>
+                        }
+                    </select>
+                    <span>to</span>
+                    <select class="form-select" name="endTime" id="endTime">
+                        @for (int hour = 9; hour <= 17; hour++)
+                        {
+                            <option value="@hour">@((hour < 12 ? $"{hour} AM" : (hour == 12 ? "12 PM" : $"{hour - 12} PM")))</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Notes (optional):</label>
+                <textarea class="form-control" name="notes" rows="2"></textarea>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary" id="cancelPanelBtn">Cancel</button>
+                <button type="submit" class="btn btn-success">Save</button>
+            </div>
+        </form>
+    </div>
+
+    
+</div>
+
+<style>
+    /* Button styles for availability slots */
+    .availability-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        margin: 2px;
+        padding: 0;
+        cursor: pointer;
+        transition: box-shadow 0.2s;
+        box-shadow: none;
+        outline: none;
+    }
+    .availability-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+    /* Green for available */
+    .btn-available {
+        background-color: #6fdc8c;
+        border-color: #6fdc8c;
+    }
+    /* Red for scheduled/booked */
+    .btn-scheduled {
+        background-color: #e44e4e;
+        border-color: #e44e4e;
+        color: #fff;
+    }
+    /* Gray for unavailable */
+    .btn-unavailable {
+        background-color: #b5b5b5;
+        border-color: #b5b5b5;
+        color: #fff;
+    }
+    /* Default button style */
+    .btn-default {
+        background-color: #fff;
+        border-color: #ccc;
+    }
+    /* Legend button styles */
+    .btn-legend {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-right: 4px;
+        border: 1px solid #ccc;
+    }
+    /* Table header style */
+    .table-header {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    /* Container for availability table */
+    .availability-container {
+        display: flex;
+        margin: 10px;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+     /* Sliding panel styles */
+    .slide-panel {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100%;
+        background: #fff;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.12);
+        z-index: 1050;
+        transition: right 0.3s ease;
+        padding: 24px 20px;
+        border-radius: 8px 0 0 8px;
+    }
+    .slide-panel.open {
+        right: 0;
+    }
+    .slide-panel-header {
+        border-bottom: 1px solid #eee;
+        margin-bottom: 18px;
+        padding-bottom: 8px;
+    }
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.3rem;
+        cursor: pointer;
+    }
+</style>
+
+<script>
+// Enable all availability buttons except the red "Scheduled" ones when Edit is clicked
+document.getElementById('editAvailabilityBtn').addEventListener('click', function () {
+    var buttons = document.querySelectorAll('.availability-btn');
+    buttons.forEach(function (btn) {
+        if (btn.classList.contains('btn-scheduled')) {
+            btn.disabled = true; // Red stays locked
+        } else {
+            btn.disabled = false; // Enable others
+            // Toggle between available and unavailable on click
+            btn.onclick = function () {
+                if (btn.classList.contains('btn-available')) {
+                    btn.classList.remove('btn-available');
+                    btn.classList.add('btn-unavailable');
+                } else if (btn.classList.contains('btn-unavailable')) {
+                    btn.classList.remove('btn-unavailable');
+                    btn.classList.add('btn-available');
+                }
+            };
+        }
+    });
+});
+
+// Show sliding panel
+document.getElementById('addAvailabilityBtn').onclick = function() {
+    document.getElementById('addAvailabilityPanel').classList.add('open');
+};
+// Hide sliding panel
+document.getElementById('closePanelBtn').onclick = function() {
+    document.getElementById('addAvailabilityPanel').classList.remove('open');
+};
+document.getElementById('cancelPanelBtn').onclick = function() {
+    document.getElementById('addAvailabilityPanel').classList.remove('open');
+};
+// Prevent default form submit for demo
+document.getElementById('addAvailabilityForm').onsubmit = function(e) {
+    e.preventDefault();
+    // Here you would handle the form data and send to server
+    document.getElementById('addAvailabilityPanel').classList.remove('open');
+};
+</script>
