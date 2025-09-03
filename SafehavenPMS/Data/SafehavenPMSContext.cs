@@ -20,7 +20,6 @@ namespace SafehavenPMS.Data
         public DbSet<MedicationOrder> MedicationOrders { get; set; }
         public DbSet<Admission> Admissions { get; set; }
         public DbSet<AdministrationLog> AdministrationLogs { get; set; }
-        public DbSet<Scheduling> Schedulings { get; set; }
 
         //Intake forms Entities
         public DbSet<IntakeForm> IntakeForms { get; set; }
@@ -131,18 +130,6 @@ namespace SafehavenPMS.Data
                 .HasOne<IntakeForm>()
                 .WithMany(i => i.FamilyMembers)
                 .HasForeignKey(f => f.IntakeFormId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Scheduling>()
-                .HasOne(s => s.Patient)
-                .WithMany(p => p.Schedulings)
-                .HasForeignKey(s => s.PatientId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<Scheduling>()
-                .HasOne(s => s.ClinicalStaff)
-                .WithMany(d => d.Schedulings)
-                .HasForeignKey(s => s.ClinicalStaffID)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

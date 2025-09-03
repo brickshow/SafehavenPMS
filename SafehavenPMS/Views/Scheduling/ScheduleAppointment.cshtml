@@ -1,10 +1,10 @@
 ﻿@model SafehavenPMS.ViewModel.ScheduleAppointmentViewModel
 
 @{
-    ViewBag.Title = "Appointment";
+    ViewBag.Title = "New Appointment";
 }
 
-<div class="header">
+<div class="header m-2">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
             <i class="bx bxs-calendar-check fs-2 me-2" title="Calendar"></i>
@@ -15,94 +15,111 @@
 </div>
 
 <div id="appointment" class="appointment d-flex flex-column justify-content-center m-auto mt-4">
-    @* Section header *@
     <div class="d-flex justify-content-start border-bottom w-100 p-2">
         <i class='bx bx-calendar-check fs-4 me-2 text-primary'></i>
         <h5 class="modal-title fw-bold mb-0">Schedule Appointment</h5>
     </div>
 
     <div class="row align-items-start m-3">
-        <!-- ================= LEFT: Calendar ================= -->
+
+        <!-- ================= LEFT: Doctor & Date ================= -->
         <div class="col-md-6 border-end">
-            @* Calendar Form (submits only selected date) *@
-            <form asp-controller="Appointment" asp-action="SubmitDate" method="post" id="dateForm">
-                <span class="d-block mb-2 fw-bold">Select Date</span>
 
-                @* Hidden fields to pass date + context *@
-                <input type="hidden" name="SelectedDate" id="selectedDate" />
-                <input type="hidden" name="PatientId" value="@Model?.PatientId" />
-                <input type="hidden" name="ClinicalStaffID" value="@Model?.ClinicalStaffID" />
+            <!-- Step 1: Select doctor -->
+           <form asp-controller="Scheduling" asp-action="SelectDoctor" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Assign Doctor (Physician)</label>
+                    <select asp-for="ClinicalStaffID" asp-items="@ViewBag.StaffList" class="form-select" onchange="this.form.submit()">
+                        <option value="">--Select Physician--</option>
+                    </select>
+                </div>
 
-                <div id="datepicker"></div>
+                <!-- Hidden patient info -->
+                <input type="hidden" asp-for="PatientId" />
+                <input type="hidden" asp-for="PatientName" />
             </form>
+
+            <!-- Step 2: Date picker -->
+           @if (Model.ClinicalStaffID > 0)
+            {
+                <form asp-controller="Scheduling" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
+                    <input type="hidden" asp-for="ClinicalStaffID" />
+                    <input type="hidden" name="SelectedDate" id="selectedDate" />
+                    <input type="hidden" name="PatientId" value="@Model.PatientId" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Select Date</label>
+                        <div id="datepicker"></div>
+                    </div>
+                </form>
+            }
         </div>
 
         <!-- ================= RIGHT: Appointment Details ================= -->
         <div class="col-md-6">
-            @* Appointment Form (submits schedule details) *@
-            <form asp-controller="Appointment" asp-action="ScheduleAppointment" method="post" id="appointmentForm">
+        <form asp-controller="Scheduling" asp-action="ScheduleAppointment" method="post">
+            @Html.AntiForgeryToken()
 
-                <span class="d-block mb-2 fw-bold">Available Time</span>
-                <div class="d-flex flex-column border rounded p-3 mb-3">
-                    <div class="row">
-                        <input type="hidden" asp-for="PatientId" />
-                        <input type="hidden" asp-for="ClinicalStaffID" />
-                        <input type="hidden" name="SelectedDate" id="selectedDate"
-                               value="@(ViewBag.SelectedDate ?? Model.SelectedDate.ToString("yyyy-MM-dd"))"
-                               asp-for="SelectedDate" />
-                        @if (ViewBag.AvailableTimes != null && ((IEnumerable<object>)ViewBag.AvailableTimes).Cast<dynamic>().Any())
+            <!-- Hidden Fields -->
+            <input type="hidden" asp-for="ClinicalStaffID" />
+            <input type="hidden" asp-for="PatientId" />
+            <input type="hidden" asp-for="PatientName" />
+            
+            <!-- Hidden Date -->
+            <input type="hidden" asp-for="SelectedDate" />
+
+            <!-- Timeslot (Dropdown) -->
+            <div class="mb-3">
+                <label class="form-label">Timeslot</label>
+                <select asp-for="TimeSlot" class="form-select" required>
+                    <option value="">--Select Timeslot--</option>
+                    @if (ViewBag.AvailableTimes != null)
+                    {
+                        foreach (var slot in ViewBag.AvailableTimes)
                         {
-                            foreach (var slot in (IEnumerable<dynamic>)ViewBag.AvailableTimes)
-                            {
-                                <div class="col-6 mb-2">
-                                    <label class="d-flex align-items-center">
-                                        <input type="radio" name="TimeSlot" value="@slot.StartTime" required />
-                                        <span class="ms-2">@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</span>
-                                    </label>
-                                </div>
-                            }
+                            var timeText = $"{slot.StartTime:hh\\:mm} - {slot.EndTime:hh\\:mm}";
+                            <option value="@slot.StartTime.ToString(@"hh\:mm")">@timeText</option>
                         }
-                        else
-                        {
-                            <div class="text-center text-muted">No Available Time</div>
-                        }
+                    }
+                </select>
+            </div>
+
+         <!-- Patient Info -->
+                <div class="mb-3">
+                    <label class="form-label">Patient</label>
+                    <div class="form-control-plaintext bg-light rounded p-2">
+                        @Model.PatientName
                     </div>
+                    <input type="hidden" asp-for="PatientId" />
+                    <input type="hidden" asp-for="PatientName" />
                 </div>
 
-                <!-- Patient Info -->
-                <div class="mb-3">
-                    <label class="form-label">Patient Name</label>
-                    <input asp-for="PatientName" type="text" class="form-control" value="@Model.PatientName" disabled />
-                </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Assign Doctor </label>
-                    <input asp-for="ClinicalStaffName" type="text" class="form-control" value="@Model.ClinicalStaffName" disabled />
-                </div>
+            <!-- Visit Type -->
+            <div class="mb-3">
+                <label asp-for="VisitType" class="form-label">Visit Type</label>
+                <select asp-for="VisitType" class="form-select">
+                    <option value="">--Select Visit Type--</option>
+                    <option value="Initial Assessment">Initial Assessment</option>
+                    <option value="Emergency Visit">Emergency Visit</option>
+                    <option value="Follow-Up Treatment">Follow-Up Treatment</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
 
-                <!-- Visit Details -->
-                <div class="mb-3">
-                    <label class="form-label">Visit Type</label>
-                    <select asp-for="VisitType" class="form-select" required>
-                        <option value="">--Select--</option>
-                        <option value="Medical Assessment">Medical Assessment</option>
-                        <option value="Emergency Visit">Emergency Visit</option>
-                        <option value="Follow-Up Treatment">Follow-Up Treatment</option>
-                        <option value="Others">Others</option>
-                    </select>
-                </div>
+            <!-- Description -->
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label">Description</label>
+                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter appointment description..."></textarea>
+            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Add Description</label>
-                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
-                </div>
+            <!-- Footer -->
+            <div class="modal-footer bg-white border-top">
+                <a href="@Url.Action("Index", "Appointment")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
+                <button type="submit" class="btn-custom btn-next m-2">Save</button>
+            </div>
+        </form>
 
-                <!-- Footer -->
-                <div class="modal-footer bg-white border-top">
-                    <a href="@Url.Action("Index", "Patient")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
-                    <button type="submit" class="btn-custom btn-next m-2">Next</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -110,7 +127,7 @@
 @* ===== CSS for Appointment Card & Date Highlight ===== *@
 <style>
     .appointment {
-        width:60%;
+        width: 60%;
         background-color: white;
         box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);
         border-radius: 6px;
@@ -122,36 +139,65 @@
         color: white;
     }
 
-        .flatpickr-day.selected:hover {
-            background: #0056b3;
-            border-color: #0056b3;
-        }
+    .flatpickr-day.selected:hover {
+        background: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .flatpickr-calendar {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid #e0e0e0;
+    }
+
+    .flatpickr-day:hover {
+        background: #f8f9fa;
+    }
+
+    .flatpickr-day.today {
+        border-color: #00A3B4;
+        color: #00A3B4;
+    }
+
+    .flatpickr-day.today:hover {
+        background: #00A3B4;
+        color: white;
+    }
+
+    .form-control-plaintext {
+        border: 1px solid #ced4da;
+        background-color: #f8f9fa !important;
+    }
 </style>
 
 @* ===== Calendar Script ===== *@
 <script>
-    flatpickr("#datepicker", {
-        inline: true,
+    // Initialize datepicker
+    const datepicker = flatpickr("#datepicker", {
         dateFormat: "Y-m-d",
         defaultDate: localStorage.getItem("selectedDate") || new Date(),
         minDate: "today",
+        disable: [
+            function(date) {
+                // Disable today's date
+                const today = new Date();
+                return date.getDate() === today.getDate() && 
+                       date.getMonth() === today.getMonth() && 
+                       date.getFullYear() === today.getFullYear();
+            }
+        ],
+        inline: true,
+        clickOpens: false,
         onChange: function (selectedDates, dateStr) {
             // save selected date
             localStorage.setItem("selectedDate", dateStr);
 
             // assign to hidden input
             document.getElementById("selectedDate").value = dateStr;
+            document.getElementById("SelectedDate").value = dateStr;
 
             // submit only the calendar form
             document.getElementById("dateForm").submit();
-        }
-    });
-
-    // ensure stored date is restored on reload
-    document.addEventListener("DOMContentLoaded", function () {
-        const storedDate = localStorage.getItem("selectedDate");
-        if (storedDate) {
-            document.getElementById("selectedDate").value = storedDate;
         }
     });
 </script>

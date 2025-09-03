@@ -1,26 +1,27 @@
 ﻿@model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
 @{
-    // Set isEditMode to false by default, or bind to your actual edit mode logic
     var isEditMode = false;
 }
 
 <div class="availability-container g-4">
     <div class="container-fluid border rounded bg-white p-4" style="width: 100%;">
+        <form asp-action="SaveAvailability" method="post">
         <!-- Header with title and edit button -->
         <div class="table-header d-flex justify-content-center align-items-center text-center">
             <h5 class="mb-0">Availability</h5>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered text-center align-middle" id="availabilityTable">
-                <thead class="table-light">
-                    <tr>
-                        <th>Time of Day</th>
-                        @for (int hour = 9; hour <= 17; hour++)
-                        {
-                            <th>@(hour < 12 ? $"{hour} AM" : (hour == 12 ? "12 PM" : $"{hour - 12} PM"))</th>
-                        }
-                    </tr>
-                </thead>
+                <input type="hidden" name="ClinicalStaffID" value="@Model.Staffs.FirstOrDefault()?.ClinicalStaffID" />
+                <table class="table table-bordered text-center align-middle" id="availabilityTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Time of Day</th>
+                            @for (int hour = 9; hour <= 17; hour++)
+                            {
+                                <th>@(hour < 12 ? $"{hour} AM" : (hour == 12 ? "12 PM" : $"{hour - 12} PM"))</th>
+                            }
+                        </tr>
+                    </thead>
                 <tbody>
                     @if (Model.Availability == null || !Model.Availability.Any())
                     {
@@ -33,13 +34,13 @@
                     else
                     {
                         // Only show days that have at least one slot AND not all slots for that day are "Unavailable"
-                        var daysOfWeek = new[] { "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY" };
+                        var daysOfWeek = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" };
 
                         foreach (var day in daysOfWeek)
                         {
                             // Gather slots for this day
                             var daySlots = Model.Availability
-                                .Where(a => a.Day.ToString().ToUpperInvariant() == day)
+                                .Where(a => a.Day.ToString() == day)
                                 .ToList();
 
                             // Skip day if there are no slots OR if all slots are Unavailable
@@ -52,25 +53,41 @@
                                 <td class="fw-bold">@day</td>
                                 @for (int hour = 9; hour <= 17; hour++)
                                 {
-                                    // Find slot for this day/hour from the day's slots
+                                    // Find the availability slot for the current day and hour
                                     var slot = daySlots.FirstOrDefault(a => a.StartTime.Hours == hour);
 
                                     if (slot != null)
                                     {
+                                        // Get the status of the slot, default to "Available" if null
                                         string status = slot.Status ?? "Available";
+                                        
+                                        // Determine the CSS class based on status:
+                                        // - Available slots are green (btn-available)
+                                        // - Scheduled slots are red (btn-scheduled)
+                                        // - Unavailable slots are gray (btn-unavailable)
+                                        // - Default is white (btn-default)
                                         string colorClass = status == "Available" ? "btn-available"
                                             : status == "Scheduled" ? "btn-scheduled"
                                             : status == "Unavailable" ? "btn-unavailable"
                                             : "btn-default";
+                                            
+                                        // Check if the slot is booked (scheduled)
                                         bool isBooked = status == "Scheduled";
+                                        
                                         <td>
+                                            <!-- Hidden inputs to store the day and hour -->
+                                            <input type="hidden" name="Slots[@day][@hour].Day" value="@day" />
+                                            <input type="hidden" name="Slots[@day][@hour].Hour" value="@hour" />
+                                            
+                                            <!-- Availability button: disabled if scheduled or not in edit mode -->
                                             <button type="button"
                                                     class="availability-btn @colorClass"
+                                                    onclick="toggleAvailability(this)"
+                                                    data-day="@day"
+                                                    data-hour="@hour"
                                                     disabled="@(isBooked ? "disabled" : !isEditMode ? "disabled" : null)">
-                                                @if (isBooked)
-                                                {
-                                                    <i class="bx bx-lock"></i>
-                                                }
+                                                <!-- Hidden input to store the current status -->
+                                                <input type="hidden" name="Slots[@day][@hour].Status" value="@status" />
                                             </button>
                                         </td>
                                     }
@@ -114,11 +131,13 @@
             <div class="d-flex justify-content-end mt-3">
                 <!-- Edit button: enables table buttons for editing -->
                 <button type="button" class="btn btn-outline-primary" id="editAvailabilityBtn">Edit</button>
+                <!-- Save button: visible when editing -->
+                <button type="submit" class="btn btn-success ms-2 d-none" id="saveAvailabilityBtn">Save Changes</button>
                 <!-- Add Availability button: opens sliding panel -->
                 <button type="button" class="btn btn-success ms-2" id="addAvailabilityBtn">Add Availability</button>
             </div>
         </div>
-       
+       </form>
     </div>
 
      <!-- Sliding Panel for Adding Availability -->
@@ -273,24 +292,32 @@
 </style>
 
 <script>
+function toggleAvailability(button) {
+    if (button.classList.contains('btn-available')) {
+        button.classList.remove('btn-available');
+        button.classList.add('btn-unavailable');
+        button.querySelector('input[type="hidden"]').value = 'Unavailable';
+    } else {
+        button.classList.remove('btn-unavailable');
+        button.classList.add('btn-available');
+        button.querySelector('input[type="hidden"]').value = 'Available';
+    }
+}
+
 // Enable all availability buttons except the red "Scheduled" ones when Edit is clicked
 document.getElementById('editAvailabilityBtn').addEventListener('click', function () {
     var buttons = document.querySelectorAll('.availability-btn');
+    var saveButton = document.getElementById('saveAvailabilityBtn');
+    
+    // Show save button
+    saveButton.classList.remove('d-none');
+    this.classList.add('d-none');
+    
     buttons.forEach(function (btn) {
         if (btn.classList.contains('btn-scheduled')) {
             btn.disabled = true; // Red stays locked
         } else {
             btn.disabled = false; // Enable others
-            // Toggle between available and unavailable on click
-            btn.onclick = function () {
-                if (btn.classList.contains('btn-available')) {
-                    btn.classList.remove('btn-available');
-                    btn.classList.add('btn-unavailable');
-                } else if (btn.classList.contains('btn-unavailable')) {
-                    btn.classList.remove('btn-unavailable');
-                    btn.classList.add('btn-available');
-                }
-            };
         }
     });
 });

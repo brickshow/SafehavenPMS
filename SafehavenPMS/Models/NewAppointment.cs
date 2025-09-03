@@ -5,18 +5,18 @@ namespace SafehavenPMS.Models
     public class NewAppointment
     {
         [Key]
-        public int AppointmentID { get; set; }
-        public int ClinicalStaffID { get; set; }//Foreign key
-        public ClinicalStaff? ClinicalStaff { get; set; }//Navigation
+        public int ScheduleId { get; set; }
         public int PatientId { get; set; }
-        public Patient? Patient { get; set; }
-        public TimeSpan TimeSlot { get; set; }
-        public DayOfWeek Day { get; set; }
-        public DateTime AppointmentDate { get; set; }
-        public string VisitType { get; set; }
-        public string Description { get; set; }
+        public int? ClinicalStaffID { get; set; }
+        public string Type { get; set; }
+        public DateTime? ScheduleDate { get; set; }
+        public string? ScheduleTime { get; set; }
         public string Status { get; set; }
-        public DateTime BookedAt { get; set; }
+        public string? Notes { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string? CreatedBy { get; set; }
 
+        public virtual Patient? Patient { get; set; } 
+        public virtual ClinicalStaff? ClinicalStaff { get; set; }
     }
 }

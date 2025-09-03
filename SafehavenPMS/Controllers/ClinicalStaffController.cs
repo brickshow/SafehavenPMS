@@ -150,8 +150,8 @@ namespace SafehavenPMS.Controllers
             // 4. Get appointments for this doctor within the range
             var appointments = await _context.NewAppointments
                 .Where(appt => appt.ClinicalStaffID == id
-                               && appt.AppointmentDate >= startDate
-                               && appt.AppointmentDate <= endDate
+                               && appt.ScheduleDate >= startDate
+                               && appt.ScheduleDate <= endDate
                                && appt.Status == "Booked")
                 .ToListAsync();
 
@@ -160,12 +160,12 @@ namespace SafehavenPMS.Controllers
             {
                 var bookedMatch = appointments.FirstOrDefault(appt =>
                     // Case 1: Specific slot with date
-                    (slot.SlotDate.HasValue && appt.AppointmentDate.Date == slot.SlotDate.Value.Date
-                                              && appt.TimeSlot == slot.StartTime)
+                    (slot.SlotDate.HasValue && appt.ScheduleDate?.Date == slot.SlotDate.Value.Date
+                                              && appt.ScheduleTime == slot.StartTime.ToString(@"hh\:mm"))
                     ||
                     // Case 2: Recurring slot (DayOfWeek match)
-                    (!slot.SlotDate.HasValue && appt.AppointmentDate.DayOfWeek == slot.Day
-                                              && appt.TimeSlot == slot.StartTime)
+                    (!slot.SlotDate.HasValue && appt.ScheduleDate?.DayOfWeek == slot.Day
+                                              && appt.ScheduleTime == slot.StartTime.ToString(@"hh\:mm"))
                 );
 
                 if (bookedMatch != null)
@@ -213,7 +213,7 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddNewClinicalStaff(AddClinicalStaffViewModel model)
+        public async Task<IActionResult> AddNewClinicalStaff(AddClinicalStaffViewModel model)
         {
             // Remove ImageURL from validation since we set it manually later
             ModelState.Remove("Filename");
@@ -294,7 +294,16 @@ namespace SafehavenPMS.Controllers
                 Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}"
             };
 
-         
+
+            try
+            {
+                await _context.ClinicalStaffs.AddAsync(staff);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex);
+            }
 
             // Clean up the uploaded file reference in session
             model.ImageProfile = null;
@@ -460,17 +469,19 @@ namespace SafehavenPMS.Controllers
         }
 
 
+        // GET action to display delete confirmation page for a clinical staff member
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
             var staff = await _context.ClinicalStaffs.FindAsync(id);
             if (staff == null)
             {
-                TempData["Error"] = "Error to delete Staff";
+            TempData["Error"] = "Error to delete Staff";
             }
             return View(staff);
         }
 
+        // POST action to handle soft delete of a clinical staff member
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -478,75 +489,145 @@ namespace SafehavenPMS.Controllers
 
             if (staff != null)
             {
-                staff.IsDeleted = true;
-                _context.ClinicalStaffs.Update(staff);
-                await _context.SaveChangesAsync();
+            staff.IsDeleted = true;
+            _context.ClinicalStaffs.Update(staff);
+            await _context.SaveChangesAsync();
             }
 
             return RedirectToAction("Index");
         }
 
+        // POST action to add or update availability slots for a clinical staff member
         [HttpPost]
         public async Task<IActionResult> AddAvailability(int ClinicalStaffID, List<string> days, int startTime, int endTime, string notes)
         {
             // Validate input
             if (days == null || !days.Any() || startTime > endTime)
             {
-                TempData["Error"] = "Please select valid days and time range.";
-                return RedirectToAction("Profile", new { id = ClinicalStaffID });
+            TempData["Error"] = "Please select valid days and time range.";
+            return RedirectToAction("Profile", new { id = ClinicalStaffID });
             }
 
             // For each selected day, merge new hours into existing day slots (avoid duplicates).
             foreach (var dayName in days)
             {
-                if (!System.Enum.TryParse<DayOfWeek>(dayName, true, out var dayOfWeek))
-                    continue;
+            if (!System.Enum.TryParse<DayOfWeek>(dayName, true, out var dayOfWeek))
+                continue;
 
-                // Load existing recurring slots for this staff + day (SlotDate == null means template/recurring)
-                var existingDaySlots = await _context.Availabilities
-                    .Where(a => a.ClinicalStaffID == ClinicalStaffID && a.Day == dayOfWeek && a.SlotDate == null)
-                    .ToListAsync();
+            // Load existing recurring slots for this staff + day (SlotDate == null means template/recurring)
+            var existingDaySlots = await _context.Availabilities
+                .Where(a => a.ClinicalStaffID == ClinicalStaffID && a.Day == dayOfWeek && a.SlotDate == null)
+                .ToListAsync();
 
-                for (int hour = startTime; hour <= endTime; hour++)
+            for (int hour = startTime; hour <= endTime; hour++)
+            {
+                var existingSlot = existingDaySlots.FirstOrDefault(a => a.StartTime.Hours == hour);
+                if (existingSlot != null)
                 {
-                    var existingSlot = existingDaySlots.FirstOrDefault(a => a.StartTime.Hours == hour);
-                    if (existingSlot != null)
-                    {
-                        // Update existing slot instead of creating duplicate.
-                        // Do not overwrite Scheduled slots — keep them scheduled.
-                        if (!string.Equals(existingSlot.Status, AvailabilityStatus.Scheduled.ToString(), StringComparison.OrdinalIgnoreCase))
-                        {
-                            existingSlot.Status = AvailabilityStatus.Available.ToString();
-                        }
-
-                        // Update notes only when provided
-                        if (!string.IsNullOrWhiteSpace(notes))
-                        {
-                            existingSlot.Notes = notes;
-                        }
-
-                        _context.Availabilities.Update(existingSlot);
-                    }
-                    else
-                    {
-                        // Create new slot for the missing hour
-                        var slot = new Availability
-                        {
-                            ClinicalStaffID = ClinicalStaffID,
-                            Day = dayOfWeek,
-                            StartTime = new TimeSpan(hour, 0, 0),
-                            EndTime = new TimeSpan(hour + 1, 0, 0),
-                            Status = AvailabilityStatus.Available.ToString(),
-                            Notes = notes
-                        };
-                        _context.Availabilities.Add(slot);
-                    }
+                // Update existing slot instead of creating duplicate.
+                // Do not overwrite Scheduled slots — keep them scheduled.
+                if (!string.Equals(existingSlot.Status, AvailabilityStatus.Scheduled.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    existingSlot.Status = AvailabilityStatus.Available.ToString();
                 }
+
+                // Update notes only when provided
+                if (!string.IsNullOrWhiteSpace(notes))
+                {
+                    existingSlot.Notes = notes;
+                }
+
+                _context.Availabilities.Update(existingSlot);
+                }
+                else
+                {
+                // Create new slot for the missing hour
+                var slot = new Availability
+                {
+                    ClinicalStaffID = ClinicalStaffID,
+                    Day = dayOfWeek,
+                    StartTime = new TimeSpan(hour, 0, 0),
+                    EndTime = new TimeSpan(hour + 1, 0, 0),
+                    Status = AvailabilityStatus.Available.ToString(),
+                    Notes = notes
+                };
+                _context.Availabilities.Add(slot);
+                }
+            }
             }
 
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Availability added/updated successfully!";
             return RedirectToAction("Profile", new { id = ClinicalStaffID });
+        }
+        
+        // View model to represent a single availability time slot
+        public class AvailabilitySlotViewModel
+        {
+            public string Day { get; set; }
+            public int Hour { get; set; }
+            public string Status { get; set; }
+        }
+        
+        // View model to save multiple availability slots at once
+        public class SaveAvailabilityViewModel
+        {
+            public int ClinicalStaffID { get; set; }
+            public Dictionary<string, Dictionary<int, AvailabilitySlotViewModel>> Slots { get; set; }
+        }
+        
+        // POST action to save multiple availability slots in one request
+        [HttpPost]
+        public IActionResult SaveAvailability(SaveAvailabilityViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+            return RedirectToAction("Index", new { tab = "availability", error = "Invalid data submitted" });
+            }
+        
+            try
+            {
+            var existingAvailability = _context.Availabilities
+                .Where(a => a.ClinicalStaffID == model.ClinicalStaffID)
+                .ToList();
+        
+            foreach (var daySlots in model.Slots)
+            {
+                foreach (var hourSlot in daySlots.Value)
+                {
+                var slot = hourSlot.Value;
+                var normalizedDay = slot.Day.Substring(0, 1).ToUpper() + slot.Day.Substring(1).ToLower();
+                var existing = existingAvailability.FirstOrDefault(a => 
+                    a.Day.ToString() == normalizedDay && 
+                    a.StartTime.Hours == slot.Hour);
+        
+                if (existing != null)
+                {
+                    existing.Status = slot.Status;
+                }
+                else
+                {
+                    _ = _context.Availabilities.Add(new Availability
+                    {
+                    ClinicalStaffID = model.ClinicalStaffID,
+                    Day = System.Enum.Parse<DayOfWeek>(slot.Day.Substring(0, 1).ToUpper() + slot.Day.Substring(1).ToLower()),
+                    StartTime = new TimeSpan(slot.Hour, 0, 0),
+                    Status = slot.Status
+                    });
+                }
+                }
+            }
+        
+            _context.SaveChanges();
+            TempData["SuccessMessage"] = "Availability added/updated successfully!";
+            return RedirectToAction("Profile", new { id = existingAvailability.FirstOrDefault()?.ClinicalStaffID });
+            }
+            catch (Exception ex)
+            {
+            Console.WriteLine("Error: " + ex.Message);
+            // Log the exception here
+            return RedirectToAction("Index", new { tab = "availability", error = "Failed to update availability" });
+            }
         }
     }
 }

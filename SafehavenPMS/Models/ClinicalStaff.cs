@@ -24,6 +24,6 @@ namespace SafehavenPMS.Models
 
         public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } // Many-to-many with Patient
         public ICollection<Availability> Availabilities { get; set; } //Navigation property
-        public ICollection<Scheduling> Schedulings { get; set; } // Navigation property for Schedulings
+        public ICollection<NewAppointment> Schedulings { get; set; } // Navigation property for Schedulings
     }
 }

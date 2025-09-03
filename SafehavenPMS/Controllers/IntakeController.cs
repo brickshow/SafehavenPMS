@@ -366,13 +366,14 @@ namespace SafehavenPMS.Controllers
             try
             {
                 //pre populate scheduling tables
-                var scheduling = new Scheduling
+                var scheduling = new NewAppointment
                 {
                     PatientId = intakeForm.PatientId,
                     Type = "Initial Assessment",
                     Status = SchedulingStatus.Pending.ToString()
                 };
-                await _context.Schedulings.AddAsync(scheduling);
+                await _context.NewAppointments
+                .AddAsync(scheduling);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Intake form submitted for assessment successfully.";
             }
