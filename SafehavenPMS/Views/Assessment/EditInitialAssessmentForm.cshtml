@@ -95,12 +95,12 @@
                     <span>Physical Examination</span>
                 </div>
             </div>
-            <div class="nav-link" id="drug-dependency-tab" data-bs-toggle="tab" data-bs-target="#drug-dependency" role="tab" aria-selected="false">
+            @* <div class="nav-link" id="drug-dependency-tab" data-bs-toggle="tab" data-bs-target="#drug-dependency" role="tab" aria-selected="false">
                 <div class="d-flex align-items-center">
                     <div class="tab-indicator"></div>
                     <span>Drug Dependency</span>
                 </div>
-            </div>
+            </div> *@
             <div class="nav-link" id="diagnosis-tab" data-bs-toggle="tab" data-bs-target="#diagnosis" role="tab" aria-selected="false">
                 <div class="d-flex align-items-center">
                     <div class="tab-indicator"></div>
@@ -134,11 +134,8 @@
             <div class="tab-pane fade" id="medical-history" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_MedicalHistory", Model)
             </div>
-            @* <div class="tab-pane fade" id="physical-exam" role="tabpanel">
+            <div class="tab-pane fade" id="physical-exam" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_PhysicalExam", Model)
-            </div>
-            <div class="tab-pane fade" id="drug-dependency" role="tabpanel">
-                @await Html.PartialAsync("AssessmentTabs/_DrugDependency", Model)
             </div>
             <div class="tab-pane fade" id="diagnosis" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_Diagnosis", Model)
@@ -146,7 +143,7 @@
             <div class="tab-pane fade" id="problem-list" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_ProblemList", Model)
             </div>
-            <div class="tab-pane fade" id="recommendation" role="tabpanel">
+            @* <div class="tab-pane fade" id="recommendation" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_Recommendation", Model)
             </div> *@
         </div>

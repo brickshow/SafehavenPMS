@@ -29,11 +29,13 @@ namespace SafehavenPMS.Data
         public DbSet<InitialAssessmentForm> InitialAssessmentForms { get; set; }
         public DbSet<HistoryPresent> HistoryPresents { get; set; }
         public DbSet<DrugUse> DrugUses { get; set; }
-
-        // Add these new DbSet properties
         public DbSet<MedicalHistory> MedicalHistories { get; set; }
         public DbSet<MedicalAllergy> MedicalAllergies { get; set; }
         public DbSet<SurgicalHistory> SurgicalHistories { get; set; }
+        public DbSet<PhysicalExam> PhysicalExams { get; set; }
+        public DbSet<Diagnosis> Diagnoses { get; set; }
+        public DbSet<SubstanceUseEntry> SubstanceUseEntries { get; set; }
+        public DbSet<ProblemList> ProblemLists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -153,7 +155,7 @@ namespace SafehavenPMS.Data
                 .WithOne(h => h.InitialAssessmentForm)
                 .HasForeignKey<HistoryPresent>(h => h.InitialAssessmentFormId)
                 .OnDelete(DeleteBehavior.Cascade);
-                
+
             // Configure DrugUse relationships
             modelBuilder.Entity<DrugUse>()
                 .HasOne(d => d.InitialAssessmentForm)
@@ -180,6 +182,34 @@ namespace SafehavenPMS.Data
                 .HasOne(s => s.InitialAssessmentForm)
                 .WithMany(i => i.SurgicalHistories)
                 .HasForeignKey(s => s.InitialAssessmentFormId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure PhysicalExam relationship
+            modelBuilder.Entity<PhysicalExam>()
+                .HasOne(p => p.InitialAssessmentForm)
+                .WithOne(i => i.PhysicalExam)
+                .HasForeignKey<PhysicalExam>(p => p.InitialAssessmentFormId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Diagnosis relationship
+            modelBuilder.Entity<Diagnosis>()
+                .HasOne(d => d.InitialAssessmentForm)
+                .WithOne(i => i.Diagnosis)
+                .HasForeignKey<Diagnosis>(d => d.InitialAssessmentFormId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure SubstanceUseEntry relationship
+            modelBuilder.Entity<SubstanceUseEntry>()
+                .HasOne(s => s.Diagnosis)
+                .WithMany(d => d.SubstanceUseEntries)
+                .HasForeignKey(s => s.DiagnosisId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure ProblemList relationship
+            modelBuilder.Entity<ProblemList>()
+                .HasOne(p => p.InitialAssessmentForm)
+                .WithMany(i => i.Problems)
+                .HasForeignKey(p => p.InitialAssessmentFormId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

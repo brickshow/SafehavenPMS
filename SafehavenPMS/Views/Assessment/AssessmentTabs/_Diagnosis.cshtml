@@ -1,0 +1,158 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+<div class="card">
+    <div class="card-header bg-white" style="color: #015F6B;">
+        <h5 class="mb-0">DIAGNOSIS</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="SaveDiagnosis" asp-controller="Assessment" method="post" id="diagnosisForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PatientId" />
+
+            <div class="mb-4">
+                <h6 class="mb-3">Substance Use Disorder</h6>
+
+                <!-- Existing substance entries list -->
+                <div id="substanceList">
+                    @if (Model?.Diagnosis?.SubstanceUses != null)
+                    {
+                        @for (var i = 0; i < Model.Diagnosis.SubstanceUses.Count; i++)
+                        {
+                            <div class="row align-items-end mb-2 substance-entry">
+                                <div class="col-6">
+                                    <label class="form-label">Name of substance</label>
+                                    <input type="text" class="form-control"
+                                        name="Diagnosis.SubstanceUses[@i].SubstanceName" 
+                                        value="@Model.Diagnosis.SubstanceUses[i].SubstanceName" />
+                                </div>
+                                <div class="col-5">
+                                    <label class="form-label">Severity</label>
+                                    <select class="form-select" name="Diagnosis.SubstanceUses[@i].Severity">
+                                        <option value="">Select Severity</option>
+                                        <option value="Mild" selected="@(Model.Diagnosis.SubstanceUses[i].Severity == "Mild")">Mild</option>
+                                        <option value="Moderate" selected="@(Model.Diagnosis.SubstanceUses[i].Severity == "Moderate")">Moderate</option>
+                                        <option value="Severe" selected="@(Model.Diagnosis.SubstanceUses[i].Severity == "Severe")">Severe</option>
+                                    </select>
+                                </div>
+                                <div class="col-1">
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeSubstance(this)">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- New substance entry form -->
+                <div class="row align-items-end mb-2">
+                    <div class="col-6">
+                        <label class="form-label">Name of substance</label>
+                        <input type="text" class="form-control" id="newSubstanceName" />
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label">Severity</label>
+                        <select class="form-select" id="newSeverity">
+                            <option value="">Select Severity</option>
+                            <option value="Mild">Mild</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Severe">Severe</option>
+                        </select>
+                    </div>
+                    <div class="col-1">
+                        <button type="button" class="btn btn-teal" onclick="addSubstance()">
+                            <i class="bx bx-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-teal px-4">
+                    <i class="bx bx-save me-2"></i>SAVE
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: none !important;
+        border: none;
+    }
+
+    .card-header {
+        background: transparent;
+        border-bottom: none;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .btn-teal {
+        background-color: #006d77;
+        color: white;
+    }
+
+    .btn-teal:hover {
+        background-color: #005c64;
+        color: white;
+    }
+</style>
+
+<script>
+    function addSubstance() {
+        const substanceName = document.getElementById('newSubstanceName').value;
+        const severity = document.getElementById('newSeverity').value;
+
+        if (!substanceName || !severity) {
+            alert('Please fill in both substance name and severity');
+            return;
+        }
+
+        const list = document.getElementById('substanceList');
+        const index = list.children.length;
+
+        const div = document.createElement('div');
+        div.className = 'row align-items-end mb-2 substance-entry';
+        div.innerHTML = `
+    <div class="col-6">
+        <label class="form-label">Name of substance</label>
+        <input type="text" class="form-control" 
+               name="Diagnosis.SubstanceUses[${index}].SubstanceName" 
+               id="Diagnosis_SubstanceUses_${index}__SubstanceName"
+               value="${substanceName}" />
+    </div>
+    <div class="col-5">
+        <label class="form-label">Severity</label>
+        <select class="form-select" 
+                name="Diagnosis.SubstanceUses[${index}].Severity"
+                id="Diagnosis_SubstanceUses_${index}__Severity">
+            <option value="">Select Severity</option>
+            <option value="Mild" ${severity === 'Mild' ? 'selected' : ''}>Mild</option>
+            <option value="Moderate" ${severity === 'Moderate' ? 'selected' : ''}>Moderate</option>
+            <option value="Severe" ${severity === 'Severe' ? 'selected' : ''}>Severe</option>
+        </select>
+    </div>
+            <div class="col-1">
+                <button type="button" class="btn btn-outline-danger" onclick="removeSubstance(this)">
+                    <i class="bx bx-trash"></i>
+                </button>
+            </div>
+        `;
+
+        list.appendChild(div);
+
+        // Clear input fields
+        document.getElementById('newSubstanceName').value = '';
+        document.getElementById('newSeverity').value = '';
+    }
+
+    function removeSubstance(button) {
+        button.closest('.substance-entry').remove();
+    }
+</script>

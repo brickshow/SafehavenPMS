@@ -1,7 +1,22 @@
 namespace SafehavenPMS.ViewModel.Assessment
 {
+   namespace SafehavenPMS.ViewModel.Assessment
+{
     public class DiagnosisViewModel
     {
-        public string? Diagnosis { get; set; }
+        public DiagnosisViewModel()
+        {
+            SubstanceUses = new List<SubstanceUseViewModel>();
+        }
+
+        // Collection of substance use entries
+        public List<SubstanceUseViewModel> SubstanceUses { get; set; }
     }
+
+    public class SubstanceUseViewModel
+    {
+        public string SubstanceName { get; set; } = string.Empty;
+        public string Severity { get; set; } = string.Empty;
+    }
+}
 }

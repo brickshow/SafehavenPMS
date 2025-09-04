@@ -6,6 +6,7 @@ using SafehavenPMS.Enum;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using SafehavenPMS.ViewModel.Assessment;
+using SafehavenPMS.ViewModel.Assessment.SafehavenPMS.ViewModel.Assessment;
 
 
 namespace SafehavenPMS.Controllers
@@ -132,9 +133,13 @@ namespace SafehavenPMS.Controllers
             }
 
             // Fetch patient data from database with related intake form
+            // Update the patient query at the start of the action
             var patient = await _context.Patients
-            .Include(p => p.IntakeForm)
-            .FirstOrDefaultAsync(p => p.PatientId == id);
+                .Include(p => p.IntakeForm)
+                .Include(p => p.InitialAssessmentForms)
+                    .ThenInclude(iaf => iaf.Diagnosis)
+                        .ThenInclude(d => d.SubstanceUseEntries)
+                .FirstOrDefaultAsync(p => p.PatientId == id);
 
             // Check if patient exists
             if (patient == null)
@@ -215,13 +220,13 @@ namespace SafehavenPMS.Controllers
                     PaternalNone = iaf.MedicalHistory != null && iaf.MedicalHistory.PaternalNone,
 
                     // Allergies - check if collections exist
-                    FoodAllergies = iaf.MedicalAllergies != null ? 
+                    FoodAllergies = iaf.MedicalAllergies != null ?
                         iaf.MedicalAllergies
                             .Where(a => a.AllergyType == "Food")
                             .Select(a => a.AllergyName)
                             .ToList() : new List<string>(),
 
-                    DrugAllergies = iaf.MedicalAllergies != null ? 
+                    DrugAllergies = iaf.MedicalAllergies != null ?
                         iaf.MedicalAllergies
                             .Where(a => a.AllergyType == "Drug")
                             .Select(a => a.AllergyName)
@@ -240,6 +245,71 @@ namespace SafehavenPMS.Controllers
                             .ToList() : new List<SurgicalOperation>()
                 })
                 .FirstOrDefaultAsync() ?? new MedicalHistoryViewModel(),
+
+                PhysicalExam = await _context.InitialAssessmentForms
+                    .Where(iaf => iaf.PatientId == id)
+                    .Select(iaf => new PhysicalExamViewModel
+                    {
+                        // Vital Signs
+                        BP = iaf.PhysicalExam != null ? iaf.PhysicalExam.BP : null,
+                        HR = iaf.PhysicalExam != null ? iaf.PhysicalExam.HR : null,
+                        RR = iaf.PhysicalExam != null ? iaf.PhysicalExam.RR : null,
+                        Temperature = iaf.PhysicalExam != null ? iaf.PhysicalExam.Temperature : null,
+                        O2 = iaf.PhysicalExam != null ? iaf.PhysicalExam.O2 : null,
+
+                        // System Examination
+                        SkinNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.SkinNormal,
+                        SkinFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.SkinFindings : null,
+
+                        ENTNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.ENTNormal,
+                        ENTFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.ENTFindings : null,
+
+                        ChestNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.ChestNormal,
+                        ChestFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.ChestFindings : null,
+
+                        LungsNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.LungsNormal,
+                        LungsFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.LungsFindings : null,
+
+                        CVSNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.CVSNormal,
+                        CVSFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.CVSFindings : null,
+
+                        AbdomenNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.AbdomenNormal,
+                        AbdomenFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.AbdomenFindings : null,
+
+                        GUTNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.GUTNormal,
+                        GUTFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.GUTFindings : null,
+
+                        ExtremitiesNormal = iaf.PhysicalExam != null && iaf.PhysicalExam.ExtremitiesNormal,
+                        ExtremitiesFindings = iaf.PhysicalExam != null ? iaf.PhysicalExam.ExtremitiesFindings : null
+                    })
+                    .FirstOrDefaultAsync() ?? new PhysicalExamViewModel(),
+
+                Diagnosis = await _context.InitialAssessmentForms
+                    .Where(iaf => iaf.PatientId == id)
+                    .Select(iaf => new DiagnosisViewModel
+                    {
+                        SubstanceUses = iaf.Diagnosis != null && iaf.Diagnosis.SubstanceUseEntries != null ?
+                            iaf.Diagnosis.SubstanceUseEntries
+                                .Select(su => new SubstanceUseViewModel
+                                {
+                                    SubstanceName = su.SubstanceName ?? string.Empty,
+                                    Severity = su.Severity ?? string.Empty
+                                })
+                                .ToList()
+                            : new List<SubstanceUseViewModel>()
+                    })
+                    .FirstOrDefaultAsync() ?? new DiagnosisViewModel(),
+
+                // Add this after the Diagnosis population in the viewModel initialization
+                ProblemList = await _context.InitialAssessmentForms
+                    .Where(iaf => iaf.PatientId == id)
+                    .Select(iaf => new ProblemListViewModel
+                    {
+                        Problems = iaf.Problems != null && iaf.Problems.Any()
+                            ? iaf.Problems.Select(p => p.Problem).ToList()
+                            : new List<string>()
+                    })
+                    .FirstOrDefaultAsync() ?? new ProblemListViewModel(),
             };
 
             // Return view with populated view model
@@ -554,6 +624,280 @@ namespace SafehavenPMS.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "An error occurred while saving the medical history.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SavePhysicalExam(AssessmentFormViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Get or create assessment form
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.PhysicalExam)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
+
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = model.PatientId.Value,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                    await _context.SaveChangesAsync(); // Save to get ID
+                }
+
+                // Update or create physical exam
+                if (assessmentForm.PhysicalExam == null)
+                {
+                    assessmentForm.PhysicalExam = new PhysicalExam
+                    {
+                        InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                }
+                else
+                {
+                    assessmentForm.PhysicalExam.UpdatedAt = DateTime.Now;
+                    assessmentForm.PhysicalExam.UpdatedBy = User.Identity?.Name ?? "System";
+                }
+
+                // Update vital signs
+                assessmentForm.PhysicalExam.BP = model.PhysicalExam.BP;
+                assessmentForm.PhysicalExam.HR = model.PhysicalExam.HR;
+                assessmentForm.PhysicalExam.RR = model.PhysicalExam.RR;
+                assessmentForm.PhysicalExam.Temperature = model.PhysicalExam.Temperature;
+                assessmentForm.PhysicalExam.O2 = model.PhysicalExam.O2;
+
+                // Update system examination
+                assessmentForm.PhysicalExam.SkinNormal = model.PhysicalExam.SkinNormal;
+                assessmentForm.PhysicalExam.SkinFindings = model.PhysicalExam.SkinFindings;
+                assessmentForm.PhysicalExam.ENTNormal = model.PhysicalExam.ENTNormal;
+                assessmentForm.PhysicalExam.ENTFindings = model.PhysicalExam.ENTFindings;
+                assessmentForm.PhysicalExam.ChestNormal = model.PhysicalExam.ChestNormal;
+                assessmentForm.PhysicalExam.ChestFindings = model.PhysicalExam.ChestFindings;
+                assessmentForm.PhysicalExam.LungsNormal = model.PhysicalExam.LungsNormal;
+                assessmentForm.PhysicalExam.LungsFindings = model.PhysicalExam.LungsFindings;
+                assessmentForm.PhysicalExam.CVSNormal = model.PhysicalExam.CVSNormal;
+                assessmentForm.PhysicalExam.CVSFindings = model.PhysicalExam.CVSFindings;
+                assessmentForm.PhysicalExam.AbdomenNormal = model.PhysicalExam.AbdomenNormal;
+                assessmentForm.PhysicalExam.AbdomenFindings = model.PhysicalExam.AbdomenFindings;
+                assessmentForm.PhysicalExam.GUTNormal = model.PhysicalExam.GUTNormal;
+                assessmentForm.PhysicalExam.GUTFindings = model.PhysicalExam.GUTFindings;
+                assessmentForm.PhysicalExam.ExtremitiesNormal = model.PhysicalExam.ExtremitiesNormal;
+                assessmentForm.PhysicalExam.ExtremitiesFindings = model.PhysicalExam.ExtremitiesFindings;
+
+                // Update patient status
+                var patient = await _context.Patients.FindAsync(model.PatientId);
+                if (patient != null)
+                {
+                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Physical examination has been saved successfully.";
+
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while saving the physical examination.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveDiagnosis(AssessmentFormViewModel model)
+        {
+            try
+            {
+                // Validate model state
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Get or create assessment form with related diagnosis data
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.Diagnosis)
+                        .ThenInclude(d => d.SubstanceUseEntries)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
+
+                // Create new assessment form if it doesn't exist
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = model.PatientId.Value,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                    await _context.SaveChangesAsync(); // Save to get ID
+                }
+
+                // Update or create diagnosis
+                if (assessmentForm.Diagnosis == null)
+                {
+                    assessmentForm.Diagnosis = new Diagnosis
+                    {
+                        InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                }
+                else
+                {
+                    assessmentForm.Diagnosis.UpdatedAt = DateTime.Now;
+                    assessmentForm.Diagnosis.UpdatedBy = User.Identity?.Name ?? "System";
+                }
+
+                // Clear existing substance use entries
+                if (assessmentForm.Diagnosis.SubstanceUseEntries != null)
+                {
+                    _context.SubstanceUseEntries.RemoveRange(assessmentForm.Diagnosis.SubstanceUseEntries);
+                }
+
+                // Add new substance use entries
+                if (model.Diagnosis?.SubstanceUses != null)
+                {
+                    foreach (var substance in model.Diagnosis.SubstanceUses)
+                    {
+                        if (!string.IsNullOrWhiteSpace(substance.SubstanceName) && !string.IsNullOrWhiteSpace(substance.Severity))
+                        {
+                            var entry = new SubstanceUseEntry
+                            {
+                                SubstanceName = substance.SubstanceName,
+                                Severity = substance.Severity,
+                                CreatedAt = DateTime.Now,
+                                CreatedBy = User.Identity?.Name ?? "System"
+                            };
+                            assessmentForm.Diagnosis.SubstanceUseEntries.Add(entry);
+                        }
+                    }
+                }
+
+                // Update patient status to in progress
+                var patient = await _context.Patients.FindAsync(model.PatientId);
+                if (patient != null)
+                {
+                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                }
+
+                // Save all changes
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Diagnosis has been saved successfully.";
+
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                // Log the database exception details here
+                TempData["ErrorMessage"] = "A database error occurred while saving the diagnosis.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error Message: " + ex.Message);
+                // Log the general exception details here
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the diagnosis.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveProblemList(AssessmentFormViewModel model)
+        {
+            try
+            {
+                // Validate model state
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Get or create assessment form with related problems
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.Problems)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
+
+                // Create new assessment form if it doesn't exist
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = model.PatientId.Value,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                    await _context.SaveChangesAsync(); // Save to get ID
+                }
+
+                // Clear existing problems
+                if (assessmentForm.Problems != null)
+                {
+                    _context.ProblemLists.RemoveRange(assessmentForm.Problems);
+                }
+
+                // Add new problems from the viewmodel
+                if (model.ProblemList?.Problems != null && model.ProblemList.Problems.Count > 0)
+                {
+                    foreach (var problemText in model.ProblemList.Problems)
+                    {
+                        if (!string.IsNullOrWhiteSpace(problemText))
+                        {
+                            var problem = new ProblemList
+                            {
+                                InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
+                                Problem = problemText,
+                                CreatedAt = DateTime.Now,
+                                CreatedBy = User.Identity?.Name ?? "System"
+                            };
+
+                            if (assessmentForm.Problems == null)
+                            {
+                                assessmentForm.Problems = new List<ProblemList>();
+                            }
+
+                            assessmentForm.Problems.Add(problem);
+                        }
+                    }
+                }
+
+                // Update patient status
+                var patient = await _context.Patients.FindAsync(model.PatientId);
+                if (patient != null)
+                {
+                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                }
+
+                // Save all changes
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Problem list has been saved successfully.";
+
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                TempData["ErrorMessage"] = "A database error occurred while saving the problem list.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the problem list.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
         }

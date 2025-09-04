@@ -1,0 +1,84 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace SafehavenPMS.Migrations
+{
+    /// <inheritdoc />
+    public partial class kjhuyijhgsdfsdf : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "Diagnoses",
+                columns: table => new
+                {
+                    DiagnosisId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InitialAssessmentFormId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Diagnoses", x => x.DiagnosisId);
+                    table.ForeignKey(
+                        name: "FK_Diagnoses_InitialAssessmentForms_InitialAssessmentFormId",
+                        column: x => x.InitialAssessmentFormId,
+                        principalTable: "InitialAssessmentForms",
+                        principalColumn: "InitialAssessmentFormId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SubstanceUseEntries",
+                columns: table => new
+                {
+                    SubstanceUseEntryId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DiagnosisId = table.Column<int>(type: "int", nullable: false),
+                    SubstanceName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Severity = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubstanceUseEntries", x => x.SubstanceUseEntryId);
+                    table.ForeignKey(
+                        name: "FK_SubstanceUseEntries_Diagnoses_DiagnosisId",
+                        column: x => x.DiagnosisId,
+                        principalTable: "Diagnoses",
+                        principalColumn: "DiagnosisId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Diagnoses_InitialAssessmentFormId",
+                table: "Diagnoses",
+                column: "InitialAssessmentFormId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubstanceUseEntries_DiagnosisId",
+                table: "SubstanceUseEntries",
+                column: "DiagnosisId");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "SubstanceUseEntries");
+
+            migrationBuilder.DropTable(
+                name: "Diagnoses");
+        }
+    }
+}

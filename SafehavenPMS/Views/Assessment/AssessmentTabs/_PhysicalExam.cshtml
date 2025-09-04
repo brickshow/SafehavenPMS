@@ -1,0 +1,169 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+<div class="card">
+    <div class="card-header bg-white" style="color: #015F6B;">
+        <h5 class="mb-0">PHYSICAL EXAMINATION</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="SavePhysicalExam" asp-controller="Assessment" method="post" id="physicalExamForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PatientId" />
+
+            @* Vital Signs Section *@
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="mb-3 fw-medium">Vital Signs</h6>
+                    <div class="row g-3">
+                        <div class="col">
+                            <div class="input-group">
+                                <input type="text" class="form-control" asp-for="PhysicalExam.BP" placeholder="BP">
+                                <span class="input-group-text">mmHg</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group">
+                                <input type="text" class="form-control" asp-for="PhysicalExam.HR" placeholder="HR">
+                                <span class="input-group-text">bpm</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group">
+                                <input type="text" class="form-control" asp-for="PhysicalExam.RR" placeholder="RR">
+                                <span class="input-group-text">cpm</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group">
+                                <input type="text" class="form-control" asp-for="PhysicalExam.Temperature" placeholder="T">
+                                <span class="input-group-text">°C</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="input-group">
+                                <input type="text" class="form-control" asp-for="PhysicalExam.O2" placeholder="O2">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* System Examination *@
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="mb-3 fw-medium">System</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">Parts</th>
+                                    <th style="width: 10%">Normal</th>
+                                    <th>Abnormal findings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Skin</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.SkinNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.SkinFindings"></td>
+                                </tr>
+                                <tr>
+                                    <td>ENT</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.ENTNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.ENTFindings"></td>
+                                </tr>
+                                <tr>
+                                    <td>Chest</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.ChestNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.ChestFindings"></td>
+                                </tr>
+                                <tr>
+                                    <td>Lungs</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.LungsNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.LungsFindings"></td>
+                                </tr>
+                                <tr>
+                                    <td>CVS</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.CVSNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.CVSFindings"></td>
+                                </tr>
+                                <tr>
+                                    <td>Abdomen</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.AbdomenNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.AbdomenFindings"></td>
+                                </tr>
+                                <tr>
+                                    <td>GUT</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.GUTNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.GUTFindings"></td>
+                                </tr>
+                                <tr>
+                                    <td>Extremities</td>
+                                    <td><input type="checkbox" class="form-check-input" asp-for="PhysicalExam.ExtremitiesNormal"></td>
+                                    <td><input type="text" class="form-control" asp-for="PhysicalExam.ExtremitiesFindings"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            @* Save Button *@
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-teal px-4">
+                    <i class="bx bx-save me-2"></i>SAVE
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: none !important;
+        border: none;
+    }
+
+    .card-header {
+        background: transparent;
+        border-bottom: none;
+    }
+
+    .form-control {
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .form-control:focus {
+        border-color: #006d77;
+        box-shadow: 0 0 0 0.2rem rgba(0,109,119,0.25);
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+        padding: 0.75rem;
+        border-color: #dee2e6;
+    }
+
+    .form-check-input:checked {
+        background-color: #006d77;
+        border-color: #006d77;
+    }
+
+    .btn-teal {
+        background-color: #006d77;
+        color: white;
+    }
+
+    .btn-teal:hover {
+        background-color: #005c64;
+        color: white;
+    }
+</style>

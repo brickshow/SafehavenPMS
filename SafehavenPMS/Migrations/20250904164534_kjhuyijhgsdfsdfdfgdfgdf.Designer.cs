@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250904164534_kjhuyijhgsdfsdfdfgdfgdf")]
+    partial class kjhuyijhgsdfsdfdfgdfgdf
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -973,39 +976,6 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("PhysicalExams");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.ProblemList", b =>
-                {
-                    b.Property<int>("ProblemListId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProblemListId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("InitialAssessmentFormId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Problem")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("ProblemListId");
-
-                    b.HasIndex("InitialAssessmentFormId");
-
-                    b.ToTable("ProblemLists");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.SubstanceUseEntry", b =>
                 {
                     b.Property<int>("SubstanceUseEntryId")
@@ -1323,17 +1293,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("InitialAssessmentForm");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.ProblemList", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
-                        .WithMany("Problems")
-                        .HasForeignKey("InitialAssessmentFormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("InitialAssessmentForm");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.SubstanceUseEntry", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.Diagnosis", "Diagnosis")
@@ -1383,8 +1342,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("MedicalHistory");
 
                     b.Navigation("PhysicalExam");
-
-                    b.Navigation("Problems");
 
                     b.Navigation("SurgicalHistories");
                 });
