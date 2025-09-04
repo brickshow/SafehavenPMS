@@ -1,0 +1,99 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+@* HISTORY OF PRESENT ILLNESS Tab - Displays and saves patient's drug use history *@
+
+<div class="card">
+    <div class="card-header bg-white" style="color: #015F6B;">
+        <h5 class="mb-0">HISTORY OF PRESENT ILLNESS</h5>
+    </div>
+    <div class="card-body">
+        @* Form posts to SaveHistoryOfPresentIllness action in AssessmentController *@
+        <form asp-action="SaveHistoryOfPresentIllness" asp-controller="Assessment" method="post">
+            @* Hidden field for HistoryPresentId (for update) *@
+            <input type="hidden" asp-for="HistoryPresent.HistoryPresentId"/>
+            <input type="hidden" asp-for="@Model.PatientId"/>
+
+            @* Onset of Drug Use field *@
+            <div class="mb-3">
+                <label class="form-label">Onset of Drug Use</label>
+                <input type="text" class="form-control" asp-for="HistoryPresent.OnsetOfDrugUse"/>
+            </div>
+
+            @* Reason for First Use field *@
+            <div class="mb-3">
+                <label class="form-label">Reason for First Use</label>
+                <textarea class="form-control" rows="3" asp-for="HistoryPresent.ReasonForFirstUse"></textarea>
+            </div>
+
+            @* History of Imprisonment field *@
+            <div class="mb-3">
+                <label class="form-label">History of Imprisonment</label>
+                <textarea class="form-control" rows="3" asp-for="HistoryPresent.HistoryOfImprisonment"></textarea>
+            </div>
+
+            @* History of previous drug rehabilitation field *@
+            <div class="mb-3">
+                <label class="form-label">History of previous drug rehabilitation</label>
+                <textarea class="form-control" rows="3" asp-for="HistoryPresent.PreviousDrugRehab"></textarea>
+            </div>
+
+            @* Who invited for first use and No. of people on first use fields *@
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Who invited for first use</label>
+                    <input type="text" class="form-control" asp-for="HistoryPresent.WhoInvitedFirstUse"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">No. of people on first use</label>
+                    <input type="number" class="form-control" asp-for="HistoryPresent.NumberOfPeopleFirstUse"/>
+                </div>
+            </div>
+
+            @* Last use of the substance and Amount consumed on first use fields *@
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Last use of the substance</label>
+                    <input type="text" class="form-control" asp-for="HistoryPresent.LastUseOfSubstance"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Amount consumed on first use</label>
+                    <input type="text" class="form-control" asp-for="HistoryPresent.AmountConsumedFirstUse"/>
+                </div>
+            </div>
+
+            @* Save button *@
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-teal px-4">
+                    SAVE
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Styling for teal theme and card layout *@
+<style>
+    .bg-teal {
+        background-color: #006d77;
+    }
+    
+    .btn-teal {
+        background-color: #006d77;
+        color: white;
+    }
+    
+    .btn-teal:hover {
+        background-color: #005c64;
+        color: white;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .form-control:focus {
+        border-color: #006d77;
+        box-shadow: 0 0 0 0.2rem rgba(0,109,119,0.25);
+    }
+</style>

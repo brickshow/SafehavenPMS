@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250904002623_drugsUser")]
+    partial class drugsUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -518,103 +521,6 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("IntakeForms");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.MedicalAllergy", b =>
-                {
-                    b.Property<int>("MedicalAllergyId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MedicalAllergyId"));
-
-                    b.Property<string>("AllergyName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AllergyType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("InitialAssessmentFormId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("MedicalAllergyId");
-
-                    b.HasIndex("InitialAssessmentFormId");
-
-                    b.ToTable("MedicalAllergies");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.MedicalHistory", b =>
-                {
-                    b.Property<int>("MedicalHistoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MedicalHistoryId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("InitialAssessmentFormId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsAsthmatic")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDiabetic")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsHypertensive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("MaternalDiabetic")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("MaternalHypertension")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("MaternalNone")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("OtherConditions")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PaternalDiabetic")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("PaternalHypertension")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("PaternalNone")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("MedicalHistoryId");
-
-                    b.HasIndex("InitialAssessmentFormId")
-                        .IsUnique();
-
-                    b.ToTable("MedicalHistories");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.MedicationOrder", b =>
                 {
                     b.Property<int>("MedicationOrderId")
@@ -843,48 +749,6 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("Patients");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.SurgicalHistory", b =>
-                {
-                    b.Property<int>("SurgicalHistoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SurgicalHistoryId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Duration")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Hospital")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("InitialAssessmentFormId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Operation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Year")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("SurgicalHistoryId");
-
-                    b.HasIndex("InitialAssessmentFormId");
-
-                    b.ToTable("SurgicalHistories");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.AdministrationLog", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.MedicationOrder", "Medication")
@@ -1038,28 +902,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.MedicalAllergy", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
-                        .WithMany("MedicalAllergies")
-                        .HasForeignKey("InitialAssessmentFormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("InitialAssessmentForm");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.MedicalHistory", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
-                        .WithOne("MedicalHistory")
-                        .HasForeignKey("SafehavenPMS.Models.MedicalHistory", "InitialAssessmentFormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("InitialAssessmentForm");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.MedicationOrder", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.Medicine", "Medicine")
@@ -1096,17 +938,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.SurgicalHistory", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
-                        .WithMany("SurgicalHistories")
-                        .HasForeignKey("InitialAssessmentFormId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("InitialAssessmentForm");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
                 {
                     b.Navigation("Availabilities");
@@ -1121,12 +952,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("DrugUses");
 
                     b.Navigation("HistoryPresent");
-
-                    b.Navigation("MedicalAllergies");
-
-                    b.Navigation("MedicalHistory");
-
-                    b.Navigation("SurgicalHistories");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.IntakeForm", b =>

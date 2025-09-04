@@ -4,8 +4,10 @@
     {
         NewReferral,
         Pending,
+        InProgress,
         Waitlisted,
         PendingAssessment,
+        OnAssessment,
         PendingApproval,
         Admitted,
         Closed,

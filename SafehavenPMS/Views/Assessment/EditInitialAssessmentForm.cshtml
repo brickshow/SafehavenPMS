@@ -1,0 +1,246 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+@{
+    ViewBag.Title = "Initial Assessment";
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="@Url.Action("Index")" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+<!-- Header spans full width above the tablature -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4" style="border-radius:6px;">
+            <div class="card-body p-4">
+                <div class="row g-0 align-items-center justify-content-between">
+                    <!-- Photo + Name -->
+                    <div class="col-auto d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <div class="rounded-circle bg-secondary" style="width:58px;height:58px;overflow:hidden;">
+                                <img src="~/Images/default.png" alt="Patient Photo" style="width:100%;height:100%;object-fit:cover;" />
+                            </div>
+                            <div class="position-absolute bottom-0 end-0 rounded-circle bg-success d-flex align-items-center justify-content-center"
+                                 style="width:20px;height:20px;">
+                                <i class="bx bx-smile text-white" style="font-size:12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">@Model.FullName</h5>
+                            <small class="text-muted">Patient No. @Model.PatientId</small>
+                        </div>
+                    </div>
+
+                    <!-- Patient Info Grid -->
+                    <div class="col">
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Age</div>
+                                <div class="fw-semibold">@Model.Age</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Sex</div>
+                                <div class="fw-semibold">@Model.Sex</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Occupation</div>
+                                <div class="fw-semibold">@Model.Occupation</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Address</div>
+                                <div class="fw-semibold">@Model.Address</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-1 shadow">
+    <!-- Left side vertical navigation -->
+    <div class="col-md-2">
+        <div class="nav flex-column nav-tabs assessment-tabs" id="assessmentTabs" role="tablist">
+            <div class="nav-link active" id="history-present-tab" data-bs-toggle="tab" data-bs-target="#history-present" role="tab" aria-selected="true">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>History of Present Illness</span>
+                </div>
+            </div>
+            <div class="nav-link" id="drug-history-tab" data-bs-toggle="tab" data-bs-target="#drug-history" role="tab" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>History of Drug Use</span>
+                </div>
+            </div>
+            <div class="nav-link" id="medical-history-tab" data-bs-toggle="tab" data-bs-target="#medical-history" role="tab" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Past Medical History</span>
+                </div>
+            </div>
+            <div class="nav-link" id="physical-exam-tab" data-bs-toggle="tab" data-bs-target="#physical-exam" role="tab" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Physical Examination</span>
+                </div>
+            </div>
+            <div class="nav-link" id="drug-dependency-tab" data-bs-toggle="tab" data-bs-target="#drug-dependency" role="tab" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Drug Dependency</span>
+                </div>
+            </div>
+            <div class="nav-link" id="diagnosis-tab" data-bs-toggle="tab" data-bs-target="#diagnosis" role="tab" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Diagnosis</span>
+                </div>
+            </div>
+            <div class="nav-link" id="problem-list-tab" data-bs-toggle="tab" data-bs-target="#problem-list" role="tab" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Problem List</span>
+                </div>
+            </div>
+            <div class="nav-link" id="recommendation-tab" data-bs-toggle="tab" data-bs-target="#recommendation" role="tab" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Recommendation</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right side content area -->
+    <div class="col-md-10">
+        <div class="tab-content" id="assessmentTabContent">
+            <div class="tab-pane fade show active" id="history-present" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_HistoryPresent", Model)
+            </div>
+            <div class="tab-pane fade" id="drug-history" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_DrugHistory", Model)
+            </div>
+            <div class="tab-pane fade" id="medical-history" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_MedicalHistory", Model)
+            </div>
+            @* <div class="tab-pane fade" id="physical-exam" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_PhysicalExam", Model)
+            </div>
+            <div class="tab-pane fade" id="drug-dependency" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_DrugDependency", Model)
+            </div>
+            <div class="tab-pane fade" id="diagnosis" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_Diagnosis", Model)
+            </div>
+            <div class="tab-pane fade" id="problem-list" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_ProblemList", Model)
+            </div>
+            <div class="tab-pane fade" id="recommendation" role="tabpanel">
+                @await Html.PartialAsync("AssessmentTabs/_Recommendation", Model)
+            </div> *@
+        </div>
+    </div>
+</div>
+
+
+<style>
+    /* Visual adjustments to mimic the tablature look */
+    .table thead th {
+        border-bottom: none;
+        background: transparent;
+    }
+
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #cfecec;
+    }
+
+    .btn-outline-danger {
+        border-color: #ef5a5a;
+        color: #ef5a5a;
+    }
+
+        .btn-outline-danger:hover {
+            background: #ef5a5a;
+            color: #fff;
+        }
+
+    /* Minor spacing */
+    .list-group .list-group-item, .nav-pills .nav-link {
+        padding: 12px 14px;
+        cursor: pointer;
+    }
+
+    .fw-semibold {
+        font-weight: 600;
+    }
+
+    /* Vertical tabs styling */
+    .assessment-tabs {
+        border: none;
+        height: 100%;
+    }
+
+    .assessment-tabs .nav-link {
+        border: none;
+        border-radius: 0;
+        margin-bottom: 2px;
+        text-align: left;
+        padding: 12px 15px;
+        color: #495057;
+        background-color: #fff;
+        transition: all 0.2s ease;
+        width: 100%;
+        position: relative;
+    }
+
+    .assessment-tabs .nav-link .d-flex {
+        position: relative;
+    }
+
+    .assessment-tabs .nav-link .tab-indicator {
+        width: 4px;
+        position: absolute;
+        left: -15px;
+        top: 0;
+        bottom: 0;
+        background-color: transparent;
+        transition: background-color 0.2s ease;
+    }
+
+    .assessment-tabs .nav-link:hover {
+        background-color: #f8f9fa;
+    }
+
+    .assessment-tabs .nav-link.active {
+        background-color: #006d77;
+        color: #fff;
+    }
+
+    .assessment-tabs .nav-link.active .tab-indicator {
+        background-color: #00a3b5;
+    }
+
+    .assessment-tabs .nav-link span {
+        margin-left: 10px;
+        font-size: 0.95rem;
+    }
+
+    .tab-content {
+        background: #fff;
+        border: 1px solid #eee;
+        min-height: 500px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+</style>

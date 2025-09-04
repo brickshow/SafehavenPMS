@@ -1,0 +1,226 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+@* Drug History Tab - Records patient's substance use history *@
+<div class="card">
+    <div class="card-header bg-white" style="color: #015F6B;">
+        <h5 class="mb-0">HISTORY OF DRUG USE</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="SaveDrugHistory" asp-controller="Assessment" method="post" id="drugHistoryForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PatientId" />
+
+            @* Drug History Table *@
+            <div class="table-responsive">
+                <table class="table drug-table mb-0">
+                    <thead>
+                        <tr>
+                            <th class="drug-th">Name of Substance</th>
+                            <th class="drug-th">Route</th>
+                            <th class="drug-th">Qty spent (a day)</th>
+                            <th class="drug-th">Frequency</th>
+                            <th class="drug-th">First Use</th>
+                            <th class="drug-th">Effects when high</th>
+                            <th class="drug-th">Effects when it wanes</th>
+                            <th class="drug-th"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="drugTableBody">
+                        @for (int i = 0; i < Model.DrugUseHistory?.DrugUseEntries?.Count; i++)
+                        {
+                            <tr class="drug-row" data-index="@i">
+                                <td>
+                                    <input type="text" name="DrugUseHistory.DrugUseEntries[@i].SubstanceName" 
+                                           class="drug-td-input" value="@Model.DrugUseHistory.DrugUseEntries[i].SubstanceName" />
+                                </td>
+                                <td>
+                                    <input type="text" name="DrugUseHistory.DrugUseEntries[@i].Route" 
+                                           class="drug-td-input" value="@Model.DrugUseHistory.DrugUseEntries[i].Route" />
+                                </td>
+                                <td>
+                                    <input type="text" name="DrugUseHistory.DrugUseEntries[@i].QuantityPerDay" 
+                                           class="drug-td-input" value="@Model.DrugUseHistory.DrugUseEntries[i].QuantityPerDay" />
+                                </td>
+                                <td>
+                                    <input type="text" name="DrugUseHistory.DrugUseEntries[@i].Frequency" 
+                                           class="drug-td-input" value="@Model.DrugUseHistory.DrugUseEntries[i].Frequency" />
+                                </td>
+                                <td>
+                                    <input type="text" name="DrugUseHistory.DrugUseEntries[@i].FirstUse" 
+                                           class="drug-td-input" value="@Model.DrugUseHistory.DrugUseEntries[i].FirstUse" />
+                                </td>
+                                <td>
+                                    <input type="text" name="DrugUseHistory.DrugUseEntries[@i].EffectsWhenHigh" 
+                                           class="drug-td-input" value="@Model.DrugUseHistory.DrugUseEntries[i].EffectsWhenHigh" />
+                                </td>
+                                <td>
+                                    <input type="text" name="DrugUseHistory.DrugUseEntries[@i].EffectsWhenWanes" 
+                                           class="drug-td-input" value="@Model.DrugUseHistory.DrugUseEntries[i].EffectsWhenWanes" />
+                                </td>
+                                <td class="text-center align-middle">
+                                    <button type="button" class="drug-delete-btn" onclick="removeRow(this)">
+                                        <i class="bx bx-trash" style="color:#e44e4e; font-size:1.4rem;"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @* Add new row inputs *@
+                        <tr id="addRow">
+                            <td><input type="text" id="newSubstance" class="drug-td-input" placeholder="Enter substance" /></td>
+                            <td><input type="text" id="newRoute" class="drug-td-input" placeholder="Route" /></td>
+                            <td><input type="text" id="newQuantity" class="drug-td-input" placeholder="Qty/day" /></td>
+                            <td><input type="text" id="newFrequency" class="drug-td-input" placeholder="Frequency" /></td>
+                            <td><input type="text" id="newFirstUse" class="drug-td-input" placeholder="First use" /></td>
+                            <td><input type="text" id="newEffectsHigh" class="drug-td-input" placeholder="Effects when high" /></td>
+                            <td><input type="text" id="newEffectsWane" class="drug-td-input" placeholder="Effects when wanes" /></td>
+                            <td class="text-center align-middle">
+                                <button type="button" class="btn-teal rounded-2" onclick="addRow()" 
+                                        style="width:32px; height:32px; border:none;">
+                                    <i class="bx bx-plus" style="font-size:1.3rem;"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            @* Save Button *@
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-teal px-4">
+                    <i class="bx bx-save me-2"></i>SAVE
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .drug-table {
+        width: 100%;
+        background: #fff;
+        border-radius: 10px;
+        border: none;
+        font-size: 0.9rem;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+
+    .drug-th {
+        font-weight: 600;
+        color: #6c6c6c;
+        padding: 18px 10px;
+        background: none;
+        font-size: 0.9rem;
+        border: none !important;
+    }
+
+    /* Default input style for all rows - no borders */
+    .drug-td-input {
+        width: 100%;
+        border: none !important;
+        background: transparent;
+        font-size: 0.9rem;
+        color: #232323;
+        padding: 4px 8px;
+        transition: all 0.2s;
+    }
+
+    .drug-td-input:focus {
+        outline: none;
+        box-shadow: 0 1px 0 0 #006d77;
+    }
+
+    /* Override for new row inputs - with borders */
+    #addRow .drug-td-input {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 4px;
+        background: transparent;
+    }
+
+    #addRow .drug-td-input:focus {
+        outline: none;
+        border-color: #006d77 !important;
+        box-shadow: 0 0 0 0.2rem rgba(0,109,119,0.25);
+    }
+
+    td {
+        border: none !important;
+        padding: 8px !important;
+    }
+
+    tr {
+        border: none !important;
+    }
+
+    .drug-delete-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-teal {
+        background-color: #006d77;
+        color: white;
+    }
+
+    .btn-teal:hover {
+        background-color: #005c64;
+        color: white;
+    }
+</style>
+
+<script>
+    let drugIndex = @(Model.DrugUseHistory?.DrugUseEntries?.Count ?? 0);
+
+    function addRow() {
+        const substance = document.getElementById('newSubstance').value;
+        if (!substance.trim()) {
+            alert("Substance name is required");
+            return;
+        }
+
+        const tbody = document.getElementById('drugTableBody');
+        const addRow = document.getElementById('addRow');
+        const newRow = document.createElement('tr');
+        newRow.className = 'drug-row';
+
+        // Get all new values
+        const route = document.getElementById('newRoute').value;
+        const quantity = document.getElementById('newQuantity').value;
+        const frequency = document.getElementById('newFrequency').value;
+        const firstUse = document.getElementById('newFirstUse').value;
+        const effectsHigh = document.getElementById('newEffectsHigh').value;
+        const effectsWane = document.getElementById('newEffectsWane').value;
+
+        newRow.innerHTML = `
+            <td><input type="text" name="DrugUseHistory.DrugUseEntries[${drugIndex}].SubstanceName" class="drug-td-input" value="${substance}" /></td>
+            <td><input type="text" name="DrugUseHistory.DrugUseEntries[${drugIndex}].Route" class="drug-td-input" value="${route}" /></td>
+            <td><input type="text" name="DrugUseHistory.DrugUseEntries[${drugIndex}].QuantityPerDay" class="drug-td-input" value="${quantity}" /></td>
+            <td><input type="text" name="DrugUseHistory.DrugUseEntries[${drugIndex}].Frequency" class="drug-td-input" value="${frequency}" /></td>
+            <td><input type="text" name="DrugUseHistory.DrugUseEntries[${drugIndex}].FirstUse" class="drug-td-input" value="${firstUse}" /></td>
+            <td><input type="text" name="DrugUseHistory.DrugUseEntries[${drugIndex}].EffectsWhenHigh" class="drug-td-input" value="${effectsHigh}" /></td>
+            <td><input type="text" name="DrugUseHistory.DrugUseEntries[${drugIndex}].EffectsWhenWanes" class="drug-td-input" value="${effectsWane}" /></td>
+            <td class="text-center align-middle">
+                <button type="button" class="drug-delete-btn" onclick="removeRow(this)">
+                    <i class="bx bx-trash" style="color:#e44e4e; font-size:1.4rem;"></i>
+                </button>
+            </td>
+        `;
+
+        tbody.insertBefore(newRow, addRow);
+        drugIndex++;
+
+        // Clear inputs
+        document.getElementById('newSubstance').value = '';
+        document.getElementById('newRoute').value = '';
+        document.getElementById('newQuantity').value = '';
+        document.getElementById('newFrequency').value = '';
+        document.getElementById('newFirstUse').value = '';
+        document.getElementById('newEffectsHigh').value = '';
+        document.getElementById('newEffectsWane').value = '';
+    }
+
+    function removeRow(button) {
+        button.closest('tr').remove();
+    }
+</script>

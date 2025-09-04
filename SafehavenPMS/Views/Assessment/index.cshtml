@@ -1,7 +1,7 @@
 @using SafehavenPMS.Enum
-@model List<SafehavenPMS.ViewModel.IntakeViewModel>
+@model List<SafehavenPMS.ViewModel.PendingAssessmentViewModel>
 @{
-    ViewBag.Title = "Intake";
+    ViewBag.Title = "Assessment";
 }
 
 <div class="header">
@@ -9,7 +9,7 @@
         <div class="d-flex align-items-center g-4">
             <div class="d-flex justify-content-center align-items-center">
                 <i class='bx bxs-user fs-2 me-2'></i>
-                <h5 class="text-custom mb-0">Patients</h5>
+                <h5 class="text-custom mb-0">Assessment</h5>
             </div>
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
@@ -52,9 +52,11 @@
 <div class="status">
     <div class="waitlisted d-flex flex-row flex-wrap gap-2">
         <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="Pending" />
-            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Pending" ? "active" : "")">
-                New Referral (@ViewBag.Pending)
+            <input type="hidden" name="status" value="Waitlisted" />
+            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
+                Pending Assessment (@ViewBag.PendingAssessment)
             </button>
         </form>
     </div>
@@ -122,11 +124,11 @@
                 <tr>
                     <th>No.</th>
                     <th>Patient</th>
-                    <th>Referred By</th>
-                    <th>Referral Phone No.</th>
-                    <th>Intake Officer</th>
-                    <th>Intake Date</th>
-                    <th class="text-center">Intake Status</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>TIme</th>
+                    <th>Completed Date</th>
+                    <th class="text-center">Status</th>
                     <th class="text-center">Action</th>
                 </tr>
             </thead>
@@ -140,60 +142,69 @@
                 else
                 {
                     var row = 1;
-                    foreach (var intake in Model)
+                    foreach (var pending in Model)
                     {
                         <tr>
                             <td>@row</td>
-                            <td>@intake.FullName</td>
-                            <td>@intake.ReferredBy</td>
-                            <td>@intake.ReferredByPhoneNumber</td>
-                            <td>@intake.IntakeOfficer</td>
-                            <td>@intake.IntakeDate?.ToString("MMM dd, yyyy")</td>
+                            <td>@(pending.PatientName ?? "-")</td>
+                            <td>@(pending.Type ?? "-")</td>
+                            <td>@(pending.Date?.ToString("MMM dd, yyyy") ?? "-")</td>
+                            <td>@(pending.Time ?? "-")</td>
+                            <td>@(pending.CompletedDate?.ToString("MMM dd, yyyy") ?? "-")</td>
                             <td class="text-center">
-                                @if(intake.IntakeStatus == IntakeStatus.Pending.ToString())
+                                @if (pending.Status == PatientStatusEnum.PendingAssessment.ToString())
                                 {
                                     <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Pending
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == IntakeStatus.InProgress.ToString())
+                                @if (pending.Status == PatientStatusEnum.InProgress.ToString())
                                 {
-                                    <div style="background-color: #F9BE8C; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                    <div style="background-color: #9FE2FB; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         In Progress
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == IntakeStatus.Completed.ToString())
+                                @if (pending.Status == SchedulingStatus.Completed.ToString())
                                 {
                                     <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Completed
                                     </div>
                                 }
-                              
                             </td>
-                                <td class="position-relative text-center">
+                            <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bx bx-dots-vertical fs-5 text-muted"></i>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                        @if (intake.IntakeStatus == "Pending")
-                                        {
+                                        @if (pending.Status == PatientStatusEnum.PendingAssessment.ToString())
+                                       {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                                    <span class="badge-dot bg-primary"></span>
+                                                    <span class="badge-dot bg-info"></span>
                                                     View Profile
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
+                                                   href="@Url.Action("EditInitialAssessmentForm", "Assessment", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Intake Form
+                                                    Edit Initial Assessment
                                                 </a>
                                             </li>
+                                           @* <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                href="#"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#submitIntakeModal"
+                                                onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                    <span class="badge-dot bg-success"></span>
+                                                    Submit Intake
+                                                </a>
+                                            </li> *@
                                         }
-                                        else if (intake.IntakeStatus == IntakeStatus.InProgress.ToString())
+                                        else if (pending.Status == PatientStatusEnum.InProgress.ToString())
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -203,24 +214,22 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
+                                                   href="@Url.Action("EditInitialAssessmentForm", "Assessment", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Intake Form
+                                                    Edit Initial Assessment
                                                 </a>
                                             </li>
-                                           <li>
+                                            <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                href="#"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#submitIntakeModal"
-                                                onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#submitIntakeModal"
+                                                   onclick="document.getElementById('modalIntakeId').value='@pending.PatientId'">
                                                     <span class="badge-dot bg-success"></span>
-                                                    Submit Intake
+                                                    Submit
                                                 </a>
                                             </li>
                                         }
-
-
                                         else
                                         {
                                             <li>
@@ -229,20 +238,13 @@
                                                     View Profile
                                                 </a>
                                             </li>
-                                               <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
-                                                    <span class="badge-dot bg-primary"></span>
-                                                    Edit Intake Form
-                                                </a>
-                                            </li>
                                         }
                                     </ul>
                                 </div>
                             </td>
                         </tr>
                         row++;
-                    }   
+                    }
                 }
             </tbody>
         </table>
@@ -327,6 +329,7 @@
             color: white !important;
             box-shadow: none;
         }
+
     .table-header {
         width: 100%;
         height: 50px;
@@ -345,6 +348,7 @@
         position: absolute !important;
         z-index: 1055 !important;
     }
+
     .table td, .table th {
         white-space: nowrap;
     }

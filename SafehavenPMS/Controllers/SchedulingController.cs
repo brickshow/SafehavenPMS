@@ -463,6 +463,30 @@ namespace SafehavenPMS.Controllers
             //Find Patient
             var patient = await _context.Patients.FirstOrDefaultAsync(s => s.PatientId == model.PatientId);
 
+            // Check if there's already a doctor assignment
+            var doctorAssignment = await _context.ClinicalStaffPatients
+                .FirstOrDefaultAsync(csp => csp.PatientId == model.PatientId);
+
+            if (doctorAssignment != null)
+            {
+                // Update existing doctor assignment if different
+                if (doctorAssignment.ClinicalStaffId != model.ClinicalStaffID)
+                {
+                    doctorAssignment.ClinicalStaffId = model.ClinicalStaffID ?? 0;
+                    _context.ClinicalStaffPatients.Update(doctorAssignment);
+                }
+            }
+            else
+            {
+                // Create new doctor assignment
+                var newAssignment = new ClinicalStaffPatient
+                {
+                    ClinicalStaffId = model.ClinicalStaffID ?? 0,
+                    PatientId = model.PatientId
+                };
+                _context.ClinicalStaffPatients.Add(newAssignment);
+            }
+
             try
             {
                 await _context.SaveChangesAsync();
@@ -477,9 +501,10 @@ namespace SafehavenPMS.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine("Error: " + ex);
+                ModelState.AddModelError("", "Failed to save appointment: " + ex.Message);
+                return View(model);
             }
 
-            // Return the Index view with updated model
             return RedirectToAction("Index");
         }
     }
