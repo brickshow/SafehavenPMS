@@ -150,7 +150,7 @@
                             <td>@(sched.Type ?? "-")</td>
                             <td>@(sched.ClinicalStaffName ?? "-")</td>
                             <td>@(sched.ScheduleDate?.ToString("MMM dd, yyyy") ?? "-")</td>
-                            <td>@(sched.ScheduleTime ?? "-")</td>
+                            <td>@(sched.ScheduleTime != null ? DateTime.Parse(sched.ScheduleTime).ToString("hh:mm tt") : "-")</td>
                             <td class="text-center">
                                 @if (sched.Status == SchedulingStatus.Pending.ToString())
                                 {

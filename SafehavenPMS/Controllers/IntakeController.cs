@@ -161,6 +161,7 @@ namespace SafehavenPMS.Controllers
                 Sex = intake.Sex ?? "-",
                 Address = intake.Address ?? "-",
                 ReferredBy = intake.IntakeForm.ReferredBy,
+                Affiliation = intake.IntakeForm.Affiliation,
                 ReferredByPhoneNumber = intake.IntakeForm.PhoneNumber,
                 IntakeOfficer = "-",
                 IntakeDate = intake?.CreatedAt != null ? ((DateTime)intake.CreatedAt).ToString("yyyy-MM-dd") : "-",
@@ -436,8 +437,7 @@ namespace SafehavenPMS.Controllers
                     Type = "Initial Assessment",
                     Status = SchedulingStatus.Pending.ToString()
                 };
-                await _context.NewAppointments
-                .AddAsync(scheduling);
+                await _context.NewAppointments.AddAsync(scheduling);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Intake form submitted for assessment successfully.";
             }

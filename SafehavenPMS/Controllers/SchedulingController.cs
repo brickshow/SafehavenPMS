@@ -36,8 +36,8 @@ namespace SafehavenPMS.Controllers
                 .AsQueryable();
 
             // Get waitlisted count (appointments with Waitlisted status)
-            ViewBag.WaitlistedCount = await _context.NewAppointments
-                .CountAsync(p => p.Status == PatientStatusEnum.Waitlisted.ToString());
+            ViewBag.WaitlistedCount = await _context.Patients
+                .CountAsync(p => p.PatientStatus == PatientStatusEnum.Waitlisted.ToString());
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -297,7 +297,7 @@ namespace SafehavenPMS.Controllers
                 Console.WriteLine(freeSlots);
             }
 
-            // ✅ Preserve patient fullname
+            //  Preserve patient fullname
             if (model.PatientId > 0)
             {
                 var patient = await _context.Patients
