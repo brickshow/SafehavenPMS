@@ -34,11 +34,6 @@ namespace SafehavenPMS.ViewModel
         [Required(ErrorMessage = "Marital Status is required")]
         public string MaritalStatus { get; set; }
 
-
-        [Required(ErrorMessage = "Date of Referrl is required")]
-        public DateTime DateOfReferral { get; set; }
-        public string? ReferredBy { get; set; }
-        public string? Affiliation { get; set; }
         public IFormFile? Filename { get; set; }
         public string? PhotoUrl { get; set; }
 
@@ -56,9 +51,5 @@ namespace SafehavenPMS.ViewModel
 
         [Required(ErrorMessage = "Province is required")]
         public string Province { get; set; }
-
-        [Phone(ErrorMessage = "Invalid phone number format")]
-        public string ReferredByPhoneNumber { get; set; }
-        public string? PresentingComplaint { get; set; }
     }
 }

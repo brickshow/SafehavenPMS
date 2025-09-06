@@ -10,9 +10,9 @@ namespace SafehavenPMS.Models
 
         // Link to Patient
         [Required]
-        public int PatientId { get; set; }
+        public int? PatientId { get; set; }
         [ForeignKey("PatientId")]
-        public Patient Patient { get; set; } // navigation
+        public Patient? Patient { get; set; } // navigation
 
         // Staff assignments
         public int? PhysicianId { get; set; }
@@ -52,7 +52,10 @@ namespace SafehavenPMS.Models
         public DateTime? UpdatedAt { get; set; }
         public DateTime? EndDate { get; set; }
         public string? Endedby { get; set; }
-        public string status { get; set; }
+        public string? status { get; set; }
 
+        public bool IsDrugDependent { get; set; }
+        public string? Diagnosis { get; set; }
+        public string? Recommendation { get; set; }
     }
 }

@@ -1,0 +1,389 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+<form asp-action="SaveMentalStatusExamination" asp-controller="Assessment" method="post" class="mental-status-form">
+    <input type="hidden" name="initialAssessmentFormId" value="@Model.AssessmentId" />
+
+    <div class="card mb-4">
+        <div class="card-header bg-white" style="color: #015F6B;">
+            <h5 class="mb-0">MENTAL STATUS EXAMINATION</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="mb-3 section-block">
+                        <label class="section-title">General Appearance</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.GeneralAppearanceNeat" />
+                                <label class="form-check-label">Neat</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.GeneralAppearanceDishevelled" />
+                                <label class="form-check-label">Dishevelled</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.GeneralAppearanceInappropriate" />
+                                <label class="form-check-label">Inappropriate</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.GeneralAppearanceOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Speech</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.SpeechNormal" />
+                                <label class="form-check-label">Normal</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.SpeechRapid" />
+                                <label class="form-check-label">Rapid</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.SpeechSlow" />
+                                <label class="form-check-label">Slow</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.SpeechIncoherent" />
+                                <label class="form-check-label">Incoherent</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.SpeechOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Behavior</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.BehaviorRelaxed" />
+                                <label class="form-check-label">Relaxed</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.BehaviorCooperative" />
+                                <label class="form-check-label">Cooperative</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.BehaviorSuspicious" />
+                                <label class="form-check-label">Suspicious</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.BehaviorPreoccupied" />
+                                <label class="form-check-label">Preoccupied</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.BehaviorOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Signs of Impending Violence</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.ViolenceRelaxed" />
+                                <label class="form-check-label">Relaxed</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.ViolenceRestless" />
+                                <label class="form-check-label">Restless</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.ViolenceClenchedFist" />
+                                <label class="form-check-label">Clenched fist</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.ViolenceRaisedVoice" />
+                                <label class="form-check-label">Raised voice</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.ViolenceOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Mood</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MoodSad" />
+                                <label class="form-check-label">Sad</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MoodAnxious" />
+                                <label class="form-check-label">Anxious</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MoodHappy" />
+                                <label class="form-check-label">Happy</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MoodFearful" />
+                                <label class="form-check-label">Fearful</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MoodHelpless" />
+                                <label class="form-check-label">Helpless</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MoodHopeless" />
+                                <label class="form-check-label">Hopeless</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MoodAngry" />
+                                <label class="form-check-label">Angry</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.MoodOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Affect</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.AffectAppropriate" />
+                                <label class="form-check-label">Appropriate</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.AffectInappropriate" />
+                                <label class="form-check-label">Inappropriate</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.AffectFlat" />
+                                <label class="form-check-label">Flat</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.AffectBlunted" />
+                                <label class="form-check-label">Blunted</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.AffectOthers" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Thoughts</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.ThoughtsNormal" />
+                                <label class="form-check-label">Normal</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.ThoughtsFlightOfIdeas" />
+                                <label class="form-check-label">Flight of Ideas</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.ThoughtsPreoccupied" />
+                                <label class="form-check-label">Pre-occupied</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.ThoughtsOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Cognition</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.CognitionConscious" />
+                                <label class="form-check-label">Conscious</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.CognitionConfused" />
+                                <label class="form-check-label">Confused</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.CognitionDrowsy" />
+                                <label class="form-check-label">Drowsy</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.CognitionOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Perceptions</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.PerceptionsIllusions" />
+                                <label class="form-check-label">Illusions</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.PerceptionsAuditoryHallucinations" />
+                                <label class="form-check-label">Auditory hallucinations</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.PerceptionsVisualHallucinations" />
+                                <label class="form-check-label">Visual hallucinations</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.PerceptionsDelusions" />
+                                <label class="form-check-label">Delusions</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.PerceptionsParanoia" />
+                                <label class="form-check-label">Paranoia</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.PerceptionsSuicidalAttempt" />
+                                <label class="form-check-label">Suicidal attempt</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.PerceptionsSuicidalIdeations" />
+                                <label class="form-check-label">Suicidal Ideations</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.PerceptionsOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Memory Impairment</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MemoryShortTerm" />
+                                <label class="form-check-label">Short-term</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.MemoryLongTerm" />
+                                <label class="form-check-label">Long-term</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.MemoryOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Orientation</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.OrientationOrientedToTime" />
+                                <label class="form-check-label">Oriented to Time</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.OrientationOrientedToPerson" />
+                                <label class="form-check-label">Oriented to Person</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.OrientationOrientedToPlace" />
+                                <label class="form-check-label">Oriented to Place</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.OrientationDisorientedToTime" />
+                                <label class="form-check-label">Disoriented to Time</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.OrientationDisorientedToPerson" />
+                                <label class="form-check-label">Disoriented to Person</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.OrientationDisorientedToPlace" />
+                                <label class="form-check-label">Disoriented to Place</label>
+                            </div>
+                            <div class="form-check flex-grow-1 d-flex align-items-center">
+                                <label class="form-check-label me-2">Others:</label>
+                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.OrientationOthers" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Judgement</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.JudgementGood" />
+                                <label class="form-check-label">Good</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.JudgementFair" />
+                                <label class="form-check-label">Fair</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.JudgementPoor" />
+                                <label class="form-check-label">Poor</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 section-block">
+                        <label class="section-title">Insight</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.InsightGood" />
+                                <label class="form-check-label">Good</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.InsightFair" />
+                                <label class="form-check-label">Fair</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" asp-for="MentalStatusExamination.InsightPoor" />
+                                <label class="form-check-label">Poor</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-primary px-4">Save</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+    .card-header h5 {
+        color: #015F6B;
+        font-weight: 600;
+    }
+    .section-title {
+        font-weight: 600;
+        color: #015F6B;
+        margin-bottom: 8px;
+        display: block;
+    }
+    .section-block {
+        background: #f8f9fa;
+        padding: 16px 18px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        box-shadow: 0 1px 2px rgba(1,95,107,0.04);
+    }
+    .form-check {
+        min-width: 120px;
+        margin-bottom: 8px;
+    }
+    .form-check-label {
+        margin-right: 0.5rem;
+    }
+    .form-control.w-auto {
+        min-width: 120px;
+    }
+    .mental-status-form .btn-primary {
+        background: linear-gradient(to right, #069FB2, #058594);
+        border: none;
+    }
+</style>

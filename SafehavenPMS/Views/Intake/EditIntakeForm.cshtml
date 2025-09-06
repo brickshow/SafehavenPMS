@@ -1,7 +1,7 @@
 ﻿@model SafehavenPMS.ViewModel.IntakeViewModel
 
 @{
-    ViewBag.Title = "Edit Intake Form";
+    ViewBag.Title = "Intake Form";
 }
 
 @* Content Header *@
@@ -67,41 +67,15 @@
     </div>
 </div>
 
-<!-- Additional Information Card -->
-<div class="card shadow-sm mb-4" style="border-radius:6px;">
-    <form>
-        <div class="card-body p-4">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Date of Intake:</label>
-                    <input type="date" class="form-control" value="@Model.IntakeDate?.ToString("MMM dd, yyyy")" disabled/>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Date of Referral:</label>
-                    <input type="date" class="form-control" value="@Model.DateOfReferral?.ToString("MMM dd, yyyy")" disabled/>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Referred by:</label>
-                    <input type="text" class="form-control" value="@Model.ReferredBy" disabled/>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Contact No.:</label>
-                    <input type="text" class="form-control" value="@Model.ReferredByPhoneNumber" disabled/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label fw-semibold">Reason for Intake:</label>
-                    <input type="text" class="form-control" value="@Model.ReasonForIntake" disabled/>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
 <div class="row g-1">
     <!-- Left navigation (Bootstrap pills vertical) -->
     <div class="col-md-3">
         <div class="nav flex-column nav-pills mb-3" id="leftTabs" role="tablist" aria-orientation="vertical">
-            <a class="nav-link active" id="tab-family-link" data-bs-toggle="pill" href="#tab-family" role="tab"
+            <a class="nav-link active" id="tab-details-link" data-bs-toggle="pill" href="#tab-details" role="tab"
+               aria-controls="tab-details" aria-selected="true">
+                Family Constellation
+            </a>
+            <a class="nav-link" id="tab-family-link" data-bs-toggle="pill" href="#tab-family" role="tab"
                aria-controls="tab-family" aria-selected="true">
                 Family Constellation
             </a>
@@ -118,7 +92,10 @@
     <!-- In the tab content section -->
     <div class="col-md-9">
         <div class="tab-content" id="tabContentWrapper">
-            <div class="tab-pane fade show active" id="tab-family" role="tabpanel" aria-labelledby="tab-family-link">
+            <div class="tab-pane fade show active" id="tab-details" role="tabpanel" aria-labelledby="tab-details-link">
+                @await Html.PartialAsync("IntakeFormTabs/DetailsTab", Model)
+            </div>
+            <div class="tab-pane fade show" id="tab-family" role="tabpanel" aria-labelledby="tab-family-link">
                 @await Html.PartialAsync("IntakeFormTabs/FamilyTab", Model)
             </div>
 

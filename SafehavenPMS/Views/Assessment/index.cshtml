@@ -164,7 +164,7 @@
                                         In Progress
                                     </div>
                                 }
-                                @if (pending.Status == SchedulingStatus.Completed.ToString())
+                                @if (pending.Status == PatientStatusEnum.PendingApproval.ToString())
                                 {
                                     <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Completed
@@ -193,18 +193,18 @@
                                                     Edit Initial Assessment
                                                 </a>
                                             </li>
-                                           @* <li>
+                                           <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                 href="#"
                                                 data-bs-toggle="modal"
-                                                data-bs-target="#submitIntakeModal"
-                                                onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                data-bs-target="#submitAssessmentModal"
+                                                onclick="document.getElementById('modalAssessmentId').value='@pending.PatientId'">
                                                     <span class="badge-dot bg-success"></span>
-                                                    Submit Intake
+                                                    Submit Assessment   
                                                 </a>
-                                            </li> *@
+                                            </li>
                                         }
-                                        else if (pending.Status == PatientStatusEnum.InProgress.ToString())
+                                        else
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -220,13 +220,13 @@
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="#"
-                                                   data-bs-toggle="modal"
-                                                   data-bs-target="#submitIntakeModal"
-                                                   onclick="document.getElementById('modalIntakeId').value='@pending.PatientId'">
+                                               <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                href="#"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#submitAssessmentModal"
+                                                onclick="document.getElementById('modalAssessmentId').value='@pending.PatientId'">
                                                     <span class="badge-dot bg-success"></span>
-                                                    Submit
+                                                    Submit Assessment   
                                                 </a>
                                             </li>
                                         }
@@ -286,27 +286,29 @@
     </div>
 </div>
 
-<!-- Intake Submit Confirmation Modal -->
-<div class="modal fade" id="submitIntakeModal" tabindex="-1" aria-labelledby="submitIntakeModalLabel" aria-hidden="true">
+<!-- Assessment Submit Confirmation Modal -->
+<div class="modal fade" id="submitAssessmentModal" tabindex="-1" aria-labelledby="submitAssessmentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 shadow">
             <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
-                <h5 class="modal-title" id="submitIntakeModalLabel">Submit Intake?</h5>
+                <h5 class="modal-title" id="submitAssessmentModalLabel">Submit Assessment?</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                Are you sure you want to submit this intake form?
+                Are you sure you want to submit this Assessment form?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                <form asp-action="SubmitIntakeForm" asp-controller="Intake" method="post">
-                    <input type="hidden" name="IntakeId" id="modalIntakeId" />
+                <form asp-action="SubmitAssessment" asp-controller="Assessment" method="post">
+                    <input type="hidden" name="patientId" id="modalAssessmentId" />
                     <button type="submit" class="btn-custom btn-next">Submit</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+
 <style>
     .custom-btn {
         background-color: white;
@@ -420,7 +422,7 @@
 <script>
        function setPatientInfo(patientId, patientName, staffName) {
         console.log('setPatientInfo called with:', patientId, patientName, staffName); // Debug log
-        document.getElementById('modalPatientId').value = patientId;
+        document.getElementById('modalAssessmentId').value = patientId;
         document.querySelector('input[name="PatientName"]').value = patientName;
         document.querySelector('input[name="StaffName"]').value = staffName;
     }

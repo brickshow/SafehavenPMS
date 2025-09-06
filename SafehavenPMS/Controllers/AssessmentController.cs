@@ -87,7 +87,8 @@ namespace SafehavenPMS.Controllers
             var patientsData = await query.ToListAsync();
             var pendingAssessment = patientsData
                 .Where(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
-                            p.PatientStatus == PatientStatusEnum.InProgress.ToString())
+                            p.PatientStatus == PatientStatusEnum.InProgress.ToString() ||
+                            p.PatientStatus == PatientStatusEnum.PendingApproval.ToString())
                 .Select(p =>
                 {
                     var appointment = p.NewAppointments.FirstOrDefault();
@@ -310,6 +311,19 @@ namespace SafehavenPMS.Controllers
                             : new List<string>()
                     })
                     .FirstOrDefaultAsync() ?? new ProblemListViewModel(),
+
+                Recommendation = await _context.InitialAssessmentForms
+                .Where(iaf => iaf.PatientId == id)
+                .Select(iaf => iaf.Recommendation != null
+                    ? new RecommendationViewModel
+                    {
+                        ProgramType = iaf.Recommendation.ProgramType,
+                        ExpectedDuration = iaf.Recommendation.ExpectedDuration,
+                        Reason = iaf.Recommendation.Reason
+                    }
+                    : new RecommendationViewModel())
+                .FirstOrDefaultAsync() ?? new RecommendationViewModel(),
+
             };
 
             // Return view with populated view model
@@ -899,6 +913,172 @@ namespace SafehavenPMS.Controllers
             {
                 TempData["ErrorMessage"] = "An unexpected error occurred while saving the problem list.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveRecommendation(AssessmentFormViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Get or create assessment form
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.Recommendation)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
+
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = model.PatientId.Value,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                    await _context.SaveChangesAsync(); // Save to get ID
+                }
+
+                // Update or create recommendation
+                if (assessmentForm.Recommendation == null)
+                {
+                    assessmentForm.Recommendation = new Recommendation
+                    {
+                        InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                }
+                else
+                {
+                    assessmentForm.Recommendation.UpdatedAt = DateTime.Now;
+                    assessmentForm.Recommendation.UpdatedBy = User.Identity?.Name ?? "System";
+                }
+
+                // Map ViewModel to Model
+                assessmentForm.Recommendation.ProgramType = model.Recommendation.ProgramType;
+                assessmentForm.Recommendation.ExpectedDuration = model.Recommendation.ExpectedDuration;
+                assessmentForm.Recommendation.Reason = model.Recommendation.Reason;
+
+                // Update patient status
+                var patient = await _context.Patients.FindAsync(model.PatientId);
+                if (patient != null)
+                {
+                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Recommendation has been saved successfully.";
+
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                TempData["ErrorMessage"] = "A database error occurred while saving the recommendation.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the recommendation.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SubmitAssessment(int patientId)
+        {
+            try
+            {
+                // Find the patient by PatientId
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId);
+
+                if (patient == null)
+                {
+                    TempData["ErrorMessage"] = "Patient not found.";
+                    return RedirectToAction("Index");
+                }
+
+                // Get the assessment form with related data
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.Diagnosis)
+                        .ThenInclude(d => d.SubstanceUseEntries)
+                    .Include(iaf => iaf.Recommendation)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == patientId);
+
+                if (assessmentForm == null)
+                {
+                    TempData["ErrorMessage"] = "Assessment form not found for this patient.";
+                    return RedirectToAction("Index");
+                }
+
+                // Check if admission already exists for this patient
+                var existingAdmission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == patientId && a.status != "Ended");
+
+                if (existingAdmission == null)
+                {
+                    // Create new admission record
+                    var admission = new Admission
+                    {
+                        PatientId = patientId,
+                        AdmissionDate = DateTime.Now,
+
+                        // Set IsDrugDependent based on substance use entries
+                        IsDrugDependent = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true,
+
+                        // Build diagnosis string from substance use entries
+                        Diagnosis = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true
+                            ? string.Join("; ", assessmentForm.Diagnosis.SubstanceUseEntries
+                                .Select(sue => $"{sue.SubstanceName} - {sue.Severity}"))
+                            : "No substance use diagnosis",
+
+                        // Set recommendation from assessment
+                        Recommendation = assessmentForm.Recommendation != null
+                            ? $"{assessmentForm.Recommendation.ProgramType}"
+                            : "No recommendation provided",
+
+                        // Set status and audit fields
+                        status = "Active",
+                        CreatedBy = User.Identity.Name ?? "System",
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.Admissions.Add(admission);
+                }
+                else
+                {
+                    // Update existing admission with latest assessment data
+                    existingAdmission.IsDrugDependent = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true;
+
+                    existingAdmission.Diagnosis = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true
+                        ? string.Join("; ", assessmentForm.Diagnosis.SubstanceUseEntries
+                            .Select(sue => $"{sue.SubstanceName} - {sue.Severity}"))
+                        : "No substance use diagnosis";
+
+                    existingAdmission.Recommendation = assessmentForm.Recommendation != null
+                        ? $"Program: {assessmentForm.Recommendation.ProgramType}, Duration: {assessmentForm.Recommendation.ExpectedDuration}, Reason: {assessmentForm.Recommendation.Reason}"
+                        : "No recommendation provided";
+
+                    existingAdmission.UpdatedBy = User.Identity.Name ?? "System";
+                    existingAdmission.UpdatedAt = DateTime.Now;
+                }
+
+                // Update patient status to PendingApproval
+                patient.PatientStatus = PatientStatusEnum.PendingApproval.ToString();
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Assessment submitted for approval and admission record created/updated.";
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while submitting the assessment.";
+                return RedirectToAction("Index");
             }
         }
     }

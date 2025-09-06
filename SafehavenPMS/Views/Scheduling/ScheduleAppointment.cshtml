@@ -26,10 +26,11 @@
         <div class="col-md-6 border-end">
 
             <!-- Step 1: Select doctor -->
-           <form asp-controller="Scheduling" asp-action="SelectDoctor" method="post">
+            <form asp-controller="Scheduling" asp-action="SelectDoctor" method="post">
                 <div class="mb-3">
                     <label class="form-label">Assign Doctor (Physician)</label>
-                    <select asp-for="ClinicalStaffID" asp-items="@ViewBag.StaffList" class="form-select" onchange="this.form.submit()">
+                    <select asp-for="ClinicalStaffID" asp-items="@ViewBag.StaffList" class="form-select"
+                        onchange="this.form.submit()">
                         <option value="">--Select Physician--</option>
                     </select>
                 </div>
@@ -40,7 +41,7 @@
             </form>
 
             <!-- Step 2: Date picker -->
-           @if (Model.ClinicalStaffID > 0)
+            @if (Model.ClinicalStaffID > 0)
             {
                 <form asp-controller="Scheduling" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
                     <input type="hidden" asp-for="ClinicalStaffID" />
@@ -57,34 +58,36 @@
 
         <!-- ================= RIGHT: Appointment Details ================= -->
         <div class="col-md-6">
-        <form asp-controller="Scheduling" asp-action="ScheduleAppointment" method="post">
-            @Html.AntiForgeryToken()
+            <form asp-controller="Scheduling" asp-action="ScheduleAppointment" method="post">
+                @Html.AntiForgeryToken()
 
-            <!-- Hidden Fields -->
-            <input type="hidden" asp-for="ClinicalStaffID" />
-            <input type="hidden" asp-for="PatientId" />
-            <input type="hidden" asp-for="PatientName" />
-            
-            <!-- Hidden Date -->
-            <input type="hidden" asp-for="SelectedDate" />
+                <!-- Hidden Fields -->
+                <input type="hidden" asp-for="ClinicalStaffID" />
+                <input type="hidden" asp-for="PatientId" />
+                <input type="hidden" asp-for="PatientName" />
 
-            <!-- Timeslot (Dropdown) -->
-            <div class="mb-3">
-                <label class="form-label">Timeslot</label>
-                <select asp-for="TimeSlot" class="form-select" required>
-                    <option value="">--Select Timeslot--</option>
-                    @if (ViewBag.AvailableTimes != null)
-                    {
-                        foreach (var slot in ViewBag.AvailableTimes)
+                <!-- Hidden Date -->
+                <input type="hidden" asp-for="SelectedDate" />
+
+                <!-- Timeslot (Dropdown) -->
+                <div class="mb-3">
+                    <label class="form-label">Timeslot</label>
+                    <select asp-for="TimeSlot" class="form-select" required>
+                        <option value="">--Select Timeslot--</option>
+                        @if (ViewBag.AvailableTimes != null)
                         {
-                            var timeText = $"{slot.StartTime:hh\\:mm} - {slot.EndTime:hh\\:mm}";
-                            <option value="@slot.StartTime.ToString(@"hh\:mm")">@timeText</option>
+                            foreach (var slot in ViewBag.AvailableTimes)
+                            {
+                                var startTime = DateTime.Today.Add(slot.StartTime).ToString("h:mm tt");
+                                var endTime = DateTime.Today.Add(slot.EndTime).ToString("h:mm tt");
+                                var timeText = $"{startTime} - {endTime}";
+                                <option value="@slot.StartTime.ToString(@"hh\:mm")">@timeText</option>
+                            }
                         }
-                    }
-                </select>
-            </div>
+                    </select>
+                </div>
 
-         <!-- Patient Info -->
+                <!-- Patient Info -->
                 <div class="mb-3">
                     <label class="form-label">Patient</label>
                     <div class="form-control-plaintext bg-light rounded p-2">
@@ -95,30 +98,32 @@
                 </div>
 
 
-            <!-- Visit Type -->
-            <div class="mb-3">
-                <label asp-for="VisitType" class="form-label">Visit Type</label>
-                <select asp-for="VisitType" class="form-select">
-                    <option value="">--Select Visit Type--</option>
-                    <option value="Initial Assessment">Initial Assessment</option>
-                    <option value="Emergency Visit">Emergency Visit</option>
-                    <option value="Follow-Up Treatment">Follow-Up Treatment</option>
-                    <option value="Others">Others</option>
-                </select>
-            </div>
+                <!-- Visit Type -->
+                <div class="mb-3">
+                    <label asp-for="VisitType" class="form-label">Visit Type</label>
+                    <select asp-for="VisitType" class="form-select">
+                        <option value="">--Select Visit Type--</option>
+                        <option value="Initial Assessment">Initial Assessment</option>
+                        <option value="Emergency Visit">Emergency Visit</option>
+                        <option value="Follow-Up Treatment">Follow-Up Treatment</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
 
-            <!-- Description -->
-            <div class="mb-3">
-                <label asp-for="Description" class="form-label">Description</label>
-                <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter appointment description..."></textarea>
-            </div>
+                <!-- Description -->
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="3"
+                        placeholder="Enter appointment description..."></textarea>
+                </div>
 
-            <!-- Footer -->
-            <div class="modal-footer bg-white border-top">
-                <a href="@Url.Action("Index", "Appointment")" class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
-                <button type="submit" class="btn-custom btn-next m-2">Save</button>
-            </div>
-        </form>
+                <!-- Footer -->
+                <div class="modal-footer bg-white border-top">
+                    <a href="@Url.Action("Index", "Appointment")"
+                        class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
+                    <button type="submit" class="btn-custom btn-next m-2">Save</button>
+                </div>
+            </form>
 
         </div>
     </div>
@@ -146,7 +151,7 @@
 
     .flatpickr-calendar {
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         border: 1px solid #e0e0e0;
     }
 
@@ -178,12 +183,12 @@
         defaultDate: localStorage.getItem("selectedDate") || new Date(),
         minDate: "today",
         disable: [
-            function(date) {
+            function (date) {
                 // Disable today's date
                 const today = new Date();
-                return date.getDate() === today.getDate() && 
-                       date.getMonth() === today.getMonth() && 
-                       date.getFullYear() === today.getFullYear();
+                return date.getDate() === today.getDate() &&
+                    date.getMonth() === today.getMonth() &&
+                    date.getFullYear() === today.getFullYear();
             }
         ],
         inline: true,

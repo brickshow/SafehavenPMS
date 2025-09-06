@@ -36,6 +36,8 @@ namespace SafehavenPMS.Data
         public DbSet<Diagnosis> Diagnoses { get; set; }
         public DbSet<SubstanceUseEntry> SubstanceUseEntries { get; set; }
         public DbSet<ProblemList> ProblemLists { get; set; }
+        public DbSet<Recommendation> Recommendations { get; set; }
+        public DbSet<MentalStatusExamination> MentalStatusExaminations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -210,6 +212,19 @@ namespace SafehavenPMS.Data
                 .HasOne(p => p.InitialAssessmentForm)
                 .WithMany(i => i.Problems)
                 .HasForeignKey(p => p.InitialAssessmentFormId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Recommendation>()
+                .HasOne(r => r.InitialAssessmentForm)
+                .WithOne(i => i.Recommendation)
+                .HasForeignKey<Recommendation>(r => r.InitialAssessmentFormId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure MentalStatusExamination relationship
+            modelBuilder.Entity<MentalStatusExamination>()
+                .HasOne(m => m.InitialAssessmentForm)
+                .WithOne(i => i.MentalStatusExamination)
+                .HasForeignKey<MentalStatusExamination>(m => m.InitialAssessmentFormId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

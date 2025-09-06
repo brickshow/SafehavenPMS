@@ -17,9 +17,13 @@ namespace SafehavenPMS.Controllers
         {
             _context = context;
         }
+
         public async Task<IActionResult> Index(string searchQuery, string status, string sortOrder, int page = 1, int pageSize = 10)
         {
-            var query = _context.Admissions.Include(a => a.Patient).AsQueryable();
+            var query = _context.Admissions
+                .Include(a => a.Patient)
+                .Where(a => a.Patient.PatientStatus == PatientStatusEnum.PendingApproval.ToString())
+                .AsQueryable();
 
             // --- SEARCH ---
             if (!string.IsNullOrWhiteSpace(searchQuery))
@@ -50,6 +54,10 @@ namespace SafehavenPMS.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
+            // Set ViewBag for pending assessment count
+            ViewBag.PendingAssessment = await _context.Patients
+                .CountAsync(p => p.PatientStatus == PatientStatusEnum.PendingApproval.ToString());
+
             ViewBag.TotalPatientCount = totalCount;
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = page;
@@ -58,19 +66,20 @@ namespace SafehavenPMS.Controllers
             ViewBag.Status = status;
             ViewBag.SortOrder = sortOrder;
 
-            // Map to ViewModel (keep your existing fields)
             var model = admissions.Select(a => new AdmitPatientViewModel
             {
                 AdmissionId = a.AdmissionId,
-                PatientId = a.PatientId,
+                PatientId = a.PatientId ?? 0,
                 FullName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
                 AdmissionDate = a.AdmissionDate,
-                Status = a.status,
-                EndDate = a.EndDate,
-                EndedBy = a.Endedby
+                CompletedDate = a.CreatedAt, // or use another date field if needed
+                IsDrugDependent = a.IsDrugDependent,
+                Diagnosis = a.Diagnosis ?? "-",
+                Recommendation = a.Recommendation ?? "-",
+                Status = a.status ?? "Pending"
             }).ToList();
 
-            return View(model); // your current view
+            return View(model);
         }
 
         // Step 1: Search for patient with pending review
@@ -265,7 +274,7 @@ namespace SafehavenPMS.Controllers
             var vm = new AdmitPatientViewModel
             {
                 AdmissionId = admission.AdmissionId,
-                PatientId = admission.PatientId,
+                PatientId = admission.PatientId ?? 0,
                 FullName = $"{admission.Patient.Firstname} {admission.Patient.Lastname}",
                 DOB = admission.Patient.DateOfBirth,
                 EducationalAttainment = admission.Patient.Education,
@@ -368,7 +377,5 @@ namespace SafehavenPMS.Controllers
             // Redirect back to the list of admissions (Index) after success
             return RedirectToAction("Index");
         }
-
-       
     }
 }

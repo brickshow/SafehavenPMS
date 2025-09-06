@@ -6,6 +6,7 @@ namespace SafehavenPMS.ViewModel
     public class AssessmentFormViewModel
     {
         // Patient Information
+        public int AssessmentId { get; set; }
         public int? PatientId { get; set; }
         public string? FullName { get; set; }
         public int? Age { get; set; }
@@ -18,6 +19,8 @@ namespace SafehavenPMS.ViewModel
         public DrugUseHistoryViewModel? DrugUseHistory { get; set; }
         public MedicalHistoryViewModel? MedicalHistory { get; set; }
         public PhysicalExamViewModel? PhysicalExam { get; set; }
+
+        public MentalStatusExaminationViewModel? MentalStatusExamination { get; set; }
         public DiagnosisViewModel? Diagnosis { get; set; }
         public ProblemListViewModel? ProblemList { get; set; }
         public RecommendationViewModel? Recommendation { get; set; }
@@ -28,6 +31,7 @@ namespace SafehavenPMS.ViewModel
             DrugUseHistory = new DrugUseHistoryViewModel();
             MedicalHistory = new MedicalHistoryViewModel();
             PhysicalExam = new PhysicalExamViewModel();
+            MentalStatusExamination = new MentalStatusExaminationViewModel();
             Diagnosis = new DiagnosisViewModel();
             ProblemList = new ProblemListViewModel();
             Recommendation = new RecommendationViewModel();

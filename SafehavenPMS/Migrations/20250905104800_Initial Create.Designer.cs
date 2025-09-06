@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250904164534_kjhuyijhgsdfsdfdfgdfgdf")]
-    partial class kjhuyijhgsdfsdfdfgdfgdf
+    [Migration("20250905104800_Initial Create")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -98,6 +98,9 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Diagnosis")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
@@ -120,7 +123,13 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("IsDrugDependent")
+                        .HasColumnType("bit");
+
                     b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PatientId1")
                         .HasColumnType("int");
 
                     b.Property<int?>("PhysicianId")
@@ -134,6 +143,9 @@ namespace SafehavenPMS.Migrations
 
                     b.Property<int?>("PsychometricianId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("RecoveryCoachId")
                         .HasColumnType("int");
@@ -149,12 +161,13 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("status")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AdmissionId");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("PatientId1");
 
                     b.HasIndex("PhysicianId");
 
@@ -474,6 +487,9 @@ namespace SafehavenPMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InitialAssessmentFormId"));
 
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -769,6 +785,229 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("Medicines");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.MentalStatusExamination", b =>
+                {
+                    b.Property<int>("MentalStatusExaminationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MentalStatusExaminationId"));
+
+                    b.Property<bool>("AffectAppropriate")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AffectBlunted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AffectFlat")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AffectInappropriate")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("AffectOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("BehaviorCooperative")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("BehaviorOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("BehaviorPreoccupied")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("BehaviorRelaxed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("BehaviorSuspicious")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CognitionConfused")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CognitionConscious")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CognitionDrowsy")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CognitionOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("GeneralAppearanceDishevelled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("GeneralAppearanceInappropriate")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("GeneralAppearanceNeat")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("GeneralAppearanceOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("InitialAssessmentFormId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("InsightFair")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("InsightGood")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("InsightPoor")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("JudgementFair")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("JudgementGood")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("JudgementPoor")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MemoryLongTerm")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MemoryOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("MemoryShortTerm")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MoodAngry")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MoodAnxious")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MoodFearful")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MoodHappy")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MoodHelpless")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MoodHopeless")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MoodOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("MoodSad")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OrientationDisorientedToPerson")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OrientationDisorientedToPlace")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OrientationDisorientedToTime")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OrientationOrientedToPerson")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OrientationOrientedToPlace")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OrientationOrientedToTime")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OrientationOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PerceptionsAuditoryHallucinations")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PerceptionsDelusions")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PerceptionsIllusions")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PerceptionsOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PerceptionsParanoia")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PerceptionsSuicidalAttempt")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PerceptionsSuicidalIdeations")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PerceptionsVisualHallucinations")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SpeechIncoherent")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SpeechNormal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SpeechOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("SpeechRapid")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SpeechSlow")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ThoughtsFlightOfIdeas")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ThoughtsNormal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ThoughtsOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ThoughtsPreoccupied")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ViolenceClenchedFist")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ViolenceOthers")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ViolenceRaisedVoice")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ViolenceRelaxed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ViolenceRestless")
+                        .HasColumnType("bit");
+
+                    b.HasKey("MentalStatusExaminationId");
+
+                    b.HasIndex("InitialAssessmentFormId")
+                        .IsUnique();
+
+                    b.ToTable("MentalStatusExaminations");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.NewAppointment", b =>
                 {
                     b.Property<int>("ScheduleId")
@@ -976,6 +1215,79 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("PhysicalExams");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.ProblemList", b =>
+                {
+                    b.Property<int>("ProblemListId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProblemListId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("InitialAssessmentFormId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Problem")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ProblemListId");
+
+                    b.HasIndex("InitialAssessmentFormId");
+
+                    b.ToTable("ProblemLists");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.Recommendation", b =>
+                {
+                    b.Property<int>("RecommendationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecommendationId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExpectedDuration")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("InitialAssessmentFormId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProgramType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("RecommendationId");
+
+                    b.HasIndex("InitialAssessmentFormId")
+                        .IsUnique();
+
+                    b.ToTable("Recommendations");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.SubstanceUseEntry", b =>
                 {
                     b.Property<int>("SubstanceUseEntryId")
@@ -1086,6 +1398,10 @@ namespace SafehavenPMS.Migrations
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("SafehavenPMS.Models.Patient", null)
+                        .WithMany("Admissions")
+                        .HasForeignKey("PatientId1");
 
                     b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
                         .WithMany()
@@ -1265,6 +1581,17 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.MentalStatusExamination", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
+                        .WithOne("MentalStatusExamination")
+                        .HasForeignKey("SafehavenPMS.Models.MentalStatusExamination", "InitialAssessmentFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InitialAssessmentForm");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.NewAppointment", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
@@ -1287,6 +1614,28 @@ namespace SafehavenPMS.Migrations
                     b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
                         .WithOne("PhysicalExam")
                         .HasForeignKey("SafehavenPMS.Models.PhysicalExam", "InitialAssessmentFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InitialAssessmentForm");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.ProblemList", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
+                        .WithMany("Problems")
+                        .HasForeignKey("InitialAssessmentFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InitialAssessmentForm");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.Recommendation", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
+                        .WithOne("Recommendation")
+                        .HasForeignKey("SafehavenPMS.Models.Recommendation", "InitialAssessmentFormId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1341,7 +1690,13 @@ namespace SafehavenPMS.Migrations
 
                     b.Navigation("MedicalHistory");
 
+                    b.Navigation("MentalStatusExamination");
+
                     b.Navigation("PhysicalExam");
+
+                    b.Navigation("Problems");
+
+                    b.Navigation("Recommendation");
 
                     b.Navigation("SurgicalHistories");
                 });
@@ -1366,6 +1721,8 @@ namespace SafehavenPMS.Migrations
             modelBuilder.Entity("SafehavenPMS.Models.Patient", b =>
                 {
                     b.Navigation("AdministrationLogs");
+
+                    b.Navigation("Admissions");
 
                     b.Navigation("ClinicalStaffPatients");
 

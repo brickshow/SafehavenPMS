@@ -94,21 +94,26 @@ namespace SafehavenPMS.Controllers
                 .ToListAsync();
 
             // Project to IntakeViewModel
-            var intakeViewModels = patientList.Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
-            {
-                IntakeId = p.IntakeForm?.IntakeFormsId ?? 0,
-                FullName = $"{p.Firstname} {p.Lastname}",
-                ReferredBy = p.IntakeForm?.ReferredBy ?? "-",
-                ReferredByPhoneNumber = p.PhoneNumber,
-                IntakeOfficer = "-", // Populate if you have this info
-                IntakeDate = p.IntakeForm?.CreatedAt ?? p.CreatedAt,
-                CompletedDate = "-", // Populate if you have this info
-                IntakeStatus = p.IntakeForm?.IntakeStatus.ToString() ?? "-"
-            }).ToList();
+             var intakeViewModels = patientList
+                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewReferral.ToString() ||
+                                                p.PatientStatus == PatientStatusEnum.Waitlisted.ToString() ||
+                                                p.PatientStatus == PatientStatusEnum.InProgress.ToString())
+                                    .Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
+                                    {
+                                        PatientId = p.PatientId,
+                                        FullName = $"{p.Firstname} {p.Lastname}",
+                                        ReferredBy = p.IntakeForm?.ReferredBy ?? string.Empty,
+                                        ReferredByPhoneNumber = p.IntakeForm?.PhoneNumber ?? string.Empty,
+                                        IntakeOfficer = "-", // Populate if you have this info
+                                        IntakeDate = p.IntakeForm?.CreatedAt != null ? ((DateTime)p.IntakeForm.CreatedAt).ToString("yyyy-MM-dd") : "-",
+                                        CompletedDate = "-", // Populate if you have this info
+                                        // SAFE: don't call ToString() on a null IntakeForm or null IntakeStatus
+                                        IntakeStatus = p.PatientStatus ?? "-",
+                                    }).ToList() ?? new List<SafehavenPMS.ViewModel.IntakeViewModel>();
 
             //Return Total number of new referral
-            var Pending = await _context.IntakeForms
-                                    .Where(p => p.IntakeStatus == Enum.IntakeStatus.Pending.ToString())
+            var Pending = await _context.Patients
+                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewReferral.ToString())
                                     .ToListAsync();
 
             ViewBag.Pending = Pending.Count();
@@ -131,45 +136,43 @@ namespace SafehavenPMS.Controllers
         [HttpGet]
         public async Task<IActionResult> EditIntakeForm(int id)
         {
-            var intake = await _context.IntakeForms
-                .Include(p => p.Patient)
-                .Include(i => i.FamilyMembers) // Add this line
-                .FirstOrDefaultAsync(i => i.IntakeFormsId == id);
+            var intake = await _context.Patients
+                .Include(p => p.IntakeForm)
+                .ThenInclude(i => i.FamilyMembers)
+                .FirstOrDefaultAsync(i => i.PatientId == id);
 
             if (intake == null)
                 return NotFound();
 
             // Calculate age from DoB
             string age = "-";
-            if (intake.Patient?.DateOfBirth != null)
+            if (intake?.DateOfBirth != null)
             {
                 var today = DateTime.Today;
-                var dob = intake.Patient.DateOfBirth;
+                var dob = intake.DateOfBirth;
                 age = (today.Year - dob.Year - (dob.Date > today.AddYears(-(today.Year - dob.Year)) ? 1 : 0)).ToString();
             }
 
             var vm = new IntakeViewModel
             {
-                IntakeId = intake.IntakeFormsId,
-                FullName = $"{intake.Patient?.Firstname} {intake.Patient?.Lastname}",
+                PatientId = intake.PatientId,
+                FullName = $"{intake.Firstname} {intake.Lastname}",
                 Age = age,
-                Sex = intake.Patient?.Sex ?? "-",
-                Address = intake.Patient?.Address ?? "-",
-                ReferredBy = intake.ReferredBy,
-                ReferredByPhoneNumber = intake.Patient?.PhoneNumber,
+                Sex = intake.Sex ?? "-",
+                Address = intake.Address ?? "-",
+                ReferredBy = intake.IntakeForm.ReferredBy,
+                ReferredByPhoneNumber = intake.IntakeForm.PhoneNumber,
                 IntakeOfficer = "-",
-                IntakeDate = intake.CreatedAt,
-                DateOfReferral = intake.DateOfReferral,
-                Occupation = intake.Patient?.Occupation ?? "-",
-                ReasonForIntake = intake.PresentingComplaint,
-                IntakeStatus = intake.IntakeStatus?.ToString(),
-                CouncilorImpression = intake.CouncilorImpression,
-                ProblemPresentation = intake.ProblemPresentation,
-                OtherFamilyDetails = intake.OtherFamilyDetails,
+                IntakeDate = intake?.CreatedAt != null ? ((DateTime)intake.CreatedAt).ToString("yyyy-MM-dd") : "-",
+                Occupation = intake?.Occupation ?? "-",
+                ReasonForIntake = intake?.IntakeForm.PresentingComplaint,
+                CouncilorImpression = intake?.IntakeForm.CouncilorImpression,
+                ProblemPresentation = intake?.IntakeForm.ProblemPresentation,
+                OtherFamilyDetails = intake?.IntakeForm.OtherFamilyDetails,
 
 
                 // Add this: Load existing family members
-                FamilyMembers = intake.FamilyMembers?.Select(fm => new FamilyMemberVm
+                FamilyMembers = intake?.IntakeForm.FamilyMembers?.Select(fm => new FamilyMemberVm
                 {
                     Name = fm.Name,
                     Age = fm.Age,
@@ -181,7 +184,67 @@ namespace SafehavenPMS.Controllers
 
             return View(vm);
         }
-        // POST: Save all family data using IFormCollection
+
+        // Save Details tab (DetailsTab.cshtml) - updates IntakeForm fields
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveDetails([FromForm] IntakeViewModel model)
+        {
+            // Validate request
+            if (model == null || model.PatientId <= 0)
+            {
+                TempData["ErrorMessage"] = "Invalid request.";
+                return RedirectToAction("Index");
+            }
+
+            // ModelState validation -> send errors via TempData and redirect back to edit page
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
+
+            var intakeForm = await _context.Patients
+                .Include(i => i.IntakeForm)
+                .FirstOrDefaultAsync(i => i.PatientId == model.PatientId);
+
+            if (intakeForm == null)
+            {
+                TempData["ErrorMessage"] = "Intake form not found.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                // Update fields from the Details tab
+                intakeForm.IntakeForm.ReferredBy = string.IsNullOrWhiteSpace(model.ReferredBy) ? intakeForm.IntakeForm.ReferredBy : model.ReferredBy.Trim();
+                intakeForm.IntakeForm.PhoneNumber = string.IsNullOrWhiteSpace(model.ReferredByPhoneNumber) ? intakeForm.IntakeForm.PhoneNumber : model.ReferredByPhoneNumber.Trim();
+                intakeForm.IntakeForm.PresentingComplaint = model.ReasonForIntake ?? intakeForm.IntakeForm.PresentingComplaint;
+                intakeForm.IntakeForm.CreatedAt = DateTime.UtcNow; // Update timestamp
+                intakeForm.IntakeForm.Affiliation = model.Affiliation ?? intakeForm.IntakeForm.Affiliation;
+                //Butanganan pas uban fields
+
+                // mark as in-progress when details saved
+                _context.IntakeForms.Update(intakeForm.IntakeForm);
+
+                // If patient is NewReferral, mark InProgress
+                await UpdatePatientStatus(intakeForm.PatientId);
+
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Intake details saved.";
+            }
+            catch (Exception ex)
+            {
+                // Log if needed and surface error via TempData
+                TempData["ErrorMessage"] = "An error occurred while saving intake details.";
+                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+            }
+
+            // Redirect back to edit view
+            return RedirectToAction("EditIntakeForm", new { id = intakeForm.PatientId });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveFamilyData([FromForm] IntakeViewModel model)
@@ -192,9 +255,10 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
             }
 
-            var intakeForm = await _context.IntakeForms
-                .Include(i => i.FamilyMembers)
-                .FirstOrDefaultAsync(i => i.IntakeFormsId == model.IntakeId);
+            var intakeForm = await _context.Patients
+                .Include(p => p.IntakeForm)
+                .ThenInclude(i => i.FamilyMembers)
+                .FirstOrDefaultAsync(i => i.PatientId == model.PatientId);
 
             if (intakeForm == null)
             {
@@ -204,42 +268,43 @@ namespace SafehavenPMS.Controllers
             try
             {
                 // Remove existing family members
-                _context.FamilyMembers.RemoveRange(intakeForm.FamilyMembers);
+                _context.FamilyMembers.RemoveRange(intakeForm.IntakeForm.FamilyMembers);
 
                 // Add family members from the model
                 if (model.FamilyMembers != null)
                 {
                     foreach (var familyMember in model.FamilyMembers.Where(fm => !string.IsNullOrWhiteSpace(fm.Name)))
                     {
-                        intakeForm.FamilyMembers.Add(new FamilyMember
+                        intakeForm.IntakeForm.FamilyMembers.Add(new FamilyMember
                         {
                             Name = familyMember.Name,
                             Age = familyMember.Age,
                             Relationship = familyMember.Relationship,
                             Comments = familyMember.Comments,
-                            IntakeFormId = intakeForm.IntakeFormsId
+                            IntakeFormId = intakeForm.IntakeForm.IntakeFormsId
                         });
                     }
                 }
 
-                // Update other family details
-                intakeForm.IntakeStatus = IntakeStatus.InProgress.ToString();
-                intakeForm.OtherFamilyDetails = model.OtherFamilyDetails;
-                // Update status
+                // Update other family details and intake form status
+                intakeForm.IntakeForm.OtherFamilyDetails = model.OtherFamilyDetails;
+                _context.IntakeForms.Update(intakeForm.IntakeForm);
+
+                //Call helper to update patient status
                 await UpdatePatientStatus(intakeForm.PatientId);
 
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"Family information saved successfully. Added {intakeForm.FamilyMembers.Count} family members.";
+                TempData["SuccessMessage"] = $"Family information saved successfully. Added {intakeForm.IntakeForm.FamilyMembers.Count} family members.";
             }
             catch (Exception ex)
             {
                 // Log the error
                 TempData["ErrorMessage"] = "An error occurred while saving family information.";
-                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+                return RedirectToAction("EditIntakeForm", new { id = model.PatientId });
             }
 
-            return RedirectToAction("EditIntakeForm", new { id = intakeForm.IntakeFormsId });
+            return RedirectToAction("EditIntakeForm", new { id = intakeForm.PatientId });
         }
 
         [HttpPost]
@@ -251,8 +316,9 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
             }
 
-            var intakeForm = await _context.IntakeForms
-                .FirstOrDefaultAsync(i => i.IntakeFormsId == model.IntakeId);
+            var intakeForm = await _context.Patients
+                .Include(p => p.IntakeForm)
+                .FirstOrDefaultAsync(i => i.PatientId == model.PatientId);
 
             if (intakeForm == null)
             {
@@ -262,9 +328,8 @@ namespace SafehavenPMS.Controllers
             try
             {
                 // Update presenting problems
-                intakeForm.ProblemPresentation = model.ProblemPresentation;
-                intakeForm.IntakeStatus = IntakeStatus.InProgress.ToString();
-                _context.IntakeForms.Update(intakeForm);
+                intakeForm.IntakeForm.ProblemPresentation = model.ProblemPresentation;
+                _context.IntakeForms.Update(intakeForm.IntakeForm);
 
                 // Update status
                 await UpdatePatientStatus(intakeForm.PatientId);
@@ -275,10 +340,10 @@ namespace SafehavenPMS.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "An error occurred while saving presenting problems.";
-                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+                return RedirectToAction("EditIntakeForm", new { id = model.PatientId});
             }
 
-            return RedirectToAction("EditIntakeForm", new { id = intakeForm.IntakeFormsId });
+            return RedirectToAction("EditIntakeForm", new { id = intakeForm.PatientId });
         }
 
         [HttpPost]
@@ -290,9 +355,9 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
             }
 
-            var intakeForm = await _context.IntakeForms
-                .Include(p => p.Patient)
-                .FirstOrDefaultAsync(i => i.IntakeFormsId == model.IntakeId);
+            var intakeForm = await _context.Patients
+                .Include(p => p.IntakeForm)
+                .FirstOrDefaultAsync(i => i.PatientId == model.PatientId);
 
             //TODO RETURN TEMDATA
             if (intakeForm == null)
@@ -303,9 +368,8 @@ namespace SafehavenPMS.Controllers
             try
             {
                 // Update counselor impressions
-                intakeForm.CouncilorImpression = model.CouncilorImpression;
-                intakeForm.IntakeStatus = IntakeStatus.InProgress.ToString();
-                _context.IntakeForms.Update(intakeForm);
+                intakeForm.IntakeForm.CouncilorImpression = model.CouncilorImpression;
+                _context.IntakeForms.Update(intakeForm.IntakeForm);
 
                 // Update status
                 await UpdatePatientStatus(intakeForm.PatientId);
@@ -316,10 +380,10 @@ namespace SafehavenPMS.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "An error occurred while saving counselor impressions.";
-                return RedirectToAction("EditIntakeForm", new { id = model.IntakeId });
+                return RedirectToAction("EditIntakeForm", new { id = model.PatientId });
             }
 
-            return RedirectToAction("EditIntakeForm", new { id = intakeForm.IntakeFormsId });
+            return RedirectToAction("EditIntakeForm", new { id = intakeForm.PatientId });
         }
 
         //Helper method to update patient status
@@ -331,14 +395,15 @@ namespace SafehavenPMS.Controllers
                 return;
 
             // All sections completed
-            if (patient.PatientStatus == PatientStatusEnum.NewReferral.ToString())
-            {
-                patient.PatientStatus = PatientStatusEnum.Pending.ToString();
-            }
-            if (patient.PatientStatus == PatientStatusEnum.Pending.ToString())
+      
+            if (patient.PatientStatus == PatientStatusEnum.InProgress.ToString())
             {
                 patient.PatientStatus = PatientStatusEnum.Waitlisted.ToString();
             } 
+            if (patient.PatientStatus == PatientStatusEnum.NewReferral.ToString())
+            {
+                patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+            }
          
             await _context.SaveChangesAsync();
 
@@ -346,21 +411,20 @@ namespace SafehavenPMS.Controllers
 
         //Action to Submit Intake form for assessment
         [HttpPost]
-        public async Task<IActionResult> SubmitIntakeForm(int IntakeId)
+        public async Task<IActionResult> SubmitIntakeForm(int PatientId)
         {
             // Logic to submit the intake form for assessment
-            var intakeForm = await _context.IntakeForms.FindAsync(IntakeId);
-            if (intakeForm == null)
+            var patient = await _context.Patients.FindAsync(PatientId);
+            if (patient == null)
             {
                 return NotFound();
             }
 
             // Update the status to submitted
-            intakeForm.IntakeStatus = IntakeStatus.Completed.ToString();
-            _context.IntakeForms.Update(intakeForm);
+            _context.Patients.Update(patient);
 
             //update patient status
-            await UpdatePatientStatus(intakeForm.PatientId);
+            await UpdatePatientStatus(patient.PatientId);
             await _context.SaveChangesAsync();
 
             try
@@ -368,7 +432,7 @@ namespace SafehavenPMS.Controllers
                 //pre populate scheduling tables
                 var scheduling = new NewAppointment
                 {
-                    PatientId = intakeForm.PatientId,
+                    PatientId = patient.PatientId,
                     Type = "Initial Assessment",
                     Status = SchedulingStatus.Pending.ToString()
                 };
@@ -380,7 +444,7 @@ namespace SafehavenPMS.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "An error occurred while submitting the intake form.";
-                return RedirectToAction("EditIntakeForm", new { id = IntakeId });
+                return RedirectToAction("EditIntakeForm", new { id = patient.PatientId });
             }
             return RedirectToAction("Index");
         }

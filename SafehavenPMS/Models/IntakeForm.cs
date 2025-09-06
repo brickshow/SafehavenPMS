@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SafehavenPMS.Models
 {
-    public class IntakeForm
+     public class IntakeForm
     {
         // Primary key
         [Key]
@@ -13,10 +13,6 @@ namespace SafehavenPMS.Models
         public int PatientId { get; set; }
         public Patient? Patient { get; set; }
 
-        // Referral information
-        [Required(ErrorMessage = "Date of referral is required")]
-        public DateTime DateOfReferral { get; set; }
-
         [Required(ErrorMessage = "This field is required")]
         public string ReferredBy { get; set; } = string.Empty;
         public string? Affiliation { get; set; }
@@ -25,12 +21,16 @@ namespace SafehavenPMS.Models
         [Phone(ErrorMessage = "Please enter a valid phone number")]
         public string PhoneNumber { get; set; } = string.Empty;
 
-        // Intake status and creation info
-        public string? IntakeStatus { get; set; }
-        public DateTime CreatedAt { get; set; }
+        // Audit fields
+        public DateTime? CreatedAt { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; } = "System";
+        public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedBy { get; set; }
 
-        //Presentinf problem
+        // Completed tracking
+        public DateTime? CompletedAt { get; set; }
+
+        // Presenting problem / intake details
         public string? ProblemPresentation { get; set; }
         public string? CouncilorImpression { get; set; }
         public string? OtherFamilyDetails { get; set; }
@@ -38,11 +38,10 @@ namespace SafehavenPMS.Models
         // Family constellation
         public List<FamilyMember> FamilyMembers { get; set; } = new();
 
-
-
         // Problems and impressions
         public string? PresentingComplaint { get; set; }
     }
+
 
     public class FamilyMember
     {

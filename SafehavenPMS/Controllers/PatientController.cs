@@ -219,21 +219,21 @@ namespace SafehavenPMS.Controllers
                 await _context.Patients.AddAsync(patient);
                 await _context.SaveChangesAsync();
 
-                // Now create and save the intake with the new PatientId
-                var intake = new IntakeForm
-                {
-                    PatientId = patient.PatientId,
-                    DateOfReferral = model.DateOfReferral,
-                    ReferredBy = model.ReferredBy ?? string.Empty,
-                    Affiliation = model.Affiliation,
-                    PhoneNumber = model.ReferredByPhoneNumber,
-                    PresentingComplaint = model.PresentingComplaint,
-                    IntakeStatus = IntakeStatus.Pending.ToString(),
-                    CreatedAt = DateTime.Now
-                };
+                // // Now create and save the intake with the new PatientId
+                // var intake = new IntakeForm
+                // {
+                //     PatientId = patient.PatientId,
+                //     DateOfReferral = model.DateOfReferral,
+                //     ReferredBy = model.ReferredBy ?? string.Empty,
+                //     Affiliation = model.Affiliation,
+                //     PhoneNumber = model.ReferredByPhoneNumber,
+                //     PresentingComplaint = model.PresentingComplaint,
+                //     IntakeStatus = IntakeStatus.Pending.ToString(),
+                //     CreatedAt = DateTime.Now
+                // };
 
-                await _context.IntakeForms.AddAsync(intake ?? new IntakeForm());
-                await _context.SaveChangesAsync();
+                // await _context.IntakeForms.AddAsync(intake ?? new IntakeForm());
+                // await _context.SaveChangesAsync();
     
                 // Save physician-patient relationship if selected
                 if (model.ClinicalStaff > 0)
@@ -248,7 +248,7 @@ namespace SafehavenPMS.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                return RedirectToAction("Index");
+                return RedirectToAction("Index", "Intake");
             }
             catch (Exception ex)
             {

@@ -29,16 +29,15 @@ namespace SafehavenPMS.Controllers
                    string status = null,
                    string sortOrder = null)
         {
-            var query = _context.Patients
-                .Include(i => i.IntakeForm)
-                .Include(c => c.ClinicalStaffPatients)
-                    .ThenInclude(csp => csp.ClinicalStaff)
+            // Query appointments with patient and staff information
+            var query = _context.NewAppointments
+                .Include(a => a.Patient)
+                .Include(a => a.ClinicalStaff)
                 .AsQueryable();
 
-            // Get waitlisted count (patients with Waitlisted status)
+            // Get waitlisted count (appointments with Waitlisted status)
             ViewBag.WaitlistedCount = await _context.NewAppointments
-                .CountAsync(p => p.Status == PatientStatusEnum.Pending.ToString());
-
+                .CountAsync(p => p.Status == PatientStatusEnum.Waitlisted.ToString());
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -51,55 +50,55 @@ namespace SafehavenPMS.Controllers
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 searchQuery = searchQuery.ToLower();
-                query = query.Where(p =>
-                    p.Firstname.ToLower().Contains(searchQuery) ||
-                    p.Lastname.ToLower().Contains(searchQuery) ||
-                    p.PatientId.ToString().Contains(searchQuery));
+                query = query.Where(a =>
+                    a.Patient.Firstname.ToLower().Contains(searchQuery) ||
+                    a.Patient.Lastname.ToLower().Contains(searchQuery) ||
+                    a.PatientId.ToString().Contains(searchQuery));
             }
 
             // Apply status filter
             if (!string.IsNullOrEmpty(status))
             {
-                query = query.Where(p => p.PatientStatus == status);
+                query = query.Where(a => a.Status == status);
             }
 
             // Apply sorting
             query = sortOrder == "ascending"
-                ? query.OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
-                : query.OrderByDescending(p => p.CreatedAt);
+                ? query.OrderBy(a => a.Patient.Firstname).ThenBy(a => a.Patient.Lastname)
+                : query.OrderByDescending(a => a.CreatedAt);
 
             // Get total count for pagination
-            ViewBag.TotalPatientCount = await query.CountAsync();
+            int totalItems = await query.CountAsync();
+            ViewBag.TotalPatientCount = totalItems;
 
             // Apply pagination
-            int totalItems = await query.CountAsync();
             int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
             ViewBag.TotalPages = totalPages;
 
             int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
             ViewBag.CurrentPage = currentPage;
 
-            var patientList = await query
+            var appointments = await query
                 .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
 
             // Map to view model
-            var schedulingVM = await _context.NewAppointments.Select(p => new SchedulingViewModel
+            var schedulingVM = appointments.Select(a => new SchedulingViewModel
             {
-                ScheduleId = p.ScheduleId,
-                PatientId = p.PatientId,
-                ClinicalStaffID = p.ClinicalStaffID,
-                Type = p.Type,
-                ScheduleDate = p.ScheduleDate,
-                ScheduleTime = p.ScheduleTime,
-                Status = p.Status,
-                Notes = p.Notes,
-                CreatedAt = p.CreatedAt,
-                CreatedBy = p.CreatedBy,
-                PatientName = $"{p.Patient.Firstname} {p.Patient.Lastname}",
-                ClinicalStaffName = $"{p.ClinicalStaff.Firstname} {p.ClinicalStaff.Lastname}"
-            }).ToListAsync();
+                ScheduleId = a.ScheduleId,
+                PatientId = a.PatientId,
+                ClinicalStaffID = a.ClinicalStaffID,
+                Type = a.Type,
+                ScheduleDate = a.ScheduleDate,
+                ScheduleTime = a.ScheduleTime,
+                Status = a.Status,
+                Notes = a.Notes,
+                CreatedAt = a.CreatedAt,
+                CreatedBy = a.CreatedBy,
+                PatientName = a.Patient != null ? $"{a.Patient.Firstname} {a.Patient.Lastname}" : "Unknown Patient",
+                ClinicalStaffName = a.ClinicalStaff != null ? $"{a.ClinicalStaff.Firstname} {a.ClinicalStaff.Lastname}" : "Unknown Staff"
+            }).ToList();
 
             return View(schedulingVM);
         }

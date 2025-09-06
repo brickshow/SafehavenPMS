@@ -4,7 +4,7 @@
 
 <form asp-action="SaveFamilyData" asp-controller="Intake" method="post" id="familyForm">
     @Html.AntiForgeryToken()
-    <input type="hidden" name="IntakeId" value="@Model.IntakeId" />
+    <input type="hidden" asp-for="PatientId" value="@Model.PatientId" />
 
     <!-- Family Constellation Table -->
     <div class="card rounded shadow-sm mb-4">
@@ -79,8 +79,8 @@
 
     <!-- Save Button -->
     <div class="d-flex justify-content-end mt-4 mb-4">
-        <button type="submit" class="btn btn-custom">
-            <i class="bx bx-save me-2"></i>Save
+        <button type="submit" class="btn btn-next">
+            Save
         </button>
     </div>
 </form>

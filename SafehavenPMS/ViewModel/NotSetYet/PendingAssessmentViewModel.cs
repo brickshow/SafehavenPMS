@@ -4,6 +4,7 @@ namespace SafehavenPMS.ViewModel
 {
     public class PendingAssessmentViewModel
     {
+        public int AssessmentId { get; set; }
         public int PatientId { get; set; }
         public string PatientName { get; set; }
         public int PhysicianId { get; set; }

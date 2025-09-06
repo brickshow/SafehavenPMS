@@ -56,6 +56,15 @@ namespace SafehavenPMS.ViewModel
         // ----------------------
         public DateTime AdmissionDate { get; set; } = DateTime.Now;
 
+        // Add this property for drug dependency status
+        public bool IsDrugDependent { get; set; }
+
+        // Diagnosis and Recommendation
+        public string? Diagnosis { get; set; }
+        public string? Recommendation { get; set; }
+
+        public DateTime? CompletedDate { get; set; }
+
         // ----------------------
         // Audit
         // ----------------------

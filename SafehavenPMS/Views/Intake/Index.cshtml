@@ -8,8 +8,8 @@
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center g-4">
             <div class="d-flex justify-content-center align-items-center">
-                <i class='bx bxs-user fs-2 me-2'></i>
-                <h5 class="text-custom mb-0">Patients</h5>
+                <i class='bx bxs-user fs-2 me-2'></i>   
+                <h5 class="text-custom mb-0">Intake</h5>
             </div>
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
@@ -52,7 +52,7 @@
 <div class="status">
     <div class="waitlisted d-flex flex-row flex-wrap gap-2">
         <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="Pending" />
+            <input type="hidden" name="status" value="NewReferral" />
             <button type="submit" class="btn custom-btn @(ViewBag.Status == "Pending" ? "active" : "")">
                 New Referral (@ViewBag.Pending)
             </button>
@@ -143,26 +143,35 @@
                     foreach (var intake in Model)
                     {
                         <tr>
-                            <td>@row</td>
-                            <td>@intake.FullName</td>
-                            <td>@intake.ReferredBy</td>
-                            <td>@intake.ReferredByPhoneNumber</td>
-                            <td>@intake.IntakeOfficer</td>
-                            <td>@intake.IntakeDate?.ToString("MMM dd, yyyy")</td>
+                        <td>@row</td>
+                            <td>@(string.IsNullOrWhiteSpace(intake.FullName) ? "-" : intake.FullName)</td>
+                            <td>@(string.IsNullOrWhiteSpace(intake.ReferredBy) ? "-" : intake.ReferredBy)</td>
+                            <td>@(string.IsNullOrWhiteSpace(intake.ReferredByPhoneNumber) ? "-" : intake.ReferredByPhoneNumber)</td>
+                            <td>@(string.IsNullOrWhiteSpace(intake.IntakeOfficer) ? "-" : intake.IntakeOfficer)</td>
+                            <td>
+                                @if(intake.IntakeDate == DateTime.MinValue.ToString("yyyy-MM-dd") || string.IsNullOrWhiteSpace(intake.IntakeDate))
+                                {
+                                    @("-")
+                                }
+                                else
+                                {
+                                    @intake.IntakeDate
+                                }
+                            </td>
                             <td class="text-center">
-                                @if(intake.IntakeStatus == IntakeStatus.Pending.ToString())
+                                @if(intake.IntakeStatus == PatientStatusEnum.NewReferral.ToString())
                                 {
                                     <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Pending
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == IntakeStatus.InProgress.ToString())
+                                @if (intake.IntakeStatus == PatientStatusEnum.InProgress.ToString())
                                 {
                                     <div style="background-color: #F9BE8C; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         In Progress
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == IntakeStatus.Completed.ToString())
+                                @if (intake.IntakeStatus == PatientStatusEnum.Waitlisted.ToString())
                                 {
                                     <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Completed
@@ -177,7 +186,7 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                        @if (intake.IntakeStatus == "Pending")
+                                        @if (intake.IntakeStatus == PatientStatusEnum.NewReferral.ToString())
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -187,9 +196,9 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
+                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Intake Form
+                                                    Create Intake Form
                                                 </a>
                                             </li>
                                         }
@@ -203,7 +212,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.IntakeId })">
+                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
                                                     Edit Intake Form
                                                 </a>
@@ -213,7 +222,7 @@
                                                 href="#"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#submitIntakeModal"
-                                                onclick="document.getElementById('modalIntakeId').value='@intake.IntakeId'">
+                                                onclick="document.getElementById('modalIntakeId').value='@intake.PatientId'">
                                                     <span class="badge-dot bg-success"></span>
                                                     Submit Intake
                                                 </a>
@@ -298,7 +307,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
                 <form asp-action="SubmitIntakeForm" asp-controller="Intake" method="post">
-                    <input type="hidden" name="IntakeId" id="modalIntakeId" />
+                    <input type="hidden" name="PatientId" id="modalIntakeId" />
                     <button type="submit" class="btn-custom btn-next">Submit</button>
                 </form>
             </div>

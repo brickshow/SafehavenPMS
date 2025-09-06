@@ -29,5 +29,6 @@ namespace SafehavenPMS.Models
         public ICollection<AdministrationLog> AdministrationLogs { get; set; } = new List<AdministrationLog>(); // Navigation property for Medication orders
         public ICollection<NewAppointment> NewAppointments { get; set; } = new List<NewAppointment>(); // Navigation property for Schedulings
         public ICollection<InitialAssessmentForm> InitialAssessmentForms { get; set; } = new List<InitialAssessmentForm>(); // Navigation property for Initial Assessments
+        public ICollection<Admission> Admissions { get; set; } = new List<Admission>();
     }
 }

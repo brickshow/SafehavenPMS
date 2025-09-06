@@ -6,22 +6,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SafehavenPMS.Migrations
 {
     /// <inheritdoc />
-    public partial class sdjfhsjdhfshf : Migration
+    public partial class kjhjh : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<string>(
-                name: "ScheduleTime",
-                table: "Schedulings",
-                type: "nvarchar(max)",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
-
             migrationBuilder.AlterColumn<DateTime>(
-                name: "ScheduleDate",
-                table: "Schedulings",
+                name: "CreatedAt",
+                table: "IntakeForms",
                 type: "datetime2",
                 nullable: true,
                 oldClrType: typeof(DateTime),
@@ -31,19 +23,9 @@ namespace SafehavenPMS.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<string>(
-                name: "ScheduleTime",
-                table: "Schedulings",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "",
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
-                oldNullable: true);
-
             migrationBuilder.AlterColumn<DateTime>(
-                name: "ScheduleDate",
-                table: "Schedulings",
+                name: "CreatedAt",
+                table: "IntakeForms",
                 type: "datetime2",
                 nullable: false,
                 defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
