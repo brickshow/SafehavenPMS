@@ -36,8 +36,8 @@ namespace SafehavenPMS.Controllers
                 .AsQueryable();
 
             // Get waitlisted count (appointments with Waitlisted status)
-            ViewBag.WaitlistedCount = await _context.Patients
-                .CountAsync(p => p.PatientStatus == PatientStatusEnum.Waitlisted.ToString());
+            ViewBag.WaitlistedCount = await _context.NewAppointments
+                .CountAsync(p => p.Status == Enum.AppointmentEnum.Pending.ToString());
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -97,7 +97,7 @@ namespace SafehavenPMS.Controllers
                 CreatedAt = a.CreatedAt,
                 CreatedBy = a.CreatedBy,
                 PatientName = a.Patient != null ? $"{a.Patient.Firstname} {a.Patient.Lastname}" : "Unknown Patient",
-                ClinicalStaffName = a.ClinicalStaff != null ? $"{a.ClinicalStaff.Firstname} {a.ClinicalStaff.Lastname}" : "Unknown Staff"
+                ClinicalStaffName = a.ClinicalStaff != null ? $"{a.ClinicalStaff.Firstname} {a.ClinicalStaff.Lastname}" : "-"
             }).ToList();
 
             return View(schedulingVM);
@@ -116,16 +116,17 @@ namespace SafehavenPMS.Controllers
             });
         }
 
-       public async Task<IActionResult> ScheduleAppointment(int? id)
+        public async Task<IActionResult> ScheduleAppointment(int? id)
         {
             var vm = new ScheduleAppointmentViewModel();
+            var patient = await _context.Patients
+                   .FirstOrDefaultAsync(p => p.PatientId == id.Value);
 
             // Get patient details if ID is provided
             if (id.HasValue && id > 0)
             {
-                var patient = await _context.Patients
-                    .FirstOrDefaultAsync(p => p.PatientId == id.Value);
-                
+
+
                 if (patient != null)
                 {
                     vm.PatientId = patient.PatientId;
@@ -159,6 +160,7 @@ namespace SafehavenPMS.Controllers
             ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
             ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
             ViewBag.SelectedDate = null;
+            ViewBag.VisitType = patient?.NewAppointments?.FirstOrDefault()?.Type;
 
             return View(vm);
         }
@@ -402,6 +404,7 @@ namespace SafehavenPMS.Controllers
 
                 ViewBag.SelectedDate = model.SelectedDate;
                 TempData["ErrorMessage"] = "Please fill in all required fields.";
+                TempData["SuccessMessage"] = "Please fill in all required fields.";
                 return View(model);
             }
 
@@ -502,6 +505,187 @@ namespace SafehavenPMS.Controllers
                 Console.WriteLine("Error: " + ex);
                 ModelState.AddModelError("", "Failed to save appointment: " + ex.Message);
                 return View(model);
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // Small helper timeslot DTO used for viewbag
+        private class TimeSlotDto
+        {
+            public TimeSpan StartTime { get; set; }
+            public TimeSpan EndTime { get; set; }
+        }
+
+        // GET: Scheduling/RescheduleAppointment/5
+        [HttpGet]
+        public async Task<IActionResult> RescheduleAppointment(int id)
+        {
+            // Load appointment with patient and staff
+            var appt = await _context.NewAppointments
+                .Include(a => a.Patient)
+                .Include(a => a.ClinicalStaff)
+                .FirstOrDefaultAsync(a => a.ScheduleId == id);
+
+            if (appt == null)
+            {
+                TempData["Error"] = "Appointment not found.";
+                return RedirectToAction("Index");
+            }
+
+            // Build viewmodel (assumes ScheduleAppointmentViewModel has these properties)
+            var vm = new SafehavenPMS.ViewModel.ScheduleAppointmentViewModel
+            {
+                ScheduleId = appt.ScheduleId,
+                PatientId = appt.PatientId,
+                PatientName = appt.Patient != null ? $"{appt.Patient.Firstname} {appt.Patient.Lastname}" : "Unknown",
+                ClinicalStaffID = appt.ClinicalStaffID ?? 0,
+                SelectedDate = appt.ScheduleDate ?? DateTime.Today,
+                TimeSlot = appt.ScheduleTime, // e.g. "09:00"
+                VisitType = appt.Type,
+                Description = appt.Notes
+            };
+
+            // Populate doctor list for select
+            var staffList = await _context.ClinicalStaffs
+                .Select(s => new { s.ClinicalStaffID, FullName = (s.Firstname + " " + s.Lastname) })
+                .ToListAsync();
+
+            ViewBag.StaffList = new SelectList(staffList, "ClinicalStaffID", "FullName", vm.ClinicalStaffID);
+
+            // Compute available times for the appointment date and selected staff
+            DateTime date = appt.ScheduleDate?.Date ?? DateTime.Today;
+
+            return View("RescheduleAppointment", vm);
+        }
+
+        // POST: Scheduling/RescheduleAppointment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RescheduleAppointment(SafehavenPMS.ViewModel.ScheduleAppointmentViewModel model)
+        {
+            if (model == null || model.ScheduleId <= 0)
+            {
+                TempData["Error"] = "Invalid request.";
+                return RedirectToAction("Index");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = string.Join(" | ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return RedirectToAction("RescheduleAppointment", new { id = model.ScheduleId });
+            }
+
+            var appt = await _context.NewAppointments.FirstOrDefaultAsync(a => a.ScheduleId == model.ScheduleId);
+            if (appt == null)
+            {
+                TempData["Error"] = "Appointment not found.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                // Parse date + timeslot
+                DateTime parsedDate;
+                if (!DateTime.TryParse(model.SelectedDate.ToString("yyyy-MM-dd"), out parsedDate))
+                {
+                    TempData["Error"] = "Invalid date selected.";
+                    return RedirectToAction("RescheduleAppointment", new { id = model.ScheduleId });
+                }
+
+                // Validate timeslot format "hh:mm"
+                if (string.IsNullOrWhiteSpace(model.TimeSlot))
+                {
+                    TempData["Error"] = "Please select a timeslot.";
+                    return RedirectToAction("RescheduleAppointment", new { id = model.ScheduleId });
+                }
+
+                // Check slot availability (allow current appointment to keep its slot)
+                var conflict = await _context.NewAppointments.AnyAsync(a =>
+                    a.ClinicalStaffID == model.ClinicalStaffID &&
+                    a.ScheduleDate.HasValue &&
+                    a.ScheduleDate.Value.Date == parsedDate.Date &&
+                    a.ScheduleTime == model.TimeSlot &&
+                    a.ScheduleId != model.ScheduleId);
+
+                if (conflict)
+                {
+                    TempData["Error"] = "Selected timeslot is no longer available. Please choose another.";
+                    return RedirectToAction("RescheduleAppointment", new { id = model.ScheduleId });
+                }
+
+                // Update appointment
+                appt.ClinicalStaffID = model.ClinicalStaffID > 0 ? model.ClinicalStaffID : appt.ClinicalStaffID;
+                appt.ScheduleDate = parsedDate;
+                appt.ScheduleTime = model.TimeSlot;
+                appt.Type = model.VisitType ?? appt.Type;
+                appt.Notes = model.Description ?? appt.Notes;
+
+                _context.NewAppointments.Update(appt);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Appointment rescheduled successfully.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "An error occurred while rescheduling the appointment.";
+                return RedirectToAction("RescheduleAppointment", new { id = model.ScheduleId });
+            }
+        }
+
+         [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelAppointment(int scheduleId)
+        {
+            if (scheduleId <= 0)
+            {
+                TempData["Error"] = "Invalid appointment id.";
+                return RedirectToAction("Index");
+            }
+
+            var appt = await _context.NewAppointments
+                .FirstOrDefaultAsync(a => a.ScheduleId == scheduleId);
+
+            if (appt == null)
+            {
+                TempData["Error"] = "Appointment not found.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                // mark appointment cancelled
+                appt.Status = Enum.AppointmentEnum.Cancelled.ToString();
+                _context.NewAppointments.Update(appt);
+
+                // try to restore availability slot if one exists (match by staff, date and start time)
+                if (appt.ClinicalStaffID.HasValue && appt.ScheduleDate.HasValue && !string.IsNullOrWhiteSpace(appt.ScheduleTime))
+                {
+                    TimeSpan parsed;
+                    if (TimeSpan.TryParse(appt.ScheduleTime, out parsed))
+                    {
+                        var avail = await _context.Availabilities.FirstOrDefaultAsync(a =>
+                            a.ClinicalStaffID == appt.ClinicalStaffID &&
+                            a.SlotDate.HasValue && a.SlotDate.Value.Date == appt.ScheduleDate.Value.Date &&
+                            a.StartTime == parsed &&
+                            a.Status == Enum.AvailabilityStatus.Scheduled.ToString());
+
+                        if (avail != null)
+                        {
+                            avail.Status = Enum.AvailabilityStatus.Available.ToString();
+                            _context.Availabilities.Update(avail);
+                        }
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Appointment cancelled successfully.";
+            }
+            catch (Exception ex)
+            {
+                // optionally log ex
+                TempData["Error"] = "Failed to cancel appointment.";
             }
 
             return RedirectToAction("Index");

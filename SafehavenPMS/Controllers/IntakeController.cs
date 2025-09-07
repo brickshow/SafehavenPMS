@@ -97,7 +97,8 @@ namespace SafehavenPMS.Controllers
              var intakeViewModels = patientList
                                     .Where(p => p.PatientStatus == PatientStatusEnum.NewReferral.ToString() ||
                                                 p.PatientStatus == PatientStatusEnum.Waitlisted.ToString() ||
-                                                p.PatientStatus == PatientStatusEnum.InProgress.ToString())
+                                                p.PatientStatus == PatientStatusEnum.InProgress.ToString() ||
+                                                p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString())
                                     .Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
                                     {
                                         PatientId = p.PatientId,

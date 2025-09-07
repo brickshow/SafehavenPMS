@@ -1,7 +1,7 @@
 @model SafehavenPMS.ViewModel.AssessmentFormViewModel
 
 <form asp-action="SaveMentalStatusExamination" asp-controller="Assessment" method="post" class="mental-status-form">
-    <input type="hidden" name="initialAssessmentFormId" value="@Model.AssessmentId" />
+    <input type="hidden" asp-for="PatientId" value="@Model.PatientId" />
 
     <div class="card mb-4">
         <div class="card-header bg-white" style="color: #015F6B;">
@@ -9,7 +9,7 @@
         </div>
         <div class="card-body">
             <div class="row g-4">
-                <div class="col-md-6">
+                <div class="col-12">
                     <div class="mb-3 section-block">
                         <label class="section-title">General Appearance</label>
                         <div class="d-flex flex-wrap gap-3">
@@ -175,7 +175,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-12">
                     <div class="mb-3 section-block">
                         <label class="section-title">Thoughts</label>
                         <div class="d-flex flex-wrap gap-3">
@@ -357,14 +357,18 @@
 <style>
     .card-header h5 {
         color: #015F6B;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: 0.2px;
     }
+
     .section-title {
-        font-weight: 600;
+        font-weight: 700;
         color: #015F6B;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
         display: block;
+        font-size: 1rem;
     }
+
     .section-block {
         background: #f8f9fa;
         padding: 16px 18px;
@@ -372,18 +376,101 @@
         margin-bottom: 18px;
         box-shadow: 0 1px 2px rgba(1,95,107,0.04);
     }
+
+    /* keep items horizontal but make checkboxes clearer/readable */
+    .section-block .d-flex {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        align-items: center;
+    }
+
+    /* checkbox "chip" */
+    .section-block .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+        padding: 6px 8px;
+        min-width: 200px;
+        cursor: pointer;
+    }
+
+    /* larger, clearer checkbox */
+    .section-block .form-check .form-check-input {
+        transform: scale(1.35);
+        margin: 0;
+        flex: 0 0 auto;
+        width: 1.15rem;
+        height: 1.15rem;
+        accent-color: #069FB2; /* modern browsers */
+        cursor: pointer;
+        border: 1.5px solid #0b3b3f;
+    }
+
+    /* label readability */
+    .section-block .form-check .form-check-label {
+        margin: 0;
+        white-space: nowrap;
+        font-size: 0.98rem;
+        color: #0b3b3f;
+        line-height: 1.2;
+    }
+
+    /* focus & hover affordances */
+    .section-block .form-check .form-check-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 0.18rem rgba(6,159,178,0.22);
+        border-radius: 4px;
+    }
+    .section-block .form-check:hover .form-check-label {
+        color: #033e43;
+    }
+
+    /* 'Others' row should take full width and align label + input horizontally */
+    .section-block .form-check.flex-grow-1.d-flex.align-items-center {
+        min-width: 100%;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    /* reasonable width for the 'Others' input */
+    .section-block .form-control.w-auto {
+        width: 260px;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    /* reset bootstrap form-check default */
     .form-check {
-        min-width: 120px;
-        margin-bottom: 8px;
+        min-width: 0;
     }
-    .form-check-label {
-        margin-right: 0.5rem;
-    }
-    .form-control.w-auto {
-        min-width: 120px;
-    }
+
     .mental-status-form .btn-primary {
         background: linear-gradient(to right, #069FB2, #058594);
         border: none;
+    }
+
+    /* Responsive tweaks */
+    @@media (max-width: 767.98px) {
+        .section-block .d-flex {
+            gap: 0.75rem;
+        }
+
+        /* Let checkboxes and labels wrap elegantly on small screens */
+        .section-block .form-check {
+            min-width: 140px;
+            padding: 6px 6px;
+        }
+
+        .section-block .form-check.flex-grow-1.d-flex.align-items-center {
+            min-width: 100%;
+            flex-direction: row;
+        }
+
+        .section-block .form-control.w-auto {
+            width: 100% !important;
+        }
     }
 </style>

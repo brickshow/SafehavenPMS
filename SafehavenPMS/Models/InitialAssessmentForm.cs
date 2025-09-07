@@ -24,7 +24,7 @@ namespace SafehavenPMS.Models
         public string? CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? UpdatedBy { get; set; }
-        public DateTime CompletedAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
     }
 
     public class HistoryPresent

@@ -22,7 +22,7 @@ namespace SafehavenPMS.Models
         public string PhoneNumber { get; set; } = string.Empty;
 
         // Audit fields
-        public DateTime? CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? CreatedAt { get; set; }
         public string CreatedBy { get; set; } = "System";
         public DateTime? UpdatedAt { get; set; }
         public string? UpdatedBy { get; set; }

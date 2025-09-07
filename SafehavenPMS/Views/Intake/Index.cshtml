@@ -41,10 +41,10 @@
                 </div>
             </div>
         </div>
-        <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
+        @* <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
             <i class='bx bx-user-plus me-1'></i>
             New Patient Intake
-        </a>
+        </a> *@
     </div>
     <hr class="mt-0 mb-2" />
 </div>
@@ -165,13 +165,13 @@
                                         Pending
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == PatientStatusEnum.InProgress.ToString())
+                                else if(intake.IntakeStatus == PatientStatusEnum.InProgress.ToString())
                                 {
                                     <div style="background-color: #F9BE8C; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         In Progress
                                     </div>
                                 }
-                                @if (intake.IntakeStatus == PatientStatusEnum.Waitlisted.ToString())
+                                else 
                                 {
                                     <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Completed
@@ -202,7 +202,7 @@
                                                 </a>
                                             </li>
                                         }
-                                        else if (intake.IntakeStatus == IntakeStatus.InProgress.ToString())
+                                        else if (intake.IntakeStatus == PatientStatusEnum.InProgress.ToString())
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -238,7 +238,7 @@
                                                     View Profile
                                                 </a>
                                             </li>
-                                               <li>
+                                            <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                    href="@Url.Action("EditIntakeForm", "Intake", new { id = intake.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>

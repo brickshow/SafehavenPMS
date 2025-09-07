@@ -32,6 +32,7 @@ namespace SafehavenPMS.Controllers
                 .Include(a => a.NewAppointments)
                 .Include(c => c.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
+                .Include(c => c.InitialAssessmentForms)
                 .AsQueryable();
 
             // Get pending assessment count (patients with Pending status)
@@ -85,27 +86,33 @@ namespace SafehavenPMS.Controllers
 
             // Map to view model - first get the data, then project in memory
             var patientsData = await query.ToListAsync();
-            var pendingAssessment = patientsData
-                .Where(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
-                            p.PatientStatus == PatientStatusEnum.InProgress.ToString() ||
-                            p.PatientStatus == PatientStatusEnum.PendingApproval.ToString())
-                .Select(p =>
-                {
-                    var appointment = p.NewAppointments.FirstOrDefault();
-                    var physician = p.ClinicalStaffPatients.FirstOrDefault(csp => csp.ClinicalStaff.Position == "Physician")?.ClinicalStaff;
+            var pendingAssessment = patientList
+            .Where(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
+                        p.PatientStatus == PatientStatusEnum.InProgress.ToString() ||
+                        p.PatientStatus == PatientStatusEnum.PendingApproval.ToString())
+            .Select(p =>
+            {
+                var appointment = p.NewAppointments.FirstOrDefault();
+                var physician = p.ClinicalStaffPatients.FirstOrDefault(csp => csp.ClinicalStaff.Position == "Physician")?.ClinicalStaff;
+                
+                // Get the latest assessment with CompletedAt
+                var latestAssessment = p.InitialAssessmentForms?
+                    .OrderByDescending(f => f.CompletedAt)
+                    .FirstOrDefault(f => f.CompletedAt.HasValue);
 
-                    return new PendingAssessmentViewModel
-                    {
-                        PatientId = p.PatientId,
-                        PhysicianId = appointment?.ClinicalStaffID ?? 0,
-                        PhysicianName = physician != null ? $"{physician.Firstname} {physician.Lastname}" : "-",
-                        Type = appointment?.Type ?? "-",
-                        PatientName = $"{p.Firstname} {p.Lastname}",
-                        Date = appointment?.ScheduleDate,
-                        Time = appointment?.ScheduleTime,
-                        Status = p.PatientStatus ?? "-"
-                    };
-                }).ToList();
+                return new PendingAssessmentViewModel
+                {
+                    PatientId = p.PatientId,
+                    PhysicianId = appointment?.ClinicalStaffID ?? 0,
+                    PhysicianName = physician != null ? $"{physician.Firstname} {physician.Lastname}" : "-",
+                    Type = appointment?.Type ?? "-",
+                    PatientName = $"{p.Firstname} {p.Lastname}",
+                    Date = appointment?.ScheduleDate,
+                    Time = appointment?.ScheduleTime,
+                    CompletedDate = latestAssessment?.CompletedAt,  // This will be null if no completed assessment exists
+                    Status = p.PatientStatus ?? "-"
+                };
+            }).ToList();
 
             return View(pendingAssessment);
         }
@@ -324,6 +331,90 @@ namespace SafehavenPMS.Controllers
                     : new RecommendationViewModel())
                 .FirstOrDefaultAsync() ?? new RecommendationViewModel(),
 
+                // Populate Mental Status Examination for display
+                MentalStatusExamination = await _context.InitialAssessmentForms
+                    .Where(iaf => iaf.PatientId == id && iaf.MentalStatusExamination != null)
+                    .OrderByDescending(iaf => iaf.MentalStatusExamination.UpdatedAt ?? iaf.MentalStatusExamination.CreatedAt)
+                    .Select(iaf => new MentalStatusExaminationViewModel
+                    {
+                        GeneralAppearanceNeat = iaf.MentalStatusExamination.GeneralAppearanceNeat,
+                        GeneralAppearanceDishevelled = iaf.MentalStatusExamination.GeneralAppearanceDishevelled,
+                        GeneralAppearanceInappropriate = iaf.MentalStatusExamination.GeneralAppearanceInappropriate,
+                        GeneralAppearanceOthers = iaf.MentalStatusExamination.GeneralAppearanceOthers,
+
+                        SpeechNormal = iaf.MentalStatusExamination.SpeechNormal,
+                        SpeechRapid = iaf.MentalStatusExamination.SpeechRapid,
+                        SpeechSlow = iaf.MentalStatusExamination.SpeechSlow,
+                        SpeechIncoherent = iaf.MentalStatusExamination.SpeechIncoherent,
+                        SpeechOthers = iaf.MentalStatusExamination.SpeechOthers,
+
+                        BehaviorRelaxed = iaf.MentalStatusExamination.BehaviorRelaxed,
+                        BehaviorCooperative = iaf.MentalStatusExamination.BehaviorCooperative,
+                        BehaviorSuspicious = iaf.MentalStatusExamination.BehaviorSuspicious,
+                        BehaviorPreoccupied = iaf.MentalStatusExamination.BehaviorPreoccupied,
+                        BehaviorOthers = iaf.MentalStatusExamination.BehaviorOthers,
+
+                        ViolenceRelaxed = iaf.MentalStatusExamination.ViolenceRelaxed,
+                        ViolenceRestless = iaf.MentalStatusExamination.ViolenceRestless,
+                        ViolenceClenchedFist = iaf.MentalStatusExamination.ViolenceClenchedFist,
+                        ViolenceRaisedVoice = iaf.MentalStatusExamination.ViolenceRaisedVoice,
+                        ViolenceOthers = iaf.MentalStatusExamination.ViolenceOthers,
+
+                        MoodSad = iaf.MentalStatusExamination.MoodSad,
+                        MoodAnxious = iaf.MentalStatusExamination.MoodAnxious,
+                        MoodHappy = iaf.MentalStatusExamination.MoodHappy,
+                        MoodFearful = iaf.MentalStatusExamination.MoodFearful,
+                        MoodHelpless = iaf.MentalStatusExamination.MoodHelpless,
+                        MoodHopeless = iaf.MentalStatusExamination.MoodHopeless,
+                        MoodAngry = iaf.MentalStatusExamination.MoodAngry,
+                        MoodOthers = iaf.MentalStatusExamination.MoodOthers,
+
+                        AffectAppropriate = iaf.MentalStatusExamination.AffectAppropriate,
+                        AffectInappropriate = iaf.MentalStatusExamination.AffectInappropriate,
+                        AffectFlat = iaf.MentalStatusExamination.AffectFlat,
+                        AffectBlunted = iaf.MentalStatusExamination.AffectBlunted,
+                        AffectOthers = iaf.MentalStatusExamination.AffectOthers,
+
+                        ThoughtsNormal = iaf.MentalStatusExamination.ThoughtsNormal,
+                        ThoughtsFlightOfIdeas = iaf.MentalStatusExamination.ThoughtsFlightOfIdeas,
+                        ThoughtsPreoccupied = iaf.MentalStatusExamination.ThoughtsPreoccupied,
+                        ThoughtsOthers = iaf.MentalStatusExamination.ThoughtsOthers,
+
+                        CognitionConscious = iaf.MentalStatusExamination.CognitionConscious,
+                        CognitionConfused = iaf.MentalStatusExamination.CognitionConfused,
+                        CognitionDrowsy = iaf.MentalStatusExamination.CognitionDrowsy,
+                        CognitionOthers = iaf.MentalStatusExamination.CognitionOthers,
+
+                        PerceptionsIllusions = iaf.MentalStatusExamination.PerceptionsIllusions,
+                        PerceptionsAuditoryHallucinations = iaf.MentalStatusExamination.PerceptionsAuditoryHallucinations,
+                        PerceptionsVisualHallucinations = iaf.MentalStatusExamination.PerceptionsVisualHallucinations,
+                        PerceptionsDelusions = iaf.MentalStatusExamination.PerceptionsDelusions,
+                        PerceptionsParanoia = iaf.MentalStatusExamination.PerceptionsParanoia,
+                        PerceptionsSuicidalAttempt = iaf.MentalStatusExamination.PerceptionsSuicidalAttempt,
+                        PerceptionsSuicidalIdeations = iaf.MentalStatusExamination.PerceptionsSuicidalIdeations,
+                        PerceptionsOthers = iaf.MentalStatusExamination.PerceptionsOthers,
+
+                        MemoryShortTerm = iaf.MentalStatusExamination.MemoryShortTerm,
+                        MemoryLongTerm = iaf.MentalStatusExamination.MemoryLongTerm,
+                        MemoryOthers = iaf.MentalStatusExamination.MemoryOthers,
+
+                        OrientationOrientedToTime = iaf.MentalStatusExamination.OrientationOrientedToTime,
+                        OrientationOrientedToPerson = iaf.MentalStatusExamination.OrientationOrientedToPerson,
+                        OrientationOrientedToPlace = iaf.MentalStatusExamination.OrientationOrientedToPlace,
+                        OrientationDisorientedToTime = iaf.MentalStatusExamination.OrientationDisorientedToTime,
+                        OrientationDisorientedToPerson = iaf.MentalStatusExamination.OrientationDisorientedToPerson,
+                        OrientationDisorientedToPlace = iaf.MentalStatusExamination.OrientationDisorientedToPlace,
+                        OrientationOthers = iaf.MentalStatusExamination.OrientationOthers,
+
+                        JudgementGood = iaf.MentalStatusExamination.JudgementGood,
+                        JudgementFair = iaf.MentalStatusExamination.JudgementFair,
+                        JudgementPoor = iaf.MentalStatusExamination.JudgementPoor,
+
+                        InsightGood = iaf.MentalStatusExamination.InsightGood,
+                        InsightFair = iaf.MentalStatusExamination.InsightFair,
+                        InsightPoor = iaf.MentalStatusExamination.InsightPoor
+                    })
+                    .FirstOrDefaultAsync() ?? new MentalStatusExaminationViewModel(),
             };
 
             // Return view with populated view model
@@ -1069,7 +1160,7 @@ namespace SafehavenPMS.Controllers
 
                 // Update patient status to PendingApproval
                 patient.PatientStatus = PatientStatusEnum.PendingApproval.ToString();
-
+                assessmentForm.CompletedAt = DateTime.Now;
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Assessment submitted for approval and admission record created/updated.";
 
@@ -1079,6 +1170,160 @@ namespace SafehavenPMS.Controllers
             {
                 TempData["ErrorMessage"] = "An error occurred while submitting the assessment.";
                 return RedirectToAction("Index");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveMentalStatusExamination(AssessmentFormViewModel model)
+        {
+            try
+            {
+                if (model?.PatientId == null)
+                {
+                    TempData["ErrorMessage"] = "Patient information missing. Cannot save mental status examination.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId.Value });
+                }
+
+                // Get or create the InitialAssessmentForm for the patient
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.MentalStatusExamination)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId.Value);
+
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = model.PatientId.Value,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                    await _context.SaveChangesAsync(); // get ID
+                }
+
+                // Ensure MentalStatusExamination navigation object exists
+                if (assessmentForm.MentalStatusExamination == null)
+                {
+                    assessmentForm.MentalStatusExamination = new Models.MentalStatusExamination
+                    {
+                        InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                    // If needed ensure it's tracked (adding to context is optional because parent is tracked)
+                }
+                else
+                {
+                    assessmentForm.MentalStatusExamination.UpdatedAt = DateTime.Now;
+                    assessmentForm.MentalStatusExamination.UpdatedBy = User.Identity?.Name ?? "System";
+                }
+
+                // Map viewmodel -> model
+                var vm = model.MentalStatusExamination ?? new MentalStatusExaminationViewModel();
+                var ms = assessmentForm.MentalStatusExamination;
+
+                ms.GeneralAppearanceNeat = vm.GeneralAppearanceNeat;
+                ms.GeneralAppearanceDishevelled = vm.GeneralAppearanceDishevelled;
+                ms.GeneralAppearanceInappropriate = vm.GeneralAppearanceInappropriate;
+                ms.GeneralAppearanceOthers = vm.GeneralAppearanceOthers;
+
+                ms.SpeechNormal = vm.SpeechNormal;
+                ms.SpeechRapid = vm.SpeechRapid;
+                ms.SpeechSlow = vm.SpeechSlow;
+                ms.SpeechIncoherent = vm.SpeechIncoherent;
+                ms.SpeechOthers = vm.SpeechOthers;
+
+                ms.BehaviorRelaxed = vm.BehaviorRelaxed;
+                ms.BehaviorCooperative = vm.BehaviorCooperative;
+                ms.BehaviorSuspicious = vm.BehaviorSuspicious;
+                ms.BehaviorPreoccupied = vm.BehaviorPreoccupied;
+                ms.BehaviorOthers = vm.BehaviorOthers;
+
+                ms.ViolenceRelaxed = vm.ViolenceRelaxed;
+                ms.ViolenceRestless = vm.ViolenceRestless;
+                ms.ViolenceClenchedFist = vm.ViolenceClenchedFist;
+                ms.ViolenceRaisedVoice = vm.ViolenceRaisedVoice;
+                ms.ViolenceOthers = vm.ViolenceOthers;
+
+                ms.MoodSad = vm.MoodSad;
+                ms.MoodAnxious = vm.MoodAnxious;
+                ms.MoodHappy = vm.MoodHappy;
+                ms.MoodFearful = vm.MoodFearful;
+                ms.MoodHelpless = vm.MoodHelpless;
+                ms.MoodHopeless = vm.MoodHopeless;
+                ms.MoodAngry = vm.MoodAngry;
+                ms.MoodOthers = vm.MoodOthers;
+
+                ms.AffectAppropriate = vm.AffectAppropriate;
+                ms.AffectInappropriate = vm.AffectInappropriate;
+                ms.AffectFlat = vm.AffectFlat;
+                ms.AffectBlunted = vm.AffectBlunted;
+                ms.AffectOthers = vm.AffectOthers;
+
+                ms.ThoughtsNormal = vm.ThoughtsNormal;
+                ms.ThoughtsFlightOfIdeas = vm.ThoughtsFlightOfIdeas;
+                ms.ThoughtsPreoccupied = vm.ThoughtsPreoccupied;
+                ms.ThoughtsOthers = vm.ThoughtsOthers;
+
+                ms.CognitionConscious = vm.CognitionConscious;
+                ms.CognitionConfused = vm.CognitionConfused;
+                ms.CognitionDrowsy = vm.CognitionDrowsy;
+                ms.CognitionOthers = vm.CognitionOthers;
+
+                ms.PerceptionsIllusions = vm.PerceptionsIllusions;
+                ms.PerceptionsAuditoryHallucinations = vm.PerceptionsAuditoryHallucinations;
+                ms.PerceptionsVisualHallucinations = vm.PerceptionsVisualHallucinations;
+                ms.PerceptionsDelusions = vm.PerceptionsDelusions;
+                ms.PerceptionsParanoia = vm.PerceptionsParanoia;
+                ms.PerceptionsSuicidalAttempt = vm.PerceptionsSuicidalAttempt;
+                ms.PerceptionsSuicidalIdeations = vm.PerceptionsSuicidalIdeations;
+                ms.PerceptionsOthers = vm.PerceptionsOthers;
+
+                ms.MemoryShortTerm = vm.MemoryShortTerm;
+                ms.MemoryLongTerm = vm.MemoryLongTerm;
+                ms.MemoryOthers = vm.MemoryOthers;
+
+                ms.OrientationOrientedToTime = vm.OrientationOrientedToTime;
+                ms.OrientationOrientedToPerson = vm.OrientationOrientedToPerson;
+                ms.OrientationOrientedToPlace = vm.OrientationOrientedToPlace;
+                ms.OrientationDisorientedToTime = vm.OrientationDisorientedToTime;
+                ms.OrientationDisorientedToPerson = vm.OrientationDisorientedToPerson;
+                ms.OrientationDisorientedToPlace = vm.OrientationDisorientedToPlace;
+                ms.OrientationOthers = vm.OrientationOthers;
+
+                ms.JudgementGood = vm.JudgementGood;
+                ms.JudgementFair = vm.JudgementFair;
+                ms.JudgementPoor = vm.JudgementPoor;
+
+                ms.InsightGood = vm.InsightGood;
+                ms.InsightFair = vm.InsightFair;
+                ms.InsightPoor = vm.InsightPoor;
+
+                // Update parent assessment audit fields
+                assessmentForm.UpdatedAt = DateTime.Now;
+                assessmentForm.UpdatedBy = User.Identity?.Name ?? "System";
+
+                // Update patient status to InProgress
+                var patient = await _context.Patients.FindAsync(model.PatientId.Value);
+                if (patient != null)
+                {
+                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                }
+
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Mental status examination saved successfully.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId.Value });
+            }
+            catch (DbUpdateException)
+            {
+                TempData["ErrorMessage"] = "Database error occurred while saving mental status examination.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model?.PatientId });
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the mental status examination.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model?.PatientId });
             }
         }
     }

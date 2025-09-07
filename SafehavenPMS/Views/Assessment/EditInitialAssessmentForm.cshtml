@@ -73,7 +73,7 @@
     <div class="col-md-2">
         <div class="nav flex-column nav-tabs assessment-tabs" id="assessmentTabs" role="tablist">
             <div class="nav-link active" id="history-present-tab" data-bs-toggle="tab" data-bs-target="#history-present"
-                role="tab" aria-selected="true">
+                role="tab" aria-selected="false">
                 <div class="d-flex align-items-center">
                     <div class="tab-indicator"></div>
                     <span>History of Present Illness</span>
@@ -101,7 +101,7 @@
                 </div>
             </div>
             <div class="nav-link" id="mental-status-tab" data-bs-toggle="tab" data-bs-target="#mental-status" role="tab"
-                aria-selected="false">
+                aria-selected="true">
                 <div class="d-flex align-items-center">
                     <div class="tab-indicator"></div>
                     <span>Mental Status Examination</span>
@@ -146,9 +146,9 @@
             <div class="tab-pane fade" id="physical-exam" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_PhysicalExam", Model)
             </div>
-            @* <div class="tab-pane fade" id="mental-status" role="tabpanel"></div>
+            <div class="tab-pane fade" id="mental-status" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_MentalStatusExaminition", Model)
-            </div> *@
+            </div>
             <div class="tab-pane fade" id="diagnosis" role="tabpanel">
                 @await Html.PartialAsync("AssessmentTabs/_Diagnosis", Model)
             </div>

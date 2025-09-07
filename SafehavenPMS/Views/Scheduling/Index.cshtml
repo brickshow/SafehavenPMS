@@ -41,10 +41,10 @@
                 </div>
             </div>
         </div>
-        <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
+        @* <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
             <i class='bx bx-user-plus me-1'></i>
             New Patient Intake
-        </a>
+        </a> *@
     </div>
     <hr class="mt-0 mb-2" />
 </div>
@@ -170,7 +170,7 @@
                                         Completed
                                     </div>
                                 }
-                                @if (sched.Status == SchedulingStatus.Canceled.ToString())
+                                @if (sched.Status == AppointmentEnum.Cancelled.ToString())
                                 {
                                     <div style="background-color: rgba(255, 0, 0, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Canceled
@@ -211,7 +211,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditIntakeForm", "Intake", new { id = sched.ScheduleId })">
+                                                   href="@Url.Action("RescheduleAppointment", "Scheduling", new { id = sched.ScheduleId })">
                                                     <span class="badge-dot bg-primary"></span>
                                                     Reschedule
                                                 </a>
@@ -220,8 +220,8 @@
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                    href="#"
                                                    data-bs-toggle="modal"
-                                                   data-bs-target="#submitIntakeModal"
-                                                   onclick="document.getElementById('modalIntakeId').value='@sched.ScheduleId'">
+                                                   data-bs-target="#cancelModal"
+                                                   onclick="document.getElementById('modalScheduleId').value='@sched.ScheduleId'">
                                                     <span class="badge-dot bg-success"></span>
                                                     Cancel
                                                 </a>
@@ -233,6 +233,13 @@
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
                                                     <span class="badge-dot bg-primary"></span>
                                                     View Profile
+                                                </a>
+                                            </li>
+                                              <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action("RescheduleAppointment", "Scheduling", new { id = sched.ScheduleId })">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    Reschedule
                                                 </a>
                                             </li>
                                         }
@@ -283,27 +290,31 @@
     </div>
 </div>
 
-<!-- Intake Submit Confirmation Modal -->
-<div class="modal fade" id="submitIntakeModal" tabindex="-1" aria-labelledby="submitIntakeModalLabel" aria-hidden="true">
+@* Cancel appointment modal *@
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 shadow">
-            <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
-                <h5 class="modal-title" id="submitIntakeModalLabel">Submit Intake?</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelModalLabel">Cancel Appointment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                Are you sure you want to submit this intake form?
+                Are you sure you want to cancel this appointment?
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                <form asp-action="SubmitIntakeForm" asp-controller="Intake" method="post">
-                    <input type="hidden" name="IntakeId" id="modalIntakeId" />
-                    <button type="submit" class="btn-custom btn-next">Submit</button>
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Close</button>
+
+                <form asp-action="CancelAppointment" asp-controller="Scheduling" method="post" class="m-0 p-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="scheduleId" id="modalScheduleId" />
+                    <button type="submit" class="btn btn-danger">Confirm Cancel</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+
 <style>
     .custom-btn {
         background-color: white;
@@ -431,4 +442,33 @@
         this.classList.add('active');
       });
     });
+
+    // Wait for the DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function () {
+        // Get the success toast element by its ID
+        var successToastEl = document.getElementById('successToast');
+        // If the success toast exists, show it using Bootstrap's Toast
+        if (successToastEl) {
+            var successToast = new bootstrap.Toast(successToastEl);
+            successToast.show();
+        }
+
+        // Get the error toast element by its ID
+        var errorToastEl = document.getElementById('errorToast');
+        // If the error toast exists, show it using Bootstrap's Toast
+        if (errorToastEl) {
+            var errorToast = new bootstrap.Toast(errorToastEl);
+            errorToast.show();
+        }
+      });
+
+      // When the delete confirmation modal is about to be shown
+      document.getElementById('deleteConfirmModal').addEventListener('show.bs.modal', function (event) {
+        // Get the button that triggered the modal
+        var button = event.relatedTarget;
+        // Get the staff ID from the button's data-id attribute
+        var staffId = button.getAttribute('data-id');
+        // Set the staff ID in the hidden input field inside the modal
+        document.getElementById('staffIdToDelete').value = staffId;
+      });
 </script>

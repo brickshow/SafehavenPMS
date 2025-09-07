@@ -249,7 +249,7 @@ namespace SafehavenPMS.Controllers
                 }
 
                 return RedirectToAction("Index", "Intake");
-            }
+            }   
             catch (Exception ex)
             {
                 Console.WriteLine($"Error saving patient: {ex.Message}");
