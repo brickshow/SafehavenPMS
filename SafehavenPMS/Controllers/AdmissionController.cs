@@ -45,11 +45,13 @@ namespace SafehavenPMS.Controllers
             // Show patients with PendingApproval OR Admitted status
             var pendingApprovalStatus = PatientStatusEnum.PendingApproval.ToString();
             var admittedStatus = PatientStatusEnum.Admitted.ToString();
+            var transferStatus = PatientStatusEnum.Closed.ToString();
             Console.WriteLine("Filtering for PatientStatus = " + pendingApprovalStatus + " OR " + admittedStatus);
 
             // Filter by patient status (PendingApproval OR Admitted)
             query = query.Where(iaf => iaf.Patient != null &&
-                (iaf.Patient.PatientStatus == pendingApprovalStatus || iaf.Patient.PatientStatus == admittedStatus));
+                (iaf.Patient.PatientStatus == pendingApprovalStatus || iaf.Patient.PatientStatus == admittedStatus
+                 || iaf.Patient.PatientStatus == transferStatus));
 
             // Apply search
             if (!string.IsNullOrWhiteSpace(searchQuery))
@@ -465,20 +467,52 @@ namespace SafehavenPMS.Controllers
             {
                 AdmissionId = admission.AdmissionId,
                 PatientId = admission.PatientId,
-                FullName = $"{admission.Patient.Firstname} {admission.Patient.Lastname}",
-                DOB = admission.Patient.DateOfBirth,
-                EducationalAttainment = admission.Patient.Education,
-                Occupation = admission.Patient.Occupation,
-                Religion = admission.Patient.Religion,
-                PhoneNumber = admission.Patient.PhoneNumber,
+                // populate selected staff ids so selects will show current values
+                PhysicianId = admission.PhysicianId,
+                PsychologistId = admission.PsychologistId,
+                PsychometricianId = admission.PsychometricianId,
+                SocialWorkerId = admission.SocialWorkerId,
+                RecoveryCoachId = admission.RecoveryCoachId,
 
-                // Family info fields
-                FamilyName = admission.FamilyName,
-                FamilyRelationship = admission.FamilyRelationship,
-                FamilyPhone = admission.FamilyPhone,
-                FamilyEmail = admission.FamilyEmail,
-                ActivatePortal = admission.ActivatePortal
+                //Patient Information
+                FullName = admission.Patient != null ? $"{admission.Patient.Firstname} {admission.Patient.Lastname}".Trim() : "-",
+                Age = CalculateAge(admission?.Patient?.DateOfBirth),
+                Sex = admission.Patient != null ? admission.Patient.Sex : "-",
+                Occupation = admission.Patient != null ? admission.Patient.Occupation : "-",
+                Address = admission.Patient != null ? admission.Patient.Address : "-"
             };
+
+            // populate staff display names for the view (optional helper fields on the VM)
+            if (vm.PhysicianId > 0)
+            {
+                var s = await _context.ClinicalStaffs.FirstOrDefaultAsync(x => x.ClinicalStaffID == vm.PhysicianId);
+                vm.PhysicianName = s != null ? $"{s.Firstname} {s.Lastname}" : "";
+            }
+            if (vm.PsychiatristId > 0)
+            {
+                var s = await _context.ClinicalStaffs.FirstOrDefaultAsync(x => x.ClinicalStaffID == vm.PsychiatristId);
+                vm.PsychiatristName = s != null ? $"{s.Firstname} {s.Lastname}" : "";
+            }
+            if (vm.PsychologistId > 0)
+            {
+                var s = await _context.ClinicalStaffs.FirstOrDefaultAsync(x => x.ClinicalStaffID == vm.PsychologistId);
+                vm.PsychologistName = s != null ? $"{s.Firstname} {s.Lastname}" : "";
+            }
+            if (vm.PsychometricianId > 0)
+            {
+                var s = await _context.ClinicalStaffs.FirstOrDefaultAsync(x => x.ClinicalStaffID == vm.PsychometricianId);
+                vm.PsychometricianName = s != null ? $"{s.Firstname} {s.Lastname}" : "";
+            }
+            if (vm.SocialWorkerId > 0)
+            {
+                var s = await _context.ClinicalStaffs.FirstOrDefaultAsync(x => x.ClinicalStaffID == vm.SocialWorkerId);
+                vm.SocialWorkerName = s != null ? $"{s.Firstname} {s.Lastname}" : "";
+            }
+            if (vm.RecoveryCoachId > 0)
+            {
+                var s = await _context.ClinicalStaffs.FirstOrDefaultAsync(x => x.ClinicalStaffID == vm.RecoveryCoachId);
+                vm.RecoveryCoachName = s != null ? $"{s.Firstname} {s.Lastname}" : "";
+            }
 
             await PopulateClinicalStaffDropdowns(); // populate dropdowns for view
             return View(vm); // return edit view with VM
@@ -545,39 +579,54 @@ namespace SafehavenPMS.Controllers
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
+                // load current admission first so we can use its CurrentFacility as FromFacility
+                var admission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+
+                var fromFacility = admission?.CurrentFacility ?? "Safehaven Rehabilitation Center";
+
                 // 1) insert transfer audit
                 var transfer = new PatientTransfer
                 {
                     PatientId = model.PatientId,
-                    FromFacility = "Safehaven Rehabilitation Center", // read from admission or pass in form
+                    FromFacility = fromFacility,
                     ToFacility = model.ReceivingFacility,
                     ProgramType = model.ProgramType,
                     Reason = model.Reason,
-                    CreatedBy = User.Identity.Name
+                    CreatedBy = User?.Identity?.Name ?? "System",
+                    CreatedAt = DateTime.UtcNow
                 };
+
                 _context.PatientTransfers.Add(transfer);
                 await _context.SaveChangesAsync();
 
-                // 2) update admission current info
-                var admission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+                // 2) update admission current info (if admission exists)
                 if (admission != null)
                 {
-                    admission.CurrentFacility = model.ReceivingFacility;   // example field
-                    admission.ProgramType = model.ProgramType;             // optional
-                    admission.Status = "Transferred";                      // or appropriate enum
+                    admission.CurrentFacility = model.ReceivingFacility;
+                    admission.ProgramType = model.ProgramType;
+                    admission.Status = "Transferred";
                     _context.Admissions.Update(admission);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 3) update patient status to Closed after transfer
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+                if (patient != null)
+                {
+                    patient.PatientStatus = PatientStatusEnum.Closed.ToString();
+                    _context.Patients.Update(patient);
                     await _context.SaveChangesAsync();
                 }
 
                 await tx.CommitAsync();
                 TempData["SuccessMessage"] = "Transfer saved.";
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine("Error saving transfer: " + ex);
                 await tx.RollbackAsync();
                 TempData["Error"] = "Unable to save transfer.";
             }
-
             return RedirectToAction("Index");
         }
     }

@@ -15,54 +15,59 @@
     <hr class="mt-0 mb-2" />
 </div>
 
+<!-- Header spans full width above the tablature -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4" style="border-radius:6px;">
+            <div class="card-body p-4">
+                <div class="row g-0 align-items-center justify-content-between">
+                    <!-- Photo + Name -->
+                    <div class="col-auto d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <div class="rounded-circle bg-secondary" style="width:58px;height:58px;overflow:hidden;">
+                                <img src="~/Images/default.png" alt="Patient Photo"
+                                    style="width:100%;height:100%;object-fit:cover;" />
+                            </div>
+                            <div class="position-absolute bottom-0 end-0 rounded-circle bg-success d-flex align-items-center justify-content-center"
+                                style="width:20px;height:20px;">
+                                <i class="bx bx-smile text-white" style="font-size:12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">@Model.FullName</h5>
+                            <small class="text-muted">Patient No. @Model.PatientId</small>
+                        </div>
+                    </div>
+
+                    <!-- Patient Info Grid -->
+                    <div class="col">
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Age</div>
+                                <div class="fw-semibold">@Model.Age</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Sex</div>
+                                <div class="fw-semibold">@Model.Sex</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Occupation</div>
+                                <div class="fw-semibold">@Model.Occupation</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Address</div>
+                                <div class="fw-semibold">@Model.Address</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container bg-white mt-3 p-0">
     <form asp-action="Edit" asp-controller="Admission" method="post">
-        <div class="section-header bg-teal text-wwhite p-2 mb-3 w-100" style="background-color: #015F6B; color:white">
-            Patient Details
-        </div>
-
-        @* Hidden Value for Patient ID *@
-        <input type="hidden" asp-for="PatientId" value="@Model.PatientId" />
-        <div class="row mb-3">
-            <div class="col-md-4 d-flex align-items-center">
-                <div>
-                    <img src="~/Images/default.png" alt="Patient Photo" style="border-radius: 50%;width:90px;  margin: 10px;">
-                </div>
-                <div>
-                    <p><strong>@Model.FullName</strong></p>
-                    <p><small>Patient No.: @Model.PatientId</small></p>
-                </div>
-            </div>
-            <div class="col-md-8 p-4">
-                <div class="row">
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label">DOB:</label>
-                        <input type="text" class="form-control" value="@(Model.DOB.HasValue? Model.DOB.Value.ToString("yyyy-MM-dd") : "")" readonly>
-                    </div>
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label">Educational Attainment:</label>
-                        <input type="text" class="form-control" value="@Model.EducationalAttainment" readonly>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label">Occupation:</label>
-                        <input type="text" class="form-control" value="@Model.Occupation" readonly>
-                    </div>
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label">Religion:</label>
-                        <input type="text" class="form-control" value="@Model.Religion" readonly>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label">Phone Number:</label>
-                        <input type="text" class="form-control" value="@Model.PhoneNumber" readonly>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="section-header bg-teal text-white p-2 mb-3 w-100" style="background-color: #015F6B;">
             Assign Clinical Staff
         </div>
@@ -73,14 +78,6 @@
                     <div class="col-md-6">
                         <label asp-for="PhysicianId" class="form-label">Physician</label>
                         <select asp-for="PhysicianId" asp-items="ViewBag.Physicians" class="form-select">
-                            <option value="">--Select--</option>
-                        </select>
-                    </div>
-
-                    <!-- Psychiatrist -->
-                    <div class="col-md-6">
-                        <label asp-for="PsychiatristId" class="form-label">Psychiatrist</label>
-                        <select asp-for="PsychiatristId" asp-items="ViewBag.Psychiatrists" class="form-select">
                             <option value="">--Select--</option>
                         </select>
                     </div>
@@ -121,46 +118,6 @@
 
         </div>
 
-        <div class="section-header bg-teal text-white p-2 mb-3 w-100" style="background-color: #015F6B;">
-            Family/Payer Information
-        </div>
-        <div class="container">
-            <div class="row g-3">
-                <!-- Name -->
-                <div class="col-md-6">
-                    <label class="form-label">Name</label>
-                    <input asp-for="FamilyName" type="text" class="form-control" placeholder="Enter name">
-                </div>
-
-                <!-- Relationship to Patient -->
-                <div class="col-md-6">
-                    <label class="form-label">Relationship to Patient</label>
-                    <input asp-for="FamilyRelationship" type="text" class="form-control" placeholder="Enter relationship">
-                </div>
-
-                <!-- Phone Number -->
-                <div class="col-md-6">
-                    <label class="form-label">Phone Number</label>
-                    <input asp-for="FamilyPhone" type="text" class="form-control" placeholder="Enter phone number">
-                </div>
-
-                <!-- Email -->
-                <div class="col-md-6">
-                    <label class="form-label">Email</label>
-                    <input asp-for="FamilyEmail" type="email" class="form-control" placeholder="Enter email">
-                </div>
-
-                <!-- Activate Family Portal -->
-                <div class="col-md-6">
-                    <div class="form-check form-switch mt-2">
-                        <input asp-for="ActivatePortal" type="checkbox" class="form-check-input" id="activatePortal" />
-                        <label class="form-check-label" asp-for="ActivatePortal">Activate Family Portal</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
         <div class="row mt-5 pt-3 border-top">
             <div class="col-md-12 text-end">
                 <button type="button" class="btn-cancel me-2" onclick="history.back()">Cancel</button>
@@ -171,29 +128,3 @@
 
 </div>
 
-<script>
-    document.getElementById("searchQuery").addEventListener("input", async function () {
-        let query = this.value;
-        if (query.length < 2) return; // start searching after 2 chars
-
-        try {
-            let response = await fetch(`/Admission/GetPatientMatches?query=${encodeURIComponent(query)}`);
-            if (!response.ok) {
-                console.error("Fetch failed:", response.statusText);
-                return;
-            }
-
-            let data = await response.json();
-
-            let datalist = document.getElementById("patientList");
-            datalist.innerHTML = "";
-            data.forEach(p => {
-                let option = document.createElement("option");
-                option.value = p.name; // must match property casing from JSON
-                datalist.appendChild(option);
-            });
-        } catch (err) {
-            console.error("Error fetching:", err);
-        }
-    });
-</script>

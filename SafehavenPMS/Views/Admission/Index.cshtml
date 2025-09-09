@@ -163,9 +163,6 @@
                             <td>@rowNum</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width:32px;height:32px;">
-                                        <i class="bx bxs-user text-white fs-5"></i>
-                                    </div>
                                     <strong>@admission.FullName</strong>
                                 </div>
                             </td>
@@ -191,13 +188,11 @@
                                         Admitted
                                     </div>            
                                 }
-                                else if (admission.Status == "Admitted")
+                                  else if (admission.Status == PatientStatusEnum.Closed.ToString())
                                 {
-                                    <span class="badge px-3 py-2" style="background:#b7f5c2;color:#1b6d2a;border-radius:6px;">Admitted</span>
-                                }
-                                else if (admission.Status == "Closed")
-                                {
-                                    <span class="badge px-3 py-2" style="background:#ffb3b3;color:#a10000;border-radius:6px;">Closed</span>
+                                    <div style="background-color: #F8000080; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Closed
+                                    </div>            
                                 }
                                 else
                                 {
@@ -255,7 +250,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                    href="@Url.Action("AdmitPatient", "Admission", new { patientId = admission.PatientId })">
+                                                    href="@Url.Action("Edit", "Admission", new { id = admission.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
                                                     Edit Admission
                                                 </a>

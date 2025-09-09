@@ -31,10 +31,15 @@ namespace SafehavenPMS.ViewModel
         public int? PhysicianId { get; set; }
 
         public int? PsychiatristId { get; set; }
+        public string? PsychiatristName { get; set; }
         public int? PsychologistId { get; set; }
+        public string? PsychologistName { get; set; }
         public int? PsychometricianId { get; set; }
+        public string? PsychometricianName { get; set; }
         public int? SocialWorkerId { get; set; }
+        public string? SocialWorkerName { get; set; }
         public int? RecoveryCoachId { get; set; }
+        public string? RecoveryCoachName { get; set; }
 
         // ----------------------
         // Family / Payer Info
