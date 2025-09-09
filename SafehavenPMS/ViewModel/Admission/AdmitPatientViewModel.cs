@@ -8,7 +8,7 @@ namespace SafehavenPMS.ViewModel
         // ----------------------
         // Patient Details
         // ----------------------
-        public int AdmissionId { get; set; }
+        public int? AdmissionId { get; set; } // Make nullable to handle no admission case
 
         public int PatientId { get; set; }
         public string? FullName { get; set; }
@@ -16,10 +16,12 @@ namespace SafehavenPMS.ViewModel
 
         [DataType(DataType.Date)]
         public DateTime? DOB { get; set; }
+        public string? Age { get; set; }
         public string? EducationalAttainment { get; set; }
         public string? Occupation { get; set; }
         public string? Religion { get; set; }
         public string? PhoneNumber { get; set; }
+        public string? Address { get; set; }
 
         // ----------------------
         // Clinical Staff
@@ -86,5 +88,9 @@ namespace SafehavenPMS.ViewModel
         // Datalist
         // ----------------------
         public List<Patient> PatientMatches { get; set; } = new List<Patient>();
+        public string? ReceivingFacility { get; set; }
+
+        public string? ProgramType { get; set; }
+        public string? Reason { get; set; }
     }
 }

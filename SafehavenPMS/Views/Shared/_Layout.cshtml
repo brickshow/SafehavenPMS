@@ -62,7 +62,7 @@
                 <ul class="submenu">
                     <li>
                         <a asp-controller="Patient" asp-action="AddNewPatient">
-                            <span>Registration</span>
+                            <span>Register Patient </span>
                         </a>
                     </li>
                     <li>
@@ -77,27 +77,54 @@
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="Scheduling" asp-action="Index">
-                            <span>Scheduling</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="Assessment" asp-action="Index">
-                            <span>Assessment</span>
-                        </a>
-                    </li>
-                    <li>
                         <a asp-controller="Admission" asp-action="Index">
                             <span>Admission</span>
                         </a>
                     </li>
+                    <li>
+                        <a asp-controller="Admission" asp-action="Index">
+                            <span>Transfer</span>
+                        </a>
+                    </li>   
+                    <li>
+                        <a asp-controller="Admission" asp-action="Index">
+                            <span>Treatment Plan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Discharge" asp-action="Index">
+                            <span>Discharge</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
-            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admision" ? "active" : "")">
-                <a asp-controller="Admission" asp-action="Index">
-                    <i class='bx bxs-file'></i>
-                    <span class="link_name">Admision</span>
+            <!-- Scheduling -->
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Scheduling" ? "active" : "")">
+                <a asp-controller="Scheduling" asp-action="Index">
+                    <i class='bx bxs-time'></i>
+                    <span class="link_name">Scheduling</span>
                 </a>
+            </li>
+            <!-- Assessment -->
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Assessment" ? "active" : "")">
+                <a href="#" class="nav-parent">
+                    <i class='bx bxs-user-detail'></i>
+                    <span class="link_name">Assessment</span>
+                    <i class='bx bx-chevron-down caret'></i>
+                </a>
+                <ul class="submenu">
+                    <li>
+                        <a asp-controller="Patient" asp-action="AddNewPatient">
+                            <span>Initial Assessment</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Patient" asp-action="Index">
+                            <span>Psychiatric Assessment</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
             </li>
             <!-- Clinical Staff -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClinicalStaff" ? "active" : "")">

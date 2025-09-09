@@ -88,7 +88,7 @@ namespace SafehavenPMS.Controllers
             var patientsData = await query.ToListAsync();
             var pendingAssessment = patientList
             .Where(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
-                        p.PatientStatus == PatientStatusEnum.InProgress.ToString() ||
+                        p.PatientStatus == PatientStatusEnum.OnAssessment.ToString() ||
                         p.PatientStatus == PatientStatusEnum.PendingApproval.ToString())
             .Select(p =>
             {
@@ -109,7 +109,7 @@ namespace SafehavenPMS.Controllers
                     PatientName = $"{p.Firstname} {p.Lastname}",
                     Date = appointment?.ScheduleDate,
                     Time = appointment?.ScheduleTime,
-                    CompletedDate = latestAssessment?.CompletedAt,  // This will be null if no completed assessment exists
+                    CompletedDate = latestAssessment?.CompletedAt,
                     Status = p.PatientStatus ?? "-"
                 };
             }).ToList();
@@ -495,7 +495,11 @@ namespace SafehavenPMS.Controllers
                 }
 
                 // Update patient status
-                patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                if (patient != null)
+                {
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
+                }
+                    
                 // patient.UpdatedAt = DateTime.Now;
                 // patient.UpdatedBy = User.Identity.Name ?? "System";
 
@@ -577,7 +581,7 @@ namespace SafehavenPMS.Controllers
                 var patient = await _context.Patients.FindAsync(model.PatientId);
                 if (patient != null)
                 {
-                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
                 }
 
                 await _context.SaveChangesAsync();
@@ -718,7 +722,7 @@ namespace SafehavenPMS.Controllers
                 var patient = await _context.Patients.FindAsync(model.PatientId);
                 if (patient != null)
                 {
-                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
                 }
 
                 await _context.SaveChangesAsync();
@@ -806,7 +810,7 @@ namespace SafehavenPMS.Controllers
                 var patient = await _context.Patients.FindAsync(model.PatientId);
                 if (patient != null)
                 {
-                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
                 }
 
                 await _context.SaveChangesAsync();
@@ -826,20 +830,51 @@ namespace SafehavenPMS.Controllers
         {
             try
             {
-                // Validate model state
+                Console.WriteLine("SaveDiagnosis called");
+                // Dump ModelState errors for debugging
                 if (!ModelState.IsValid)
                 {
-                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    Console.WriteLine("ModelState is INVALID:");
+                    foreach (var kv in ModelState)
+                    {
+                        foreach (var err in kv.Value.Errors)
+                        {
+                            Console.WriteLine($"  Key={kv.Key} Error='{err.ErrorMessage}' Exception='{err.Exception?.Message}'");
+                        }
+                    }
+                }
+
+                // Dump all posted form keys/values to help see what was sent
+                Console.WriteLine("Request.Form contents:");
+                foreach (var key in Request.Form.Keys)
+                {
+                    Console.WriteLine($"  {key} = {Request.Form[key]}");
+                }
+
+                // Null check for model
+                if (model == null)
+                {
+                    Console.WriteLine("Model binder returned NULL model.");
+                    TempData["ErrorMessage"] = "No data received. Please try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = (int?)null });
+                }
+
+                // Ensure PatientId present
+                if (model.PatientId == null || model.PatientId == 0)
+                {
+                    Console.WriteLine($"PatientId missing in posted model: PatientId={model.PatientId}");
+                    TempData["ErrorMessage"] = "Patient not specified.";
                     return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
                 }
 
-                // Get or create assessment form with related diagnosis data
+                // Load or create the InitialAssessmentForm with diagnosis and substance entries included
                 var assessmentForm = await _context.InitialAssessmentForms
                     .Include(iaf => iaf.Diagnosis)
                         .ThenInclude(d => d.SubstanceUseEntries)
                     .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
 
-                // Create new assessment form if it doesn't exist
+                Console.WriteLine($"Loaded assessmentForm -> {(assessmentForm != null ? $"IAFId={assessmentForm.InitialAssessmentFormId} PatientId={assessmentForm.PatientId}" : "null")}");
+
                 if (assessmentForm == null)
                 {
                     assessmentForm = new InitialAssessmentForm
@@ -849,75 +884,99 @@ namespace SafehavenPMS.Controllers
                         CreatedBy = User.Identity?.Name ?? "System"
                     };
                     _context.InitialAssessmentForms.Add(assessmentForm);
-                    await _context.SaveChangesAsync(); // Save to get ID
+                    await _context.SaveChangesAsync(); // get ID
+                    Console.WriteLine($"Created new InitialAssessmentForm id={assessmentForm.InitialAssessmentFormId}");
                 }
 
-                // Update or create diagnosis
+                // Ensure Diagnosis object exists and its collection is initialized
+                Console.WriteLine($"Before ensure Diagnosis -> exists={(assessmentForm.Diagnosis != null)} DiagnosisId={(assessmentForm.Diagnosis?.DiagnosisId.ToString() ?? "null")})");
                 if (assessmentForm.Diagnosis == null)
                 {
                     assessmentForm.Diagnosis = new Diagnosis
                     {
                         InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
                         CreatedAt = DateTime.Now,
-                        CreatedBy = User.Identity?.Name ?? "System"
+                        CreatedBy = User.Identity?.Name ?? "System",
+                        SubstanceUseEntries = new List<SubstanceUseEntry>()
                     };
+                    _context.Diagnoses.Add(assessmentForm.Diagnosis);
+                    Console.WriteLine("Added new Diagnosis instance to context (not yet saved).");
                 }
                 else
                 {
                     assessmentForm.Diagnosis.UpdatedAt = DateTime.Now;
                     assessmentForm.Diagnosis.UpdatedBy = User.Identity?.Name ?? "System";
+                    if (assessmentForm.Diagnosis.SubstanceUseEntries == null)
+                        assessmentForm.Diagnosis.SubstanceUseEntries = new List<SubstanceUseEntry>();
                 }
 
-                // Clear existing substance use entries
-                if (assessmentForm.Diagnosis.SubstanceUseEntries != null)
+                // Remove existing substance entries (if any)
+                if (assessmentForm.Diagnosis.SubstanceUseEntries != null && assessmentForm.Diagnosis.SubstanceUseEntries.Any())
                 {
+                    Console.WriteLine($"Removing existing SubstanceUseEntries count={assessmentForm.Diagnosis.SubstanceUseEntries.Count}");
                     _context.SubstanceUseEntries.RemoveRange(assessmentForm.Diagnosis.SubstanceUseEntries);
+                    // clear in-memory collection so we can add new ones
+                    assessmentForm.Diagnosis.SubstanceUseEntries.Clear();
                 }
 
-                // Add new substance use entries
-                if (model.Diagnosis?.SubstanceUses != null)
+                // Add posted substance entries (model.Diagnosis may be null or list empty)
+                var posted = model.Diagnosis?.SubstanceUses;
+                Console.WriteLine($"Posted substance entries count = {(posted?.Count ?? 0)}");
+                if (posted != null)
                 {
-                    foreach (var substance in model.Diagnosis.SubstanceUses)
+                    foreach (var suVm in posted)
                     {
-                        if (!string.IsNullOrWhiteSpace(substance.SubstanceName) && !string.IsNullOrWhiteSpace(substance.Severity))
+                        if (suVm == null) continue;
+                        var name = suVm.SubstanceName?.Trim();
+                        var severity = suVm.Severity?.Trim();
+                        Console.WriteLine($"Posted item -> SubstanceName='{name}' Severity='{severity}'");
+                        if (string.IsNullOrWhiteSpace(name)) continue; // skip invalid
+                        var entry = new SubstanceUseEntry
                         {
-                            var entry = new SubstanceUseEntry
-                            {
-                                SubstanceName = substance.SubstanceName,
-                                Severity = substance.Severity,
-                                CreatedAt = DateTime.Now,
-                                CreatedBy = User.Identity?.Name ?? "System"
-                            };
-                            assessmentForm.Diagnosis.SubstanceUseEntries.Add(entry);
-                        }
+                            DiagnosisId = assessmentForm.Diagnosis.DiagnosisId, // will be 0 for new; EF will set FK after save
+                            SubstanceName = name,
+                            Severity = severity,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = User.Identity?.Name ?? "System"
+                        };
+                        assessmentForm.Diagnosis.SubstanceUseEntries.Add(entry);
+                        Console.WriteLine($"  Queued adding substance '{name}' severity='{severity}' to Diagnosis (in-memory).");
                     }
                 }
 
-                // Update patient status to in progress
+                // DEBUG: show what will be saved for diagnosis/substances
+                Console.WriteLine($"Diagnosis before save -> DiagnosisId={(assessmentForm.Diagnosis.DiagnosisId == 0 ? "0(not persisted)" : assessmentForm.Diagnosis.DiagnosisId.ToString())}, SubstanceUseEntriesCount={(assessmentForm.Diagnosis.SubstanceUseEntries?.Count ?? 0)}");
+                if (assessmentForm.Diagnosis.SubstanceUseEntries != null)
+                {
+                    foreach (var e in assessmentForm.Diagnosis.SubstanceUseEntries)
+                    {
+                        Console.WriteLine($"   Pending Entry -> SubstanceName='{e.SubstanceName}' Severity='{e.Severity}' DiagnosisId={e.DiagnosisId}");
+                    }
+                }
+
+                // Update patient status
                 var patient = await _context.Patients.FindAsync(model.PatientId);
                 if (patient != null)
                 {
-                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
                 }
 
-                // Save all changes
+                // Save changes
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Diagnosis has been saved successfully.";
-
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
             catch (DbUpdateException dbEx)
             {
-                // Log the database exception details here
+                Console.WriteLine("SaveDiagnosis DbUpdateException: " + dbEx);
                 TempData["ErrorMessage"] = "A database error occurred while saving the diagnosis.";
-                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model?.PatientId });
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error Message: " + ex.Message);
-                // Log the general exception details here
+                Console.WriteLine("SaveDiagnosis Exception: " + ex);
                 TempData["ErrorMessage"] = "An unexpected error occurred while saving the diagnosis.";
-                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model?.PatientId });
             }
         }
 
@@ -986,7 +1045,7 @@ namespace SafehavenPMS.Controllers
                 var patient = await _context.Patients.FindAsync(model.PatientId);
                 if (patient != null)
                 {
-                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
                 }
 
                 // Save all changes
@@ -1060,7 +1119,7 @@ namespace SafehavenPMS.Controllers
                 var patient = await _context.Patients.FindAsync(model.PatientId);
                 if (patient != null)
                 {
-                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
                 }
 
                 await _context.SaveChangesAsync();
@@ -1105,57 +1164,6 @@ namespace SafehavenPMS.Controllers
                 {
                     TempData["ErrorMessage"] = "Assessment form not found for this patient.";
                     return RedirectToAction("Index");
-                }
-
-                // Check if admission already exists for this patient
-                var existingAdmission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == patientId && a.status != "Ended");
-
-                if (existingAdmission == null)
-                {
-                    // Create new admission record
-                    var admission = new Admission
-                    {
-                        PatientId = patientId,
-                        AdmissionDate = DateTime.Now,
-
-                        // Set IsDrugDependent based on substance use entries
-                        IsDrugDependent = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true,
-
-                        // Build diagnosis string from substance use entries
-                        Diagnosis = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true
-                            ? string.Join("; ", assessmentForm.Diagnosis.SubstanceUseEntries
-                                .Select(sue => $"{sue.SubstanceName} - {sue.Severity}"))
-                            : "No substance use diagnosis",
-
-                        // Set recommendation from assessment
-                        Recommendation = assessmentForm.Recommendation != null
-                            ? $"{assessmentForm.Recommendation.ProgramType}"
-                            : "No recommendation provided",
-
-                        // Set status and audit fields
-                        status = "Active",
-                        CreatedBy = User.Identity.Name ?? "System",
-                        CreatedAt = DateTime.Now
-                    };
-
-                    _context.Admissions.Add(admission);
-                }
-                else
-                {
-                    // Update existing admission with latest assessment data
-                    existingAdmission.IsDrugDependent = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true;
-
-                    existingAdmission.Diagnosis = assessmentForm.Diagnosis?.SubstanceUseEntries?.Any() == true
-                        ? string.Join("; ", assessmentForm.Diagnosis.SubstanceUseEntries
-                            .Select(sue => $"{sue.SubstanceName} - {sue.Severity}"))
-                        : "No substance use diagnosis";
-
-                    existingAdmission.Recommendation = assessmentForm.Recommendation != null
-                        ? $"Program: {assessmentForm.Recommendation.ProgramType}, Duration: {assessmentForm.Recommendation.ExpectedDuration}, Reason: {assessmentForm.Recommendation.Reason}"
-                        : "No recommendation provided";
-
-                    existingAdmission.UpdatedBy = User.Identity.Name ?? "System";
-                    existingAdmission.UpdatedAt = DateTime.Now;
                 }
 
                 // Update patient status to PendingApproval
@@ -1303,11 +1311,11 @@ namespace SafehavenPMS.Controllers
                 assessmentForm.UpdatedAt = DateTime.Now;
                 assessmentForm.UpdatedBy = User.Identity?.Name ?? "System";
 
-                // Update patient status to InProgress
+                // Update patient status to OnAssessment
                 var patient = await _context.Patients.FindAsync(model.PatientId.Value);
                 if (patient != null)
                 {
-                    patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
+                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
                 }
 
                 await _context.SaveChangesAsync();

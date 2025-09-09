@@ -19,6 +19,8 @@ namespace SafehavenPMS.Data
         public DbSet<NewAppointment> NewAppointments { get; set; }
         public DbSet<MedicationOrder> MedicationOrders { get; set; }
         public DbSet<Admission> Admissions { get; set; }
+        public DbSet<PatientTransfer> PatientTransfers { get; set; }
+
         public DbSet<AdministrationLog> AdministrationLogs { get; set; }
 
         //Intake forms Entities
@@ -102,42 +104,6 @@ namespace SafehavenPMS.Data
               .WithMany()                    // if Patient has a collection of Admissions, put it here
               .HasForeignKey(a => a.PatientId)
               .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Admission>()
-                .HasOne<ClinicalStaff>()
-                .WithMany()
-                .HasForeignKey(a => a.PhysicianId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Admission>()
-                .HasOne<ClinicalStaff>()
-                .WithMany()
-                .HasForeignKey(a => a.PsychiatristId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Admission>()
-                .HasOne<ClinicalStaff>()
-                .WithMany()
-                .HasForeignKey(a => a.PsychologistId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Admission>()
-                .HasOne<ClinicalStaff>()
-                .WithMany()
-                .HasForeignKey(a => a.PsychometricianId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Admission>()
-                .HasOne<ClinicalStaff>()
-                .WithMany()
-                .HasForeignKey(a => a.SocialWorkerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Admission>()
-                .HasOne<ClinicalStaff>()
-                .WithMany()
-                .HasForeignKey(a => a.RecoveryCoachId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<FamilyMember>()
                 .HasOne<IntakeForm>()

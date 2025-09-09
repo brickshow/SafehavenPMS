@@ -3,7 +3,6 @@
     public enum PatientStatusEnum
     {
         NewReferral,
-        Pending,
         InProgress,
         Waitlisted,
         PendingAssessment,
@@ -12,7 +11,6 @@
         Admitted,
         Closed,
         Relapsed,
-        PendingReview,
         Discharged
     }
 }

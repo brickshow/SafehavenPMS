@@ -56,10 +56,10 @@
                 </div>
             </div>
         </div>
-        <a href="@Url.Action("AdmitPatient", "Admission")" class="btn-custom text-decoration-none btn-primary">
+        @* <a href="@Url.Action("AdmitPatient", "Admission")" class="btn-custom text-decoration-none btn-primary">
             <i class='bx bx-user-plus me-1'></i>
             New Admission
-        </a>
+        </a> *@
     </div>
     <hr class="mt-0 mb-2" />
 </div>
@@ -71,7 +71,7 @@
             <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
             <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
             <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
-                Pending Assessment (@ViewBag.PendingAssessment)
+                Pending Assessment (@ViewBag.TotalPendingApprovalCount)
             </button>
         </form>
     </div>
@@ -180,9 +180,16 @@
                             <td>@admission.Diagnosis</td>
                             <td>@admission.Recommendation</td>
                             <td>
-                                @if (admission.Status == "Pending")
+                                @if (admission.Status == PatientStatusEnum.PendingApproval.ToString())
                                 {
-                                    <span class="badge px-3 py-2" style="background:#ffe066;color:#7a6a01;border-radius:6px;">Pending</span>
+                                    <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Pending
+                                    </div>                                }
+                                else if (admission.Status == PatientStatusEnum.Admitted.ToString())
+                                {
+                                    <div style="background-color: #9FE2FB; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Admitted
+                                    </div>            
                                 }
                                 else if (admission.Status == "Admitted")
                                 {
@@ -204,7 +211,43 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                        <li>
+                                        @if(admission.Status == PatientStatusEnum.PendingApproval.ToString())
+                                        {
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                    <span class="badge-dot bg-info"></span>
+                                                    View Profile
+                                                </a>
+                                            </li>
+                                            @* <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action("ApproveAssessment", "Admission", new { id = admission.PatientId })"
+                                                   onclick="return confirm('Are you sure you want to approve this assessment?');">
+                                                    <span class="badge-dot bg-warning"></span>
+                                                    Review Assessment
+                                                </a>
+                                            </li> *@
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                    href="@Url.Action("AdmitPatient", "Admission", new { patientId = admission.PatientId })">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    Admit Patient
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#transferModal-@admission.PatientId">
+                                                    <span class="badge-dot bg-success"></span>
+                                                    Transfer
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if(admission.Status == PatientStatusEnum.Admitted.ToString())
+                                        {
+                                            <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
                                                     <span class="badge-dot bg-info"></span>
                                                     View Profile
@@ -212,21 +255,22 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("AdmitPatient", "Admission", new { id = admission.PatientId })">
+                                                    href="@Url.Action("AdmitPatient", "Admission", new { patientId = admission.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Initial Assessment
+                                                    Edit Admission
                                                 </a>
                                             </li>
-                                           <li>
+                                            <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                 href="#"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#submitAssessmentModal"
                                                 onclick="document.getElementById('modalAssessmentId').value='@admission.PatientId'">
                                                     <span class="badge-dot bg-success"></span>
-                                                    Submit Assessment   
+                                                   Review Assessment
                                                 </a>
                                             </li>
+                                        }
                                     </ul>
                                 </div>
                             </td>
@@ -265,7 +309,58 @@
     </div>
 </div>
 
-@await Html.PartialAsync("_AddAppointmentModal")
+@* Per-row Transfer Modal (rendered server-side, populated with admission data) *@
+@foreach (var admission in Model)
+{
+<div class="modal fade" id="transferModal-@admission.PatientId" tabindex="-1" aria-labelledby="transferModalLabel-@admission.PatientId" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="Admission" asp-action="Transfer" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
+                    <h5 class="modal-title" id="transferModalLabel-@admission.PatientId">Transfer Patient - @admission.FullName</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    @* patient id (hidden) and read-only fields prefilled via Razor *@
+                    <input type="hidden" name="PatientId" value="@admission.PatientId" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Patient</label>
+                        <input type="text" class="form-control" value="@admission.FullName" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="receivingFacility-@admission.PatientId" class="form-label">Receiving Facility</label>
+                        <input type="text" id="receivingFacility-@admission.PatientId" name="ReceivingFacility" class="form-control" placeholder="Enter receiving facility" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="programType-@admission.PatientId" class="form-label">Type of Program</label>
+                        <select id="programType-@admission.PatientId" name="ProgramType" class="form-select" required>
+                            <option value="">--Select--</option>
+                            <option value="Outpatient Rehabilitation">Outpatient Rehabilitation</option>
+                            <option value="Community-Based">Community-Based</option>
+                            <option value="Inpatient">Inpatient</option>
+                            <option value="Residential">Residential</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="transferReason-@admission.PatientId" class="form-label">Reason for Transfer</label>
+                        <textarea id="transferReason-@admission.PatientId" name="Reason" class="form-control" rows="4" placeholder="Enter reason for transfer" required></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn-custom btn-next">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+}
 
 <style>
     .table-header {

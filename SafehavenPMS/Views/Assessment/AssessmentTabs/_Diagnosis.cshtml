@@ -47,11 +47,9 @@
                 <!-- New substance entry form -->
                 <div class="row align-items-end mb-2">
                     <div class="col-6">
-                        <label class="form-label">Name of substance</label>
                         <input type="text" class="form-control" id="newSubstanceName" />
                     </div>
                     <div class="col-5">
-                        <label class="form-label">Severity</label>
                         <select class="form-select" id="newSeverity">
                             <option value="">Select Severity</option>
                             <option value="Mild">Mild</option>
@@ -121,14 +119,12 @@
         div.className = 'row align-items-end mb-2 substance-entry';
         div.innerHTML = `
     <div class="col-6">
-        <label class="form-label">Name of substance</label>
         <input type="text" class="form-control" 
                name="Diagnosis.SubstanceUses[${index}].SubstanceName" 
                id="Diagnosis_SubstanceUses_${index}__SubstanceName"
                value="${substanceName}" />
     </div>
     <div class="col-5">
-        <label class="form-label">Severity</label>
         <select class="form-select" 
                 name="Diagnosis.SubstanceUses[${index}].Severity"
                 id="Diagnosis_SubstanceUses_${index}__Severity">

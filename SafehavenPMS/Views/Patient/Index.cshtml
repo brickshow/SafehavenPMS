@@ -174,9 +174,13 @@
                                             if (staff != null)
                                             {
                                                 <div class="d-flex align-items-center gap-1">
-                                                    <img src="@staff.ProfilePictureURL" alt="@staff.Firstname @staff.Lastname" class="staff-avatar" />
-                                                    <span class="small">@staff.Firstname @staff.Lastname</span>
-                                                </div>
+                                                @* native title for default browser tooltip + data-tooltip for styled CSS tooltip *@
+                                                <img src="@(string.IsNullOrEmpty(staff.ProfilePictureURL) ? Url.Content("~/images/default.png") : staff.ProfilePictureURL)"
+                                                    alt="@($"{staff.Firstname} {staff.Lastname}")"
+                                                    title="@($"{staff.Firstname} {staff.Lastname} - ({staff.Position})")"
+                                                    data-tooltip="@($"{staff.Firstname} {staff.Lastname}")"
+                                                    class="staff-avatar" />
+                                            </div>
                                             }
                                         }
                                     }
@@ -414,6 +418,44 @@
         border-radius: 50%;
         object-fit: cover;
         border: 1px solid #e9ecef;
+        position: relative;
+    }
+
+    /* Pure-CSS styled tooltip (no JavaScript) */
+    .staff-avatar[data-tooltip] {
+        /* keep relative for pseudo elements */
+        position: relative;
+        cursor: default;
+    }
+
+    .staff-avatar[data-tooltip]:hover::after {
+        content: attr(data-tooltip);                 /* read text from attribute */
+        position: absolute;
+        left: 50%;
+        bottom: 120%;                                /* place above the avatar */
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.75);
+        color: #fff;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 9999;
+        pointer-events: none;
+        opacity: 1;
+    }
+
+    .staff-avatar[data-tooltip]:hover::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: calc(120% - 6px);                    /* small arrow under tooltip */
+        transform: translateX(-50%);
+        border-width: 6px;
+        border-style: solid;
+        border-color: rgba(0,0,0,0.75) transparent transparent transparent;
+        z-index: 9999;
+        pointer-events: none;
     }
 </style>
 

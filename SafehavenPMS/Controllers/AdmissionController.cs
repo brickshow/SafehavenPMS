@@ -5,6 +5,8 @@ using SafehavenPMS.Data;
 using SafehavenPMS.Enum;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SafehavenPMS.Controllers
@@ -18,137 +20,242 @@ namespace SafehavenPMS.Controllers
             _context = context;
         }
 
+        // Action to list admissions or initial assessments with search, sort, paging
         public async Task<IActionResult> Index(string searchQuery, string status, string sortOrder, int page = 1, int pageSize = 10)
         {
-            var query = _context.Admissions
-                .Include(a => a.Patient)
-                .Where(a => a.Patient.PatientStatus == PatientStatusEnum.PendingApproval.ToString())
+            try
+            {
+            Console.WriteLine($"Index called: searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', page={page}, pageSize={pageSize}");
+
+            // Log patient status counts
+            var statusCounts = await _context.Patients
+                .GroupBy(p => p.PatientStatus)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+            Console.WriteLine("PatientStatusCounts:");
+            foreach (var sc in statusCounts) Console.WriteLine($"  Status='{sc.Status}' Count={sc.Count}");
+
+            // Base query with related data loaded
+            var query = _context.InitialAssessmentForms
+                .Include(iaf => iaf.Patient)
+                .Include(iaf => iaf.Diagnosis).ThenInclude(d => d.SubstanceUseEntries)
+                .Include(iaf => iaf.Recommendation)
                 .AsQueryable();
 
-            // --- SEARCH ---
+            // Show patients with PendingApproval OR Admitted status
+            var pendingApprovalStatus = PatientStatusEnum.PendingApproval.ToString();
+            var admittedStatus = PatientStatusEnum.Admitted.ToString();
+            Console.WriteLine("Filtering for PatientStatus = " + pendingApprovalStatus + " OR " + admittedStatus);
+
+            // Filter by patient status (PendingApproval OR Admitted)
+            query = query.Where(iaf => iaf.Patient != null &&
+                (iaf.Patient.PatientStatus == pendingApprovalStatus || iaf.Patient.PatientStatus == admittedStatus));
+
+            // Apply search
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
-                query = query.Where(a =>
-                    a.Patient.Firstname.Contains(searchQuery) ||
-                    a.Patient.Lastname.Contains(searchQuery));
+                var q = searchQuery.Trim();
+                Console.WriteLine($"Applying search filter: '{q}'");
+                query = query.Where(iaf =>
+                iaf.Patient.Firstname.Contains(q) ||
+                iaf.Patient.Lastname.Contains(q) ||
+                iaf.Patient.PatientId.ToString().Contains(q));
             }
 
-            // --- FILTER BY STATUS ---
-            if (!string.IsNullOrWhiteSpace(status))
+            // Apply sorting
+            if (sortOrder == "ascending")
             {
-                query = query.Where(a => a.status == status);
+                query = query.OrderBy(iaf => iaf.CompletedAt ?? iaf.CreatedAt);
+                Console.WriteLine("Sorting ascending by completed/created");
+            }
+            else
+            {
+                query = query.OrderByDescending(iaf => iaf.CompletedAt ?? iaf.CreatedAt);
+                Console.WriteLine("Sorting descending by completed/created");
             }
 
-            // --- SORT ---
-            query = sortOrder == "descending"
-                ? query.OrderByDescending(a => a.AdmissionDate)
-                : query.OrderBy(a => a.AdmissionDate);
-
-            // --- TOTAL COUNT for pagination ---
+            // Paging
             int totalCount = await query.CountAsync();
-            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            Console.WriteLine($"Query COUNT result: {totalCount}");
+            int totalPages = pageSize > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 1;
+            var currentPage = Math.Max(1, Math.Min(page, totalPages));
 
-            // --- PAGINATION ---
-            var admissions = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            var iafList = await query
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize > 0 ? pageSize : totalCount)
                 .ToListAsync();
 
-            // Set ViewBag for pending assessment count
-            ViewBag.PendingAssessment = await _context.Patients
-                .CountAsync(p => p.PatientStatus == PatientStatusEnum.PendingApproval.ToString());
+            Console.WriteLine($"Fetched iafList.Count = {iafList.Count}");
+            var iafIds = iafList.Select(i => i.InitialAssessmentFormId).ToList();
+            Console.WriteLine($"IAF ids: {string.Join(", ", iafIds)}");
 
-            ViewBag.TotalPatientCount = totalCount;
-            ViewBag.TotalPages = totalPages;
-            ViewBag.CurrentPage = page;
-            ViewBag.PageSize = pageSize;
-            ViewBag.SearchQuery = searchQuery;
-            ViewBag.Status = status;
-            ViewBag.SortOrder = sortOrder;
-
-            var model = admissions.Select(a => new AdmitPatientViewModel
+            // Map to view model using the already-included navigation properties
+            var model = iafList.Select(iaf =>
             {
-                AdmissionId = a.AdmissionId,
-                PatientId = a.PatientId ?? 0,
-                FullName = $"{a.Patient.Firstname} {a.Patient.Lastname}",
-                AdmissionDate = a.AdmissionDate,
-                CompletedDate = a.CreatedAt, // or use another date field if needed
-                IsDrugDependent = a.IsDrugDependent,
-                Diagnosis = a.Diagnosis ?? "-",
-                Recommendation = a.Recommendation ?? "-",
-                Status = a.status ?? "Pending"
+                var patient = iaf.Patient;
+
+                var diag = iaf.Diagnosis;
+                var substances = diag?.SubstanceUseEntries?
+                .Where(s => !string.IsNullOrWhiteSpace(s.SubstanceName))
+                .Select(s => s.SubstanceName.Trim())
+                .Distinct()
+                .ToList();
+
+                var diagnosisText = (substances != null && substances.Any())
+                ? string.Join(", ", substances)
+                : "-";
+
+                var rec = iaf.Recommendation;
+                string recommendationText = "-";
+                if (rec != null)
+                {
+                var pt = rec.ProgramType?.Trim();
+                if (!string.IsNullOrWhiteSpace(pt))
+                    recommendationText = pt;
+                }
+
+                Console.WriteLine($"IAF {iaf.InitialAssessmentFormId} -> DiagnosisId={(diag != null ? diag.DiagnosisId.ToString() : "null")}, SubstanceCount={(substances?.Count ?? 0)}, RecommendationId={(rec != null ? rec.RecommendationId.ToString() : "null")}");
+
+                return new AdmitPatientViewModel
+                {
+                PatientId = patient?.PatientId ?? 0,
+                FullName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "-",
+                CompletedDate = iaf.CompletedAt ?? iaf.UpdatedAt ?? iaf.CreatedAt,
+                Status = patient?.PatientStatus ?? "-",
+                Diagnosis = diagnosisText,
+                Recommendation = recommendationText
+                };
             }).ToList();
 
+            Console.WriteLine($"Model items: {model.Count}");
+            ViewBag.TotalPatientCount = model.Count;
+            ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == pendingApprovalStatus)?.Count ?? 0;
+            ViewBag.TotalAdmittedCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
+
             return View(model);
-        }
-
-        // Step 1: Search for patient with pending review
-        [HttpPost]
-        public async Task<IActionResult> SearchPatient(int searchQuery)
-        {
-            // searchQuery is PatientId from dropdown
-            var patient = await _context.Patients
-                .Include(p => p.ClinicalStaffPatients)
-                    .ThenInclude(csp => csp.ClinicalStaff)
-                .FirstOrDefaultAsync(p => p.PatientId == searchQuery &&
-                                          p.PatientStatus == Enum.PatientStatusEnum.PendingReview.ToString());
-
-            if (patient == null)
-                return View("AdmitPatient", new AdmitPatientViewModel());
-
-            var physician = patient.ClinicalStaffPatients
-                .Select(csp => csp.ClinicalStaff)
-                .FirstOrDefault();
-
-            var vm = new AdmitPatientViewModel
+            }
+            catch (Exception ex)
             {
-                PatientId = patient.PatientId,
-                FullName = $"{patient.Firstname} {patient.MiddleName} {patient.Lastname}".Trim(),
-                Sex = patient.Sex,
-                DOB = patient.DateOfBirth,
-                EducationalAttainment = patient.Education,
-                Occupation = patient.Occupation,
-                Religion = patient.Religion,
-                PhoneNumber = patient.PhoneNumber,
-                PhysicianId = physician?.ClinicalStaffID,
-                PhysicianName = physician != null ? $"{physician.Firstname} {physician.Lastname}" : ""
-            };
-
-            await PopulateClinicalStaffDropdowns();
-            return View("AdmitPatient", vm);
+            Console.WriteLine("AdmissionController.Index ERROR: " + ex);
+            Console.WriteLine($"  searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', page={page}, pageSize={pageSize}");
+            return View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
+            }
         }
 
+        // // SearchPatient: POST action to find a patient by id with PendingReview status
+        // [HttpPost]
+        // public async Task<IActionResult> SearchPatient(int searchQuery)
+        // {
+        //     // Find patient including their clinical staff assignments
+        //     var patient = await _context.Patients
+        //         .Include(p => p.ClinicalStaffPatients)
+        //             .ThenInclude(csp => csp.ClinicalStaff)
+        //         .FirstOrDefaultAsync(p => p.PatientId == searchQuery &&
+        //                                   p.PatientStatus == Enum.PatientStatusEnum.Ad.ToString()); // ensure status is PendingReview
 
-        public async Task<IActionResult> AdmitPatient()
+        //     if (patient == null)
+        //         return View("AdmitPatient", new AdmitPatientViewModel()); // return empty VM if not found
+
+        //     // Choose first associated physician if any
+        //     var physician = patient.ClinicalStaffPatients
+        //         .Select(csp => csp.ClinicalStaff)
+        //         .FirstOrDefault();
+
+        //     // Map patient data to AdmitPatientViewModel for the AdmitPatient view
+        //     var vm = new AdmitPatientViewModel
+        //     {
+        //         PatientId = patient.PatientId,
+        //         FullName = $"{patient.Firstname} {patient.MiddleName} {patient.Lastname}".Trim(),
+        //         Sex = patient.Sex,
+        //         DOB = patient.DateOfBirth,
+        //         EducationalAttainment = patient.Education,
+        //         Occupation = patient.Occupation,
+        //         Religion = patient.Religion,
+        //         PhoneNumber = patient.PhoneNumber,
+        //         PhysicianId = physician?.ClinicalStaffID,
+        //         PhysicianName = physician != null ? $"{physician.Firstname} {physician.Lastname}" : ""
+        //     };
+
+        //     await PopulateClinicalStaffDropdowns(); // fill dropdown lists for view
+        //     return View("AdmitPatient", vm); // return AdmitPatient view with VM
+        // }
+
+        // GET: AdmitPatient page to show dropdown of patients with PendingReview
+        [HttpGet]
+        public async Task<IActionResult> AdmitPatient(int patientId)
         {
-            // Fetch all patients with PendingReview status
-            var patients = await _context.Patients
-                .Where(p => p.PatientStatus == Enum.PatientStatusEnum.PendingReview.ToString())
-                .ToListAsync();
+            // Populate clinical staff dropdowns used by the view
+            await PopulateClinicalStaffDropdowns();
 
-            // Populate ViewBag for dropdown
-            ViewBag.PatientList = new SelectList(
-                patients.Select(p => new
+            // Get patients with PendingReview status for selection list
+            var patients = await _context.Patients.FirstOrDefaultAsync(i => i.PatientId == patientId);
+
+            var vm = new AdmitPatientViewModel();
+
+            if (patientId > 0)
+            {
+                // Load patient and their clinical-staff associations
+                var patient = await _context.Patients
+                    .Include(p => p.ClinicalStaffPatients)
+                        .ThenInclude(csp => csp.ClinicalStaff)
+                    .FirstOrDefaultAsync(p => p.PatientId == patientId);
+
+                // Calculate age from DoB (use helper)
+                var ageText = CalculateAge(patient?.DateOfBirth);
+
+                if (patient != null)
                 {
-                    p.PatientId,
-                    FullName = $"{p.Firstname} {p.Lastname}"
-                }),
-                "PatientId",
-                "FullName"
-            );
+                    vm.PatientId = patient.PatientId;
+                    vm.FullName = $"{patient.Firstname} {patient.MiddleName} {patient.Lastname}".Trim();
+                    vm.Sex = patient.Sex;
+                    vm.Age = ageText;
+                    vm.EducationalAttainment = patient.Education;
+                    vm.Occupation = patient.Occupation;
+                    vm.Religion = patient.Religion;
+                    vm.PhoneNumber = patient.PhoneNumber;
+                    vm.Address = string.IsNullOrWhiteSpace(patient.Address) ? "-" : patient.Address;
 
-            // Always provide a non-null model
-            return View(new AdmitPatientViewModel());
+                    // Prefill per-role selects from ClinicalStaffPatients join entries (if present)
+                    vm.PhysicianId = patient.ClinicalStaffPatients?
+                        .Where(c => c.ClinicalStaff != null && c.ClinicalStaff.Position == "Physician")
+                        .Select(c => c.ClinicalStaff.ClinicalStaffID)
+                        .FirstOrDefault();
+
+
+
+                    // Provide a readable physician name for the read-only field in the view
+                    var physician = patient.ClinicalStaffPatients?
+                        .Select(c => c.ClinicalStaff)
+                        .FirstOrDefault(s => s != null && s.Position == "Physician")
+                        ?? patient.ClinicalStaffPatients?.Select(c => c.ClinicalStaff).FirstOrDefault();
+
+                    if (physician != null)
+                        vm.PhysicianName = $"{physician.Firstname} {physician.Lastname}";
+                }
+            }
+
+            return View(vm);
         }
 
+         private string CalculateAge(DateTime? dob)
+        {
+            if (!dob.HasValue) return "-";
+            var today = DateTime.Today;
+            int years = today.Year - dob.Value.Year;
+            // if birthday hasn't occurred yet this year, subtract one
+            if (dob.Value.Date > today.AddYears(-years)) years--;
+            if (years < 0) years = 0;
+            return years.ToString();
+        }
 
+        // POST: AdmitPatient - create an admission for a patient
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdmitPatient(AdmitPatientViewModel model)
         {
-            // 1. Validate model
             if (!ModelState.IsValid)
             {
-                foreach (var state in ModelState)
+                foreach (var state in ModelState) // log each validation error
                 {
                     var key = state.Key;
                     foreach (var error in state.Value.Errors)
@@ -156,18 +263,38 @@ namespace SafehavenPMS.Controllers
                         Console.WriteLine($"Field: {key}, Error: {error.ErrorMessage}");
                     }
                 }
-                // Repopulate dropdowns for clinical staff if needed
+                await PopulateClinicalStaffDropdowns(); // repopulate dropdowns for redisplay
+                return View(model); // return view with validation messages
+            }
+
+            var patient = await _context.Patients
+                .Include(p => p.ClinicalStaffPatients)
+                .Include(i => i.InitialAssessmentForms)
+                    .ThenInclude(r => r.Recommendation)
+                .FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+
+            if (patient == null)
+            {
+                ModelState.AddModelError("", "Patient not found.");
                 await PopulateClinicalStaffDropdowns();
                 return View(model);
             }
 
-            // 2. Map ViewModel to Admission model
-            // Proceed to save admission
+            // Generate next CaseId "CASE-000001"
+            var newCaseId = await GenerateNextCaseIdAsync();
+
+            //Get the program type
+            var ProgramType = patient.InitialAssessmentForms?
+                .OrderByDescending(iaf => iaf.CreatedAt)
+                .FirstOrDefault()?
+                .Recommendation?.ProgramType ?? "-";
+
+            // Build admission entity
             var admission = new Admission
             {
+                CaseId = newCaseId,
                 PatientId = model.PatientId,
                 PhysicianId = model.PhysicianId,
-                PsychiatristId = model.PsychiatristId,
                 PsychologistId = model.PsychologistId,
                 PsychometricianId = model.PsychometricianId,
                 SocialWorkerId = model.SocialWorkerId,
@@ -179,38 +306,94 @@ namespace SafehavenPMS.Controllers
                 ActivatePortal = model.ActivatePortal,
                 AdmissionDate = DateTime.Now,
                 CreatedAt = DateTime.Now,
-                CreatedBy = "System", // Replace with logged-in user
-                status = Enum.AdmissionStatus.Active.ToString()
+                CreatedBy = User?.Identity?.Name ?? "System",
+                Status = AdmissionStatus.Active.ToString(),
+                ProgramType = ProgramType,
+                CurrentFacility = "Safehaven Rehabilitation Center" // default facility on admission
             };
 
-            var patient = await _context.Patients.FirstOrDefaultAsync(s => s.PatientId == model.PatientId);
-
-            if (patient == null)
+            // Use transaction to ensure consistency when creating admission + clinical staff link + updating patient
+            using (var tx = await _context.Database.BeginTransactionAsync())
             {
-                ModelState.AddModelError("", "Patient not found.");
-                await PopulateClinicalStaffDropdowns();
-                return View(model);
+                try
+                {
+                    // Add ClinicalStaffPatient entries for selected roles (avoid duplicates)
+                    var staffIds = new int?[]
+                    {
+                        model.PhysicianId,
+                        model.PsychologistId,
+                        model.PsychometricianId,
+                        model.SocialWorkerId,
+                        model.RecoveryCoachId
+                    }.Where(id => id.HasValue).Select(id => id!.Value).Distinct();
+
+                    foreach (var staffId in staffIds)
+                    {
+                        var exists = await _context.ClinicalStaffPatients
+                            .AnyAsync(csp => csp.PatientId == patient.PatientId && csp.ClinicalStaffId == staffId);
+
+                        if (!exists)
+                        {
+                            _context.ClinicalStaffPatients.Add(new ClinicalStaffPatient
+                            {
+                                PatientId = patient.PatientId,
+                                ClinicalStaffId = staffId
+                            });
+                        }
+                    }
+
+                    // Update patient status
+                    patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
+                    _context.Patients.Update(patient);
+
+                    // Add admission record
+                    _context.Admissions.Add(admission);
+
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error admitting patient: " + ex);
+                    await tx.RollbackAsync();
+                    ModelState.AddModelError("", "Unable to admit patient. Please try again.");
+                    await PopulateClinicalStaffDropdowns();
+                    return View(model);
+                }
             }
 
-
-            //Update patient Status into active
-            patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
-
-            // 3. Save to database
-            _context.Patients.Update(patient);
-            _context.Admissions.Add(admission);
-            await _context.SaveChangesAsync();
-
-            // 4. Redirect or return success message
             TempData["SuccessMessage"] = $"Patient {model.FullName} admitted successfully!";
-            return RedirectToAction("Index"); // or wherever you want to go
+            return RedirectToAction("Index");
         }
 
-        // Helper to populate staff dropdowns in case of validation failure
+        // helper to produce next CaseId in the format CASE-000001
+        private async Task<string> GenerateNextCaseIdAsync()
+        {
+            // find the maximum numeric suffix used so far
+            var lastCase = await _context.Admissions
+                .Where(a => !string.IsNullOrEmpty(a.CaseId) && a.CaseId.StartsWith("CASE-"))
+                .Select(a => a.CaseId)
+                .OrderByDescending(c => c)
+                .FirstOrDefaultAsync();
+
+            int next = 1;
+            if (!string.IsNullOrWhiteSpace(lastCase) && lastCase.Length >= 6)
+            {
+                var suffix = lastCase.Substring(5);
+                if (int.TryParse(suffix, out var parsed))
+                {
+                    next = parsed + 1;
+                }
+            }
+            return $"CASE-{next:000000}";
+        }
+
+        // Helper to populate clinical staff dropdowns used across views
         private async Task PopulateClinicalStaffDropdowns()
         {
-            var allStaff = await _context.ClinicalStaffs.ToListAsync();
+            var allStaff = await _context.ClinicalStaffs.ToListAsync(); // get all staff
 
+            // Create ViewBag.Physicians list filtered by Position
             ViewBag.Physicians = allStaff
                .Where(s => s.Position == "Physician")
                .Select(s => new SelectListItem
@@ -219,62 +402,69 @@ namespace SafehavenPMS.Controllers
                    Text = s.Firstname + " " + s.Lastname
                }).ToList();
 
+            // Create ViewBag.Psychiatrists
             ViewBag.Psychiatrists = allStaff
                 .Where(s => s.Position == "Psychiatrist")
                 .Select(s => new SelectListItem
                 {
-                    Value = s.ClinicalStaffID.ToString(),
-                    Text = s.Firstname + " " + s.Lastname
+                   Value = s.ClinicalStaffID.ToString(),
+                   Text = s.Firstname + " " + s.Lastname
                 }).ToList();
 
+            // Create ViewBag.Psychologists
             ViewBag.Psychologists = allStaff
                 .Where(s => s.Position == "Psychologist")
                 .Select(s => new SelectListItem
                 {
-                    Value = s.ClinicalStaffID.ToString(),
-                    Text = s.Firstname + " " + s.Lastname
+                   Value = s.ClinicalStaffID.ToString(),
+                   Text = s.Firstname + " " + s.Lastname
                 }).ToList();
 
+            // Create ViewBag.Psychometricians
             ViewBag.Psychometricians = allStaff
                 .Where(s => s.Position == "Psychometrician")
                 .Select(s => new SelectListItem
                 {
-                    Value = s.ClinicalStaffID.ToString(),
-                    Text = s.Firstname + " " + s.Lastname
+                   Value = s.ClinicalStaffID.ToString(),
+                   Text = s.Firstname + " " + s.Lastname
                 }).ToList();
 
+            // Create ViewBag.SocialWorkers
             ViewBag.SocialWorkers = allStaff
                 .Where(s => s.Position == "Social Worker")
                 .Select(s => new SelectListItem
                 {
-                    Value = s.ClinicalStaffID.ToString(),
-                    Text = s.Firstname + " " + s.Lastname
+                   Value = s.ClinicalStaffID.ToString(),
+                   Text = s.Firstname + " " + s.Lastname
                 }).ToList();
 
+            // Create ViewBag.RecoveryCoaches
             ViewBag.RecoveryCoaches = allStaff
                 .Where(s => s.Position == "Recovery Coach")
                 .Select(s => new SelectListItem
                 {
-                    Value = s.ClinicalStaffID.ToString(),
-                    Text = s.Firstname + " " + s.Lastname
+                   Value = s.ClinicalStaffID.ToString(),
+                   Text = s.Firstname + " " + s.Lastname
                 }).ToList();
         }
 
+        // GET: Edit admission by id
         public async Task<IActionResult> Edit(int id)
         {
             var admission = await _context.Admissions
-                .Include(a => a.Patient) // include patient for FullName, DOB, etc.
-                .FirstOrDefaultAsync(a => a.AdmissionId == id);
+                .Include(a => a.Patient) // include patient to show related info
+                .FirstOrDefaultAsync(a => a.AdmissionId == id); // find admission by id
 
             if (admission == null)
             {
-                return NotFound();
+                return NotFound(); // return 404 if not found
             }
 
+            // Map admission and patient details to view model
             var vm = new AdmitPatientViewModel
             {
                 AdmissionId = admission.AdmissionId,
-                PatientId = admission.PatientId ?? 0,
+                PatientId = admission.PatientId,
                 FullName = $"{admission.Patient.Firstname} {admission.Patient.Lastname}",
                 DOB = admission.Patient.DateOfBirth,
                 EducationalAttainment = admission.Patient.Education,
@@ -282,15 +472,7 @@ namespace SafehavenPMS.Controllers
                 Religion = admission.Patient.Religion,
                 PhoneNumber = admission.Patient.PhoneNumber,
 
-                // Staff assignments
-                PhysicianId = admission.PhysicianId,
-                PsychiatristId = admission.PsychiatristId,
-                PsychologistId = admission.PsychologistId,
-                PsychometricianId = admission.PsychometricianId,
-                SocialWorkerId = admission.SocialWorkerId,
-                RecoveryCoachId = admission.RecoveryCoachId,
-
-                // Family Info
+                // Family info fields
                 FamilyName = admission.FamilyName,
                 FamilyRelationship = admission.FamilyRelationship,
                 FamilyPhone = admission.FamilyPhone,
@@ -298,83 +480,104 @@ namespace SafehavenPMS.Controllers
                 ActivatePortal = admission.ActivatePortal
             };
 
-            // populate dropdowns (just like AdmitPatient)
-            await PopulateClinicalStaffDropdowns();
-
-            return View(vm);
+            await PopulateClinicalStaffDropdowns(); // populate dropdowns for view
+            return View(vm); // return edit view with VM
         }
 
-
+        // POST: Edit admission
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, AdmitPatientViewModel model)
         {
-            // Check if model binding/validation passed (required fields, etc.)
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) // validate model
             {
-                // Repopulate dropdowns again because ViewBags get cleared on postback
-                await PopulateClinicalStaffDropdowns();
-
-                // Return the same view with validation errors and filled model
-                return View(model);
+                await PopulateClinicalStaffDropdowns(); // repopulate dropdowns for redisplay
+                return View(model); // return view with validation errors
             }
 
-            // Fetch the admission record from database using AdmissionId
+            // Load admission including patient in case patient fields need to be updated
             var admission = await _context.Admissions
-                .Include(a => a.Patient) // include Patient entity so we can update patient info if needed
+                .Include(a => a.Patient)
                 .FirstOrDefaultAsync(a => a.AdmissionId == id);
 
-            // If no record found, return 404 Not Found
             if (admission == null)
             {
-                return NotFound();
+                return NotFound(); // admission not found
             }
 
-            // ===== Update Admission fields with values from the form =====
-            admission.PhysicianId = model.PhysicianId;                 // Update Physician
-            admission.PsychiatristId = model.PsychiatristId;           // Update Psychiatrist
-            admission.PsychologistId = model.PsychologistId;           // Update Psychologist
-            admission.PsychometricianId = model.PsychometricianId;     // Update Psychometrician
-            admission.SocialWorkerId = model.SocialWorkerId;           // Update Social Worker
-            admission.RecoveryCoachId = model.RecoveryCoachId;         // Update Recovery Coach
+            // Update admission fields from posted model
+            admission.FamilyName = model.FamilyName;
+            admission.FamilyRelationship = model.FamilyRelationship;
+            admission.FamilyPhone = model.FamilyPhone;
+            admission.FamilyEmail = model.FamilyEmail;
+            admission.ActivatePortal = model.ActivatePortal;
 
-            // Family / payer information
-            admission.FamilyName = model.FamilyName;                   // Update Family Contact Name
-            admission.FamilyRelationship = model.FamilyRelationship;   // Update Relationship to Patient
-            admission.FamilyPhone = model.FamilyPhone;                 // Update Contact Phone
-            admission.FamilyEmail = model.FamilyEmail;                 // Update Contact Email
-            admission.ActivatePortal = model.ActivatePortal;           // Update whether Family Portal is active
-
-            // ===== OPTIONAL: Update Patient fields if you want them editable =====
+            // Optional: update patient fields if desired (commented out)
             // admission.Patient.Occupation = model.Occupation;
             // admission.Patient.Religion = model.Religion;
             // admission.Patient.PhoneNumber = model.PhoneNumber;
 
             try
             {
-                // Mark the admission as modified in EF and save changes
-                _context.Update(admission);
-                await _context.SaveChangesAsync();
+                _context.Update(admission); // mark admission modified
+                await _context.SaveChangesAsync(); // save changes to DB
 
-                // Show success message after saving
-                TempData["SuccessMessage"] = "Admission updated successfully!";
+                TempData["SuccessMessage"] = "Admission updated successfully!"; // success message
             }
             catch (DbUpdateException ex)
             {
-                // Handle database update errors (e.g., SQL constraint violation)
-                ModelState.AddModelError("", "Unable to save changes. Please try again.");
-
-                // Log error for debugging
-                Console.WriteLine(ex);
-
-                // Repopulate dropdowns again so view doesn’t break
-                await PopulateClinicalStaffDropdowns();
-
-                // Return view with error
-                return View(model);
+                ModelState.AddModelError("", "Unable to save changes. Please try again."); // show generic error
+                Console.WriteLine(ex); // log exception
+                await PopulateClinicalStaffDropdowns(); // repopulate dropdowns for view
+                return View(model); // return view with error
             }
 
-            // Redirect back to the list of admissions (Index) after success
+            return RedirectToAction("Index"); // redirect to list after success
+        }
+
+        // POST: Transfer patient to another facility
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Transfer(AdmitPatientViewModel model)
+        {
+            if (!ModelState.IsValid) return RedirectToAction("Index");
+
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1) insert transfer audit
+                var transfer = new PatientTransfer
+                {
+                    PatientId = model.PatientId,
+                    FromFacility = "Safehaven Rehabilitation Center", // read from admission or pass in form
+                    ToFacility = model.ReceivingFacility,
+                    ProgramType = model.ProgramType,
+                    Reason = model.Reason,
+                    CreatedBy = User.Identity.Name
+                };
+                _context.PatientTransfers.Add(transfer);
+                await _context.SaveChangesAsync();
+
+                // 2) update admission current info
+                var admission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+                if (admission != null)
+                {
+                    admission.CurrentFacility = model.ReceivingFacility;   // example field
+                    admission.ProgramType = model.ProgramType;             // optional
+                    admission.Status = "Transferred";                      // or appropriate enum
+                    _context.Admissions.Update(admission);
+                    await _context.SaveChangesAsync();
+                }
+
+                await tx.CommitAsync();
+                TempData["SuccessMessage"] = "Transfer saved.";
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                TempData["Error"] = "Unable to save transfer.";
+            }
+
             return RedirectToAction("Index");
         }
     }

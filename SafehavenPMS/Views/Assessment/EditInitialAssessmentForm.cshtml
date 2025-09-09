@@ -254,3 +254,39 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tabContainer = document.getElementById('assessmentTabs');
+        const tabContent = document.getElementById('assessmentTabContent');
+        const TAB_KEY = 'assessmentActiveTab';
+
+        // --- Restore last active tab ---
+        const lastTabId = localStorage.getItem(TAB_KEY);
+        if (lastTabId) {
+            // Remove active class from all nav-links and tab-panes
+            tabContainer.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+            tabContent.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+
+            // Activate the stored tab
+            const navLink = tabContainer.querySelector(`[data-bs-target="${lastTabId}"]`);
+            const tabPane = tabContent.querySelector(lastTabId);
+            if (navLink && tabPane) {
+                navLink.classList.add('active');
+                tabPane.classList.add('show', 'active');
+            }
+        }
+
+        // --- Listen for tab changes ---
+        tabContainer.querySelectorAll('.nav-link').forEach(nav => {
+            nav.addEventListener('click', function () {
+                const target = nav.getAttribute('data-bs-target');
+                if (target) {
+                    localStorage.setItem(TAB_KEY, target);
+                }
+            });
+        });
+    });
+</script>
