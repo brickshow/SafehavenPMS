@@ -1,0 +1,81 @@
+@model SafehavenPMS.ViewModel.PsychiatricAssessmentViewModel
+
+<form asp-action="SavingHistoryOfPresent" asp-controller="PsychiatricAssessment" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="PatientId" />
+    
+    <div class="chief-container">
+        <h5 class="chief-title">History Of Present Illness</h5>
+
+        <div class="form-group">
+            <textarea id="HistoryOfPresentIllness" asp-for="HistoryOfPresentIllness" class="form-control chief-textarea"
+                      placeholder="Enter history of present illness..." rows="10">@Model.HistoryOfPresentIllness</textarea>
+        </div>
+
+        <div class="save-wrap">
+            <button type="submit" class="btn btn-next">SAVE</button>
+        </div>
+    </div>
+</form>
+
+<style>
+    .chief-container {
+        padding: 18px 20px;
+    }
+
+    .chief-title {
+        color: #0b6b6b; /* teal heading */
+        font-weight: 600;
+        margin-bottom: 12px;
+        font-size: 16px;
+    }
+
+    .chief-textarea {
+        width: 100%;
+        min-height: 220px;
+        border: 1px solid #d6d6d6;
+        border-radius: 4px;
+        padding: 14px;
+        resize: vertical;
+        box-shadow: none;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .chief-textarea:focus {
+        outline: none;
+        border-color: rgba(11,107,107,0.8);
+        box-shadow: 0 0 0 3px rgba(11,107,107,0.06);
+    }
+
+    .save-wrap {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 18px;
+    }
+
+    .save-btn {
+        background: #0b6b6b;
+        color: #fff;
+        padding: 10px 44px;
+        border: none;
+        border-radius: 2px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.18);
+        letter-spacing: 1px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .save-btn:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0 rgba(0,0,0,0.18);
+    }
+
+    /* responsive small screens */
+    @@media (max-width: 576px) {
+        .save-btn {
+            padding: 10px 24px;
+            font-size: 14px;
+        }
+    }
+</style>

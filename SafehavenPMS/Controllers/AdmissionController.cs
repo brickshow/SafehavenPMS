@@ -351,6 +351,19 @@ namespace SafehavenPMS.Controllers
                     // Add admission record
                     _context.Admissions.Add(admission);
 
+                    // Prepopulate Psychiatric fields
+                    var psychiatricAssessment = new PsychiatricAssessment
+                    {
+                        PatientId = patient.PatientId,
+                        Type = "Psychiatric Assessment",
+                        Date = DateTime.Now,
+                        Time = DateTime.Now.ToString("hh:mm tt"),
+                        Status = "Pending",
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User?.Identity?.Name ?? "System"
+                    };
+                    _context.PsychiatricAssessments.Add(psychiatricAssessment);
+
                     await _context.SaveChangesAsync();
                     await tx.CommitAsync();
                 }

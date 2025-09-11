@@ -1,0 +1,328 @@
+@model SafehavenPMS.ViewModel.PsychiatricAssessmentViewModel
+
+@{
+    ViewBag.Title = "Psychiatric Assessment";
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="@Url.Action("Index")" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+     @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["SuccessMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" id="errorToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["Error"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+
+<!-- Header spans full width above the tablature -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4" style="border-radius:6px;">
+            <div class="card-body p-4">
+                <div class="row g-0 align-items-center justify-content-between">
+                    <!-- Photo + Name -->
+                    <div class="col-auto d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <div class="rounded-circle bg-secondary" style="width:58px;height:58px;overflow:hidden;">
+                                <img src="~/Images/default.png" alt="Patient Photo"
+                                    style="width:100%;height:100%;object-fit:cover;" />
+                            </div>
+                            <div class="position-absolute bottom-0 end-0 rounded-circle bg-success d-flex align-items-center justify-content-center"
+                                style="width:20px;height:20px;">
+                                <i class="bx bx-smile text-white" style="font-size:12px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">@Model.FullName</h5>
+                            <small class="text-muted">Patient No. @Model.PatientId</small>
+                        </div>
+                    </div>
+
+                    <!-- Patient Info Grid -->
+                    <div class="col">
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Age</div>
+                                <div class="fw-semibold">@Model.Age</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Sex</div>
+                                <div class="fw-semibold">@Model.Sex</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Occupation</div>
+                                <div class="fw-semibold">@Model.Occupation</div>
+                            </div>
+                            <div class="col-6 col-md-3 mb-2 mb-md-0 d-flex flex-column justify-content-start">
+                                <div class="text-muted small">Address</div>
+                                <div class="fw-semibold">@Model.Address</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-1 shadow">
+    <!-- Left side vertical navigation -->
+     <div class="col-md-2">
+        <div class="nav flex-column nav-tabs assessment-tabs" id="assessmentTabs" role="tablist" aria-orientation="vertical">
+            <button class="nav-link active text-start" id="chief-complaint-tab" data-bs-toggle="tab" data-bs-target="#chief-complaint" type="button" role="tab" aria-controls="chief-complaint" aria-selected="true">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Chief Complaint</span>
+                </div>
+            </button>
+
+            <button class="nav-link text-start" id="history-present-tab" data-bs-toggle="tab" data-bs-target="#history-present" type="button" role="tab" aria-controls="history-present" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>History of Present Illness</span>
+                </div>
+            </button>
+
+            <button class="nav-link text-start" id="personal-family-tab" data-bs-toggle="tab" data-bs-target="#personal-family" type="button" role="tab" aria-controls="personal-family" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Personal and Family</span>
+                </div>
+            </button>
+
+            <button class="nav-link text-start" id="mental-status-tab" data-bs-toggle="tab" data-bs-target="#mental-status" type="button" role="tab" aria-controls="mental-status" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Mental Status</span>
+                </div>
+            </button>
+
+            <button class="nav-link text-start" id="impression-tab" data-bs-toggle="tab" data-bs-target="#impression" type="button" role="tab" aria-controls="impression" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Impression</span>
+                </div>
+            </button>
+
+            <button class="nav-link text-start" id="diagnosis-tab" data-bs-toggle="tab" data-bs-target="#diagnosis" type="button" role="tab" aria-controls="diagnosis" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Diagnosis</span>
+                </div>
+            </button>
+
+            <button class="nav-link text-start" id="problem-list-tab" data-bs-toggle="tab" data-bs-target="#problem-list" type="button" role="tab" aria-controls="problem-list" aria-selected="false">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Problem List</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Right side content area -->
+    <div class="col-md-10">
+        <div class="tab-content" id="assessmentTabContent">
+            <div class="tab-pane fade show active" id="chief-complaint" role="tabpanel">
+                @await Html.PartialAsync("PsyAssessmentTabs/_ChiefComplaint", Model)
+            </div>
+            <div class="tab-pane fade" id="history-present" role="tabpanel">
+                @await Html.PartialAsync("PsyAssessmentTabs/_HistoryOfPresent", Model)
+            </div>
+            <div class="tab-pane fade" id="personal-family" role="tabpanel">
+                @await Html.PartialAsync("PsyAssessmentTabs/_PersonalFamily", Model)
+            </div>
+            <div class="tab-pane fade" id="mental-status" role="tabpanel">
+                @await Html.PartialAsync("PsyAssessmentTabs/_MentalStatus", Model)
+            </div>
+            <div class="tab-pane fade" id="impression" role="tabpanel">
+                @await Html.PartialAsync("PsyAssessmentTabs/_Impression", Model)
+            </div>
+            <div class="tab-pane fade" id="diagnosis" role="tabpanel">
+                @await Html.PartialAsync("PsyAssessmentTabs/_Diagnosis", Model)
+            </div>
+            <div class="tab-pane fade" id="problem-list" role="tabpanel">
+                @await Html.PartialAsync("PsyAssessmentTabs/_ProblemList", Model)
+            </div>
+        </div>
+    </div>
+
+
+<style>
+    /* Visual adjustments to mimic the tablature look */
+    .table thead th {
+        border-bottom: none;
+        background: transparent;
+    }
+
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #cfecec;
+    }
+
+    .btn-outline-danger {
+        border-color: #ef5a5a;
+        color: #ef5a5a;
+    }
+
+    .btn-outline-danger:hover {
+        background: #ef5a5a;
+        color: #fff;
+    }
+
+    /* Minor spacing */
+    .list-group .list-group-item,
+    .nav-pills .nav-link {
+        padding: 12px 14px;
+        cursor: pointer;
+    }
+
+    .fw-semibold {
+        font-weight: 600;
+    }
+
+    /* Vertical tabs styling */
+    .assessment-tabs {
+        border: none;
+        height: 100%;
+    }
+
+    .assessment-tabs .nav-link {
+        border: none;
+        border-radius: 0;
+        margin-bottom: 2px;
+        text-align: left;
+        padding: 12px 15px;
+        color: #495057;
+        background-color: #fff;
+        transition: all 0.2s ease;
+        width: 100%;
+        position: relative;
+    }
+
+    .assessment-tabs .nav-link .d-flex {
+        position: relative;
+    }
+
+    .assessment-tabs .nav-link .tab-indicator {
+        width: 4px;
+        position: absolute;
+        left: -15px;
+        top: 0;
+        bottom: 0;
+        background-color: transparent;
+        transition: background-color 0.2s ease;
+    }
+
+    .assessment-tabs .nav-link:hover {
+        background-color: #f8f9fa;
+    }
+
+    .assessment-tabs .nav-link.active {
+        background-color: #006d77;
+        color: #fff;
+    }
+
+    .assessment-tabs .nav-link.active .tab-indicator {
+        background-color: #00a3b5;
+    }
+
+    .assessment-tabs .nav-link span {
+        margin-left: 10px;
+        font-size: 0.95rem;
+    }
+
+    .tab-content {
+        background: #fff;
+        border: 1px solid #eee;
+        min-height: 500px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tabContainer = document.getElementById('assessmentTabs');
+        const tabContent = document.getElementById('assessmentTabContent');
+        const TAB_KEY = 'assessmentActiveTab';
+
+        // --- Restore last active tab ---
+        const lastTabId = localStorage.getItem(TAB_KEY);
+        if (lastTabId) {
+            // Remove active class from all nav-links and tab-panes
+            tabContainer.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+            tabContent.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+
+            // Activate the stored tab
+            const navLink = tabContainer.querySelector(`[data-bs-target="${lastTabId}"]`);
+            const tabPane = tabContent.querySelector(lastTabId);
+            if (navLink && tabPane) {
+                navLink.classList.add('active');
+                tabPane.classList.add('show', 'active');
+            }
+        }
+
+        // --- Listen for tab changes ---
+        tabContainer.querySelectorAll('.nav-link').forEach(nav => {
+            nav.addEventListener('click', function () {
+                const target = nav.getAttribute('data-bs-target');
+                if (target) {
+                    localStorage.setItem(TAB_KEY, target);
+                }
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var successToastEl = document.getElementById('successToast');
+        if (successToastEl) {
+            var successToast = new bootstrap.Toast(successToastEl);
+            successToast.show();
+        }
+
+        var errorToastEl = document.getElementById('errorToast');
+        if (errorToastEl) {
+            var errorToast = new bootstrap.Toast(errorToastEl);
+            errorToast.show();
+        }
+
+    });
+
+        document.getElementById('deleteConfirmModal').addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var staffId = button.getAttribute('data-id');
+        document.getElementById('staffIdToDelete').value = staffId;
+    });
+</script>

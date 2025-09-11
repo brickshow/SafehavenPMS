@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250906152920_kjhjh")]
-    partial class kjhjh
+    [Migration("20250911034203_djfhsgjdfusdfsdfdfgasdasdasdsdsdfsdfsdfsdasdldjfh")]
+    partial class djfhsgjdfusdfsdfdfgasdasdasdsdsdfsdfsdfsdasdldjfh
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -91,6 +91,12 @@ namespace SafehavenPMS.Migrations
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CaseId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ClinicalStaffID")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -98,14 +104,15 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Diagnosis")
+                    b.Property<string>("CurrentFacility")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Endedby")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("EndedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("FamilyEmail")
                         .HasMaxLength(100)
@@ -123,9 +130,6 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool>("IsDrugDependent")
-                        .HasColumnType("bit");
-
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
@@ -135,8 +139,8 @@ namespace SafehavenPMS.Migrations
                     b.Property<int?>("PhysicianId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PsychiatristId")
-                        .HasColumnType("int");
+                    b.Property<string>("ProgramType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("PsychologistId")
                         .HasColumnType("int");
@@ -144,14 +148,15 @@ namespace SafehavenPMS.Migrations
                     b.Property<int?>("PsychometricianId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Recommendation")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("RecoveryCoachId")
                         .HasColumnType("int");
 
                     b.Property<int?>("SocialWorkerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -160,18 +165,15 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("status")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("AdmissionId");
+
+                    b.HasIndex("ClinicalStaffID");
 
                     b.HasIndex("PatientId");
 
                     b.HasIndex("PatientId1");
 
                     b.HasIndex("PhysicianId");
-
-                    b.HasIndex("PsychiatristId");
 
                     b.HasIndex("PsychologistId");
 
@@ -297,7 +299,12 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("ClinicalStaffId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("AdmissionId")
+                        .HasColumnType("int");
+
                     b.HasKey("PatientId", "ClinicalStaffId");
+
+                    b.HasIndex("AdmissionId");
 
                     b.HasIndex("ClinicalStaffId");
 
@@ -487,7 +494,7 @@ namespace SafehavenPMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InitialAssessmentFormId"));
 
-                    b.Property<DateTime>("CompletedAt")
+                    b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -529,6 +536,9 @@ namespace SafehavenPMS.Migrations
                     b.Property<string>("Affiliation")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CouncilorImpression")
                         .HasColumnType("nvarchar(max)");
 
@@ -537,12 +547,6 @@ namespace SafehavenPMS.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("DateOfReferral")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("IntakeStatus")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OtherFamilyDetails")
@@ -563,6 +567,12 @@ namespace SafehavenPMS.Migrations
 
                     b.Property<string>("ReferredBy")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("IntakeFormsId");
@@ -1121,6 +1131,48 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("Patients");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.PatientTransfer", b =>
+                {
+                    b.Property<int>("TransferId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransferId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FromFacility")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProgramType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ToFacility")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TransferDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("TransferId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("PatientTransfers");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.PhysicalExam", b =>
                 {
                     b.Property<int>("PhysicalExamId")
@@ -1246,6 +1298,66 @@ namespace SafehavenPMS.Migrations
                     b.HasIndex("InitialAssessmentFormId");
 
                     b.ToTable("ProblemLists");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.PsychiatricAssessment", b =>
+                {
+                    b.Property<int>("PsychiatricAssessmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PsychiatricAssessmentId"));
+
+                    b.Property<string>("ChiefComplaint")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HistoryOfPresentIllness")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Impression")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MentalStatusExamination")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PersonalAndFamilyHistory")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Time")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PsychiatricAssessmentId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("PsychiatricAssessments");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Recommendation", b =>
@@ -1393,6 +1505,10 @@ namespace SafehavenPMS.Migrations
 
             modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>
                 {
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
+                        .WithMany()
+                        .HasForeignKey("ClinicalStaffID");
+
                     b.HasOne("SafehavenPMS.Models.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
@@ -1403,37 +1519,39 @@ namespace SafehavenPMS.Migrations
                         .WithMany("Admissions")
                         .HasForeignKey("PatientId1");
 
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "Physician")
                         .WithMany()
-                        .HasForeignKey("PhysicianId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("PhysicianId");
 
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "Psychologist")
                         .WithMany()
-                        .HasForeignKey("PsychiatristId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("PsychologistId");
 
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "Psychometrician")
                         .WithMany()
-                        .HasForeignKey("PsychologistId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("PsychometricianId");
 
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "RecoveryCoach")
                         .WithMany()
-                        .HasForeignKey("PsychometricianId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("RecoveryCoachId");
 
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "SocialWorker")
                         .WithMany()
-                        .HasForeignKey("RecoveryCoachId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("SocialWorkerId");
 
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", null)
-                        .WithMany()
-                        .HasForeignKey("SocialWorkerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.Navigation("ClinicalStaff");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("Physician");
+
+                    b.Navigation("Psychologist");
+
+                    b.Navigation("Psychometrician");
+
+                    b.Navigation("RecoveryCoach");
+
+                    b.Navigation("SocialWorker");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Availability", b =>
@@ -1449,6 +1567,10 @@ namespace SafehavenPMS.Migrations
 
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaffPatient", b =>
                 {
+                    b.HasOne("SafehavenPMS.Models.Admission", null)
+                        .WithMany("ClinicalStaffPatients")
+                        .HasForeignKey("AdmissionId");
+
                     b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
                         .WithMany("ClinicalStaffPatients")
                         .HasForeignKey("ClinicalStaffId")
@@ -1609,6 +1731,17 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.PatientTransfer", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.PhysicalExam", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
@@ -1629,6 +1762,17 @@ namespace SafehavenPMS.Migrations
                         .IsRequired();
 
                     b.Navigation("InitialAssessmentForm");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.PsychiatricAssessment", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                        .WithMany("PsychiatricAssessments")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Recommendation", b =>
@@ -1662,6 +1806,11 @@ namespace SafehavenPMS.Migrations
                         .IsRequired();
 
                     b.Navigation("InitialAssessmentForm");
+                });
+
+            modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>
+                {
+                    b.Navigation("ClinicalStaffPatients");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
@@ -1734,6 +1883,8 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("MedicationOrders");
 
                     b.Navigation("NewAppointments");
+
+                    b.Navigation("PsychiatricAssessments");
                 });
 #pragma warning restore 612, 618
         }

@@ -12,8 +12,8 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    [Migration("20250909165843_djfhsgjdfusdfsdfdfgasdasdasdsdsdfsdfsdfsdasd")]
-    partial class djfhsgjdfusdfsdfdfgasdasdasdsdsdfsdfsdfsdasd
+    [Migration("20250910033926_Initial Create")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1300,6 +1300,51 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("ProblemLists");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.PsychiatricAssessment", b =>
+                {
+                    b.Property<int>("PsychiatricAssessmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PsychiatricAssessmentId"));
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Time")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PsychiatricAssessmentId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("PsychiatricAssessments");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.Recommendation", b =>
                 {
                     b.Property<int>("RecommendationId")
@@ -1704,6 +1749,17 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("InitialAssessmentForm");
                 });
 
+            modelBuilder.Entity("SafehavenPMS.Models.PsychiatricAssessment", b =>
+                {
+                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
+                        .WithMany("PsychiatricAssessments")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("SafehavenPMS.Models.Recommendation", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
@@ -1812,6 +1868,8 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("MedicationOrders");
 
                     b.Navigation("NewAppointments");
+
+                    b.Navigation("PsychiatricAssessments");
                 });
 #pragma warning restore 612, 618
         }
