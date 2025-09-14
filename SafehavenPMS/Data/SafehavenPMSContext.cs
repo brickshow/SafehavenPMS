@@ -46,6 +46,9 @@ namespace SafehavenPMS.Data
         public DbSet<PsyProblemList> PsyProblemLists { get; set; }
         public DbSet<PsyDiagnosisList> PsyDiagnosisLists { get; set; }
 
+        // Goals Entity
+        public DbSet<Goal> Goals { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Many-to-many: Patient ↔ ClinicalStaff
@@ -204,6 +207,13 @@ namespace SafehavenPMS.Data
                 .WithMany(p => p.PsychiatricAssessments) // Add a collection in Patient if not yet
                 .HasForeignKey(pa => pa.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ProblemList → Goals (One-to-Many)
+            modelBuilder.Entity<Goal>()
+                .HasOne(g => g.ProblemList)
+                .WithMany(p => p.Goals)
+                .HasForeignKey(g => g.ProblemListId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

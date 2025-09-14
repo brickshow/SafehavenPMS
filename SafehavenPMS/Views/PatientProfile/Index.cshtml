@@ -57,7 +57,7 @@
     </div>
     <div class="tab-pane fade" id="tab-treatment" role="tabpanel" aria-labelledby="treatment-tab">
         @* Add treatment partial here *@
-        @await Html.PartialAsync("ProfileTabs/_TreatmentPlanTab")
+        @await Html.PartialAsync("ProfileTabs/_TreatmentPlanTab", Model.TreatmentPlanTab)
     </div>
     <div class="tab-pane fade" id="tab-case" role="tabpanel" aria-labelledby="case-tab">
         @* Add case documentation partial here *@

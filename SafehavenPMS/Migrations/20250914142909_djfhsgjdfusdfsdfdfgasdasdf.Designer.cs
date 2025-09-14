@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250914142909_djfhsgjdfusdfsdfdfgasdasdf")]
+    partial class djfhsgjdfusdfsdfdfgasdasdf
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -396,50 +399,6 @@ namespace SafehavenPMS.Migrations
                     b.HasIndex("PatientIntakeIntakeFormsId");
 
                     b.ToTable("FamilyMembers");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Goal", b =>
-                {
-                    b.Property<int>("GoalId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GoalId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NotedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProblemListId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("TargetDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("GoalId");
-
-                    b.HasIndex("ProblemListId");
-
-                    b.ToTable("Goals");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.HistoryPresent", b =>
@@ -1678,17 +1637,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("PatientIntake");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.Goal", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.ProblemList", "ProblemList")
-                        .WithMany("Goals")
-                        .HasForeignKey("ProblemListId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ProblemList");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.HistoryPresent", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
@@ -1971,11 +1919,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("NewAppointments");
 
                     b.Navigation("PsychiatricAssessments");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.ProblemList", b =>
-                {
-                    b.Navigation("Goals");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PsychiatricAssessment", b =>

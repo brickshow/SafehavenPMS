@@ -23,41 +23,69 @@ namespace SafehavenPMS.Controllers
             if (id == null)
             {
                 TempData["ErrorMessage"] = "Patient ID not found.";
-                return View();
+                // Return an empty model to avoid null reference
+                return View(new PatientProfilePageViewModel());
             }
 
-            // Fetch patient details from the database
             var patient = await _context.Patients
-                                .Include(c => c.ClinicalStaffPatients)
-                                    .ThenInclude(s => s.ClinicalStaff)
-                                .Include(c => c.IntakeForm)
-                                    .ThenInclude(i => i.FamilyMembers)
-                                .FirstOrDefaultAsync(i => i.PatientId == id);
+                .Include(c => c.ClinicalStaffPatients)
+                    .ThenInclude(s => s.ClinicalStaff)
+                .Include(c => c.IntakeForm)
+                    .ThenInclude(i => i.FamilyMembers)
+                .FirstOrDefaultAsync(i => i.PatientId == id);
+
             if (patient == null)
             {
                 TempData["ErrorMessage"] = "Patient not found.";
-                return View();
+                // Return an empty model to avoid null reference
+                return View(new PatientProfilePageViewModel());
             }
 
+            // Fetch InitialAssessmentForm and ProblemList for TreatmentPlan
+            var assessment = await _context.InitialAssessmentForms
+                .Include(a => a.Problems)
+                    .ThenInclude(p => p.Goals)
+                .FirstOrDefaultAsync(a => a.PatientId == patient.PatientId);
 
-            var viewModel = new ViewModel.PatientProfilePageViewModel
+            var treatmentPlanViewModel = new PatientTreatmentPlanTabViewModel();
+
+            if (assessment?.Problems != null)
+            {
+                foreach (var problem in assessment.Problems)
+                {
+                    var problemVm = new ProblemViewModel
+                    {
+                        ProblemListId = problem.ProblemListId,
+                        InitialAssessmentFormId = assessment.InitialAssessmentFormId,
+                        Problems = problem.Problem,
+                        Status = problem.Status,
+                        Goals = problem.Goals?.Select(g => new GoalViewModel
+                        {
+                            GoalId = g.GoalId,
+                            Description = g.Description,
+                            Status = g.Status,
+                            NotedBy = g.NotedBy,
+                            TargetDate = g.TargetDate
+                        }).ToList() ?? new List<GoalViewModel>(),
+                        Interventions = new List<InterventionViewModel>() // TODO: Map interventions if you have an interventions table
+                    };
+                    treatmentPlanViewModel.Problems.Add(problemVm);
+                }
+            }
+
+            var viewModel = new PatientProfilePageViewModel
             {
                 PatientId = patient.PatientId,
                 PatientName = $"{patient.Firstname} {patient.Lastname}",
                 OverViewTab = new PatientOverViewTabViewModel
                 {
-                    // Populate with actual data as needed
                     FoodAllergies = new List<string> { "Peanuts", "Shellfish" },
                     DrugAllergies = new List<string> { "Penicillin" },
                     ActiveMedications = new List<string> { "Aspirin", "Lisinopril" },
-                    // TreatmentTeams expects a list of TreatmentTeamMemberViewModel instances.
-                    // Provide an empty list for now or create TreatmentTeamMemberViewModel objects as needed.
                     TreatmentTeams = new List<TreatmentTeamMemberViewModel>()
                 },
-
                 PersonalInfoTab = new PatientPersonalInfoTabViewModel()
                 {
-                    // Populate with actual data
                     PatientId = patient.PatientId,
                     FirstName = patient.Firstname,
                     LastName = patient.Lastname,
@@ -70,8 +98,6 @@ namespace SafehavenPMS.Controllers
                     Sex = patient.Sex,
                     PhoneNumber = patient.PhoneNumber,
                     Address = patient.Address,
-
-                    // Populate family members from FamilyMember entity
                     FamilyConstellation = patient.IntakeForm?.FamilyMembers?
                         .Select(fm => new FamilyConstellationViewModel
                         {
@@ -81,16 +107,20 @@ namespace SafehavenPMS.Controllers
                             Comments = fm.Comments,
                         }).ToList() ?? new List<FamilyConstellationViewModel>()
                 },
-                MedicalHistoryTab = new ViewModel.PatientMedicalHistoryTabViewModel(),
-                ClinicalFormTab = new ViewModel.PatientClinicalFormTabViewModel(),
-                TreatmentPlanTab = new ViewModel.PatientTreatmentPlanTabViewModel(),
-                ProgressNotesTab = new ViewModel.PatientProgressNotesTabViewModel(),
-                ActivityLogTab = new ViewModel.PatientActivityLogTabViewModel()
+                MedicalHistoryTab = new PatientMedicalHistoryTabViewModel(),
+                ClinicalFormTab = new PatientClinicalFormTabViewModel(),
+
+                TreatmentPlanTab = new PatientTreatmentPlanTabViewModel
+                {
+                    Problems = treatmentPlanViewModel.Problems
+                },
+
+                ProgressNotesTab = new PatientProgressNotesTabViewModel(),
+                ActivityLogTab = new PatientActivityLogTabViewModel()
             };
 
-
-
-            // Return the entity directly to the view (avoid mapping to properties that may not exist)
+            //ViewBag for patient ID
+            ViewBag.PatientId = patient.PatientId;
             return View(viewModel);
         }
         

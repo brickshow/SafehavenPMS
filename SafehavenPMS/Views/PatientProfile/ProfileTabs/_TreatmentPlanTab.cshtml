@@ -1,229 +1,765 @@
-<div class="row" style="min-height:600px;">
-    <!-- Problem List Sidebar -->
-    <div class="col-md-4 border-end px-4 py-3 bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
-            <h5 class="fw-bold mb-0">Problem List</h5>
-            <a href="#" class="text-teal fw-semibold small text-decoration-none">+ Add</a>
+@model SafehavenPMS.ViewModel.PatientProfile.PatientTreatmentPlanTabViewModel
+
+    <div class="row" style="min-height:600px;">
+        <!-- Problem List Sidebar -->
+        <div class="col-md-4 border-end px-4 py-3 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+                <h5 class="fw-bold mb-0">Problem List</h5>
+                <button type="button" class="btn btn-link text-teal fw-semibold small p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#AddProblemModal">+ Add</button>
+            </div>
+
+            <!-- Nav tabs -->
+            <ul class="nav flex-column" id="problemTab" role="tablist">
+                @for (int i = 0; i < Model.Problems.Count; i++)
+                {
+                    var problem = Model.Problems[i];
+                    var isActive = i == 0 ? "active" : "";
+                    <li class="nav-item" role="presentation" style="margin-bottom:10px;">
+                        <div class="d-flex align-items-center justify-content-between rounded-3 @(isActive == "active" ? "bg-lightblue" : "bg-light") px-3 py-3 nav-links cursor-pointer"
+                             style="border: 1px solid #e5e5e5;"
+                             data-tab="#problem@(i+1)">
+                            <button class="w-100 bg-transparent border-0 text-start p-0 m-0"
+                                    id="problem@(i+1)-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#problem@(i+1)"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="problem@(i+1)"
+                                    aria-selected="@(isActive == "active" ? "true" : "false")"
+                                    style="outline:none;">
+                                <span class="fw-semibold" style="font-size:1.1em;">@problem.Problems</span>
+                                <span class="badge bg-active ms-2">@problem.Status</span>
+                            </button>
+                            <div class="dropdown ms-2">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="d-flex align-items-center px-2">
+                                    <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                    <li class="px-2 text-muted fw-semibold small">Options</li>
+                                    <li>
+                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                           data-bs-toggle="modal" data-bs-target="#EditProblemModal-@problem.ProblemListId">
+                                            <span class="badge-dot bg-info"></span>
+                                            Edit Problem
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                           data-bs-toggle="modal" data-bs-target="#MarkProblemResolvedModal-@problem.ProblemListId">
+                                            <span class="badge-dot bg-success"></span>
+                                            Mark as Resolved
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                           data-bs-toggle="modal" data-bs-target="#MarkProblemInactiveModal-@problem.ProblemListId">
+                                            <span class="badge-dot bg-danger"></span>
+                                            Mark as Inactive
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                           data-bs-toggle="modal" data-bs-target="#MarkProblemActiveModal-@problem.ProblemListId">
+                                            <span class="badge-dot bg-success"></span>
+                                            Mark as Active
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
         </div>
-        <div class="d-flex align-items-center mb-2 gap-2">
-            <span class="text-muted me-auto">Status</span>
-            <select class="form-select form-select-sm w-auto" style="font-size:0.95em;">
-                <option value="active">Active</option>
-                <option value="resolved">Resolved</option>
-                <option value="inactive">Inactive</option>
-            </select>
+
+        <!-- Tab content -->
+        <div class="col-md-8 bg-white">
+            <div class="tab-content" id="problemTabContent">
+                @for (int i = 0; i < Model.Problems.Count; i++)
+                {
+                    var problem = Model.Problems[i];
+                    <div class="tab-pane fade @(i == 0 ? "show active" : "")"
+                        id="problem@(i+1)"
+                        role="tabpanel"
+                        aria-labelledby="problem@(i+1)-tab">
+                        <div class="mt-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <h5 class="fw-bold mb-0">@problem.Problems</h5>
+                                <span class="badge bg-active ms-2">@problem.Status</span>
+                            </div>
+                            <div class="small text-muted mb-3">
+                                Noted by: <span class="fw-semibold">-</span>
+                            </div>
+                            <hr />
+                        </div>
+
+                        <!-- Goal Section -->
+                        <div class="mt-3 bg-light p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-3">
+                                    <h4 class="fw-bold mb-0">Goal</h4>
+                                    <a href="#" class="text-teal fw-semibold small text-decoration-none"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addGoalModal"
+                                    onclick="document.getElementById('problemListId').value='@problem.ProblemListId'">
+                                        + Add
+                                    </a>
+                                </div>
+                                <div>
+                                    <select class="form-select form-select-sm w-auto ms-auto" style="font-size:0.95em;" aria-label="Goal Status">
+                                        <option value="inprogress">Goal Status</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="discontinued">Discontinued</option>
+                                    </select>
+                                </div>
+                            </div>
+                            @if (problem.Goals == null || !problem.Goals.Any())
+                            {
+                                <div class="text-center text-muted py-5 bg-white">
+                                    This patient has no active goals yet.<br />
+                                    <a href="#" class="text-teal fw-semibold small text-decoration-none" data-bs-toggle="modal" data-bs-target="#addGoalModal" onclick="document.getElementById('problemListId').value='@problem.ProblemListId'">+ Add Now</a>
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var goal in problem.Goals)
+                                {
+                                    // Set status text and background class
+                                    var statusText = goal.Status;
+                                    var statusClass = "bg-inprogress";
+                                    if (!string.IsNullOrEmpty(goal.Status))
+                                    {
+                                        switch (goal.Status.Trim().ToLower())
+                                        {
+                                            case "completed":
+                                                statusText = "Completed";
+                                                statusClass = "bg-completed";
+                                                break;
+                                            case "discontinue":
+                                            case "discontinued":
+                                                statusText = "Discontinue";
+                                                statusClass = "bg-discontinued";
+                                                break;
+                                            default:
+                                                statusText = "In Progress";
+                                                statusClass = "bg-inprogress";
+                                                break;
+                                        }
+                                    }
+
+                                    <div class="p-3 rounded-3 mb-2 bg-white shadow-sm">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                <span class="fw-bold">@goal.Description</span>
+                                                <span class="badge @statusClass ms-2">@statusText</span>
+                                                <i class="bi bi-three-dots-vertical ms-auto"></i>
+                                            </div>
+                                            <div class="dropdown" data-bs-display="static">
+                                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                                </a>
+                                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                                    <li class="px-2 text-muted fw-semibold small">Options</li>
+                                                    <li>
+                                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#EditGoalModal-@goal.GoalId">
+                                                            <span class="badge-dot bg-info"></span>
+                                                            Edit Goal
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#MarkAsCompletedModal-@goal.GoalId">
+                                                            <span class="badge-dot bg-success"></span>
+                                                            Mark as Completed
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#DiscontinueGoalModal-@goal.GoalId">
+                                                            <span class="badge-dot bg-danger"></span>
+                                                            Discontinue
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="small text-muted mt-1">
+                                                Noted by: <span class="fw-semibold">@goal.NotedBy</span>
+                                                <span class="ms-3">Target Date: @goal.TargetDate?.ToShortDateString()</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Interventions Section -->
+                        <div class="mt-4 bg-light p-4">
+                            <div class="d-flex align-items-center mb-2 gap-3">
+                                <h4 class="fw-bold mb-0">Interventions</h4>
+                                <a href="#" class="text-teal fw-semibold small ms-2 text-decoration-none" data-bs-toggle="modal" data-bs-target="#addInterventionModal">+ Add</a>
+                            </div>
+                            @if (problem.Interventions == null || problem.Interventions.Count == 0)
+                            {
+                                <div class="text-center bg-white text-muted py-5">
+                                    This patient has no added interventions yet.<br />
+                                    <a href="#" class="text-teal fw-semibold small text-decoration-none" data-bs-toggle="modal" data-bs-target="#addInterventionModal">+ Add Now</a>
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var intervention in problem.Interventions)
+                                {
+                                    <div class="p-3 rounded-3 mb-2 bg-white shadow-sm">
+                                        <div class="d-flex align-items-center">
+                                            <span class="fw-bold">@intervention.Description</span>
+                                            <span class="badge bg-inprogress ms-2">@intervention.Status</span>
+                                            <i class="bi bi-three-dots-vertical ms-auto"></i>
+                                        </div>
+                                        <div class="small text-muted mt-1">
+                                            Noted by: <span class="fw-semibold">@intervention.NotedBy</span>
+                                            <span class="ms-3">Date Added: @intervention.DateAdded?.ToShortDateString()</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
-        <table class="table problem-list-table">
-            <tbody>
-                <tr>
-                    <td>
-                        <a class="nav-link active w-100 d-block" id="problem1-tab" data-bs-toggle="pill" href="#problem1" role="tab" aria-controls="problem1" aria-selected="true" style="border-radius:8px; background:none;">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span>Opioid Dependence due.....</span>
-                                <span class="badge bg-active ms-2">Active</span>
-                                <i class="bi bi-three-dots-vertical ms-2"></i>
-                            </div>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <a class="nav-link w-100 d-block" id="problem2-tab" data-bs-toggle="pill" href="#problem2" role="tab" aria-controls="problem2" aria-selected="false" style="border-radius:8px; background:none;">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span>Opioid Dependence due.....</span>
-                                <span class="badge bg-resolved ms-2">Resolved</span>
-                                <i class="bi bi-three-dots-vertical ms-2"></i>
-                            </div>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <a class="nav-link w-100 d-block" id="problem3-tab" data-bs-toggle="pill" href="#problem3" role="tab" aria-controls="problem3" aria-selected="false" style="border-radius:8px; background:none;">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span>Opioid Dependence due.....</span>
-                                <span class="badge bg-inactive ms-2">Inactive</span>
-                                <i class="bi bi-three-dots-vertical ms-2"></i>
-                            </div>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <a class="nav-link w-100 d-block" id="problem4-tab" data-bs-toggle="pill" href="#problem4" role="tab" aria-controls="problem4" aria-selected="false" style="border-radius:8px; background:none;">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span>Opioid Dependence due.....</span>
-                                <span class="badge bg-inactive ms-2">Inactive</span>
-                                <i class="bi bi-three-dots-vertical ms-2"></i>
-                            </div>
-                        </a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 
-    <!-- Main Content Header-->
-    <div class="col-md-8 bg-white">
-        <div class="tab-content" id="problemTabContent">
-            <!-- Problem 1 Content -->
-            <div class="tab-pane fade show active" id="problem1" role="tabpanel" aria-labelledby="problem1-tab">
-                @* Render dynamic goals and interventions for Problem 1 here *@
-                <div>
-                    <div class="d-flex align-items-center mb-2">
-                        <h5 class="fw-bold mb-0">Opioid Dependence due to unresolved trauma</h5>
-                        <span class="badge bg-active ms-2">Active</span>
-                    </div>
-                    <div class="small text-muted mb-3">
-                        Noted by: <span class="fw-semibold">Katie Duterte</span>
-                    </div>
-                    <hr />
+@* Modal in adding problem *@
+
+<!-- #region Modal For Goal-->
+
+    @* Add Goal Modal *@
+    <div class="modal fade" id="addGoalModal" tabindex="-1" aria-labelledby="addGoalModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                    <h5 class="modal-title fw-bold" id="addGoalModalLabel">Add Goal</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="mt-3 bg-light p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="d-flex align-items-center gap-3">
-                            <h4 class="fw-bold mb-0">Goal</h4>
-                            <a href="#" class="text-teal fw-semibold small text-decoration-none">+ Add</a>
+                <div class="modal-body">
+                    <form asp-action="AddGoal" asp-controller="TreatmentPlan" method="post">
+                        <input type="hidden" name="problemListId" id="problemListId" />
+                        <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                        <div class="mb-3">
+                            <label for="goalDescription" class="form-label fw-semibold">Goal</label>
+                            <input type="text" name="description" class="form-control" id="description" placeholder="Enter goal" />
                         </div>
-                        <div class="d-flex align-items-center">
-                            <select class="form-select form-select-sm w-auto ms-auto" style="font-size:0.95em;" aria-label="Goal Status">
-                                <option value="inprogress">In progress</option>
-                                <option value="completed">Completed</option>
-                                <option value="discontinued">Discontinued</option>
-                            </select>
+                        <div class="mb-4">
+                            <label for="targetDate" class="form-label fw-semibold">Target Date</label>
+                            <input type="date" name="targetDate" class="form-control" id="targetDate" />
                         </div>
-                    </div>
-                    <div class="p-3 rounded-3 mb-2 bg-white shadow-sm">
-                        <div class="d-flex align-items-center">
-                            <span class="fw-bold">Find out different cause of traumas</span>
-                            <span class="badge bg-inprogress ms-2">In Progress</span>
-                            <span class="badge bg-discontinued ms-2">Discontinued</span>
-                            <i class="bi bi-three-dots-vertical ms-auto"></i>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Add</button>
                         </div>
-                        <div class="small text-muted mt-1">
-                            Noted by: <span class="fw-semibold">Sha Ramos</span>
-                            <span class="ms-3">Target Date: 09-45-35</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="fw-bold text-uppercase small text-muted">Interventions</span>
-                        <a href="#" class="text-teal fw-semibold small ms-2">+ Add</a>
-                    </div>
-                    <div class="text-center text-muted py-5">
-                        This patient has no added interventions yet.<br />
-                        <a href="#" class="text-teal fw-semibold">+ Add now</a>
-                    </div>
+                    </form>
                 </div>
             </div>
-            <!-- Problem 2 Content -->
-            <div class="tab-pane fade" id="problem2" role="tabpanel" aria-labelledby="problem2-tab">
-                @* Render dynamic goals and interventions for Problem 2 here *@
+        </div>
+    </div>
+
+    <!-- Edit Goal Modal -->
+    @foreach (var problem in Model.Problems)
+    {
+        if (problem.Goals != null)
+        {
+            foreach (var goal in problem.Goals)
+            {
+                <div class="modal fade" id="EditGoalModal-@goal.GoalId" tabindex="-1" aria-labelledby="editGoalModalLabel-@goal.GoalId" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:10px;">
+                            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                                <h5 class="modal-title fw-bold" id="editGoalModalLabel-@goal.GoalId">Edit Goal</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form asp-action="EditGoal" asp-controller="TreatmentPlan" method="post">
+                                    <input type="hidden" name="goalId" value="@goal.GoalId" />
+                                    <input type="hidden" name="problemListId" value="@problem.ProblemListId" />
+                                    <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                                    <div class="mb-3">
+                                        <label for="editDescription-@goal.GoalId" class="form-label fw-semibold">Goal</label>
+                                        <input type="text" name="description" class="form-control" id="editDescription-@goal.GoalId" value="@goal.Description" placeholder="Enter goal" />
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="editTargetDate-@goal.GoalId" class="form-label fw-semibold">Target Date</label>
+                                        <input type="date" name="targetDate" class="form-control" id="editTargetDate-@goal.GoalId" value="@(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("yyyy-MM-dd") : "")" />
+                                    </div>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+
+    @* Mark As Completed Confirmation Modal *@
+    @foreach (var problem in Model.Problems)
+    {
+        if (problem.Goals != null)
+        {
+            foreach (var goal in problem.Goals)
+            {
+                <div class="modal fade" id="MarkAsCompletedModal-@goal.GoalId" tabindex="-1" aria-labelledby="markAsCompletedModalLabel-@goal.GoalId" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:10px;">
+                            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                                <h5 class="modal-title fw-bold" id="markAsCompletedModalLabel-@goal.GoalId">Mark Goal as Completed</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form asp-action="MarkGoalAsCompleted" asp-controller="TreatmentPlan" method="post">
+                                    <input type="hidden" name="goalId" value="@goal.GoalId" />
+                                    <input type="hidden" name="problemListId" value="@problem.ProblemListId" />
+                                    <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                                    <div class="mb-3">
+                                        <p class="fw-semibold mb-0">Are you sure you want to mark this goal as completed?</p>
+                                        <div class="mt-2 text-muted">
+                                            <strong>Goal:</strong> @goal.Description <br />
+                                            <strong>Target Date:</strong> @(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("yyyy-MM-dd") : "-")
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                                        <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+
+    @* Discontinue Goal Confirmation Modal *@
+    @foreach (var problem in Model.Problems)
+    {
+        if (problem.Goals != null)
+        {
+            foreach (var goal in problem.Goals)
+            {
+                <div class="modal fade" id="DiscontinueGoalModal-@goal.GoalId" tabindex="-1" aria-labelledby="discontinueGoalModalLabel-@goal.GoalId" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:10px;">
+                            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                                <h5 class="modal-title fw-bold" id="discontinueGoalModalLabel-@goal.GoalId">Discontinue Goal</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form asp-action="DiscontinueGoal" asp-controller="TreatmentPlan" method="post">
+                                    <input type="hidden" name="goalId" value="@goal.GoalId" />
+                                    <input type="hidden" name="problemListId" value="@problem.ProblemListId" />
+                                    <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                                    <div class="mb-3">
+                                        <p class="fw-semibold mb-0">Are you sure you want to discontinue this goal?</p>
+                                        <div class="mt-2 text-muted">
+                                            <strong>Goal:</strong> @goal.Description <br />
+                                            <strong>Target Date:</strong> @(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("yyyy-MM-dd") : "-")
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                                        <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+<!-- #endregion -->
+
+
+<!-- Add Problem Modal -->
+<div class="modal fade" id="AddProblemModal" tabindex="-1" aria-labelledby="addProblemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:10px;">
+            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                <h5 class="modal-title fw-bold" id="addProblemModalLabel">Add Problem</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <!-- Problem 3 Content -->
-            <div class="tab-pane fade" id="problem3" role="tabpanel" aria-labelledby="problem3-tab">
-                @* Render dynamic goals and interventions for Problem 3 here *@
-            </div>
-            <!-- Problem 4 Content -->
-            <div class="tab-pane fade" id="problem4" role="tabpanel" aria-labelledby="problem4-tab">
-                @* Render dynamic goals and interventions for Problem 4 here *@
+            <div class="modal-body">
+                <form asp-action="AddProblem" asp-controller="TreatmentPlan" method="post">
+                    <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                    <input type="hidden" name="initialAssessmentFormId" value="@Model.Problems.FirstOrDefault()?.InitialAssessmentFormId" />
+                    <div class="mb-3">
+                        <label for="problemDescription" class="form-label fw-semibold">Problem</label>
+                        <input type="text" name="Problems" class="form-control" id="problemDescription" placeholder="Enter problem" required />
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Add</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    .bg-lightblue {
-        background: #D6F2F7 !important;
-    }
+<!-- Edit Problem Modal -->
+@foreach (var problem in Model.Problems)
+{
+    <div class="modal fade" id="EditProblemModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="editProblemModalLabel-@problem.ProblemListId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                    <h5 class="modal-title fw-bold" id="editProblemModalLabel-@problem.ProblemListId">Edit Problem</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form asp-action="EditProblem" asp-controller="TreatmentPlan" method="post">
+                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                        <div class="mb-3">
+                            <label for="editProblemDescription-@problem.ProblemListId" class="form-label fw-semibold">Problem</label>
+                            <input type="text" name="Problems" class="form-control" id="editProblemDescription-@problem.ProblemListId" value="@problem.Problems" required />
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
-    .bg-active {
-        background: #B8F5B8 !important;
-        color: #222 !important;
-    }   
+<!-- Mark as Resolved Modal -->
+@foreach (var problem in Model.Problems)
+{
+    <div class="modal fade" id="MarkProblemResolvedModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="markProblemResolvedModalLabel-@problem.ProblemListId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                    <h5 class="modal-title fw-bold" id="markProblemResolvedModalLabel-@problem.ProblemListId">Mark as Resolved</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form asp-action="MarkProblemResolved" asp-controller="TreatmentPlan" method="post">
+                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                        <p class="fw-semibold mb-0">Are you sure you want to mark this problem as resolved?</p>
+                        <div class="mt-2 text-muted">
+                            <strong>Problem:</strong> @problem.Problems
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                            <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
-    .bg-resolved {
-        background: #E5D6F7 !important;
-        color: #7D4BB6 !important;
-    }
+<!-- Mark as Inactive Modal -->
+@foreach (var problem in Model.Problems)
+{
+    <div class="modal fade" id="MarkProblemInactiveModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="markProblemInactiveModalLabel-@problem.ProblemListId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                    <h5 class="modal-title fw-bold" id="markProblemInactiveModalLabel-@problem.ProblemListId">Mark as Inactive</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form asp-action="MarkProblemInactive" asp-controller="TreatmentPlan" method="post">
+                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                        <p class="fw-semibold mb-0">Are you sure you want to mark this problem as inactive?</p>
+                        <div class="mt-2 text-muted">
+                            <strong>Problem:</strong> @problem.Problems
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                            <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
-    .bg-inactive {
-        background: #F7D6D6 !important;
-        color: #C94A4A !important;
-    }
+<!-- Mark as Active Modal -->
+@foreach (var problem in Model.Problems)
+{
+    <div class="modal fade" id="MarkProblemActiveModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="markProblemActiveModalLabel-@problem.ProblemListId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                    <h5 class="modal-title fw-bold" id="markProblemActiveModalLabel-@problem.ProblemListId">Mark as Active</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form asp-action="MarkProblemActive" asp-controller="TreatmentPlan" method="post">
+                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                        <p class="fw-semibold mb-0">Are you sure you want to mark this problem as active?</p>
+                        <div class="mt-2 text-muted">
+                            <strong>Problem:</strong> @problem.Problems
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                            <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
-    .bg-inprogress {
-        background: #FFF59D !important;
-        color: #222 !important;
-    }
+    <!-- Add Intervention Modal -->
+    <div class="modal fade" id="addInterventionModal" tabindex="-1" aria-labelledby="addInterventionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#00798A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                    <h5 class="modal-title fw-bold" id="addInterventionModalLabel">Add Intervention</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-4 pb-2">
+                    <form asp-action="AddIntervention" asp-controller="TreatmentPlan" method="post">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Service</label>
+                            <input type="text" class="form-control" value="Medication Management, Therapy" readonly style="color:#d32f2f;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Service</label>
+                            <input type="text" class="form-control" value="dropdown" readonly style="color:#d32f2f;" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description</label>
+                            <input type="text" name="Description" class="form-control" />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Duration/Frequency</label>
+                            <input type="text" name="DurationFrequency" class="form-control" />
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn" style="background:#00798A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    .bg-discontinued {
-        background: #BDBDBD !important;
-        color: #222 !important;
-    }
+    <!-- Custom styles for modal -->
+    <style>
+        #addInterventionModal .modal-header {
+            background: #00798A;
+            color: #fff;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        #addInterventionModal .form-control[readonly] {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        #addInterventionModal .btn {
+            background: #00798A;
+            color: #fff;
+            border-radius: 8px;
+            min-width: 120px;
+            font-weight: 600;
+        }
+    </style>
 
-    .bg-completed {
-        background: #B8F5B8 !important;
-        color: #222 !important;
-    }
+    <style>
+        .nav-links {
+            border: none;
+            border-bottom: 1px solid #cccaca;
+            padding: 10px;
+            color: #333;
+        }
 
-    .text-teal {
-        color: #008B9B !important;
-    }
+            .nav-links:hover {
+                background-color: #f8f9fa;
+            }
 
-    .fw-bold {
-        font-weight: 700 !important;
-    }
+            .nav-links.active {
+                background-color: #D6F2F7 !important;
+                color: #333 !important;
+            }
 
-    .fw-semibold {
-        font-weight: 600 !important;
-    }
+        .bg-lightblue {
+            background: #D6F2F7 !important;
+        }
 
-    .rounded-3 {
-        border-radius: 12px !important;
-    }
+        .bg-active {
+            background: #B8F5B8 !important;
+            color: #222 !important;
+        }
 
-    .badge {
-        font-size: 0.95em;
-        padding: 6px 16px;
-        border-radius: 8px;
-        font-weight: 600;
-    }
+        .bg-resolved {
+            background: #E5D6F7 !important;
+            color: #7D4BB6 !important;
+        }
 
-    .small {
-        font-size: 0.98em;
-    }
+        .bg-inactive {
+            background: #F7D6D6 !important;
+            color: #C94A4A !important;
+        }
 
-    .table th,
-    .table td {
-        border: none !important;
-    }
+        .bg-inprogress {
+            background: #FFF59D !important;
+            color: #222 !important;
+        }
 
-    .table {
-        margin-bottom: 0 !important;
-    }
+        .bg-discontinued {
+            background: #BDBDBD !important;
+            color: #222 !important;
+        }
 
-    .bi {
-        font-size: 1.2em;
-        vertical-align: middle;
-    }
+        .bg-completed {
+            background: #B8F5B8 !important;
+            color: #222 !important;
+        }
 
-    .problem-list-table th,
-    .problem-list-table td {
-        border-bottom: 1px solid #dee2e6 !important;
-    }
+        .text-teal {
+            color: #008B9B !important;
+        }
 
-    .problem-list-table tr:last-child td {
-        border-bottom: none !important;
-    }
-</style>
+        .fw-bold {
+            font-weight: 700 !important;
+        }
 
-<script>
-    document.querySelectorAll('.clickable-row').forEach(function(row) {
-        row.addEventListener('click', function() {
-            // Replace with your desired action
-            alert('Row clicked: ' + row.cells[0].innerText);
+        .fw-semibold {
+            font-weight: 600 !important;
+        }
+
+        .rounded-3 {
+            border-radius: 12px !important;
+        }
+
+        .badge {
+            font-size: 0.95em;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .small {
+            font-size: 0.98em;
+        }
+
+        .table th,
+        .table td {
+            border: none !important;
+        }
+
+        .table {
+            margin-bottom: 0 !important;
+        }
+
+        .bi {
+            font-size: 1.2em;
+            vertical-align: middle;
+        }
+
+        .problem-list-table th,
+        .problem-list-table td {
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+
+        .problem-list-table tr:last-child td {
+            border-bottom: none !important;
+        }
+
+        /* Remove underline from dropdown icon */
+        .dropdown > a {
+            text-decoration: none !important;
+            border-bottom: none !important;
+            box-shadow: none !important;
+        }
+        .dropdown > a:focus,
+        .dropdown > a:active {
+            text-decoration: none !important;
+            border-bottom: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var triggerTabList = [].slice.call(document.querySelectorAll('#problemTab button'));
+
+            // Hide all tab panes except the first one on page load
+            var tabPanes = document.querySelectorAll('#problemTabContent .tab-pane');
+            tabPanes.forEach(function(pane, idx) {
+                if (idx === 0) {
+                    pane.classList.add('show', 'active');
+                } else {
+                    pane.classList.remove('show', 'active');
+                }
+            });
+
+            // Function to update problem item highlighting
+            function updateProblemHighlight(selectedButton) {
+                document.querySelectorAll('.nav-item .d-flex').forEach(function(item) {
+                    item.classList.remove('bg-lightblue');
+                    item.classList.add('bg-light');
+                });
+                if (selectedButton) {
+                    selectedButton.closest('.nav-item').querySelector('.d-flex').classList.remove('bg-light');
+                    selectedButton.closest('.nav-item').querySelector('.d-flex').classList.add('bg-lightblue');
+                }
+            }
+
+            function showTabPane(tabId) {
+                tabPanes.forEach(function(pane) {
+                    if ('#' + pane.id === tabId) {
+                        pane.classList.add('show', 'active');
+                    } else {
+                        pane.classList.remove('show', 'active');
+                    }
+                });
+            }
+
+            triggerTabList.forEach(function (triggerEl) {
+                var tabTrigger = new bootstrap.Tab(triggerEl);
+
+                triggerEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    tabTrigger.show();
+                    updateProblemHighlight(this);
+                    showTabPane(this.getAttribute('data-bs-target'));
+                });
+
+                // Initialize the first item as active
+                if (triggerEl.getAttribute('aria-selected') === 'true') {
+                    updateProblemHighlight(triggerEl);
+                }
+            });
+
+            // Make the whole problem clickable except the dropdown
+            document.querySelectorAll('#problemTab .d-flex').forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.dropdown')) return;
+                    var btn = item.querySelector('button');
+                    var tabTrigger = new bootstrap.Tab(btn);
+                    tabTrigger.show();
+                    updateProblemHighlight(btn);
+                    showTabPane(btn.getAttribute('data-bs-target'));
+                });
+            });
         });
-    });
-</script>
+    </script>

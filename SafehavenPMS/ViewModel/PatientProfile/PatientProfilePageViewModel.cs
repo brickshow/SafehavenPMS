@@ -41,7 +41,6 @@ namespace SafehavenPMS.ViewModel
         // Add properties relevant to medical history
     }
     public class PatientClinicalFormTabViewModel { }
-    public class PatientTreatmentPlanTabViewModel { }
     public class PatientProgressNotesTabViewModel { }
     public class PatientActivityLogTabViewModel { }
 }

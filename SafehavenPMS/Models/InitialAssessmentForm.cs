@@ -250,9 +250,10 @@ namespace SafehavenPMS.Models
         // Problem details
         public string? Problem { get; set; }
 
+        public string? Status { get; set; } // e.g. In Progress, Completed, Discontinued
         // Navigation property
         public InitialAssessmentForm? InitialAssessmentForm { get; set; }
-
+        public ICollection<Goal>? Goals { get; set; }
         // Audit fields
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string? CreatedBy { get; set; }
