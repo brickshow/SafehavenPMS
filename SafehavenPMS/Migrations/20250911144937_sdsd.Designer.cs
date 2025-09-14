@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250911144937_sdsd")]
+    partial class sdsd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -82,11 +85,17 @@ namespace SafehavenPMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdmissionId"));
 
+                    b.Property<bool>("ActivatePortal")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("AdmissionDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CaseId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ClinicalStaffID")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -95,12 +104,31 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("CurrentFacility")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("EndedBy")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FamilyEmail")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FamilyName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("FamilyPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FamilyRelationship")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
@@ -138,6 +166,8 @@ namespace SafehavenPMS.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("AdmissionId");
+
+                    b.HasIndex("ClinicalStaffID");
 
                     b.HasIndex("PatientId");
 
@@ -1517,6 +1547,10 @@ namespace SafehavenPMS.Migrations
 
             modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>
                 {
+                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
+                        .WithMany()
+                        .HasForeignKey("ClinicalStaffID");
+
                     b.HasOne("SafehavenPMS.Models.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
@@ -1546,6 +1580,8 @@ namespace SafehavenPMS.Migrations
                     b.HasOne("SafehavenPMS.Models.ClinicalStaff", "SocialWorker")
                         .WithMany()
                         .HasForeignKey("SocialWorkerId");
+
+                    b.Navigation("ClinicalStaff");
 
                     b.Navigation("Patient");
 

@@ -22,11 +22,25 @@ namespace SafehavenPMS.ViewModel
         public string? Sex { get; set; }
         public string? Occupation { get; set; }
         public string? Address { get; set; }
-        
+
         public string? Type { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? Time { get; set; }
         public DateTime? CompletedDate { get; set; }
         public string? Status { get; set; }
+
+        // Problem list used by the Diagnosis partial
+        public PsyProblemListViewModel ProblemList { get; set; } = new PsyProblemListViewModel();
+        public PsyDiagnosisListViewModel PsyDiagnosisList { get; set; } = new PsyDiagnosisListViewModel();
+    }
+
+    public class PsyProblemListViewModel
+    {
+        public List<string> Problems { get; set; } = new List<string>();
+    }
+
+    public class PsyDiagnosisListViewModel
+    {
+        public List<string> Diagnosis { get; set; } = new List<string>();
     }
 }

@@ -1,15 +1,15 @@
 @using SafehavenPMS.Enum
-@model List<SafehavenPMS.ViewModel.PendingAssessmentViewModel>
+@model List<SafehavenPMS.ViewModel.Approval.ApprovalViewModel>
 @{
-    ViewBag.Title = "Assessment";
+    ViewBag.Title = "Intake";
 }
 
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center g-4">
             <div class="d-flex justify-content-center align-items-center">
-                <i class='bx bxs-user fs-2 me-2'></i>
-                <h5 class="text-custom mb-0">Assessment</h5>
+                <i class='bx bxs-user fs-2 me-2'></i>   
+                <h5 class="text-custom mb-0">Approval</h5>
             </div>
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
@@ -52,11 +52,9 @@
 <div class="status">
     <div class="waitlisted d-flex flex-row flex-wrap gap-2">
         <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="Waitlisted" />
-            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
-            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
-                Pending Assessment (@ViewBag.PendingAssessment)
+            <input type="hidden" name="status" value="NewReferral" />
+            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Pending" ? "active" : "")">
+                Pending Approval (@ViewBag.TotalPendingApprovalCount)
             </button>
         </form>
     </div>
@@ -123,54 +121,65 @@
             <thead class="table-light">
                 <tr>
                     <th>No.</th>
-                    <th>Patient</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>TIme</th>
+                    <th>Patient Name</th>
                     <th>Completed Date</th>
-                    <th class="text-center">Status</th>
-                    <th class="text-center">Action</th>
+                    <th>Drug Dependent</th>
+                    <th>Diagnosis</th>
+                    <th>Recommendation</th>
+                    <th>Status</th>
+                    <th class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @if (Model == null || !Model.Any())
+                @if (Model?.Any() != true)
                 {
                     <tr>
-                        <td colspan="8" class="text-center">No patients found.</td>
+                        <td colspan="9" class="text-center">No patients found.</td>
                     </tr>
                 }
                 else
                 {
-                    var row = 1;
-                    foreach (var pending in Model)
+                    int rowNum = 1;
+                    foreach (var admission in Model)
                     {
                         <tr>
-                            <td>@row</td>
-                            <td>@(pending.PatientName ?? "-")</td>
-                            <td>@(pending.Type ?? "-")</td>
-                            <td>@(pending.Date?.ToString("MMM dd, yyyy") ?? "-")</td>
-                            <td>@(pending.Time ?? "-")</td>
+                            <td>@rowNum</td>
                             <td>
-                                    @(pending.CompletedDate.HasValue ? pending.CompletedDate.Value.ToString("yyyy-MM-dd") : "-")
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong>@admission.PatientName</strong>
+                                </div>
                             </td>
-                            <td class="text-center">
-                                @if (pending.Status == PatientStatusEnum.PendingAssessment.ToString())
+                            <td>
+                                @(admission.CompletedAt.HasValue 
+                                    ? admission.CompletedAt.Value.ToString("MM-dd-yy")
+                                    : "-")
+                            </td>
+                            <td>
+                               -
+                            </td>
+                            <td>@admission.Diagnosis</td>
+                            <td>@admission.Recommendation</td>
+                            <td>
+                                @if (admission.Status == PatientStatusEnum.PendingApproval.ToString())
                                 {
                                     <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Pending
-                                    </div>
-                                }
-                                else if (pending.Status == PatientStatusEnum.OnAssessment.ToString())
+                                    </div>                                }
+                                else if (admission.Status == PatientStatusEnum.Admitted.ToString())
                                 {
                                     <div style="background-color: #9FE2FB; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                                        In Progress
-                                    </div>
+                                        Admitted
+                                    </div>            
+                                }
+                                  else if (admission.Status == PatientStatusEnum.Closed.ToString())
+                                {
+                                    <div style="background-color: #F8000080; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Transferred
+                                    </div>            
                                 }
                                 else
                                 {
-                                    <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                                        Completed
-                                    </div>
+                                    <span class="badge px-3 py-2 bg-secondary">-</span>
                                 }
                             </td>
                             <td class="position-relative text-center">
@@ -180,45 +189,42 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                        @if (pending.Status == PatientStatusEnum.PendingAssessment.ToString())
-                                       {
-                                            <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                                    <span class="badge-dot bg-info"></span>
-                                                    View Profile
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditInitialAssessmentForm", "Assessment", new { id = pending.PatientId })">
-                                                    <span class="badge-dot bg-primary"></span>
-                                                    Initial Assessment
-                                                </a>
-                                            </li>
-                                        }
-                                        else
+
+                                        @* REPLACE the three action items with modal triggers *@
+                                        @if(admission.Status == PatientStatusEnum.PendingApproval.ToString())
                                         {
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#confirmResidentialModal-@admission.PatientId">
                                                     <span class="badge-dot bg-info"></span>
-                                                    View Profile
+                                                    Residential
                                                 </a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditInitialAssessmentForm", "Assessment", new { id = pending.PatientId })">
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#confirmOutpatientModal-@admission.PatientId">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Initial Assessment
+                                                    Outpatient
                                                 </a>
                                             </li>
                                             <li>
-                                               <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                href="#"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#submitAssessmentModal"
-                                                onclick="document.getElementById('modalAssessmentId').value='@pending.PatientId'">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="#"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#confirmCommunityModal-@admission.PatientId">
                                                     <span class="badge-dot bg-success"></span>
-                                                    Submit Assessment   
+                                                   Community-Based
+                                                </a>
+                                            </li>
+                                        }else{
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action( "ViewPatient", "Patient", new { patientId = admission.PatientId })">
+                                                   View Profile
                                                 </a>
                                             </li>
                                         }
@@ -226,7 +232,7 @@
                                 </div>
                             </td>
                         </tr>
-                        row++;
+                        rowNum++;
                     }
                 }
             </tbody>
@@ -269,29 +275,123 @@
     </div>
 </div>
 
-<!-- Assessment Submit Confirmation Modal -->
-<div class="modal fade" id="submitAssessmentModal" tabindex="-1" aria-labelledby="submitAssessmentModalLabel" aria-hidden="true">
+<!-- Intake Submit Confirmation Modal -->
+<div class="modal fade" id="submitIntakeModal" tabindex="-1" aria-labelledby="submitIntakeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 shadow">
             <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
-                <h5 class="modal-title" id="submitAssessmentModalLabel">Submit Assessment?</h5>
+                <h5 class="modal-title" id="submitIntakeModalLabel">Submit Intake?</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                Are you sure you want to submit this Assessment form?
+                Are you sure you want to submit this intake form?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                <form asp-action="SubmitAssessment" asp-controller="Assessment" method="post">
-                    <input type="hidden" name="patientId" id="modalAssessmentId" />
+                <form asp-action="SubmitIntakeForm" asp-controller="Intake" method="post">
+                    <input type="hidden" name="PatientId" id="modalIntakeId" />
                     <button type="submit" class="btn-custom btn-next">Submit</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+@* Confirmation modals for actions (one set per admission) *@
+@foreach (var admission in Model)
+{
+    <!-- Confirm Residential -->
+    <div class="modal fade" id="confirmResidentialModal-@admission.PatientId" tabindex="-1" aria-labelledby="confirmResidentialLabel-@admission.PatientId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow">
+            <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
+                    <h5 class="modal-title" id="confirmResidentialLabel-@admission.PatientId">Confirm Residential</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to admit <strong>@admission.PatientName</strong> to a Residential program?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="AdmitPatient" asp-controller="Approval" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="patientId" value="@admission.PatientId" />
+                        <input type="hidden" name="programType" value="Residential" />
+                        <button type="submit" class="btn-custom btn-next">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Confirm Outpatient -->
+    <div class="modal fade" id="confirmOutpatientModal-@admission.PatientId" tabindex="-1" aria-labelledby="confirmOutpatientLabel-@admission.PatientId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow">
+            <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
+                    <h5 class="modal-title" id="confirmOutpatientLabel-@admission.PatientId">Confirm Outpatient</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to admit <strong>@admission.PatientName</strong> as an Outpatient?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="TransferToOutpatient" asp-controller="Approval" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="patientId" value="@admission.PatientId" />
+                        <input type="hidden" name="programType" value="Outpatient" />
+                        <button type="submit" class="btn-custom btn-next">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
+     <!-- Confirm Community-Based -->
+    <div class="modal fade" id="confirmCommunityModal-@admission.PatientId" tabindex="-1" aria-labelledby="confirmCommunityLabel-@admission.PatientId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow">
+            <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
+                    <h5 class="modal-title" id="confirmCommunityLabel-@admission.PatientId">Confirm Community-Based</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Please confirm: transfer <strong>@admission.PatientName</strong> to Outpatient services. The patient's status will be updated and the clinical team will be notified.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="TransferToCommunity" asp-controller="Approval" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="patientId" value="@admission.PatientId" />
+                        <input type="hidden" name="programType" value="Community-Based" />
+                        <button type="submit" class="btn-custom btn-next">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<script>
+    // Show transfer modal after confirming community-based action
+    function openTransferModal(patientId) {
+        // hide confirm modal
+        var confirmId = 'confirmCommunityModal-' + patientId;
+        var confirmModalEl = document.getElementById(confirmId);
+        var confirmModal = bootstrap.Modal.getOrCreateInstance(confirmModalEl);
+        confirmModal.hide();
+
+        // open existing transfer modal (must exist in the page)
+        var transferId = 'transferModal-' + patientId;
+        var transferEl = document.getElementById(transferId);
+        if (transferEl) {
+            var transferModal = new bootstrap.Modal(transferEl);
+            transferModal.show();
+        } else {
+            // fallback: navigate to transfer action if transfer modal not rendered
+            window.location.href = '@Url.Action("Transfer", "Admission")' + '?patientId=' + encodeURIComponent(patientId);
+        }
+    }
+</script>
 <style>
     .custom-btn {
         background-color: white;
@@ -314,7 +414,6 @@
             color: white !important;
             box-shadow: none;
         }
-
     .table-header {
         width: 100%;
         height: 50px;
@@ -333,7 +432,6 @@
         position: absolute !important;
         z-index: 1055 !important;
     }
-
     .table td, .table th {
         white-space: nowrap;
     }
@@ -405,7 +503,7 @@
 <script>
        function setPatientInfo(patientId, patientName, staffName) {
         console.log('setPatientInfo called with:', patientId, patientName, staffName); // Debug log
-        document.getElementById('modalAssessmentId').value = patientId;
+        document.getElementById('modalPatientId').value = patientId;
         document.querySelector('input[name="PatientName"]').value = patientName;
         document.querySelector('input[name="StaffName"]').value = staffName;
     }

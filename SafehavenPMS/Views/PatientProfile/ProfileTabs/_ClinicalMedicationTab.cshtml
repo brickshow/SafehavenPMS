@@ -1,0 +1,76 @@
+@* @model IEnumerable<SafehavenPMS.ViewModel.PatientProfile.FormSummaryViewModel>
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <h4 class="fw-bold mb-0">10 Forms</h4>
+    <div class="d-flex align-items-center gap-2">
+        <input type="text" class="form-control" placeholder="Search document ..." style="width: 250px;">
+        <button class="btn btn-teal px-4">Search</button>
+        <span class="ms-2 text-muted">Sort by <i class="bi bi-funnel"></i></span>
+    </div>
+</div>
+<hr />
+
+<div class="row g-3">
+    @foreach (var form in Model)
+    {
+        var bgClass = form.Status == "In Progress" ? "bg-beige"
+                    : form.Status == "Completed" ? "bg-lightblue"
+                    : "bg-lightgray";
+        var editableText = form.Status == "In Progress" || form.Status == "Completed"
+            ? "<span class='text-danger fw-semibold ms-2'>Editable</span>"
+            : "<span class='text-danger fw-semibold ms-2'>Archive after patient is discharged</span>";
+
+        <div class="col-md-6">
+            <div class="p-3 rounded-3 @bgClass position-relative mb-2" style="min-height: 110px;">
+                <div>
+                    <span class="fw-bold fs-5">@form.Title</span>
+                    @Html.Raw(form.Status == "In Progress" || form.Status == "Completed" ? editableText : editableText)
+                </div>
+                <div class="mt-2 small">
+                    <span class="text-muted">Date Created: @form.DateCreated.ToString("MM-dd-yy")</span>
+                    <span class="ms-3 text-muted">Clinician: <span class="fw-semibold">@form.Clinician</span></span>
+                    <span class="ms-3 text-muted">Status: <span class="fw-semibold">@form.Status</span></span>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .bg-beige {
+        background: #F7E7D8;
+    }
+    .bg-lightblue {
+        background: #D6F2F7;
+    }
+    .bg-lightgray {
+        background: #E5E5E5;
+    }
+    .btn-teal {
+        background: #008B9B;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .btn-teal:hover {
+        background: #015F6B;
+    }
+    input.form-control:focus {
+        box-shadow: none;
+        border-color: #cfecec;
+    }
+    .rounded-3 {
+        border-radius: 12px !important;
+    }
+    .fw-bold {
+        font-weight: 700 !important;
+    }
+    .fw-semibold {
+        font-weight: 600 !important;
+    }
+    .small {
+        font-size: 0.98em;
+    }
+</style> *@

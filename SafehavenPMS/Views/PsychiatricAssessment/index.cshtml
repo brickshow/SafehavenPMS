@@ -161,13 +161,13 @@
                                         Pending
                                     </div>
                                 }
-                                @if (pending.Status == "OnAssessment")
+                                @if (pending.Status == PsychiatricEnumStatus.InProgress.ToString())
                                 {
                                     <div style="background-color: #9FE2FB; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         In Progress
                                     </div>
                                 }
-                                @if (pending.Status == PatientStatusEnum.PendingApproval.ToString())
+                                @if (pending.Status == PsychiatricEnumStatus.Completed.ToString())
                                 {
                                     <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Completed
@@ -197,7 +197,7 @@
                                                 </a>
                                             </li>
                                         }
-                                        else
+                                        else if (pending.Status == PsychiatricEnumStatus.InProgress.ToString())
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -207,11 +207,12 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("EditInitialAssessmentForm", "Assessment", new { id = pending.PatientId })">
+                                                   href="@Url.Action("PsychiatricAssessmentForm", "PsychiatricAssessment", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Initial Assessment
+                                                    Edit Assessment Form
                                                 </a>
                                             </li>
+
                                             <li>
                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                 href="#"
@@ -220,6 +221,22 @@
                                                 onclick="document.getElementById('modalAssessmentId').value='@pending.PatientId'">
                                                     <span class="badge-dot bg-success"></span>
                                                     Submit Assessment   
+                                                </a>
+                                            </li>
+                                        }
+                                        else if (pending.Status == PsychiatricEnumStatus.Completed.ToString())
+                                        {
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                    <span class="badge-dot bg-info"></span>
+                                                    View Profile
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action("PsychiatricAssessmentForm", "PsychiatricAssessment", new { id = pending.PatientId })">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    Edit Initial Assessment
                                                 </a>
                                             </li>
                                         }
@@ -283,7 +300,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                <form asp-action="SubmitAssessment" asp-controller="Assessment" method="post">
+                <form asp-action="SubmitAssessment" asp-controller="PsychiatricAssessment" method="post">
                     <input type="hidden" name="patientId" id="modalAssessmentId" />
                     <button type="submit" class="btn-custom btn-next">Submit</button>
                 </form>

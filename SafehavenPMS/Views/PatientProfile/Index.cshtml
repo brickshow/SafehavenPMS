@@ -1,42 +1,77 @@
-﻿@model SafehavenPMS.Models.Patient
+﻿@model SafehavenPMS.ViewModel.PatientProfilePageViewModel
 @{
-    ViewBag.Title = "Brix Lampago";
-    var patientId = 123456;
+    ViewBag.Title = "Patient Profile";
 }
 
 @* Header: Patient Name + Status *@
 <div>
     <div class="d-flex justify-content-start align-items-start mb-3">
         <div class="d-flex align-items-center">
-            <i class='bx bx-reply fs-1 me-2'></i>
-            <img src="/Images/sample.JPG" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;" />
+            <a href="javascript:history.back()" class="me-2 text-decoration-none text-muted"><i class="bx bx-reply fs-4"></i></a>
+
+            <img src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? Url.Content("~/Images/sample.JPG") : Model.AvatarUrl)"
+                 class="rounded-circle me-3"
+                 style="width: 60px; height: 60px; object-fit: cover;"/>
+
             <div>
-                <h4 class="mb-0 fw-bold text-custom">Brix Lampago</h4>
-                <span class="text-muted">Patient - 230491</span>
+                <h4 class="mb-0 fw-bold text-custom">@(!string.IsNullOrWhiteSpace(Model.PatientName) ? Model.PatientName : "-")</h4>
+                <span class="text-muted">Patient - @(!string.IsNullOrWhiteSpace(Model.PatientId.ToString()) ? Model.PatientId.ToString() : "-")</span>
             </div>
         </div>
-        <div class="d-flex align-items-start">
-            <span class="badge bg-success m-2">Active</span>
-        </div>
+
     </div>
+
     <div>
-        <ul class="nav nav-tabs mb-4" id="profileTabs">
-            <li class="nav-item"><a class="nav-link active" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Overview", patientId = patientId })" href="#">Overview</a></li>
-            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Personal", patientId = patientId })" href="#">Personal</a></li>
-            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Notes", patientId = patientId })" href="#">Notes</a></li>
-            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_CaseDocumentation", patientId = patientId })" href="#">Case Documentation</a></li>
-            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_PrescriptionAndMedication", patientId = patientId })" href="#">Prescription & Medication</a></li>
-            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_Billing", patientId = patientId })" href="#">Billing</a></li>
-            <li class="nav-item"><a class="nav-link" data-url="@Url.Action("LoadTab", "PatientProfile", new { tab = "_ActivityLogs", patientId = patientId })" href="#">Activity Logs</a></li>
+        <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#tab-overview" role="tab" aria-controls="tab-overview" aria-selected="true">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="personal-tab" data-bs-toggle="tab" href="#tab-personal" role="tab" aria-controls="tab-personal" aria-selected="false">Personal</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="clinical-doc-tab" data-bs-toggle="tab" href="#tab-clinical-doc" role="tab" aria-controls="tab-clinical-doc" aria-selected="false">Clinical Documentation</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="medical-history-tab" data-bs-toggle="tab" href="#tab-medical-history" role="tab" aria-controls="tab-medical-history" aria-selected="false">Medical History</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="treatment-tab" data-bs-toggle="tab" href="#tab-treatment" role="tab" aria-controls="tab-treatment" aria-selected="false">Treatment Plan</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="progress-note-tab" data-bs-toggle="tab" href="#tab-progress-note" role="tab" aria-controls="tab-progress-note" aria-selected="false">Progress Note</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="activity-tab" data-bs-toggle="tab" href="#tab-activity" role="tab" aria-controls="tab-activity" aria-selected="false">Activity Logs</a>
+            </li>
         </ul>
     </div>
 </div>
 
-@* Initial content area with Overview partial *@
-<div id="tabContentArea">
-    @await Html.PartialAsync("_Overview", Model);
+<div class="tab-content" id="tabContentArea">
+    <div class="tab-pane fade show active" id="tab-overview" role="tabpanel" aria-labelledby="overview-tab">
+        @await Html.PartialAsync("ProfileTabs/_OverviewTab", Model.OverViewTab)
+    </div>
+    <div class="tab-pane fade" id="tab-personal" role="tabpanel" aria-labelledby="personal-tab">
+        @await Html.PartialAsync("ProfileTabs/_PatientProfileTab", Model.PersonalInfoTab)
+    </div>
+    <div class="tab-pane fade" id="tab-treatment" role="tabpanel" aria-labelledby="treatment-tab">
+        @* Add treatment partial here *@
+        @await Html.PartialAsync("ProfileTabs/_TreatmentPlanTab")
+    </div>
+    <div class="tab-pane fade" id="tab-case" role="tabpanel" aria-labelledby="case-tab">
+        @* Add case documentation partial here *@
+    </div>
+    <div class="tab-pane fade" id="tab-prescription" role="tabpanel" aria-labelledby="prescription-tab">
+        @* Add prescription & medication partial here *@
+    </div>
+    <div class="tab-pane fade" id="tab-billing" role="tabpanel" aria-labelledby="billing-tab">
+        @* Add billing partial here *@
+    </div>
+    <div class="tab-pane fade" id="tab-activity" role="tabpanel" aria-labelledby="activity-tab">
+        @* Add activity logs partial here *@
+    </div>
 </div>
-
 
 @* Styles *@
 <style>
@@ -74,5 +109,3 @@
             font-weight: bold;
         }
 </style>
-
-<script src="~/js/patient-tabs.js"></script>

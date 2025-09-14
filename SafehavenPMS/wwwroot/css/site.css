@@ -20,7 +20,7 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 240px;
+    width: 300px; /* changed from 240px */
     height: 100vh;
     background-color: #003036;
     padding-top: 20px;
@@ -265,8 +265,8 @@ body {
     }
 
 .home-section {
-    margin-left: 240px;
-    width: calc(100% - 240px);
+    margin-left: 300px; /* changed from 240px */
+    width: calc(100% - 300px); /* changed from 240px */
     padding: 20px;
     padding-top: 60px;
     min-height: 100vh;
@@ -278,7 +278,7 @@ body {
     position: fixed;
     top: 0;
     right: 0;
-    left: 240px;
+    left: 300px; /* changed from 240px */
     z-index: 999;
     display: flex;
     align-items: center;

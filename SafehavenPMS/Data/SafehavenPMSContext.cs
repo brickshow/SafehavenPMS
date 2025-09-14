@@ -43,6 +43,8 @@ namespace SafehavenPMS.Data
 
         //Psychiatric Assessment Entity
         public DbSet<PsychiatricAssessment> PsychiatricAssessments { get; set; }
+        public DbSet<PsyProblemList> PsyProblemLists { get; set; }
+        public DbSet<PsyDiagnosisList> PsyDiagnosisLists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

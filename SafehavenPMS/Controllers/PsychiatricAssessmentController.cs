@@ -4,10 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.Enum;
 using SafehavenPMS.ViewModel;
+using SafehavenPMS.Models;
+using System.Linq;
+using System;
+using safehavenpms.Enum;
 
 namespace safehavenpms.Controllers
 {
-    public class PsychiatricAssessmentController : Controller
+    public partial class PsychiatricAssessmentController : Controller
     {
         private readonly SafehavenPMSContext _context;
         public PsychiatricAssessmentController(SafehavenPMSContext context)
@@ -33,7 +37,7 @@ namespace safehavenpms.Controllers
             ViewBag.Status = status;
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
 
-            // 🔎 Apply search filter
+            //Apply search filter
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 searchQuery = searchQuery.ToLower();
@@ -84,7 +88,10 @@ namespace safehavenpms.Controllers
 
             // Project to PsychiatricAssessmentViewModel
             var psychiatricViewModels = patientList
-                                   .Where(p => p.Patient.PatientStatus == PatientStatusEnum.Admitted.ToString())
+                                   .Where(p => p.Status == PsychiatricEnumStatus.Pending.ToString() ||
+                                               p.Status == PsychiatricEnumStatus.InProgress.ToString() ||
+                                               p.Status == PsychiatricEnumStatus.Completed.ToString())
+                                    // Only show assessments for patients with relevant status
                                    .Select(p => new PsychiatricAssessmentViewModel
                                    {
                                        // If you have a dedicated PK on the transfer entity use that instead of PatientId
@@ -93,8 +100,8 @@ namespace safehavenpms.Controllers
                                        FullName = $"{p.Patient.Firstname} {p.Patient.Lastname}",
                                        Type = p.Type, // Assuming type is always "Initial" for pending assessments
                                        Date = p.CreatedAt,
-                                       CompletedDate = null, // Pending assessments are not completed
-                                       Status = "Pending"
+                                       CompletedDate = p.CompletedDate, // Pending assessments are not completed
+                                       Status = p.Status,
                                    }).ToList() ?? new List<PsychiatricAssessmentViewModel>();
 
             //Return Total number of new referral
@@ -124,8 +131,10 @@ namespace safehavenpms.Controllers
         {
             // Try to load assessment by its PK or as fallback by patient id
             var assessment = await _context.PsychiatricAssessments
-                                           .Include(a => a.Patient)
-                                           .FirstOrDefaultAsync(a => a.PatientId == id || a.PatientId == id);
+                           .Include(a => a.Patient)
+                           .Include(a => a.ProblemLists) // load problem list
+                           .Include(a => a.DiagnosisLists) // load diagnosis list
+                           .FirstOrDefaultAsync(a => a.PatientId == id);
 
             // If assessment not found, try to load patient directly (id might be a patientId)
             var patient = assessment?.Patient;
@@ -163,13 +172,27 @@ namespace safehavenpms.Controllers
                 CompletedDate = null,
                 Status = patient?.PatientStatus,
 
-                //Tab content
+                // Map to nested properties to match the view's asp-for bindings
                 ChiefComplaint = assessment?.ChiefComplaint,
                 HistoryOfPresentIllness = assessment?.HistoryOfPresentIllness,
-                PersonalAndFamilyHistory = assessment?.PersonalAndFamilyHistory
-
-                //populate tab view models if assessment exists
+                PersonalAndFamilyHistory = assessment?.PersonalAndFamilyHistory,
+                MentalStatusExamination = assessment?.MentalStatusExamination,
+                Impression = assessment?.Impression,
             };
+
+            // Map problem list (as a list of strings)
+            var problems = assessment?.ProblemLists?
+                          .Select(pl => pl.Problem)
+                          .Where(p => !string.IsNullOrWhiteSpace(p))
+                          .ToList() ?? new List<string>();
+            vm.ProblemList.Problems = problems;
+
+            // Map diagnosis list (as a list of strings)
+            var diagnoses = assessment?.DiagnosisLists?
+                            .Select(dl => dl.Diagnosis)
+                            .Where(d => !string.IsNullOrWhiteSpace(d))
+                            .ToList() ?? new List<string>();
+            vm.PsyDiagnosisList.Diagnosis = diagnoses;
 
             return View("PsychiatricAssessmentForm", vm);
         }
@@ -189,6 +212,10 @@ namespace safehavenpms.Controllers
                 assessment.ChiefComplaint = ChiefComplaint;
                 await _context.SaveChangesAsync();
             }
+
+            //Update status to In Progress
+            assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+            await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Chief Complaint saved successfully.";
             return RedirectToAction("PsychiatricAssessmentForm", new { id = PatientId });
@@ -210,6 +237,10 @@ namespace safehavenpms.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            //Update status to In Progress
+            assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+            await _context.SaveChangesAsync();
+
             TempData["SuccessMessage"] = "History of Present Illness saved successfully.";
             return RedirectToAction("PsychiatricAssessmentForm", new { id = PatientId });
         }
@@ -227,8 +258,233 @@ namespace safehavenpms.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            //Update status to In Progress
+            assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+            await _context.SaveChangesAsync();
+
             TempData["SuccessMessage"] = "Personal and Family History saved successfully.";
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
+        }
+
+        //Saving mental status
+        [HttpPost]
+        public async Task<IActionResult> SavingMentalStatus(PsychiatricAssessmentViewModel model)
+        {
+            var assessment = await _context.PsychiatricAssessments.FirstOrDefaultAsync(d => d.PatientId == model.PatientId);
+
+            //Check if null
+            if (assessment == null)
+            {
+                TempData["ErrorMessage"] = "Saving assesment for error!";
+            }
+
+            try
+            {
+                assessment.MentalStatusExamination = model.MentalStatusExamination;
+
+                //Update status to In Progress
+                assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error Message: " + ex);
+                return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
+            }
+
+            return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
+        }
+
+        //Saving Impression
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SavingImpression(PsychiatricAssessmentViewModel model)
+        {
+            //Find assessment by patient id
+            var assessment = await _context.PsychiatricAssessments.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+            if (assessment != null)
+            {
+                assessment.Impression = model.Impression;
+                await _context.SaveChangesAsync();
+            }
+
+            //Update status to In Progress
+            assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Impression saved successfully.";
+            return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
+        }
+
+        // POST: Save problem/diagnosis list for an assessment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveProblemList(PsychiatricAssessmentViewModel model)
+        {
+            if (model == null)
+                return BadRequest();
+
+            var incomingProblems = model.ProblemList?.Problems ?? new List<string>();
+            // normalize/trim and remove empty entries
+            var cleaned = incomingProblems
+                          .Where(p => !string.IsNullOrWhiteSpace(p))
+                          .Select(p => p.Trim())
+                          .ToList();
+
+            // find or create assessment record for the patient
+            var assessment = await _context.PsychiatricAssessments
+                                           .FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+
+            if (assessment == null)
+            {
+                assessment = new PsychiatricAssessment
+                {
+                    PatientId = model.PatientId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.PsychiatricAssessments.Add(assessment);
+                await _context.SaveChangesAsync();
+            }
+
+            try
+            {
+                // use the concrete entity type defined in Models (PsyProblemList)
+                var problemSet = _context.Set<PsyProblemList>();
+
+                // remove existing entries for this assessment
+                var existing = await problemSet
+                                     .Where(p => p.PsychiatricAssessmentId == assessment.PsychiatricAssessmentId)
+                                     .ToListAsync();
+
+                if (existing.Any())
+                {
+                    problemSet.RemoveRange(existing);
+                    await _context.SaveChangesAsync();
+                }
+
+                // The UI posts newest-first (index 0 = newest). Persist in that same order.
+                foreach (var p in cleaned)
+                {
+                    var item = new PsyProblemList
+                    {
+                        PsychiatricAssessmentId = assessment.PsychiatricAssessmentId,
+                        Problem = p
+                    };
+                    problemSet.Add(item);
+                }
+
+                //Update status to In Progress
+                assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Problem saved successfully.";
+            }
+            catch (Exception ex)
+            {
+                // prefer logging if available; surface a friendly message
+                TempData["Error"] = "Error saving problem: " + ex.Message;
+            }
+
+            return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
+        }
+
+       [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveDiagnosis(PsychiatricAssessmentViewModel model)
+        {
+            if (model == null)
+                return BadRequest();
+
+            var incomingDiagnoses = model.PsyDiagnosisList?.Diagnosis ?? new List<string>();
+            // normalize/trim and remove empty entries
+            var cleaned = incomingDiagnoses
+                          .Where(p => !string.IsNullOrWhiteSpace(p))
+                          .Select(p => p.Trim())
+                          .ToList();
+
+            // find or create assessment record for the patient
+            var assessment = await _context.PsychiatricAssessments
+                                           .FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+
+            if (assessment == null)
+            {
+                assessment = new PsychiatricAssessment
+                {
+                    PatientId = model.PatientId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.PsychiatricAssessments.Add(assessment);
+                await _context.SaveChangesAsync();
+            }
+
+            try
+            {
+                // use the concrete entity type defined in Models (PsyDiagnosisList)
+                var diagnosisSet = _context.Set<PsyDiagnosisList>();
+
+                // remove existing entries for this assessment
+                var existing = await diagnosisSet
+                                     .Where(p => p.PsychiatricAssessmentId == assessment.PsychiatricAssessmentId)
+                                     .ToListAsync();
+
+                if (existing.Any())
+                {
+                    diagnosisSet.RemoveRange(existing);
+                    await _context.SaveChangesAsync();
+                }
+
+                // The UI posts newest-first (index 0 = newest). Persist in that same order.
+                foreach (var p in cleaned)
+                {
+                    var item = new PsyDiagnosisList
+                    {
+                        PsychiatricAssessmentId = assessment.PsychiatricAssessmentId,
+                        Diagnosis = p
+                    };
+                    diagnosisSet.Add(item);
+                }
+
+                //Update status to In Progress
+                assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Diagnosis saved successfully.";
+            }
+            catch (Exception ex)
+            {
+                // prefer logging if available; surface a friendly message
+                TempData["Error"] = "Error saving diagnosis: " + ex.Message;
+            }
+
+            return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitAssessment(int patientId)
+        {
+            // Find the assessment by patientId
+            var assessment = await _context.PsychiatricAssessments
+                                           .FirstOrDefaultAsync(a => a.PatientId == patientId);
+
+            if (assessment == null)
+            {
+                TempData["Error"] = "Assessment not found for the specified patient.";
+                return RedirectToAction("Index", "PsychiatricAssessment");
+            }
+
+            // Update status and completed date
+            assessment.Status = PsychiatricEnumStatus.Completed.ToString();
+            assessment.CompletedDate = DateTime.UtcNow;
+
+            // Save changes
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Assessment submitted successfully and marked as completed.";
+            return RedirectToAction("Index", "PsychiatricAssessment");
         }
     }
 }

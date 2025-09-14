@@ -243,7 +243,8 @@
                                         @if(admission.Status == PatientStatusEnum.Admitted.ToString())
                                         {
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" 
+                                                    href="@Url.Action("Index", "PatientProfile", new { id = admission.PatientId })">
                                                     <span class="badge-dot bg-info"></span>
                                                     View Profile
                                                 </a>
@@ -337,8 +338,6 @@
                             <option value="">--Select--</option>
                             <option value="Outpatient Rehabilitation">Outpatient Rehabilitation</option>
                             <option value="Community-Based">Community-Based</option>
-                            <option value="Inpatient">Inpatient</option>
-                            <option value="Residential">Residential</option>
                         </select>
                     </div>
 

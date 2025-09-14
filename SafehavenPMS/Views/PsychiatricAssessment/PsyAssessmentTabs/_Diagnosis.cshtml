@@ -1,29 +1,29 @@
-@* @model SafehavenPMS.ViewModel.PsychiatricAssessmentViewModel
+@model SafehavenPMS.ViewModel.PsychiatricAssessmentViewModel
 
 <div class="card">
     <div class="card-header bg-white" style="color: #015F6B;">
-        <h5 class="mb-0">PROBLEM LIST</h5>
-    </div>
+            <h5 class="chief-title">Diagnosis</h5>
+     </div>
     <div class="card-body">
-        <form asp-action="SaveProblemList" asp-controller="Assessment" method="post" id="problemListForm">
+        <form asp-action="SaveDiagnosis" asp-controller="PsychiatricAssessment" method="post" id="diagnosisForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="PatientId" />
 
             <div class="mb-4">
-                <div id="problemList">
-                    @if (Model?.PsychiatricDiagnosisViewModel?.Problems != null)
+                <div id="diagnosisList">
+                    @if (Model?.PsyDiagnosisList?.Diagnosis != null)
                     {
-                        @for (var i = 0; i < Model.ProblemList.Problems.Count; i++)
+                        @for (var i = 0; i < Model.PsyDiagnosisList.Diagnosis.Count; i++)
                         {
-                            <div class="row align-items-end mb-2 problem-entry">
+                            <div class="row align-items-end mb-2 diagnosis-entry">
                                 <div class="col-11">
                                     <input type="text" class="form-control"
-                                           name="ProblemList.Problems[@i]"
-                                           value="@Model.ProblemList.Problems[i]"
-                                           placeholder="Enter problem description" />
+                                           name="PsyDiagnosisList.Diagnosis[@i]"  // Fixed: Use PsyDiagnosisList.Diagnosis to match controller
+                                           value="@Model.PsyDiagnosisList.Diagnosis[i]"
+                                           placeholder="Enter diagnosis description" />
                                 </div>
                                 <div class="col-1">
-                                    <button type="button" class="btn btn-outline-danger" onclick="removeProblem(this)">
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeDiagnosis(this)">
                                         <i class="bx bx-trash"></i>
                                     </button>
                                 </div>
@@ -34,11 +34,11 @@
 
                 <div class="row align-items-end mb-2">
                     <div class="col-11">
-                        <input type="text" class="form-control" id="newProblem" 
-                               placeholder="Enter new problem" />
+                        <input type="text" class="form-control" id="newDiagnosis" 
+                               placeholder="Enter new Diagnosis" />
                     </div>
                     <div class="col-1">
-                        <button type="button" class="btn btn-teal" onclick="addProblem()">
+                        <button type="button" class="btn btn-teal" onclick="addDiagnosis()">
                             <i class="bx bx-plus"></i>
                         </button>
                     </div>
@@ -55,6 +55,17 @@
 </div>
 
 <style>
+    .chief-container {
+        padding: 18px 20px;
+    }
+
+    .chief-title {
+        color: #0b6b6b; /* teal heading */
+        font-weight: 600;
+        margin-bottom: 12px;
+        font-size: 16px;
+    }
+
     .card {
         box-shadow: none !important;
         border: none;
@@ -82,28 +93,28 @@
 </style>
 
 <script>
-    function addProblem() {
-        const problemText = document.getElementById('newProblem').value;
+    function addDiagnosis() {
+        const diagnosisText = document.getElementById('newDiagnosis').value;
         
-        if (!problemText) {
-            alert('Please enter a problem description');
+        if (!diagnosisText) {
+            alert('Please enter a diagnosis description');
             return;
         }
 
-        const list = document.getElementById('problemList');
+        const list = document.getElementById('diagnosisList');
         const index = list.children.length;
         
         const div = document.createElement('div');
-        div.className = 'row align-items-end mb-2 problem-entry';
+        div.className = 'row align-items-end mb-2 diagnosis-entry';
         div.innerHTML = `
             <div class="col-11">
                 <input type="text" class="form-control" 
-                       name="ProblemList.Problems[${index}]" 
-                       id="ProblemList_Problems_${index}"
-                       value="${problemText}" />
+                       name="PsyDiagnosisList.Diagnosis[${index}]"  // Fixed: Use PsyDiagnosisList.Diagnosis to match controller
+                       id="PsyDiagnosisList_Diagnosis_${index}"
+                       value="${diagnosisText}" />
             </div>
             <div class="col-1">
-                <button type="button" class="btn btn-outline-danger" onclick="removeProblem(this)">
+                <button type="button" class="btn btn-outline-danger" onclick="removeDiagnosis(this)">
                     <i class="bx bx-trash"></i>
                 </button>
             </div>
@@ -112,20 +123,20 @@
         list.appendChild(div);
         
         // Clear input field
-        document.getElementById('newProblem').value = '';
+        document.getElementById('newDiagnosis').value = '';
     }
 
-    function removeProblem(button) {
-        button.closest('.problem-entry').remove();
+    function removeDiagnosis(button) {
+        button.closest('.diagnosis-entry').remove();
         
-        // Reindex remaining problems
-        const list = document.getElementById('problemList');
-        const entries = list.getElementsByClassName('problem-entry');
+        // Reindex remaining diagnoses
+        const list = document.getElementById('diagnosisList');
+        const entries = list.getElementsByClassName('diagnosis-entry');
         
         for (let i = 0; i < entries.length; i++) {
             const input = entries[i].querySelector('input');
-            input.name = `ProblemList.Problems[${i}]`;
-            input.id = `ProblemList_Problems_${i}`;
+            input.name = `PsyDiagnosisList.Diagnosis[${i}]`;  // Fixed: Use PsyDiagnosisList.Diagnosis to match controller
+            input.id = `PsyDiagnosisList_Diagnosis_${i}`;
         }
     }
-</script> *@
+</script>

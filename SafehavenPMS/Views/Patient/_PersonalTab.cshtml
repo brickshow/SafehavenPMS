@@ -1,26 +1,4 @@
-﻿@model SafehavenPMS.ViewModel.ClinicalStaffProfileViewModel
-
-@{
-    //Extract Patient records
-    var patient = Model.Patients.FirstOrDefault();
-
-    //Calculate age
-    int? age = null;
-
-    if (patient?.DateOfBirth != null)
-    {
-        var today = DateTime.Today;
-        var birthDate = patient.DateOfBirth;
-        age = today.Year - birthDate.Year;
-
-        // Subtract 1 if birthday hasn't occurred yet this year
-        if (birthDate.Date > today.AddYears(-age.Value))
-        {
-            age--;
-        }
-    }
-}
-
+﻿@model SafehavenPMS.ViewModel.PatientProfile.PatientPersonalInfoTabViewModel
 
 <div class="container-fluid rounded p-4 bg-white w-100">
     @* Header *@
@@ -40,47 +18,47 @@
             <div class="row g-3">
                 <div class="col-md-3">
                     <p class="text-muted mb-1">First Name</p>
-                    <p class="fw-semibold">@patient?.Firstname</p>
+                    <p class="fw-semibold">@Model.FirstName</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Middle Name</p>
-                    <p class="fw-semibold">@patient?.Lastname</p>
+                    <p class="fw-semibold">@Model.MiddleName</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Last Name</p>
-                    <p class="fw-semibold">@patient?.Lastname</p>
+                    <p class="fw-semibold">@Model.LastName</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Birthdate</p>
-                    <p class="fw-semibold">@patient?.DateOfBirth.ToShortTimeString()</p>
+                    <p class="fw-semibold">@Model.DateOfBirth</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Age</p>
-                    <p class="fw-semibold">@age</p>
+                    <p class="fw-semibold">@Model.Age</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Marital Status</p>
-                    <p class="fw-semibold">@patient?.MaritalStatus</p>
+                    <p class="fw-semibold">@Model.MaritalStatus</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Employment/Occupation</p>
-                    <p class="fw-semibold">@patient?.Occupation</p>
+                    <p class="fw-semibold">@Model.Occupation</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Religion</p>
-                    <p class="fw-semibold">@patient?.Religion</p>
+                    <p class="fw-semibold">@Model.Religion</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Sex</p>
-                    <p class="fw-semibold">@patient?.Sex</p>
+                    <p class="fw-semibold">@Model.Sex</p>
                 </div>
                 <div class="col-md-3">
                     <p class="text-muted mb-1">Phone Number</p>
-                    <p class="fw-semibold">@patient?.PhoneNumber</p>
+                    <p class="fw-semibold">@Model.PhoneNumber</p>
                 </div>
                 <div class="col-md-6">
-                    <p class="text-muted mb-1">Phone Number</p>
-                    <p class="fw-semibold">@patient?.Address</p>
+                    <p class="text-muted mb-1">Address</p>
+                    <p class="fw-semibold">@Model.Address</p>
                 </div>
             </div>
         </div>
@@ -88,7 +66,7 @@
         @* Profile Picture *@
         <div class="col-md-2">
             <div class="border overflow-hidden mb-2" style="width: 150px; height: 150px; border-radius:6px">
-                <img id="imagePreview" src="@(string.IsNullOrEmpty(patient?.PhotoUrl) ? "/Images/default.png" : patient?.PhotoUrl)" alt="Profile" class="w-100 h-100 object-fit-cover">
+                <img id="imagePreview" src="@(string.IsNullOrEmpty(Model?.PhotoUrl) ? "/Images/default.png" : Model?.PhotoUrl)" alt="Profile" class="w-100 h-100 object-fit-cover">
             </div>
         </div>
     </div>

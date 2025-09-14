@@ -1,0 +1,229 @@
+<div class="row" style="min-height:600px;">
+    <!-- Problem List Sidebar -->
+    <div class="col-md-4 border-end px-4 py-3 bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+            <h5 class="fw-bold mb-0">Problem List</h5>
+            <a href="#" class="text-teal fw-semibold small text-decoration-none">+ Add</a>
+        </div>
+        <div class="d-flex align-items-center mb-2 gap-2">
+            <span class="text-muted me-auto">Status</span>
+            <select class="form-select form-select-sm w-auto" style="font-size:0.95em;">
+                <option value="active">Active</option>
+                <option value="resolved">Resolved</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+        <table class="table problem-list-table">
+            <tbody>
+                <tr>
+                    <td>
+                        <a class="nav-link active w-100 d-block" id="problem1-tab" data-bs-toggle="pill" href="#problem1" role="tab" aria-controls="problem1" aria-selected="true" style="border-radius:8px; background:none;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span>Opioid Dependence due.....</span>
+                                <span class="badge bg-active ms-2">Active</span>
+                                <i class="bi bi-three-dots-vertical ms-2"></i>
+                            </div>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a class="nav-link w-100 d-block" id="problem2-tab" data-bs-toggle="pill" href="#problem2" role="tab" aria-controls="problem2" aria-selected="false" style="border-radius:8px; background:none;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span>Opioid Dependence due.....</span>
+                                <span class="badge bg-resolved ms-2">Resolved</span>
+                                <i class="bi bi-three-dots-vertical ms-2"></i>
+                            </div>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a class="nav-link w-100 d-block" id="problem3-tab" data-bs-toggle="pill" href="#problem3" role="tab" aria-controls="problem3" aria-selected="false" style="border-radius:8px; background:none;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span>Opioid Dependence due.....</span>
+                                <span class="badge bg-inactive ms-2">Inactive</span>
+                                <i class="bi bi-three-dots-vertical ms-2"></i>
+                            </div>
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a class="nav-link w-100 d-block" id="problem4-tab" data-bs-toggle="pill" href="#problem4" role="tab" aria-controls="problem4" aria-selected="false" style="border-radius:8px; background:none;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span>Opioid Dependence due.....</span>
+                                <span class="badge bg-inactive ms-2">Inactive</span>
+                                <i class="bi bi-three-dots-vertical ms-2"></i>
+                            </div>
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Main Content Header-->
+    <div class="col-md-8 bg-white">
+        <div class="tab-content" id="problemTabContent">
+            <!-- Problem 1 Content -->
+            <div class="tab-pane fade show active" id="problem1" role="tabpanel" aria-labelledby="problem1-tab">
+                @* Render dynamic goals and interventions for Problem 1 here *@
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <h5 class="fw-bold mb-0">Opioid Dependence due to unresolved trauma</h5>
+                        <span class="badge bg-active ms-2">Active</span>
+                    </div>
+                    <div class="small text-muted mb-3">
+                        Noted by: <span class="fw-semibold">Katie Duterte</span>
+                    </div>
+                    <hr />
+                </div>
+                <div class="mt-3 bg-light p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <h4 class="fw-bold mb-0">Goal</h4>
+                            <a href="#" class="text-teal fw-semibold small text-decoration-none">+ Add</a>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <select class="form-select form-select-sm w-auto ms-auto" style="font-size:0.95em;" aria-label="Goal Status">
+                                <option value="inprogress">In progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="discontinued">Discontinued</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-3 mb-2 bg-white shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold">Find out different cause of traumas</span>
+                            <span class="badge bg-inprogress ms-2">In Progress</span>
+                            <span class="badge bg-discontinued ms-2">Discontinued</span>
+                            <i class="bi bi-three-dots-vertical ms-auto"></i>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            Noted by: <span class="fw-semibold">Sha Ramos</span>
+                            <span class="ms-3">Target Date: 09-45-35</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="fw-bold text-uppercase small text-muted">Interventions</span>
+                        <a href="#" class="text-teal fw-semibold small ms-2">+ Add</a>
+                    </div>
+                    <div class="text-center text-muted py-5">
+                        This patient has no added interventions yet.<br />
+                        <a href="#" class="text-teal fw-semibold">+ Add now</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Problem 2 Content -->
+            <div class="tab-pane fade" id="problem2" role="tabpanel" aria-labelledby="problem2-tab">
+                @* Render dynamic goals and interventions for Problem 2 here *@
+            </div>
+            <!-- Problem 3 Content -->
+            <div class="tab-pane fade" id="problem3" role="tabpanel" aria-labelledby="problem3-tab">
+                @* Render dynamic goals and interventions for Problem 3 here *@
+            </div>
+            <!-- Problem 4 Content -->
+            <div class="tab-pane fade" id="problem4" role="tabpanel" aria-labelledby="problem4-tab">
+                @* Render dynamic goals and interventions for Problem 4 here *@
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-lightblue {
+        background: #D6F2F7 !important;
+    }
+
+    .bg-active {
+        background: #B8F5B8 !important;
+        color: #222 !important;
+    }   
+
+    .bg-resolved {
+        background: #E5D6F7 !important;
+        color: #7D4BB6 !important;
+    }
+
+    .bg-inactive {
+        background: #F7D6D6 !important;
+        color: #C94A4A !important;
+    }
+
+    .bg-inprogress {
+        background: #FFF59D !important;
+        color: #222 !important;
+    }
+
+    .bg-discontinued {
+        background: #BDBDBD !important;
+        color: #222 !important;
+    }
+
+    .bg-completed {
+        background: #B8F5B8 !important;
+        color: #222 !important;
+    }
+
+    .text-teal {
+        color: #008B9B !important;
+    }
+
+    .fw-bold {
+        font-weight: 700 !important;
+    }
+
+    .fw-semibold {
+        font-weight: 600 !important;
+    }
+
+    .rounded-3 {
+        border-radius: 12px !important;
+    }
+
+    .badge {
+        font-size: 0.95em;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .small {
+        font-size: 0.98em;
+    }
+
+    .table th,
+    .table td {
+        border: none !important;
+    }
+
+    .table {
+        margin-bottom: 0 !important;
+    }
+
+    .bi {
+        font-size: 1.2em;
+        vertical-align: middle;
+    }
+
+    .problem-list-table th,
+    .problem-list-table td {
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+
+    .problem-list-table tr:last-child td {
+        border-bottom: none !important;
+    }
+</style>
+
+<script>
+    document.querySelectorAll('.clickable-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+            // Replace with your desired action
+            alert('Row clicked: ' + row.cells[0].innerText);
+        });
+    });
+</script>

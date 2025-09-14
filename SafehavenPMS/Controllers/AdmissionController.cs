@@ -144,44 +144,6 @@ namespace SafehavenPMS.Controllers
             }
         }
 
-        // // SearchPatient: POST action to find a patient by id with PendingReview status
-        // [HttpPost]
-        // public async Task<IActionResult> SearchPatient(int searchQuery)
-        // {
-        //     // Find patient including their clinical staff assignments
-        //     var patient = await _context.Patients
-        //         .Include(p => p.ClinicalStaffPatients)
-        //             .ThenInclude(csp => csp.ClinicalStaff)
-        //         .FirstOrDefaultAsync(p => p.PatientId == searchQuery &&
-        //                                   p.PatientStatus == Enum.PatientStatusEnum.Ad.ToString()); // ensure status is PendingReview
-
-        //     if (patient == null)
-        //         return View("AdmitPatient", new AdmitPatientViewModel()); // return empty VM if not found
-
-        //     // Choose first associated physician if any
-        //     var physician = patient.ClinicalStaffPatients
-        //         .Select(csp => csp.ClinicalStaff)
-        //         .FirstOrDefault();
-
-        //     // Map patient data to AdmitPatientViewModel for the AdmitPatient view
-        //     var vm = new AdmitPatientViewModel
-        //     {
-        //         PatientId = patient.PatientId,
-        //         FullName = $"{patient.Firstname} {patient.MiddleName} {patient.Lastname}".Trim(),
-        //         Sex = patient.Sex,
-        //         DOB = patient.DateOfBirth,
-        //         EducationalAttainment = patient.Education,
-        //         Occupation = patient.Occupation,
-        //         Religion = patient.Religion,
-        //         PhoneNumber = patient.PhoneNumber,
-        //         PhysicianId = physician?.ClinicalStaffID,
-        //         PhysicianName = physician != null ? $"{physician.Firstname} {physician.Lastname}" : ""
-        //     };
-
-        //     await PopulateClinicalStaffDropdowns(); // fill dropdown lists for view
-        //     return View("AdmitPatient", vm); // return AdmitPatient view with VM
-        // }
-
         // GET: AdmitPatient page to show dropdown of patients with PendingReview
         [HttpGet]
         public async Task<IActionResult> AdmitPatient(int patientId)
@@ -301,17 +263,11 @@ namespace SafehavenPMS.Controllers
                 PsychometricianId = model.PsychometricianId,
                 SocialWorkerId = model.SocialWorkerId,
                 RecoveryCoachId = model.RecoveryCoachId,
-                FamilyName = model.FamilyName,
-                FamilyRelationship = model.FamilyRelationship,
-                FamilyPhone = model.FamilyPhone,
-                FamilyEmail = model.FamilyEmail,
-                ActivatePortal = model.ActivatePortal,
                 AdmissionDate = DateTime.Now,
                 CreatedAt = DateTime.Now,
                 CreatedBy = User?.Identity?.Name ?? "System",
                 Status = AdmissionStatus.Active.ToString(),
                 ProgramType = ProgramType,
-                CurrentFacility = "Safehaven Rehabilitation Center" // default facility on admission
             };
 
             // Use transaction to ensure consistency when creating admission + clinical staff link + updating patient
@@ -552,12 +508,7 @@ namespace SafehavenPMS.Controllers
                 return NotFound(); // admission not found
             }
 
-            // Update admission fields from posted model
-            admission.FamilyName = model.FamilyName;
-            admission.FamilyRelationship = model.FamilyRelationship;
-            admission.FamilyPhone = model.FamilyPhone;
-            admission.FamilyEmail = model.FamilyEmail;
-            admission.ActivatePortal = model.ActivatePortal;
+        
 
             // Optional: update patient fields if desired (commented out)
             // admission.Patient.Occupation = model.Occupation;
@@ -595,13 +546,11 @@ namespace SafehavenPMS.Controllers
                 // load current admission first so we can use its CurrentFacility as FromFacility
                 var admission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
 
-                var fromFacility = admission?.CurrentFacility ?? "Safehaven Rehabilitation Center";
 
                 // 1) insert transfer audit
                 var transfer = new PatientTransfer
                 {
                     PatientId = model.PatientId,
-                    FromFacility = fromFacility,
                     ToFacility = model.ReceivingFacility,
                     ProgramType = model.ProgramType,
                     Reason = model.Reason,
@@ -615,7 +564,6 @@ namespace SafehavenPMS.Controllers
                 // 2) update admission current info (if admission exists)
                 if (admission != null)
                 {
-                    admission.CurrentFacility = model.ReceivingFacility;
                     admission.ProgramType = model.ProgramType;
                     admission.Status = "Transferred";
                     _context.Admissions.Update(admission);

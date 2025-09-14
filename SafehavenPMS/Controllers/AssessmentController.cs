@@ -89,7 +89,8 @@ namespace SafehavenPMS.Controllers
             var pendingAssessment = patientList
             .Where(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
                         p.PatientStatus == PatientStatusEnum.OnAssessment.ToString() ||
-                        p.PatientStatus == PatientStatusEnum.PendingApproval.ToString())
+                        p.PatientStatus == PatientStatusEnum.PendingApproval.ToString()||
+                        p.PatientStatus == PatientStatusEnum.Admitted.ToString())
             .Select(p =>
             {
                 var appointment = p.NewAppointments.FirstOrDefault();

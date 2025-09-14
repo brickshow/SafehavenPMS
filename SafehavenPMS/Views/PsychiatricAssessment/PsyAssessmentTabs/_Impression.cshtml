@@ -1,11 +1,13 @@
-<form method="post" class="chief-complaint-form" role="form">
-    @Html.AntiForgeryToken()
+@model SafehavenPMS.ViewModel.PsychiatricAssessmentViewModel
 
+<form asp-action="SavingImpression" method="post" asp-controller="PsychiatricAssessment">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="PatientId" />
     <div class="chief-container">
         <h5 class="chief-title">Impression</h5>
 
         <div class="form-group">
-            <textarea id="Impression" name="Impression" class="form-control chief-textarea"
+            <textarea id="Impression" asp-for="Impression" class="form-control chief-textarea"
                       placeholder="Enter impression..." rows="10"></textarea>
         </div>
 

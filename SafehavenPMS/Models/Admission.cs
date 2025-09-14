@@ -48,28 +48,24 @@ namespace SafehavenPMS.Models
         [ForeignKey("RecoveryCoachId")]
         public ClinicalStaff? RecoveryCoach { get; set; }
 
-        // legacy single clinical staff field (kept for backward compatibility)
-        public int? ClinicalStaffID { get; set; }
-        public ClinicalStaff? ClinicalStaff { get; set; } // navigation
-
         // New: reuse the ClinicalStaffPatient join entity to list assignments for the patient
         // This allows using the existing ClinicalStaffPatient records without changing the AdmitPatient view
         public ICollection<ClinicalStaffPatient> ClinicalStaffPatients { get; set; } = new List<ClinicalStaffPatient>();
 
-        // Family / Payer info
-        [MaxLength(150)]
-        public string? FamilyName { get; set; }
+        // // Family / Payer info
+        // [MaxLength(150)]
+        // public string? FamilyName { get; set; }
 
-        [MaxLength(100)]
-        public string? FamilyRelationship { get; set; }
+        // [MaxLength(100)]
+        // public string? FamilyRelationship { get; set; }
 
-        [MaxLength(20)]
-        public string? FamilyPhone { get; set; }
+        // [MaxLength(20)]
+        // public string? FamilyPhone { get; set; }
 
-        [MaxLength(100)]
-        public string? FamilyEmail { get; set; }
+        // [MaxLength(100)]
+        // public string? FamilyEmail { get; set; }
 
-        public bool ActivatePortal { get; set; } = true;
+        // public bool ActivatePortal { get; set; } = true;
 
         // Admission tracking
         public DateTime AdmissionDate { get; set; } = DateTime.Now;
@@ -91,9 +87,6 @@ namespace SafehavenPMS.Models
 
         [MaxLength(50)]
         public string? Status { get; set; }
-
-        //Record for tranfer
-        public string? CurrentFacility { get; set; }
         public string? ProgramType { get; set; }
     }
 }
