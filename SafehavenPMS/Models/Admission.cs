@@ -68,13 +68,13 @@ namespace SafehavenPMS.Models
         // public bool ActivatePortal { get; set; } = true;
 
         // Admission tracking
-        public DateTime AdmissionDate { get; set; } = DateTime.Now;
+        public DateTime ApprovalDate { get; set; }
 
         // Audit
         [MaxLength(50)]
         public string? CreatedBy { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; }
 
         [MaxLength(50)]
         public string? UpdatedBy { get; set; }

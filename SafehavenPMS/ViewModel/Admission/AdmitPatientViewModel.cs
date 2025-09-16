@@ -69,7 +69,7 @@ namespace SafehavenPMS.ViewModel
         [MaxLength(50, ErrorMessage = "Created By cannot exceed 50 characters.")]
         public string? CreatedBy { get; set; }
 
-        public DateTime? CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [MaxLength(50, ErrorMessage = "Updated By cannot exceed 50 characters.")]
         public string? UpdatedBy { get; set; }

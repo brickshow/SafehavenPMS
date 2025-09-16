@@ -36,10 +36,8 @@ namespace SafehavenPMS.Controllers
             foreach (var sc in statusCounts) Console.WriteLine($"  Status='{sc.Status}' Count={sc.Count}");
 
             // Base query with related data loaded
-            var query = _context.InitialAssessmentForms
+            var query = _context.Admissions
                 .Include(iaf => iaf.Patient)
-                .Include(iaf => iaf.Diagnosis).ThenInclude(d => d.SubstanceUseEntries)
-                .Include(iaf => iaf.Recommendation)
                 .AsQueryable();
 
             // Show patients with PendingApproval OR Admitted status
@@ -66,12 +64,12 @@ namespace SafehavenPMS.Controllers
             // Apply sorting
             if (sortOrder == "ascending")
             {
-                query = query.OrderBy(iaf => iaf.CompletedAt ?? iaf.CreatedAt);
+                query = query.OrderBy(iaf => iaf.CreatedAt);
                 Console.WriteLine("Sorting ascending by completed/created");
             }
             else
             {
-                query = query.OrderByDescending(iaf => iaf.CompletedAt ?? iaf.CreatedAt);
+                query = query.OrderByDescending(iaf => iaf.ApprovalDate);
                 Console.WriteLine("Sorting descending by completed/created");
             }
 
@@ -81,34 +79,23 @@ namespace SafehavenPMS.Controllers
             int totalPages = pageSize > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 1;
             var currentPage = Math.Max(1, Math.Min(page, totalPages));
 
-            var iafList = await query
+            var patient = await query
                 .Skip((currentPage - 1) * pageSize)
                 .Take(pageSize > 0 ? pageSize : totalCount)
                 .ToListAsync();
 
-            Console.WriteLine($"Fetched iafList.Count = {iafList.Count}");
-            var iafIds = iafList.Select(i => i.InitialAssessmentFormId).ToList();
-            Console.WriteLine($"IAF ids: {string.Join(", ", iafIds)}");
-
             // Map to view model using the already-included navigation properties
-            var model = iafList.Select(iaf =>
+            var model = patient.Select(p =>
             {
-                var patient = iaf.Patient;
-
-                var diag = iaf.Diagnosis;
-                var substances = diag?.SubstanceUseEntries?
-                .Where(s => !string.IsNullOrWhiteSpace(s.SubstanceName))
-                .Select(s => s.SubstanceName.Trim())
-                .Distinct()
-                .ToList();
+                var name = $"{p.Patient.Firstname} {p.Patient.Lastname}";
 
                 return new AdmitPatientViewModel
                 {
-                    PatientId = patient?.PatientId ?? 0,
-                    FullName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "-",
-                    CreatedAt = iaf.CompletedAt ?? iaf.UpdatedAt ?? iaf.CreatedAt,
-                    //ApprovalDate = 
-                    Status = patient?.PatientStatus ?? "-",
+                    PatientId = p.PatientId,
+                    FullName = name,
+                    CreatedAt = p.CreatedAt,
+                    ApprovalDate = p.ApprovalDate,
+                    Status = p.Patient.PatientStatus,
                 };
             }).ToList();
 
@@ -211,13 +198,12 @@ namespace SafehavenPMS.Controllers
                     }
                 }
                 await PopulateClinicalStaffDropdowns(); // repopulate dropdowns for redisplay
-                return View(model); // return view with validation messages
+                return View(model); // return view with validation messagescd 
             }
 
-            var patient = await _context.Patients
+            var patient = await _context.Admissions
+                .Include(p => p.Patient)
                 .Include(p => p.ClinicalStaffPatients)
-                .Include(i => i.InitialAssessmentForms)
-                    .ThenInclude(r => r.Recommendation)
                 .FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
 
             if (patient == null)
@@ -230,28 +216,21 @@ namespace SafehavenPMS.Controllers
             // Generate next CaseId "CASE-000001"
             var newCaseId = await GenerateNextCaseIdAsync();
 
-            //Get the program type
-            var ProgramType = patient.InitialAssessmentForms?
-                .OrderByDescending(iaf => iaf.CreatedAt)
-                .FirstOrDefault()?
-                .Recommendation?.ProgramType ?? "-";
 
-            // Build admission entity
-            var admission = new Admission
-            {
-                CaseId = newCaseId,
-                PatientId = model.PatientId,
-                PhysicianId = model.PhysicianId,
-                PsychologistId = model.PsychologistId,
-                PsychometricianId = model.PsychometricianId,
-                SocialWorkerId = model.SocialWorkerId,
-                RecoveryCoachId = model.RecoveryCoachId,
-                AdmissionDate = DateTime.Now,
-                CreatedAt = DateTime.Now,
-                CreatedBy = User?.Identity?.Name ?? "System",
-                Status = AdmissionStatus.Active.ToString(),
-                ProgramType = ProgramType,
-            };
+
+            // Update admission entity
+
+            patient.CaseId = newCaseId;
+            patient.PatientId = model.PatientId;
+            patient.PhysicianId = model.PhysicianId;
+            patient.PsychologistId = model.PsychologistId;
+            patient.PsychometricianId = model.PsychometricianId;
+            patient.SocialWorkerId = model.SocialWorkerId;
+            patient.RecoveryCoachId = model.RecoveryCoachId;
+            patient.CreatedAt = DateTime.Now;
+            patient.CreatedBy = User?.Identity?.Name ?? "System";
+            patient.Status = AdmissionStatus.Active.ToString();
+
 
             // Use transaction to ensure consistency when creating admission + clinical staff link + updating patient
             using (var tx = await _context.Database.BeginTransactionAsync())
@@ -284,11 +263,8 @@ namespace SafehavenPMS.Controllers
                     }
 
                     // Update patient status
-                    patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
-                    _context.Patients.Update(patient);
+                    patient.Patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
 
-                    // Add admission record
-                    _context.Admissions.Add(admission);
 
                     // Prepopulate Psychiatric fields
                     var psychiatricAssessment = new PsychiatricAssessment

@@ -161,11 +161,9 @@
                         <tr>
                             <td>@rowNum</td>
                             <td>@admission.FullName</td>
-                            <td>
-                               -
-                            </td>
-                            <td>@admission.Diagnosis</td>
-                            <td>@admission.Recommendation</td>
+                            <td>-</td>
+                            <td>@(admission.ApprovalDate.ToString("MMM dd, yyyy"))</td>
+                            <td>@admission.CreatedAt.ToString("MMM dd, yyyy")</td>
                             <td>
                                 @if (admission.Status == PatientStatusEnum.PendingAdmission.ToString())
                                 {
