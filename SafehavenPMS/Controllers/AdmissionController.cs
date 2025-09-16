@@ -102,29 +102,13 @@ namespace SafehavenPMS.Controllers
                 .Distinct()
                 .ToList();
 
-                var diagnosisText = (substances != null && substances.Any())
-                ? string.Join(", ", substances)
-                : "-";
-
-                var rec = iaf.Recommendation;
-                string recommendationText = "-";
-                if (rec != null)
-                {
-                var pt = rec.ProgramType?.Trim();
-                if (!string.IsNullOrWhiteSpace(pt))
-                    recommendationText = pt;
-                }
-
-                Console.WriteLine($"IAF {iaf.InitialAssessmentFormId} -> DiagnosisId={(diag != null ? diag.DiagnosisId.ToString() : "null")}, SubstanceCount={(substances?.Count ?? 0)}, RecommendationId={(rec != null ? rec.RecommendationId.ToString() : "null")}");
-
                 return new AdmitPatientViewModel
                 {
-                PatientId = patient?.PatientId ?? 0,
-                FullName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "-",
-                CompletedDate = iaf.CompletedAt ?? iaf.UpdatedAt ?? iaf.CreatedAt,
-                Status = patient?.PatientStatus ?? "-",
-                Diagnosis = diagnosisText,
-                Recommendation = recommendationText
+                    PatientId = patient?.PatientId ?? 0,
+                    FullName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "-",
+                    CreatedAt = iaf.CompletedAt ?? iaf.UpdatedAt ?? iaf.CreatedAt,
+                    //ApprovalDate = 
+                    Status = patient?.PatientStatus ?? "-",
                 };
             }).ToList();
 

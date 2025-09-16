@@ -49,7 +49,7 @@ namespace SafehavenPMS.Controllers
 
                 // Show patients with PendingApproval OR Admitted status
                 var pendingApprovalStatus = PatientStatusEnum.PendingApproval.ToString();
-                var admittedStatus = PatientStatusEnum.Admitted.ToString();
+                var admittedStatus = PatientStatusEnum.PendingAdmission.ToString();
                 var transferStatus = PatientStatusEnum.Discharged.ToString();
                 Console.WriteLine("Filtering for PatientStatus = " + pendingApprovalStatus + " OR " + admittedStatus);
 

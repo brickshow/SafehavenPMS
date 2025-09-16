@@ -61,16 +61,7 @@ namespace SafehavenPMS.ViewModel
         // ----------------------
         // Admission Tracking
         // ----------------------
-        public DateTime AdmissionDate { get; set; } = DateTime.Now;
-
-        // Add this property for drug dependency status
-        public bool IsDrugDependent { get; set; }
-
-        // Diagnosis and Recommendation
-        public string? Diagnosis { get; set; }
-        public string? Recommendation { get; set; }
-
-        public DateTime? CompletedDate { get; set; }
+        public DateTime ApprovalDate { get; set; } = DateTime.Now;
 
         // ----------------------
         // Audit
@@ -78,7 +69,7 @@ namespace SafehavenPMS.ViewModel
         [MaxLength(50, ErrorMessage = "Created By cannot exceed 50 characters.")]
         public string? CreatedBy { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? CreatedAt { get; set; } = DateTime.Now;
 
         [MaxLength(50, ErrorMessage = "Updated By cannot exceed 50 characters.")]
         public string? UpdatedBy { get; set; }
