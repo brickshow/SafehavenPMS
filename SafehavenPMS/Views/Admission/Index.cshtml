@@ -139,9 +139,9 @@
                 <tr>
                     <th>No.</th>
                     <th>Patient Name</th>
+                    <th>Treatment Team</th>
                     <th>Approval Date</th> 
                     <th>Admission Date</th>
-                    <th>Treatment Team</th>
                     <th>Status</th>
                     <th class="text-center">Actions</th>
                 </tr>
@@ -160,21 +160,10 @@
                     {
                         <tr>
                             <td>@rowNum</td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <strong>@admission.FullName</strong>
-                                </div>
-                            </td>
-                            <td>
-                                @(admission.CompletedDate.HasValue 
-                                    ? admission.CompletedDate.Value.ToString("MM-dd-yy") 
-                                    : "-")
-                            </td>
-                            <td>
-                               -
-                            </td>
-                            <td>@admission.Diagnosis</td>
-                            <td>@admission.Recommendation</td>
+                            <td>@admission.FullName</td>
+                            <td>-</td>
+                            <td>@(admission.ApprovalDate.ToString("MMM dd, yyyy"))</td>
+                            <td>@admission.CreatedAt.ToString("MMM dd, yyyy")</td>
                             <td>
                                 @if (admission.Status == PatientStatusEnum.PendingAdmission.ToString())
                                 {

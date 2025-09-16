@@ -7,7 +7,6 @@ namespace SafehavenPMS.ViewModel.Approval
     {
         public int PatientId { get; set; }
         public Patient? Patient { get; set; }
-
         //Attributes to be displayed in the view
         public string? PatientName { get; set; }
         public DateTime? CompletedAt { get; set; }

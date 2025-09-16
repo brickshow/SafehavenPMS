@@ -165,7 +165,7 @@
                                     <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Pending
                                     </div>                                }
-                                else if (admission.Status == PatientStatusEnum.Admitted.ToString())
+                                else if (admission.Status == PatientStatusEnum.PendingAdmission.ToString())
                                 {
                                     <div style="background-color: #9FE2FB; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Approved
@@ -220,7 +220,9 @@
                                                    Community-Based
                                                 </a>
                                             </li>
-                                        }else{
+                                        }
+                                        else
+                                        {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                    href="@Url.Action( "ViewPatient", "Patient", new { patientId = admission.PatientId })">

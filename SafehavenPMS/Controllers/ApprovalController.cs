@@ -49,7 +49,7 @@ namespace SafehavenPMS.Controllers
 
                 // Show patients with PendingApproval OR Admitted status
                 var pendingApprovalStatus = PatientStatusEnum.PendingApproval.ToString();
-                var admittedStatus = PatientStatusEnum.Admitted.ToString();
+                var admittedStatus = PatientStatusEnum.PendingAdmission.ToString();
                 var transferStatus = PatientStatusEnum.Discharged.ToString();
                 Console.WriteLine("Filtering for PatientStatus = " + pendingApprovalStatus + " OR " + admittedStatus);
 
@@ -149,27 +149,27 @@ namespace SafehavenPMS.Controllers
             }
         }
 
-        // helper to produce next CaseId in the format CASE-000001
-        private async Task<string> GenerateNextCaseIdAsync()
-        {
-            // find the maximum numeric suffix used so far
-            var lastCase = await _context.Admissions
-                .Where(a => !string.IsNullOrEmpty(a.CaseId) && a.CaseId.StartsWith("CASE-"))
-                .Select(a => a.CaseId)
-                .OrderByDescending(c => c)
-                .FirstOrDefaultAsync();
+        //// helper to produce next CaseId in the format CASE-000001
+        //private async Task<string> GenerateNextCaseIdAsync()
+        //{
+        //    // find the maximum numeric suffix used so far
+        //    var lastCase = await _context.Admissions
+        //        .Where(a => !string.IsNullOrEmpty(a.CaseId) && a.CaseId.StartsWith("CASE-"))
+        //        .Select(a => a.CaseId)
+        //        .OrderByDescending(c => c)
+        //        .FirstOrDefaultAsync();
 
-            int next = 1;
-            if (!string.IsNullOrWhiteSpace(lastCase) && lastCase.Length >= 6)
-            {
-                var suffix = lastCase.Substring(5);
-                if (int.TryParse(suffix, out var parsed))
-                {
-                    next = parsed + 1;
-                }
-            }
-            return $"CASE-{next:000000}";
-        }
+        //    int next = 1;
+        //    if (!string.IsNullOrWhiteSpace(lastCase) && lastCase.Length >= 6)
+        //    {
+        //        var suffix = lastCase.Substring(5);
+        //        if (int.TryParse(suffix, out var parsed))
+        //        {
+        //            next = parsed + 1;
+        //        }
+        //    }
+        //    return $"CASE-{next:000000}";
+        //}
 
         //Action for Residential Modal
         [HttpPost]
@@ -194,10 +194,9 @@ namespace SafehavenPMS.Controllers
             var newAdmission = new Admission
             {
                 PatientId = patientId,
-                CaseId = await GenerateNextCaseIdAsync(),
+                // CaseId = await GenerateNextCaseIdAsync(),
                 ProgramType = programType,
-                AdmissionDate = DateTime.Now,
-                CreatedAt = DateTime.Now,
+                ApprovalDate = DateTime.Now,
                 CreatedBy = User.Identity?.Name ?? "System"
             };
 
