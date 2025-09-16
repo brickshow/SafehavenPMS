@@ -42,21 +42,21 @@ namespace SafehavenPMS.Controllers
             }
 
             // Fetch InitialAssessmentForm and ProblemList for TreatmentPlan
-            var assessment = await _context.InitialAssessmentForms
-                .Include(a => a.Problems)
+            var assessment = await _context.PsychiatricAssessments
+                .Include(a => a.ProblemLists)
                     .ThenInclude(p => p.Goals)
                 .FirstOrDefaultAsync(a => a.PatientId == patient.PatientId);
 
             var treatmentPlanViewModel = new PatientTreatmentPlanTabViewModel();
 
-            if (assessment?.Problems != null)
+            if (assessment?.ProblemLists != null)
             {
-                foreach (var problem in assessment.Problems)
+                foreach (var problem in assessment.ProblemLists)
                 {
                     var problemVm = new ProblemViewModel
                     {
-                        ProblemListId = problem.ProblemListId,
-                        InitialAssessmentFormId = assessment.InitialAssessmentFormId,
+                        PsyProblemListId = problem.PsyProblemListId,
+                        InitialAssessmentFormId = assessment.PsychiatricAssessmentId,
                         Problems = problem.Problem,
                         Status = problem.Status,
                         Goals = problem.Goals?.Select(g => new GoalViewModel

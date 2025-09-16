@@ -19,22 +19,23 @@ namespace SafehavenPMS.Controllers
         {
             _context = context;
         }
-        
+
+        // Add Goal for PsychiatricAssessment Problem
         [HttpPost]
-        public async Task<IActionResult> AddGoal(int patientId, int problemListId, string description, DateTime? targetDate)
+        public async Task<IActionResult> AddGoal(int patientId, int psyProblemListId, string description, DateTime? targetDate)
         {
             if (string.IsNullOrWhiteSpace(description))
             {
                 return BadRequest("Goal description is required.");
             }
 
-            var problem = await _context.ProblemLists
+            var problem = await _context.PsyProblemLists
                 .Include(p => p.Goals)
-                .FirstOrDefaultAsync(p => p.ProblemListId == problemListId);
+                .FirstOrDefaultAsync(p => p.PsyProblemListId == psyProblemListId);
 
             if (problem == null)
             {
-                return NotFound("Problem not found.");
+                return NotFound("Psychiatric Problem not found.");
             }
 
             var goal = new Goal
@@ -43,28 +44,26 @@ namespace SafehavenPMS.Controllers
                 TargetDate = targetDate,
                 Status = "In Progress",
                 NotedBy = User.Identity?.Name ?? "System",
-                ProblemListId = problemListId,
+                PsyProblemListId = psyProblemListId,
                 CreatedBy = User.Identity?.Name ?? "System",
                 CreatedAt = DateTime.Now
-                // Add other fields if needed
             };
 
             _context.Goals.Add(goal);
             await _context.SaveChangesAsync();
 
-            // Optionally, return the updated goals list or a success message
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
         [HttpPost]
-        public async Task<IActionResult> EditGoal(int patientId, int goalId, int problemListId, string description, DateTime? targetDate)
+        public async Task<IActionResult> EditGoal(int patientId, int goalId, int psyProblemListId, string description, DateTime? targetDate)
         {
             if (string.IsNullOrWhiteSpace(description))
             {
                 return BadRequest("Goal description is required.");
             }
 
-            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.ProblemListId == problemListId);
+            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.PsyProblemListId == psyProblemListId);
             if (goal == null)
             {
                 return NotFound("Goal not found.");
@@ -72,8 +71,6 @@ namespace SafehavenPMS.Controllers
 
             goal.Description = description;
             goal.TargetDate = targetDate;
-
-            //TODO: Add audit fields for activity tracking
             goal.UpdatedAt = DateTime.Now;
             goal.UpdatedBy = User.Identity?.Name ?? "System";
 
@@ -84,9 +81,9 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> MarkGoalAsCompleted(int patientId, int goalId, int problemListId)
+        public async Task<IActionResult> MarkGoalAsCompleted(int patientId, int goalId, int psyProblemListId)
         {
-            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.ProblemListId == problemListId);
+            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.PsyProblemListId == psyProblemListId);
             if (goal == null)
                 return NotFound();
 
@@ -100,9 +97,9 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> DiscontinueGoal(int patientId, int goalId, int problemListId)
+        public async Task<IActionResult> DiscontinueGoal(int patientId, int goalId, int psyProblemListId)
         {
-            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.ProblemListId == problemListId);
+            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.PsyProblemListId == psyProblemListId);
             if (goal == null)
                 return NotFound();
 
@@ -115,48 +112,56 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
+        // Add Psychiatric Problem
         [HttpPost]
-        public async Task<IActionResult> AddProblem(int patientId, string Problems, int initialAssessmentFormId)
+        public async Task<IActionResult> AddProblem(int patientId, string problemText, int psychiatricAssessmentId)
         {
-            if (string.IsNullOrWhiteSpace(Problems))
+            if (string.IsNullOrWhiteSpace(problemText))
                 return BadRequest("Problem description is required.");
 
-            var problem = new ProblemList
+            // Check if PsychiatricAssessmentId exists
+            var assessmentExists = await _context.PsychiatricAssessments
+                .AnyAsync(a => a.PsychiatricAssessmentId == psychiatricAssessmentId);
+
+            if (!assessmentExists)
+                return BadRequest("Invalid PsychiatricAssessmentId.");
+
+            var problem = new PsyProblemList
             {
-                Problem = Problems,
+                PsychiatricAssessmentId = psychiatricAssessmentId,
+                Problem = problemText,
                 Status = "Active",
-                InitialAssessmentFormId = initialAssessmentFormId, // <-- Set this!
                 CreatedBy = User.Identity?.Name ?? "System",
                 CreatedAt = DateTime.Now
             };
 
-            _context.ProblemLists.Add(problem);
+            _context.PsyProblemLists.Add(problem);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
         [HttpPost]
-        public async Task<IActionResult> EditProblem(int patientId, int ProblemListId, string Problems)
+        public async Task<IActionResult> EditProblem(int patientId, int psyProblemListId, string problemText)
         {
-            var problem = await _context.ProblemLists.FirstOrDefaultAsync(p => p.ProblemListId == ProblemListId);
+            var problem = await _context.PsyProblemLists.FirstOrDefaultAsync(p => p.PsyProblemListId == psyProblemListId);
             if (problem == null)
                 return NotFound();
 
-            problem.Problem = Problems;
+            problem.Problem = problemText;
             problem.UpdatedAt = DateTime.Now;
             problem.UpdatedBy = User.Identity?.Name ?? "System";
 
-            _context.ProblemLists.Update(problem);
+            _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
         [HttpPost]
-        public async Task<IActionResult> MarkProblemResolved(int patientId, int ProblemListId)
+        public async Task<IActionResult> MarkProblemResolved(int patientId, int psyProblemListId)
         {
-            var problem = await _context.ProblemLists.FirstOrDefaultAsync(p => p.ProblemListId == ProblemListId);
+            var problem = await _context.PsyProblemLists.FirstOrDefaultAsync(p => p.PsyProblemListId == psyProblemListId);
             if (problem == null)
                 return NotFound();
 
@@ -164,16 +169,16 @@ namespace SafehavenPMS.Controllers
             problem.UpdatedAt = DateTime.Now;
             problem.UpdatedBy = User.Identity?.Name ?? "System";
 
-            _context.ProblemLists.Update(problem);
+            _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
         [HttpPost]
-        public async Task<IActionResult> MarkProblemInactive(int patientId, int ProblemListId)
+        public async Task<IActionResult> MarkProblemInactive(int patientId, int psyProblemListId)
         {
-            var problem = await _context.ProblemLists.FirstOrDefaultAsync(p => p.ProblemListId == ProblemListId);
+            var problem = await _context.PsyProblemLists.FirstOrDefaultAsync(p => p.PsyProblemListId == psyProblemListId);
             if (problem == null)
                 return NotFound();
 
@@ -181,16 +186,16 @@ namespace SafehavenPMS.Controllers
             problem.UpdatedAt = DateTime.Now;
             problem.UpdatedBy = User.Identity?.Name ?? "System";
 
-            _context.ProblemLists.Update(problem);
+            _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
         [HttpPost]
-        public async Task<IActionResult> MarkProblemActive(int patientId, int ProblemListId)
+        public async Task<IActionResult> MarkProblemActive(int patientId, int psyProblemListId)
         {
-            var problem = await _context.ProblemLists.FirstOrDefaultAsync(p => p.ProblemListId == ProblemListId);
+            var problem = await _context.PsyProblemLists.FirstOrDefaultAsync(p => p.PsyProblemListId == psyProblemListId);
             if (problem == null)
                 return NotFound();
 
@@ -198,7 +203,7 @@ namespace SafehavenPMS.Controllers
             problem.UpdatedAt = DateTime.Now;
             problem.UpdatedBy = User.Identity?.Name ?? "System";
 
-            _context.ProblemLists.Update(problem);
+            _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });

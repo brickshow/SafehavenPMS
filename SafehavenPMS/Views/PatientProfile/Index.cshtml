@@ -35,9 +35,12 @@
             <li class="nav-item">
                 <a class="nav-link" id="medical-history-tab" data-bs-toggle="tab" href="#tab-medical-history" role="tab" aria-controls="tab-medical-history" aria-selected="false">Medical History</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" id="treatment-tab" data-bs-toggle="tab" href="#tab-treatment" role="tab" aria-controls="tab-treatment" aria-selected="false">Treatment Plan</a>
-            </li>
+
+            @if(Model.TreatmentPlanTab != null && Model.TreatmentPlanTab.Problems != null && Model.TreatmentPlanTab.Problems.Any()){
+                <li class="nav-item">
+                    <a class="nav-link" id="treatment-tab" data-bs-toggle="tab" href="#tab-treatment" role="tab" aria-controls="tab-treatment" aria-selected="false">Treatment Plan</a>
+                </li>
+            }
             <li class="nav-item">
                 <a class="nav-link" id="progress-note-tab" data-bs-toggle="tab" href="#tab-progress-note" role="tab" aria-controls="tab-progress-note" aria-selected="false">Progress Note</a>
             </li>
@@ -109,3 +112,24 @@
             font-weight: bold;
         }
 </style>
+
+<script>
+    // Save active tab to localStorage
+    document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(tab) {
+        tab.addEventListener('shown.bs.tab', function (e) {
+            localStorage.setItem('activeProfileTab', e.target.id);
+        });
+    });
+
+    // Restore active tab from localStorage
+    document.addEventListener('DOMContentLoaded', function () {
+        var activeTabId = localStorage.getItem('activeProfileTab');
+        if (activeTabId) {
+            var tabTrigger = document.getElementById(activeTabId);
+            if (tabTrigger) {
+                var tab = new bootstrap.Tab(tabTrigger);
+                tab.show();
+            }
+        }
+    });
+</script>

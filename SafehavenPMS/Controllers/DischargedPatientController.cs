@@ -5,15 +5,15 @@ using SafehavenPMS.ViewModel;
 
 namespace SafehavenPMS.Controllers
 {
-    public class TransferController : Controller
+    public class DischargedPatientController : Controller
     {
         private readonly SafehavenPMSContext _context;
 
-        public TransferController(SafehavenPMSContext context)
+        public DischargedPatientController(SafehavenPMSContext context)
         {
             _context = context;
         }
-       
+        
         public async Task<IActionResult> Index(
                    int? page = 1,
                    int? pageSize = 10,
@@ -21,17 +21,17 @@ namespace SafehavenPMS.Controllers
                    string status = null,
                    string sortOrder = null)
         {
-            // Query transfers with patient information
-            var query = _context.PatientTransfers
+            // Query discharged patients with patient information
+            var query = _context.DischargedPatients
                 .Include(a => a.Patient)
                 .AsQueryable();
 
-            // If you want to return only Closed transfers uncomment the next line:
-            query = query.Where(a => a.Patient.PatientStatus == Enum.PatientStatusEnum.Closed.ToString());
+            // Only get patients with Discharged status
+            query = query.Where(a => a.Status == Enum.PatientStatusEnum.Discharged.ToString());
 
-            // Get closed count (transfers with Closed status)
-            ViewBag.TransfersCount = await _context.PatientTransfers
-                .CountAsync(p => p.Patient.PatientStatus == Enum.PatientStatusEnum.Closed.ToString());
+            // Get discharged count
+            ViewBag.DischargedCount = await _context.DischargedPatients
+                .CountAsync(p => p.Status == Enum.PatientStatusEnum.Discharged.ToString());
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -50,7 +50,7 @@ namespace SafehavenPMS.Controllers
                     a.PatientId.ToString().Contains(searchQuery));
             }
 
-            // Apply status filter (optional - will further restrict results)
+            // Apply status filter (optional)
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(a => a.Status == status);
@@ -59,7 +59,7 @@ namespace SafehavenPMS.Controllers
             // Apply sorting
             query = sortOrder == "ascending"
                 ? query.OrderBy(a => a.Patient.Firstname).ThenBy(a => a.Patient.Lastname)
-                : query.OrderByDescending(a => a.CreatedAt);
+                : query.OrderByDescending(a => a.DischargeDate);
 
             // Pagination and projection
             int totalItems = await query.CountAsync();
@@ -69,30 +69,26 @@ namespace SafehavenPMS.Controllers
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = currentPage;
 
-            var transfers = await query
+            var dischargedPatients = await query
                 .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
 
-            var viewModel = transfers.Select(a => new TransferViewModel
+            var viewModel = dischargedPatients.Select(a => new DischargedViewModel
             {
-                TransferId = a.TransferId,
+                DischargeId = a.DischargeId,
                 PatientId = a.PatientId,
-                FromFacility = a.FromFacility,
-                TransferDate = a.TransferDate,
-                PatientName = a.Patient != null ? $"{a.Patient.Firstname} {a.Patient.Lastname}" : "-",
-                ToFacility = a.ToFacility,
-                ProgramType = a.ProgramType,
+                Photo = a.Patient?.PhotoUrl,
+                PatientName = a.Patient != null ? $"{a.Patient.Firstname} {a.Patient.Lastname}" : "Unknown",
                 Reason = a.Reason,
-                CreatedBy = a.CreatedBy,
-                CreatedAt = a.CreatedAt,
+                DischargedBy = a.CreatedBy,
+                DischargeDate = a.DischargeDate,
                 Status = a.Status,
-                Photo = a.Patient?.PhotoUrl
             }).ToList();
 
             return View(viewModel);
         }
-
+    
         [HttpGet]
         public IActionResult Search(string searchQuery)
         {

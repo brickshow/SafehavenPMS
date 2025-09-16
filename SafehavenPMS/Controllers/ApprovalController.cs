@@ -50,7 +50,7 @@ namespace SafehavenPMS.Controllers
                 // Show patients with PendingApproval OR Admitted status
                 var pendingApprovalStatus = PatientStatusEnum.PendingApproval.ToString();
                 var admittedStatus = PatientStatusEnum.Admitted.ToString();
-                var transferStatus = PatientStatusEnum.Closed.ToString();
+                var transferStatus = PatientStatusEnum.Discharged.ToString();
                 Console.WriteLine("Filtering for PatientStatus = " + pendingApprovalStatus + " OR " + admittedStatus);
 
                 // Filter by patient status (PendingApproval OR Admitted)
@@ -188,7 +188,7 @@ namespace SafehavenPMS.Controllers
             }
 
             // Update patient status to Admitted
-            patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
+            patient.PatientStatus = PatientStatusEnum.PendingAdmission.ToString();
 
             //Update admission Program type
             var newAdmission = new Admission
@@ -219,7 +219,7 @@ namespace SafehavenPMS.Controllers
         //Action for Outpatient Modal
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> TransferToOutpatient(int patientId, string programType)
+        public async Task<IActionResult> DischargeToOutpatient(int patientId, string programType)
         {
             if (patientId <= 0 || string.IsNullOrWhiteSpace(programType))
             {
@@ -232,28 +232,29 @@ namespace SafehavenPMS.Controllers
                 return NotFound("Patient not found.");
             }
 
-            // Update patient status to Admitted
-            patient.PatientStatus = PatientStatusEnum.Closed.ToString();
+            // Update patient status to Discharged
+            patient.PatientStatus = PatientStatusEnum.Discharged.ToString();
 
-            var transfer = new PatientTransfer
+            var dischargedPatient = new DischargedPatient
             {
                 PatientId = patientId,
-                ToFacility = "Outpatient",
                 ProgramType = programType,
-                Reason = "Transferred to Outpatient",
-                TransferDate = DateTime.Now,
-                CreatedBy = User.Identity?.Name ?? "System"
+                Reason = "Transferred",
+                Status = PatientStatusEnum.Discharged.ToString(),
+                CreatedBy = User.Identity?.Name ?? "System",
+                DischargeDate = DateTime.Now
             };
-            //Save changes to database
-            _context.PatientTransfers.Add(transfer);
+
+            // Save changes to database
+            _context.DischargedPatients.Add(dischargedPatient);
             _context.Patients.Update(patient);
             await _context.SaveChangesAsync();
 
-            //Tempdata for Success message
-            TempData["SuccessMessage"] = $"Patient {patientId} transferred to {programType} successfully.";
+            // Tempdata for Success message
+            TempData["SuccessMessage"] = $"Patient {patientId} discharged to {programType} successfully.";
 
-            // Log the admission action
-            Console.WriteLine($"Patient {patientId} transferred to {programType} on {DateTime.Now}");
+            // Log the discharge action
+            Console.WriteLine($"Patient {patientId} discharged to {programType} on {DateTime.Now}");
 
             // Redirect back to the Index view
             return RedirectToAction(nameof(Index));
@@ -262,7 +263,7 @@ namespace SafehavenPMS.Controllers
         //Action for Community-based
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> TransferToCommunity(int patientId, string programType)
+        public async Task<IActionResult> DischargeToCommunity(int patientId, string programType)
         {
             if (patientId <= 0 || string.IsNullOrWhiteSpace(programType))
             {
@@ -275,29 +276,29 @@ namespace SafehavenPMS.Controllers
                 return NotFound("Patient not found.");
             }
 
-            // Update patient status to Admitted
-            patient.PatientStatus = PatientStatusEnum.Closed.ToString();
+            // Update patient status to Discharged
+            patient.PatientStatus = PatientStatusEnum.Discharged.ToString();
 
-            //Update admission Program type
-            var newAdmission = new Admission
+            var dischargedPatient = new DischargedPatient
             {
                 PatientId = patientId,
                 ProgramType = programType,
-                AdmissionDate = DateTime.Now,
-                CreatedAt = DateTime.Now,
-                CreatedBy = User.Identity?.Name ?? "System"
+                Reason = "Transferred",
+                Status = PatientStatusEnum.Discharged.ToString(),
+                CreatedBy = User.Identity?.Name ?? "System",
+                DischargeDate = DateTime.Now
             };
 
-            //Save changes to database
-            _context.Admissions.Add(newAdmission);
+            // Save changes to database
+            _context.DischargedPatients.Add(dischargedPatient);
             _context.Patients.Update(patient);
             await _context.SaveChangesAsync();
 
-            //Tempdata for Success message
-            TempData["SuccessMessage"] = $"Patient {patientId} transferred to {programType} successfully.";
+            // Tempdata for Success message
+            TempData["SuccessMessage"] = $"Patient {patientId} discharged to {programType} successfully.";
 
-            // Log the admission action
-            Console.WriteLine($"Patient {patientId} transferred to {programType} on {DateTime.Now}");
+            // Log the discharge action
+            Console.WriteLine($"Patient {patientId} discharged to {programType} on {DateTime.Now}");
 
             // Redirect back to the Index view
             return RedirectToAction(nameof(Index));

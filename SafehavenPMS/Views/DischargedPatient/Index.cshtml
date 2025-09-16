@@ -1,15 +1,15 @@
 @using SafehavenPMS.Enum
-@model List<SafehavenPMS.ViewModel.TransferViewModel>
+@model List<SafehavenPMS.ViewModel.DischargedViewModel>
 @{
-    ViewBag.Title = "Transfer Patient List";
+    ViewBag.Title = "Discharged Patients";
 }
 
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center g-4">
             <div class="d-flex justify-content-center align-items-center">
-                <i class='bx bxs-calendar fs-2 me-2'></i>
-                <h5 class="text-custom mb-0">Transfer</h5>
+                <i class='bx bxs-group   fs-2 me-2'></i>
+                <h5 class="text-custom mb-0">Discharged Patients</h5>
             </div>
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
@@ -111,9 +111,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Patient</th>
-                    <th>Date Transferred</th>
-                    <th>Receiving Facility</th>
-                    <th>New Program</th>
+                    <th>Discharged Date</th>
                     <th>Reason</th>
                     <th class="text-center">Status</th>
                     <th class="text-center">Action</th>
@@ -129,23 +127,17 @@
                 else
                 {
                     var row = 1;
-                    foreach (var transfer in Model)
+                    foreach (var discharged in Model)
                     {
                         <tr>
                             <td>@row</td>
-                            <td>@(transfer.PatientName ?? "-")</td>
-                            <td>@(transfer.TransferDate?.ToString("MMM dd, yyyy") ?? "-")</td>
-                            <td>@(transfer.ToFacility ?? "-")</td>
-                            <td>@(transfer.ProgramType ?? "-")</td>
-                            <td>@(transfer.Reason ?? "-")</td>
-                            <td class="text-center">                              
-                                @if (transfer.Status == PatientStatusEnum.Closed.ToString())
-                                {
-                                    <div style="background-color: rgba(255, 0, 0, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                                        Closed
-                                    </div>
-                                }
-
+                            <td>@(discharged.PatientName ?? "-")</td>
+                            <td>@(discharged.DischargeDate?.ToString("MMM dd, yyyy") ?? "-")</td>
+                            <td>@(discharged.Reason ?? "-")</td>
+                            <td class="text-center">
+                              <div style="background-color: #F8000080; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        @discharged.Status
+                              </div>     
                             </td>
                             <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
@@ -154,15 +146,15 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                            <li>
+                                            @* <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
                                                     <span class="badge-dot bg-primary"></span>
                                                     View Profile
                                                 </a>
-                                            </li>
+                                            </li> *@
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("AdmitPatient", "Admission", new { id = transfer.PatientId })">
+                                                   href="@Url.Action("AdmitPatient", "Admission", new { id = discharged.PatientId })">
                                                     <span class="badge-dot bg-success"></span>
                                                     Re-Admit Patient
                                                 </a>

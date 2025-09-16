@@ -16,9 +16,8 @@ namespace SafehavenPMS.Models
         public string? NotedBy { get; set; }
 
         // Foreign Key to ProblemList
-        public int ProblemListId { get; set; }
-        [ForeignKey("ProblemListId")]
-        public ProblemList? ProblemList { get; set; }
+        public int? PsyProblemListId { get; set; } // Make nullable
+        public PsyProblemList? ProblemList { get; set; }
 
         //Audit fields
         public DateTime CreatedAt { get; set; } = DateTime.Now;

@@ -19,7 +19,6 @@ namespace SafehavenPMS.Data
         public DbSet<NewAppointment> NewAppointments { get; set; }
         public DbSet<MedicationOrder> MedicationOrders { get; set; }
         public DbSet<Admission> Admissions { get; set; }
-        public DbSet<PatientTransfer> PatientTransfers { get; set; }
 
         public DbSet<AdministrationLog> AdministrationLogs { get; set; }
 
@@ -48,6 +47,11 @@ namespace SafehavenPMS.Data
 
         // Goals Entity
         public DbSet<Goal> Goals { get; set; }
+        public DbSet<DischargedPatient> DischargedPatients { get; set; }
+
+        // Add this for ServiceType
+        public DbSet<ServiceType> ServiceTypes { get; set; }
+        public DbSet<Service> Services { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -211,9 +215,31 @@ namespace SafehavenPMS.Data
             // ProblemList → Goals (One-to-Many)
             modelBuilder.Entity<Goal>()
                 .HasOne(g => g.ProblemList)
-                .WithMany(p => p.Goals)
-                .HasForeignKey(g => g.ProblemListId)
+                .WithMany(pl => pl.Goals)
+                .HasForeignKey(g => g.PsyProblemListId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // DischargedPatient → Patient (FK relationship)
+            modelBuilder.Entity<DischargedPatient>()
+                .HasOne(d => d.Patient)
+                .WithMany()
+                .HasForeignKey(d => d.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ServiceType (1) <-> (Many) Service
+            modelBuilder.Entity<Service>()
+                .HasOne(s => s.ServiceType)
+                .WithMany()
+                .HasForeignKey(s => s.ServiceTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Update IntakeForm → Patient relationship
+            modelBuilder.Entity<IntakeForm>()
+                .HasOne(i => i.Patient)
+                .WithOne(p => p.IntakeForm)
+                .HasForeignKey<IntakeForm>(i => i.PatientId)
+                .IsRequired(false)  // Make the relationship optional
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

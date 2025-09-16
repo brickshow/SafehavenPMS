@@ -139,10 +139,9 @@
                 <tr>
                     <th>No.</th>
                     <th>Patient Name</th>
-                    <th>Completed Date</th>
-                    <th>Drug Dependent</th>
-                    <th>Diagnosis</th>
-                    <th>Recommendation</th>
+                    <th>Approval Date</th> 
+                    <th>Admission Date</th>
+                    <th>Treatment Team</th>
                     <th>Status</th>
                     <th class="text-center">Actions</th>
                 </tr>
@@ -177,7 +176,7 @@
                             <td>@admission.Diagnosis</td>
                             <td>@admission.Recommendation</td>
                             <td>
-                                @if (admission.Status == PatientStatusEnum.PendingApproval.ToString())
+                                @if (admission.Status == PatientStatusEnum.PendingAdmission.ToString())
                                 {
                                     <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                         Pending
@@ -206,7 +205,7 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                        @if(admission.Status == PatientStatusEnum.PendingApproval.ToString())
+                                        @if(admission.Status == PatientStatusEnum.PendingAdmission.ToString())
                                         {
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
@@ -229,7 +228,7 @@
                                                     Admit Patient
                                                 </a>
                                             </li>
-                                            <li>
+                                            @* <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                    href="#"
                                                    data-bs-toggle="modal"
@@ -237,7 +236,7 @@
                                                     <span class="badge-dot bg-success"></span>
                                                     Transfer
                                                 </a>
-                                            </li>
+                                            </li> *@
                                         }
 
                                         @if(admission.Status == PatientStatusEnum.Admitted.ToString())

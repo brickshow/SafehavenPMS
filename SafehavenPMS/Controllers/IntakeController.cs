@@ -95,7 +95,7 @@ namespace SafehavenPMS.Controllers
 
             // Project to IntakeViewModel
              var intakeViewModels = patientList
-                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewReferral.ToString() ||
+                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewIntake.ToString() ||
                                                 p.PatientStatus == PatientStatusEnum.Waitlisted.ToString() ||
                                                 p.PatientStatus == PatientStatusEnum.InProgress.ToString() ||
                                                 p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
@@ -105,7 +105,7 @@ namespace SafehavenPMS.Controllers
                                     {
                                         PatientId = p.PatientId,
                                         FullName = $"{p.Firstname} {p.Lastname}",
-                                        ReferredBy = p.IntakeForm?.ReferredBy ?? string.Empty,
+                                        ReferredBy = p.IntakeForm?.AccompaniedBy ?? string.Empty,
                                         ReferredByPhoneNumber = p.IntakeForm?.PhoneNumber ?? string.Empty,
                                         IntakeOfficer = "-", // Populate if you have this info
                                         IntakeDate = p.IntakeForm?.CreatedAt != null ? ((DateTime)p.IntakeForm.CreatedAt).ToString("yyyy-MM-dd") : "-",
@@ -116,7 +116,7 @@ namespace SafehavenPMS.Controllers
 
             //Return Total number of new referral
             var Pending = await _context.Patients
-                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewReferral.ToString())
+                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewIntake.ToString())
                                     .ToListAsync();
 
             ViewBag.Pending = Pending.Count();
@@ -163,7 +163,7 @@ namespace SafehavenPMS.Controllers
                 Age = age,
                 Sex = intake.Sex ?? "-",
                 Address = intake.Address ?? "-",
-                ReferredBy = intake.IntakeForm.ReferredBy,
+                ReferredBy = intake.IntakeForm.AccompaniedBy,
                 Affiliation = intake.IntakeForm.Affiliation,
                 ReferredByPhoneNumber = intake.IntakeForm.PhoneNumber,
                 IntakeOfficer = "-",
@@ -221,7 +221,7 @@ namespace SafehavenPMS.Controllers
             try
             {
                 // Update fields from the Details tab
-                intakeForm.IntakeForm.ReferredBy = string.IsNullOrWhiteSpace(model.ReferredBy) ? intakeForm.IntakeForm.ReferredBy : model.ReferredBy.Trim();
+                intakeForm.IntakeForm.AccompaniedBy = string.IsNullOrWhiteSpace(model.ReferredBy) ? intakeForm.IntakeForm.AccompaniedBy : model.ReferredBy.Trim();
                 intakeForm.IntakeForm.PhoneNumber = string.IsNullOrWhiteSpace(model.ReferredByPhoneNumber) ? intakeForm.IntakeForm.PhoneNumber : model.ReferredByPhoneNumber.Trim();
                 intakeForm.IntakeForm.PresentingComplaint = model.ReasonForIntake ?? intakeForm.IntakeForm.PresentingComplaint;
                 intakeForm.IntakeForm.CreatedAt = DateTime.UtcNow; // Update timestamp
@@ -402,12 +402,12 @@ namespace SafehavenPMS.Controllers
       
             if (patient.PatientStatus == PatientStatusEnum.InProgress.ToString())
             {
-                patient.PatientStatus = PatientStatusEnum.Waitlisted.ToString();
+                patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
             } 
-            if (patient.PatientStatus == PatientStatusEnum.NewReferral.ToString())
+            if (patient.PatientStatus == PatientStatusEnum.NewIntake.ToString())
             {
                 patient.PatientStatus = PatientStatusEnum.InProgress.ToString();
-            }
+            }   
          
             await _context.SaveChangesAsync();
 
@@ -428,7 +428,7 @@ namespace SafehavenPMS.Controllers
             _context.Patients.Update(patient);
 
             //update patient status
-            await UpdatePatientStatus(patient.PatientId);
+            patient.PatientStatus = PatientStatusEnum.Waitlisted.ToString(); 
             await _context.SaveChangesAsync();
 
             try

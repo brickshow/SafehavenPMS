@@ -43,21 +43,20 @@ namespace SafehavenPMS.Controllers
                 .AsQueryable();
 
             // Show patients with PendingApproval OR Admitted status
-            var pendingApprovalStatus = PatientStatusEnum.PendingApproval.ToString();
             var admittedStatus = PatientStatusEnum.Admitted.ToString();
-            var transferStatus = PatientStatusEnum.Closed.ToString();
-            Console.WriteLine("Filtering for PatientStatus = " + pendingApprovalStatus + " OR " + admittedStatus);
+            var PendingAdmission = PatientStatusEnum.PendingAdmission.ToString();
+            Console.WriteLine("Filtering for PatientStatus = "  + " OR " + admittedStatus);
 
             // Filter by patient status (PendingApproval OR Admitted)
             query = query.Where(iaf => iaf.Patient != null &&
-                (iaf.Patient.PatientStatus == pendingApprovalStatus || iaf.Patient.PatientStatus == admittedStatus
-                 || iaf.Patient.PatientStatus == transferStatus));
+                ( iaf.Patient.PatientStatus == PendingAdmission ||
+                  iaf.Patient.PatientStatus == admittedStatus));
 
             // Apply search
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var q = searchQuery.Trim();
-                Console.WriteLine($"Applying search filter: '{q}'");
+                Console.WriteLine($"Applying search filter: '{q}'");    
                 query = query.Where(iaf =>
                 iaf.Patient.Firstname.Contains(q) ||
                 iaf.Patient.Lastname.Contains(q) ||
@@ -131,7 +130,7 @@ namespace SafehavenPMS.Controllers
 
             Console.WriteLine($"Model items: {model.Count}");
             ViewBag.TotalPatientCount = model.Count;
-            ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == pendingApprovalStatus)?.Count ?? 0;
+            ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
             ViewBag.TotalAdmittedCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
 
             return View(model);
@@ -533,62 +532,62 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index"); // redirect to list after success
         }
 
-        // POST: Transfer patient to another facility
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Transfer(AdmitPatientViewModel model)
-        {
-            if (!ModelState.IsValid) return RedirectToAction("Index");
+        // // POST: Transfer patient to another facility
+        // [HttpPost]
+        // [ValidateAntiForgeryToken]
+        // public async Task<IActionResult> Transfer(AdmitPatientViewModel model)
+        // {
+        //     if (!ModelState.IsValid) return RedirectToAction("Index");
 
-            using var tx = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                // load current admission first so we can use its CurrentFacility as FromFacility
-                var admission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+        //     using var tx = await _context.Database.BeginTransactionAsync();
+        //     try
+        //     {
+        //         // load current admission first so we can use its CurrentFacility as FromFacility
+        //         var admission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
 
 
-                // 1) insert transfer audit
-                var transfer = new PatientTransfer
-                {
-                    PatientId = model.PatientId,
-                    ToFacility = model.ReceivingFacility,
-                    ProgramType = model.ProgramType,
-                    Reason = model.Reason,
-                    CreatedBy = User?.Identity?.Name ?? "System",
-                    CreatedAt = DateTime.UtcNow
-                };
+        //         // 1) insert transfer audit
+        //         var transfer = new PatientTransfer
+        //         {
+        //             PatientId = model.PatientId,
+        //             ToFacility = model.ReceivingFacility,
+        //             ProgramType = model.ProgramType,
+        //             Reason = model.Reason,
+        //             CreatedBy = User?.Identity?.Name ?? "System",
+        //             CreatedAt = DateTime.UtcNow
+        //         };
 
-                _context.PatientTransfers.Add(transfer);
-                await _context.SaveChangesAsync();
+        //         _context.PatientTransfers.Add(transfer);
+        //         await _context.SaveChangesAsync();
 
-                // 2) update admission current info (if admission exists)
-                if (admission != null)
-                {
-                    admission.ProgramType = model.ProgramType;
-                    admission.Status = "Transferred";
-                    _context.Admissions.Update(admission);
-                    await _context.SaveChangesAsync();
-                }
+        //         // 2) update admission current info (if admission exists)
+        //         if (admission != null)
+        //         {
+        //             admission.ProgramType = model.ProgramType;
+        //             admission.Status = "Transferred";
+        //             _context.Admissions.Update(admission);
+        //             await _context.SaveChangesAsync();
+        //         }
 
-                // 3) update patient status to Closed after transfer
-                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.Closed.ToString();
-                    _context.Patients.Update(patient);
-                    await _context.SaveChangesAsync();
-                }
+        //         // 3) update patient status to Closed after transfer
+        //         var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+        //         if (patient != null)
+        //         {
+        //             patient.PatientStatus = PatientStatusEnum.Closed.ToString();
+        //             _context.Patients.Update(patient);
+        //             await _context.SaveChangesAsync();
+        //         }
 
-                await tx.CommitAsync();
-                TempData["SuccessMessage"] = "Transfer saved.";
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine("Error saving transfer: " + ex);
-                await tx.RollbackAsync();
-                TempData["Error"] = "Unable to save transfer.";
-            }
-            return RedirectToAction("Index");
-        }
+        //         await tx.CommitAsync();
+        //         TempData["SuccessMessage"] = "Transfer saved.";
+        //     }
+        //     catch(Exception ex)
+        //     {
+        //         Console.WriteLine("Error saving transfer: " + ex);
+        //         await tx.RollbackAsync();
+        //         TempData["Error"] = "Unable to save transfer.";
+        //     }
+        //     return RedirectToAction("Index");
+        // }
     }
 }

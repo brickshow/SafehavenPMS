@@ -12,14 +12,9 @@ namespace SafehavenPMS.Models
         // Patient relationship
         public int PatientId { get; set; }
         public Patient? Patient { get; set; }
-
-        [Required(ErrorMessage = "This field is required")]
-        public string ReferredBy { get; set; } = string.Empty;
+        public string? AccompaniedBy { get; set; }
         public string? Affiliation { get; set; }
-
-        [Required(ErrorMessage = "Phone number is required")]
-        [Phone(ErrorMessage = "Please enter a valid phone number")]
-        public string PhoneNumber { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
 
         // Audit fields
         public DateTime? CreatedAt { get; set; }

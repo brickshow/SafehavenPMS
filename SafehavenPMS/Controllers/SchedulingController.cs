@@ -39,6 +39,10 @@ namespace SafehavenPMS.Controllers
             ViewBag.WaitlistedCount = await _context.NewAppointments
                 .CountAsync(p => p.Status == Enum.AppointmentEnum.Pending.ToString());
 
+            //Total count for psychiatric 
+            ViewBag.PsychiatricQueue = await _context.PsychiatricAssessments
+                .CountAsync(p => p.Status == PatientStatusEnum.Admitted.ToString());
+
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
             ViewBag.PageSize = pageSize ?? 10;

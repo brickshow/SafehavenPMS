@@ -73,7 +73,7 @@
         <div class="nav flex-column nav-pills mb-3" id="leftTabs" role="tablist" aria-orientation="vertical">
             <a class="nav-link active" id="tab-details-link" data-bs-toggle="pill" href="#tab-details" role="tab"
                aria-controls="tab-details" aria-selected="true">
-                Family Constellation
+                Intake Details
             </a>
             <a class="nav-link" id="tab-family-link" data-bs-toggle="pill" href="#tab-family" role="tab"
                aria-controls="tab-family" aria-selected="true">
@@ -176,3 +176,48 @@
             margin-bottom: 0;
         }
 </style>
+
+<script>
+    // Get active tab from localStorage or default to 'tab-details'
+    const activeTabId = localStorage.getItem('intakeFormActiveTab') || 'tab-details';
+    
+    // Function to activate tab
+    function activateTab(tabId) {
+        // Remove active class from all tabs
+        document.querySelectorAll('.nav-link').forEach(tab => {
+            tab.classList.remove('active');
+            tab.setAttribute('aria-selected', 'false');
+        });
+        
+        // Remove active class from all panes
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active', 'show');
+        });
+        
+        // Activate selected tab
+        const selectedTab = document.getElementById(tabId + '-link');
+        const selectedPane = document.getElementById(tabId);
+        
+        if (selectedTab && selectedPane) {
+            selectedTab.classList.add('active');
+            selectedTab.setAttribute('aria-selected', 'true');
+            selectedPane.classList.add('active', 'show');
+            
+            // Store active tab ID
+            localStorage.setItem('intakeFormActiveTab', tabId);
+        }
+    }
+    
+    // Add click listeners to tabs
+    document.querySelectorAll('.nav-link').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const tabId = e.target.getAttribute('href').substring(1);
+            localStorage.setItem('intakeFormActiveTab', tabId);
+        });
+    });
+    
+    // Activate the saved tab on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        activateTab(activeTabId);
+    });
+</script>

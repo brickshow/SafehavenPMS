@@ -14,7 +14,7 @@
                 {
                     var problem = Model.Problems[i];
                     var isActive = i == 0 ? "active" : "";
-                    <li class="nav-item" role="presentation" style="margin-bottom:10px;">
+                    <li class="nav-item position-relative" role="presentation" style="margin-bottom:10px; overflow:visible;">
                         <div class="d-flex align-items-center justify-content-between rounded-3 @(isActive == "active" ? "bg-lightblue" : "bg-light") px-3 py-3 nav-links cursor-pointer"
                              style="border: 1px solid #e5e5e5;"
                              data-tab="#problem@(i+1)">
@@ -27,40 +27,41 @@
                                     aria-controls="problem@(i+1)"
                                     aria-selected="@(isActive == "active" ? "true" : "false")"
                                     style="outline:none;">
-                                <span class="fw-semibold" style="font-size:1.1em;">@problem.Problems</span>
-                                <span class="badge bg-active ms-2">@problem.Status</span>
+                                <div class="d-flex align-items-center gap-5">
+                                    <span class="fw-semibold" style="font-size:1.1em;">@problem.Problems</span>
+                                    <span class="badge bg-active ms-2">@problem.Status</span>
+                                </div>
+                                
                             </button>
-                            <div class="dropdown ms-2">
+                            <div class="dropdown ms-2" style="position:absolute; right:10px; top:10px;">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="d-flex align-items-center px-2">
                                     <i class="bx bx-dots-vertical fs-5 text-muted"></i>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3"
+                                    style="min-width: 220px; z-index:1060; position:absolute;">
                                     <li class="px-2 text-muted fw-semibold small">Options</li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                           data-bs-toggle="modal" data-bs-target="#EditProblemModal-@problem.ProblemListId">
-                                            <span class="badge-dot bg-info"></span>
+                                        data-bs-toggle="modal" data-bs-target="#EditProblemModal-@problem.PsyProblemListId">
+                                            <!-- Removed badge-dot color -->
                                             Edit Problem
                                         </a>
                                     </li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                           data-bs-toggle="modal" data-bs-target="#MarkProblemResolvedModal-@problem.ProblemListId">
-                                            <span class="badge-dot bg-success"></span>
+                                        data-bs-toggle="modal" data-bs-target="#MarkProblemResolvedModal-@problem.PsyProblemListId">
                                             Mark as Resolved
                                         </a>
                                     </li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                           data-bs-toggle="modal" data-bs-target="#MarkProblemInactiveModal-@problem.ProblemListId">
-                                            <span class="badge-dot bg-danger"></span>
+                                        data-bs-toggle="modal" data-bs-target="#MarkProblemInactiveModal-@problem.PsyProblemListId">
                                             Mark as Inactive
                                         </a>
                                     </li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                           data-bs-toggle="modal" data-bs-target="#MarkProblemActiveModal-@problem.ProblemListId">
-                                            <span class="badge-dot bg-success"></span>
+                                        data-bs-toggle="modal" data-bs-target="#MarkProblemActiveModal-@problem.PsyProblemListId">
                                             Mark as Active
                                         </a>
                                     </li>
@@ -101,7 +102,7 @@
                                     <a href="#" class="text-teal fw-semibold small text-decoration-none"
                                     data-bs-toggle="modal"
                                     data-bs-target="#addGoalModal"
-                                    onclick="document.getElementById('problemListId').value='@problem.ProblemListId'">
+                                    onclick="document.getElementById('PsyProblemListId').value='@problem.PsyProblemListId'">
                                         + Add
                                     </a>
                                 </div>
@@ -117,7 +118,7 @@
                             {
                                 <div class="text-center text-muted py-5 bg-white">
                                     This patient has no active goals yet.<br />
-                                    <a href="#" class="text-teal fw-semibold small text-decoration-none" data-bs-toggle="modal" data-bs-target="#addGoalModal" onclick="document.getElementById('problemListId').value='@problem.ProblemListId'">+ Add Now</a>
+                                    <a href="#" class="text-teal fw-semibold small text-decoration-none" data-bs-toggle="modal" data-bs-target="#addGoalModal" onclick="document.getElementById('PsyProblemListId').value='@problem.PsyProblemListId'">+ Add Now</a>
                                 </div>
                             }
                             else
@@ -247,7 +248,7 @@
                 </div>
                 <div class="modal-body">
                     <form asp-action="AddGoal" asp-controller="TreatmentPlan" method="post">
-                        <input type="hidden" name="problemListId" id="problemListId" />
+                        <input type="hidden" name="PsyProblemListId" id="PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                         <div class="mb-3">
                             <label for="goalDescription" class="form-label fw-semibold">Goal</label>
@@ -283,7 +284,7 @@
                             <div class="modal-body">
                                 <form asp-action="EditGoal" asp-controller="TreatmentPlan" method="post">
                                     <input type="hidden" name="goalId" value="@goal.GoalId" />
-                                    <input type="hidden" name="problemListId" value="@problem.ProblemListId" />
+                                    <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
                                     <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                                     <div class="mb-3">
                                         <label for="editDescription-@goal.GoalId" class="form-label fw-semibold">Goal</label>
@@ -322,7 +323,7 @@
                             <div class="modal-body">
                                 <form asp-action="MarkGoalAsCompleted" asp-controller="TreatmentPlan" method="post">
                                     <input type="hidden" name="goalId" value="@goal.GoalId" />
-                                    <input type="hidden" name="problemListId" value="@problem.ProblemListId" />
+                                    <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
                                     <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                                     <div class="mb-3">
                                         <p class="fw-semibold mb-0">Are you sure you want to mark this goal as completed?</p>
@@ -361,7 +362,7 @@
                             <div class="modal-body">
                                 <form asp-action="DiscontinueGoal" asp-controller="TreatmentPlan" method="post">
                                     <input type="hidden" name="goalId" value="@goal.GoalId" />
-                                    <input type="hidden" name="problemListId" value="@problem.ProblemListId" />
+                                    <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
                                     <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                                     <div class="mb-3">
                                         <p class="fw-semibold mb-0">Are you sure you want to discontinue this goal?</p>
@@ -396,10 +397,10 @@
             <div class="modal-body">
                 <form asp-action="AddProblem" asp-controller="TreatmentPlan" method="post">
                     <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
-                    <input type="hidden" name="initialAssessmentFormId" value="@Model.Problems.FirstOrDefault()?.InitialAssessmentFormId" />
+                    <input type="hidden" name="psychiatricAssessmentId" value="@Model.Problems.FirstOrDefault()?.InitialAssessmentFormId" />
                     <div class="mb-3">
                         <label for="problemDescription" class="form-label fw-semibold">Problem</label>
-                        <input type="text" name="Problems" class="form-control" id="problemDescription" placeholder="Enter problem" required />
+                        <input type="text" name="problemText" class="form-control" id="problemDescription" placeholder="Enter problem" required />
                     </div>
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Add</button>
@@ -413,20 +414,20 @@
 <!-- Edit Problem Modal -->
 @foreach (var problem in Model.Problems)
 {
-    <div class="modal fade" id="EditProblemModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="editProblemModalLabel-@problem.ProblemListId" aria-hidden="true">
+    <div class="modal fade" id="EditProblemModal-@problem.PsyProblemListId" tabindex="-1" aria-labelledby="editProblemModalLabel-@problem.PsyProblemListId" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                    <h5 class="modal-title fw-bold" id="editProblemModalLabel-@problem.ProblemListId">Edit Problem</h5>
+                    <h5 class="modal-title fw-bold" id="editProblemModalLabel-@problem.PsyProblemListId">Edit Problem</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form asp-action="EditProblem" asp-controller="TreatmentPlan" method="post">
-                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                         <div class="mb-3">
-                            <label for="editProblemDescription-@problem.ProblemListId" class="form-label fw-semibold">Problem</label>
-                            <input type="text" name="Problems" class="form-control" id="editProblemDescription-@problem.ProblemListId" value="@problem.Problems" required />
+                            <label for="editProblemDescription-@problem.PsyProblemListId" class="form-label fw-semibold">Problem</label>
+                            <input type="text" name="Problems" class="form-control" id="editProblemDescription-@problem.PsyProblemListId" value="@problem.Problems" required />
                         </div>
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Save</button>
@@ -441,16 +442,16 @@
 <!-- Mark as Resolved Modal -->
 @foreach (var problem in Model.Problems)
 {
-    <div class="modal fade" id="MarkProblemResolvedModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="markProblemResolvedModalLabel-@problem.ProblemListId" aria-hidden="true">
+    <div class="modal fade" id="MarkProblemResolvedModal-@problem.PsyProblemListId" tabindex="-1" aria-labelledby="markProblemResolvedModalLabel-@problem.PsyProblemListId" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                    <h5 class="modal-title fw-bold" id="markProblemResolvedModalLabel-@problem.ProblemListId">Mark as Resolved</h5>
+                    <h5 class="modal-title fw-bold" id="markProblemResolvedModalLabel-@problem.PsyProblemListId">Mark as Resolved</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form asp-action="MarkProblemResolved" asp-controller="TreatmentPlan" method="post">
-                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                         <p class="fw-semibold mb-0">Are you sure you want to mark this problem as resolved?</p>
                         <div class="mt-2 text-muted">
@@ -470,16 +471,16 @@
 <!-- Mark as Inactive Modal -->
 @foreach (var problem in Model.Problems)
 {
-    <div class="modal fade" id="MarkProblemInactiveModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="markProblemInactiveModalLabel-@problem.ProblemListId" aria-hidden="true">
+    <div class="modal fade" id="MarkProblemInactiveModal-@problem.PsyProblemListId" tabindex="-1" aria-labelledby="markProblemInactiveModalLabel-@problem.PsyProblemListId" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                    <h5 class="modal-title fw-bold" id="markProblemInactiveModalLabel-@problem.ProblemListId">Mark as Inactive</h5>
+                    <h5 class="modal-title fw-bold" id="markProblemInactiveModalLabel-@problem.PsyProblemListId">Mark as Inactive</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form asp-action="MarkProblemInactive" asp-controller="TreatmentPlan" method="post">
-                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                         <p class="fw-semibold mb-0">Are you sure you want to mark this problem as inactive?</p>
                         <div class="mt-2 text-muted">
@@ -499,16 +500,16 @@
 <!-- Mark as Active Modal -->
 @foreach (var problem in Model.Problems)
 {
-    <div class="modal fade" id="MarkProblemActiveModal-@problem.ProblemListId" tabindex="-1" aria-labelledby="markProblemActiveModalLabel-@problem.ProblemListId" aria-hidden="true">
+    <div class="modal fade" id="MarkProblemActiveModal-@problem.PsyProblemListId" tabindex="-1" aria-labelledby="markProblemActiveModalLabel-@problem.PsyProblemListId" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                    <h5 class="modal-title fw-bold" id="markProblemActiveModalLabel-@problem.ProblemListId">Mark as Active</h5>
+                    <h5 class="modal-title fw-bold" id="markProblemActiveModalLabel-@problem.PsyProblemListId">Mark as Active</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form asp-action="MarkProblemActive" asp-controller="TreatmentPlan" method="post">
-                        <input type="hidden" name="ProblemListId" value="@problem.ProblemListId" />
+                        <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                         <p class="fw-semibold mb-0">Are you sure you want to mark this problem as active?</p>
                         <div class="mt-2 text-muted">
@@ -525,7 +526,7 @@
     </div>
 }
 
-    <!-- Add Intervention Modal -->
+    @* <!-- Add Intervention Modal -->
     <div class="modal fade" id="addInterventionModal" tabindex="-1" aria-labelledby="addInterventionModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius:10px;">
@@ -558,7 +559,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> *@
 
     <!-- Custom styles for modal -->
     <style>
@@ -581,21 +582,39 @@
             min-width: 120px;
             font-weight: 600;
         }
+
+        /* Ensure dropdown menu is above other elements */
+        .dropdown-menu {
+            z-index: 1055 !important; /* higher than modal and other content */
+            position: absolute !important;
+        }
+
+        /* Ensure dropdown menu is above other elements and not clipped */
+        .nav-item.position-relative { overflow: visible; }
+        .nav-item .dropdown-menu {
+            z-index: 1060 !important;
+            position: absolute !important;
+            right: 100  px;
+            top: 40px;
+        }
+
+        .dropdown-menu .dropdown-item {
+            color: #222 !important;
+            background: #fff !important;
+            opacity: 1 !important;
+        }
     </style>
 
     <style>
-        .nav-links {
+        .nav-links-item {
             border: none;
             border-bottom: 1px solid #cccaca;
             padding: 10px;
             color: #333;
         }
 
-            .nav-links:hover {
-                background-color: #f8f9fa;
-            }
 
-            .nav-links.active {
+            .nav-links-item.active {
                 background-color: #D6F2F7 !important;
                 color: #333 !important;
             }

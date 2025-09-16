@@ -197,17 +197,17 @@ namespace SafehavenPMS.Controllers
 
             try
             {
-                // Create and save patient first
+                // Create and save patient only
                 var patient = new Patient
                 {
                     Firstname = model.Firstname,
                     MiddleName = model.MiddleName ?? string.Empty,
                     Lastname = model.Lastname,
                     DateOfBirth = model.DateOfBirth,
-                    PhoneNumber = model.ContactNumber,
+                    PhoneNumber = model.ContactNumber ?? string.Empty, // Ensure phone number is not null
                     Sex = model.Sex,
                     Occupation = model.Occupation ?? string.Empty,
-                    PatientStatus = Enum.PatientStatusEnum.NewReferral.ToString(),
+                    PatientStatus = Enum.PatientStatusEnum.NewIntake.ToString(),
                     Education = model.Education ?? string.Empty,
                     Religion = model.Religion ?? string.Empty,
                     MaritalStatus = model.MaritalStatus,
@@ -219,22 +219,6 @@ namespace SafehavenPMS.Controllers
                 await _context.Patients.AddAsync(patient);
                 await _context.SaveChangesAsync();
 
-                // // Now create and save the intake with the new PatientId
-                // var intake = new IntakeForm
-                // {
-                //     PatientId = patient.PatientId,
-                //     DateOfReferral = model.DateOfReferral,
-                //     ReferredBy = model.ReferredBy ?? string.Empty,
-                //     Affiliation = model.Affiliation,
-                //     PhoneNumber = model.ReferredByPhoneNumber,
-                //     PresentingComplaint = model.PresentingComplaint,
-                //     IntakeStatus = IntakeStatus.Pending.ToString(),
-                //     CreatedAt = DateTime.Now
-                // };
-
-                // await _context.IntakeForms.AddAsync(intake ?? new IntakeForm());
-                // await _context.SaveChangesAsync();
-    
                 // Save physician-patient relationship if selected
                 if (model.ClinicalStaff > 0)
                 {
@@ -248,8 +232,8 @@ namespace SafehavenPMS.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                return RedirectToAction("Index", "Intake");
-            }   
+                return RedirectToAction("Index", "Intake"); // Redirect to Patient Index instead of Intake
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error saving patient: {ex.Message}");

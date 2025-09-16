@@ -11,7 +11,7 @@ namespace SafehavenPMS.ViewModel.PatientProfile
     public class ProblemViewModel
     {
         public int? InitialAssessmentFormId { get; set; }
-        public int ProblemListId { get; set; }
+        public int PsyProblemListId { get; set; }
         public string? Problems { get; set; }
         public string? Status { get; set; }
         public List<GoalViewModel> Goals { get; set; } = new List<GoalViewModel>();

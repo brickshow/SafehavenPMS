@@ -31,6 +31,7 @@ namespace SafehavenPMS.Models
         public Patient? Patient { get; set; }
         public List<PsyProblemList> ProblemLists { get; set; } = new List<PsyProblemList>();
         public List<PsyDiagnosisList> DiagnosisLists { get; set; } = new List<PsyDiagnosisList>();
+        public List<Goal> Goals { get; set; } = new List<Goal>();
     }
 
     public class PsyProblemList
@@ -38,9 +39,20 @@ namespace SafehavenPMS.Models
         public int PsyProblemListId { get; set; } // Primary Key
         public int PsychiatricAssessmentId { get; set; } // Foreign Key
         public string? Problem { get; set; }
+        public string? Status { get; set; }
+
+        //Audit fields
+        public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedBy { get; set; }
+        
+        public DateTime? CreatedAt { get; set; }
+        public string? CreatedBy { get; set; }
+        
+        
 
         // Navigation property
         public PsychiatricAssessment? PsychiatricAssessment { get; set; }
+        public List<Goal> Goals { get; set; } = new List<Goal>();
     }
 
       public class PsyDiagnosisList

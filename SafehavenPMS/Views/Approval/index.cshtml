@@ -1,7 +1,7 @@
 @using SafehavenPMS.Enum
 @model List<SafehavenPMS.ViewModel.Approval.ApprovalViewModel>
 @{
-    ViewBag.Title = "Intake";
+    ViewBag.Title = "Approval";
 }
 
 <div class="header">
@@ -168,13 +168,13 @@
                                 else if (admission.Status == PatientStatusEnum.Admitted.ToString())
                                 {
                                     <div style="background-color: #9FE2FB; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                                        Admitted
+                                        Approved
                                     </div>            
                                 }
-                                  else if (admission.Status == PatientStatusEnum.Closed.ToString())
+                                  else if (admission.Status == PatientStatusEnum.Discharged.ToString())
                                 {
                                     <div style="background-color: #F8000080; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                                        Transferred
+                                        Discharged
                                     </div>            
                                 }
                                 else
@@ -336,7 +336,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                    <form asp-action="TransferToOutpatient" asp-controller="Approval" method="post" class="m-0">
+                    <form asp-action="DischargeToOutpatient" asp-controller="Approval" method="post" class="m-0">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="patientId" value="@admission.PatientId" />
                         <input type="hidden" name="programType" value="Outpatient" />
@@ -360,7 +360,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                    <form asp-action="TransferToCommunity" asp-controller="Approval" method="post" class="m-0">
+                    <form asp-action="DischargeToCommunity" asp-controller="Approval" method="post" class="m-0">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="patientId" value="@admission.PatientId" />
                         <input type="hidden" name="programType" value="Community-Based" />
