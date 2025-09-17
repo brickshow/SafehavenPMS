@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250917113001_MakePsyProblemListIdNullablejhgsasdasdasdsdfsdfasdasdasdxcvxvsdfsdsdfsdasdasda")]
+    partial class MakePsyProblemListIdNullablejhgsasdasdasdsdfsdfasdasdasdxcvxvsdfsdsdfsdasdasda
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -834,7 +837,7 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PsyProblemListId")
+                    b.Property<int?>("PsyProblemList")
                         .HasColumnType("int");
 
                     b.Property<string>("ScheduledType")
@@ -864,7 +867,7 @@ namespace SafehavenPMS.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.HasIndex("PsyProblemListId");
+                    b.HasIndex("PsyProblemList");
 
                     b.ToTable("MedicationOrders");
                 });
@@ -1970,8 +1973,8 @@ namespace SafehavenPMS.Migrations
                         .IsRequired();
 
                     b.HasOne("SafehavenPMS.Models.PsyProblemList", "PsyProblem")
-                        .WithMany("MedicationOrders")
-                        .HasForeignKey("PsyProblemListId");
+                        .WithMany()
+                        .HasForeignKey("PsyProblemList");
 
                     b.Navigation("Medicine");
 
@@ -2198,8 +2201,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Goals");
 
                     b.Navigation("Interventions");
-
-                    b.Navigation("MedicationOrders");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PsychiatricAssessment", b =>

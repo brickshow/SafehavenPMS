@@ -31,5 +31,7 @@ namespace SafehavenPMS.Models
         public ICollection<InitialAssessmentForm> InitialAssessmentForms { get; set; } = new List<InitialAssessmentForm>(); // Navigation property for Initial Assessments
         public ICollection<PsychiatricAssessment> PsychiatricAssessments { get; set; } = new List<PsychiatricAssessment>(); // Navigation property for Psychiatric Assessments
         public ICollection<Admission> Admissions { get; set; } = new List<Admission>();
+        public ICollection<Intervention> Interventions { get; set; } = new List<Intervention>();
+        
     }
 }

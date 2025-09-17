@@ -2,7 +2,9 @@
 
 @{
     ViewBag.Title = "Add Medication";
-}
+     var tempOrders = ViewBag.TempOrders as List<SafehavenPMS.ViewModel.MedicationOrderViewModel>
+                                         ?? new List<SafehavenPMS.ViewModel.MedicationOrderViewModel>();
+}                    
 
 @* Content Header *@
 <div class="header-content">
@@ -14,144 +16,223 @@
     </div>
     <hr class="mt-0 mb-2" />
 </div>
+
 <div class="container bg-white p-0">
-    <form asp-action="AddMedicationOrder" asp-controller="Medication" method="post">
-        <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
-            Patient Medication Details
-        </div>
-        <div class="row mb-3 justify-content-start m-3">
-            <div class="col-md-6">
-                <div class="mb-2">
-                    <label asp-for="PatientId" class="form-label"></label>
-                    <select asp-for="PatientId" class="form-select" asp-items="ViewBag.PatientList">
-                        <option value="">Select patient</option>
-                    </select>
-                    <span asp-validation-for="PatientId" class="text-danger"></span>
-                </div>
-            </div>
-        </div>
-        <hr class="mt-0 mb-3" />
-        <div class="row">
-            <div class="col-md-12">
-                <div class="row mb-3 justify-content-start m-3">
-                    <div class="col-md-6">
-                        <div class="mb-2">
-                            <label asp-for="MedicineId" class="form-label">Medicine Name:</label>
-                            <select asp-for="MedicineId" class="form-select" asp-items="ViewBag.MedicineList">
-                                <option value="">Select Medicine</option>
-                            </select>
-                        </div>
+    <div class="row w-100 m-0 p-0 d-flex justify-content-center">
+        <!-- Left side form -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <form asp-action="AddMedicationOrder" asp-controller="Medication" method="post">
+                    @* carry problem id from Treatment Plan into the posted model *@
+                    <input asp-for="PsyProblemListId" type="hidden" value="@ViewBag.ProblemId" />
+                    <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+                        Patient Medication Details
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row m-3">
-            <div class="col-md-12">
-                <div class="row g-3">
-                    @* Unit per dose input: 4 columns *@
-                    <div class="col-md-4">
-                        <label asp-for="UnitPerDose" class="form-label">Unit per dose:</label>
-                        <input asp-for="UnitPerDose" type="number" class="form-control" min="1" value="1" />
-                        <span asp-validation-for="UnitPerDose" class="text-danger"></span>
-                    </div>
-
-                    @* Note input: 8 columns *@
-                    <div class="col-md-8">
-                        <label asp-for="Note" class="form-label">Note:</label>
-                        <input asp-for="Note" type="text" class="form-control" placeholder="" />
-                        <span asp-validation-for="Note" class="text-danger"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <hr class="mt-0 mb-3" />
-        <div class="container m-4">
-            <div class="row mb-3">
-                <div class="col-md-12">
-                    <div class="row g-3">
-                        @* Scheduled Type: 3 columns *@
-                        <div class="col-md-3">
-                            <label class="form-label">Scheduled Type:</label>
-                            <select asp-for="ScheduledType" class="form-select" id="scheduledType">
-                                <option value="Daily">Daily</option>
-                                <option value="NonDaily">Non-daily</option>
-                            </select>
-                            <span asp-validation-for="ScheduledType" class="text-danger"></span>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label asp-for="DaysInterval" class="form-label">Days Interval:</label>
-                            <input asp-for="DaysInterval" type="number" class="form-control" id="daysInterval" disabled />
-                            <span asp-validation-for="DaysInterval" class="text-danger"></span>
-                        </div>
-
-                        @* Scheduled Time: 6 columns *@
+                    <div class="row mb-3 justify-content-start m-3">
                         <div class="col-md-6">
-                            <label class="form-label">Scheduled Time:</label>
-                            <div class="d-flex flex-wrap gap-2">
-                                <div class="form-check form-check-inline">
-                                    <input asp-for="Breakfast" class="form-check-input" type="checkbox" id="breakfast" checked>
-                                    <label asp-for="Breakfast" class="form-check-label" for="breakfast">Breakfast</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input asp-for="Lunch" class="form-check-input" type="checkbox" id="lunch" checked>
-                                    <label asp-for="Lunch" class="form-check-label" for="lunch">Lunch</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input asp-for="Dinner" class="form-check-input" type="checkbox" id="dinner" checked>
-                                    <label asp-for="Dinner" class="form-check-label" for="dinner">Dinner</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input asp-for="Bedtime" class="form-check-input" type="checkbox" id="bedtime">
-                                    <label asp-for="Bedtime" class="form-check-label" for="bedtime">Bedtime</label>
+                        @if (!tempOrders.Any())
+                        {
+                            <div class="mb-2">
+                                <label asp-for="PatientId" class="form-label"></label>
+                                <select asp-for="PatientId" class="form-select" asp-items="ViewBag.PatientList">
+                                    <option value="">Select patient</option>
+                                </select>
+                                <span asp-validation-for="PatientId" class="text-danger"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-2">
+                                <label asp-for="PatientId" class="form-label"></label>
+                                <select asp-for="PatientId" class="form-select" asp-items="ViewBag.PatientList" disabled>
+                                    <option value="">Select patient</option>
+                                </select>
+                                <span asp-validation-for="PatientId" class="text-danger"></span>
+                            </div>
+                        }
+                        </div>
+                    </div>
+                    <hr class="mt-0 mb-3" />
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="row mb-3 justify-content-start m-3">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <label asp-for="MedicineId" class="form-label">Medicine Name:</label>
+                                        <select asp-for="MedicineId" class="form-select" asp-items="ViewBag.MedicineList">
+                                            <option value="">Select Medicine</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="row mb-3">
-                <div class="col-md-12">
-                    <div class="row g-3">
-                        @* Start Date: 3 columns *@
-                        <div class="col-md-3">
-                            <label asp-for="StartDate" class="form-label">Start Date:</label>
-                            <input asp-for="StartDate" type="date" class="form-control" value="2025-01-28">
-                            <span asp-validation-for="StartDate" class="text-danger"></span>
-                        </div>
+                    <div class="row m-3">
+                        <div class="col-md-12">
+                            <div class="row g-3">
+                                @* Unit per dose input: 4 columns *@
+                                <div class="col-md-4">
+                                    <label asp-for="UnitPerDose" class="form-label">Unit per dose:</label>
+                                    <input asp-for="UnitPerDose" type="number" class="form-control" min="1" value="1" />
+                                    <span asp-validation-for="UnitPerDose" class="text-danger"></span>
+                                </div>
 
-                        @* Discontinue Date: 3 columns *@
-                        <div class="col-md-3">
-                            <label asp-for="DiscontinueDate" class="form-label">Discontinue Date:</label>
-                            <input asp-for="DiscontinueDate" id="DiscontinueDate" type="date" class="form-control" value="2025-01-28">
-                            <span asp-validation-for="DiscontinueDate" class="text-danger"></span>
-                        </div>
-
-                        @* No Discontinue checkbox: 6 columns *@
-                        <div class="col-md-6">
-                            <div class="form-check mt-4">
-                                <input asp-for="NoDiscontinueDate" class="form-check-input" type="checkbox" id="noDiscontinue">
-                                <label asp-for="NoDiscontinueDate" class="form-check-label" for="noDiscontinue">No Discontinue Date</label>
-
+                                @* Note input: 8 columns *@
+                                <div class="col-md-8">
+                                    <label asp-for="Note" class="form-label">Note:</label>
+                                    <input asp-for="Note" type="text" class="form-control" placeholder="" />
+                                    <span asp-validation-for="Note" class="text-danger"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <hr class="mt-0 mb-3" />
+                    <div class="container m-4">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="row g-3">
+                                    @* Scheduled Type: 3 columns *@
+                                    <div class="col-md-3">
+                                        <label class="form-label">Scheduled Type:</label>
+                                        <select asp-for="ScheduledType" class="form-select" id="scheduledType">
+                                            <option value="Daily">Daily</option>
+                                            <option value="NonDaily">Non-daily</option>
+                                        </select>
+                                        <span asp-validation-for="ScheduledType" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label asp-for="DaysInterval" class="form-label">Days Interval:</label>
+                                        <input asp-for="DaysInterval" type="number" class="form-control" id="daysInterval" disabled />
+                                        <span asp-validation-for="DaysInterval" class="text-danger"></span>
+                                    </div>
+
+                                    @* Scheduled Time: 6 columns *@
+                                    <div class="col-md-6">
+                                        <label class="form-label">Scheduled Time:</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <div class="form-check form-check-inline">
+                                                <input asp-for="Breakfast" class="form-check-input" type="checkbox" id="breakfast" checked>
+                                                <label asp-for="Breakfast" class="form-check-label" for="breakfast">Breakfast</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input asp-for="Lunch" class="form-check-input" type="checkbox" id="lunch" checked>
+                                                <label asp-for="Lunch" class="form-check-label" for="lunch">Lunch</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input asp-for="Dinner" class="form-check-input" type="checkbox" id="dinner" checked>
+                                                <label asp-for="Dinner" class="form-check-label" for="dinner">Dinner</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input asp-for="Bedtime" class="form-check-input" type="checkbox" id="bedtime">
+                                                <label asp-for="Bedtime" class="form-check-label" for="bedtime">Bedtime</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="row g-3">
+                                    @* Start Date: 3 columns *@
+                                    <div class="col-md-3">
+                                        <label asp-for="StartDate" class="form-label">Start Date:</label>
+                                        <input asp-for="StartDate" type="date" class="form-control" value="2025-01-28">
+                                        <span asp-validation-for="StartDate" class="text-danger"></span>
+                                    </div>
+
+                                    @* Discontinue Date: 3 columns *@
+                                    <div class="col-md-3">
+                                        <label asp-for="DiscontinueDate" class="form-label">Discontinue Date:</label>
+                                        <input asp-for="DiscontinueDate" id="DiscontinueDate" type="date" class="form-control" value="2025-01-28">
+                                        <span asp-validation-for="DiscontinueDate" class="text-danger"></span>
+                                    </div>
+
+                                    @* No Discontinue checkbox: 6 columns *@
+                                    <div class="col-md-6">
+                                        <div class="form-check mt-4">
+                                            <input asp-for="NoDiscontinueDate" class="form-check-input" type="checkbox" id="noDiscontinue">
+                                            <label asp-for="NoDiscontinueDate" class="form-check-label" for="noDiscontinue">No Discontinue Date</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="mt-0 mb-3" />
+                    <div class="row m-3">
+                        <div class="col-md-12 text-end m-3">
+                            <button type="button" class="btn btn-secondary me-2" onclick="history.back()">Cancel</button>
+                            <button type="submit" class="btn btn-teal">Add</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <hr class="mt-0 mb-3" />
-        <div class="row m-3">
-            <div class="col-md-12 text-end m-3">
-                <button type="button" class="btn btn-secondary me-2" onclick="history.back()">Cancel</button>
-                <button type="submit" class="btn btn-teal">Add</button>
+        <!-- Right side medication order list -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+                    <strong>Medication Order List</strong>
+                </div>
+                <div class="card-body">
+
+
+                    @if (!tempOrders.Any())
+                    {
+                        <div class="text-muted">No medication orders in temporary list.</div>
+                    }
+                    else
+                    {
+                        for (int i = 0; i < tempOrders.Count; i++)
+                        {
+                            var item = tempOrders[i];
+                            var times = new List<string>();
+                            if (item.Breakfast) times.Add("B");
+                            if (item.Lunch) times.Add("L");
+                            if (item.Dinner) times.Add("D");
+                            if (item.Bedtime) times.Add("BT");
+                            var timesDisplay = times.Any() ? string.Join(", ", times) : "—";
+                            <div class="mb-3 p-2 border rounded d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>@(string.IsNullOrWhiteSpace(item.MedicineName) ? $"#{item.MedicineId}" : item.MedicineName)</strong><br />
+                                    <small class="text-muted">
+                                        @(item.ScheduledType ?? "Daily") @timesDisplay<br />
+                                        Start: @item.StartDate.ToString("yyyy-MM-dd")<br />
+                                        DC: @(item.NoDiscontinueDate ? "Not set" : (item.DiscontinueDate?.ToString("yyyy-MM-dd") ?? "Not set"))
+                                    </small>
+                                    @if (!string.IsNullOrWhiteSpace(item.Note))
+                                    {
+                                        <div class="mt-1"><small>Note: @item.Note</small></div>
+                                    }
+                                </div>
+
+                                <div class="d-flex flex-column align-items-end ms-2">
+                                    <form asp-action="RemoveTempOrder" asp-controller="Medication" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="index" value="@i" />
+                                        <button type="submit" class="btn btn-link text-danger p-0" title="Remove"><i class="bx bx-trash"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                        <form asp-action="SubmitOrders" asp-controller="Medication" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-teal w-100 mt-2">Submit Order</button>
+                        </form>
+                    }
+                </div>
             </div>
         </div>
-    </form>
+    </div>
 </div>
+
 <!-- Bootstrap JS and dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <style>
@@ -162,9 +243,9 @@
         border-radius: 5px;
     }
 
-        .btn-teal:hover {
-            background-color: #148c8c;
-        }
+    .btn-teal:hover {
+        background-color: #148c8c;
+    }
 </style>
 
 <script>

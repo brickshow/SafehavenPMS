@@ -22,6 +22,11 @@ namespace SafehavenPMS.Models
         [ForeignKey("MedicineId")]
         public Medicine? Medicine { get; set; }
 
+        //Problem List
+        public int? PsyProblemListId { get; set; }
+        [ForeignKey("PsyProblemListId")]
+        public PsyProblemList? PsyProblem { get; set; }
+
         // Dosage
         [Required]
         [Range(1, int.MaxValue)]

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250916094442_ksdjfhsdjfhsdkjhskdfjh")]
+    partial class ksdjfhsdjfhsdkjhskdfjh
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -638,61 +641,6 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("IntakeForms");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.Intervention", b =>
-                {
-                    b.Property<int>("InterventionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InterventionId"));
-
-                    b.Property<DateTime?>("DateAdded")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("DurationFrequency")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("NotedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PsyProblemListId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ServiceId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ServiceTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("InterventionId");
-
-                    b.HasIndex("PatientId");
-
-                    b.HasIndex("PsyProblemListId");
-
-                    b.HasIndex("ServiceId");
-
-                    b.HasIndex("ServiceTypeId");
-
-                    b.ToTable("Interventions");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.MedicalAllergy", b =>
                 {
                     b.Property<int>("MedicalAllergyId")
@@ -834,9 +782,6 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PsyProblemListId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ScheduledType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -863,8 +808,6 @@ namespace SafehavenPMS.Migrations
                     b.HasIndex("MedicineId");
 
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("PsyProblemListId");
 
                     b.ToTable("MedicationOrders");
                 });
@@ -1898,41 +1841,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.Intervention", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
-                        .WithMany("Interventions")
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.PsyProblemList", "Problem")
-                        .WithMany("Interventions")
-                        .HasForeignKey("PsyProblemListId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.Service", "ServiceModality")
-                        .WithMany()
-                        .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.ServiceType", "ServiceType")
-                        .WithMany()
-                        .HasForeignKey("ServiceTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Patient");
-
-                    b.Navigation("Problem");
-
-                    b.Navigation("ServiceModality");
-
-                    b.Navigation("ServiceType");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.MedicalAllergy", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.InitialAssessmentForm", "InitialAssessmentForm")
@@ -1969,15 +1877,9 @@ namespace SafehavenPMS.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SafehavenPMS.Models.PsyProblemList", "PsyProblem")
-                        .WithMany("MedicationOrders")
-                        .HasForeignKey("PsyProblemListId");
-
                     b.Navigation("Medicine");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("PsyProblem");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.MentalStatusExamination", b =>
@@ -2179,8 +2081,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("IntakeForm")
                         .IsRequired();
 
-                    b.Navigation("Interventions");
-
                     b.Navigation("MedicationOrders");
 
                     b.Navigation("NewAppointments");
@@ -2196,10 +2096,6 @@ namespace SafehavenPMS.Migrations
             modelBuilder.Entity("SafehavenPMS.Models.PsyProblemList", b =>
                 {
                     b.Navigation("Goals");
-
-                    b.Navigation("Interventions");
-
-                    b.Navigation("MedicationOrders");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PsychiatricAssessment", b =>

@@ -208,5 +208,38 @@ namespace SafehavenPMS.Controllers
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AddIntervention(
+            int patientId,
+            int problemId,
+            int ServiceType,
+            int ServiceModality,
+            string DurationFrequency,
+            string Description)
+        {
+            // Validate required fields
+            if (ServiceType == 0 || ServiceModality == 0)
+                return BadRequest("Service Type and Service Modality are required.");
+
+            var intervention = new Intervention
+            {
+                PatientId = patientId,
+                PsyProblemListId = problemId,
+                ServiceTypeId = ServiceType,
+                ServiceId = ServiceModality,
+                DurationFrequency = DurationFrequency,
+                Description = Description,
+                Status = "Active",
+                NotedBy = User.Identity?.Name ?? "System",
+                DateAdded = DateTime.Now
+            };
+
+            _context.Interventions.Add(intervention);
+            await _context.SaveChangesAsync();
+
+            // Redirect back to patient profile or treatment plan view
+            return RedirectToAction("Index", "PatientProfile", new { id = patientId });
+        }
     }
 }

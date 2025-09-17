@@ -1,5 +1,9 @@
 @model SafehavenPMS.ViewModel.PatientProfile.PatientTreatmentPlanTabViewModel
 
+@{
+    var activeProblem = Model.Problems.FirstOrDefault(); // Default to first
+}
+
     <div class="row" style="min-height:600px;">
         <!-- Problem List Sidebar -->
         <div class="col-md-4 border-end px-4 py-3 bg-white">
@@ -18,15 +22,17 @@
                         <div class="d-flex align-items-center justify-content-between rounded-3 @(isActive == "active" ? "bg-lightblue" : "bg-light") px-3 py-3 nav-links cursor-pointer"
                              style="border: 1px solid #e5e5e5;"
                              data-tab="#problem@(i+1)">
-                            <button class="w-100 bg-transparent border-0 text-start p-0 m-0"
-                                    id="problem@(i+1)-tab"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#problem@(i+1)"
-                                    type="button"
-                                    role="tab"
-                                    aria-controls="problem@(i+1)"
-                                    aria-selected="@(isActive == "active" ? "true" : "false")"
-                                    style="outline:none;">
+                            <button
+                                class="w-100 bg-transparent border-0 text-start p-0 m-0"
+                                id="problem@(i+1)-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#problem@(i+1)"
+                                data-bs-id="@problem.PsyProblemListId"
+                                type="button"
+                                role="tab"
+                                aria-controls="problem@(i+1)"
+                                aria-selected="@(isActive == "active" ? "true" : "false")"
+                                style="outline:none;">
                                 <div class="d-flex align-items-center gap-5">
                                     <span class="fw-semibold" style="font-size:1.1em;">@problem.Problems</span>
                                     <span class="badge bg-active ms-2">@problem.Status</span>
@@ -39,29 +45,32 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3"
                                     style="min-width: 220px; z-index:1060; position:absolute;">
-                                    <li class="px-2 text-muted fw-semibold small">Options</li>
+                                    <li class="px-2 fw-semibold small">Options</li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#EditProblemModal-@problem.PsyProblemListId">
-                                            <!-- Removed badge-dot color -->
+                                        data-bs-toggle="modal" data-bs-target="#EditProblemModal-@problem.PsyProblemListId"
+                                        style="color:Black;">
                                             Edit Problem
                                         </a>
                                     </li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#MarkProblemResolvedModal-@problem.PsyProblemListId">
+                                        data-bs-toggle="modal" data-bs-target="#MarkProblemResolvedModal-@problem.PsyProblemListId"
+                                        style="color:Black;">
                                             Mark as Resolved
                                         </a>
                                     </li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#MarkProblemInactiveModal-@problem.PsyProblemListId">
+                                        data-bs-toggle="modal" data-bs-target="#MarkProblemInactiveModal-@problem.PsyProblemListId"
+                                        style="color:Black;">
                                             Mark as Inactive
                                         </a>
                                     </li>
                                     <li>
                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#MarkProblemActiveModal-@problem.PsyProblemListId">
+                                        data-bs-toggle="modal" data-bs-target="#MarkProblemActiveModal-@problem.PsyProblemListId"
+                                        style="color:Black;">
                                             Mark as Active
                                         </a>
                                     </li>
@@ -197,48 +206,124 @@
                             }
                         </div> *@
 
-                        <!-- Interventions Section -->
+                       <!-- Interventions Section -->
                         <div class="mt-4 bg-light p-4">
-                        <div class="d-flex align-items-center justify-content-between    mb-2 gap-3">
-                            <h4 class="fw-bold mb-0">Interventions</h4>
-                            <div class="gap-4">
-                                <a href="#" class="btn btn-custom text-white fw-semibold small ms-2 text-decoration-none" 
-                                    style="color:white"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#addInterventionModal">
-                                    + Add Intervention
-                                </a>
-                                <a href="#" class="btn btn-custom text-white fw-semibold small ms-2 text-decoration-none" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#addInterventionModal">
-                                    + Add Medication
-                                </a>
-                            </div>
-                        </div>
-                            @if (problem.Interventions == null || problem.Interventions.Count == 0)
-                            {
-                                <div class="text-center bg-white text-muted py-5">
-                                    This patient has no added interventions yet.<br />
-                                    <a href="#" class="text-teal fw-semibold small text-decoration-none" data-bs-toggle="modal" data-bs-target="#addInterventionModal">+ Add Now</a>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h4 class="fw-bold mb-0">INTERVENTIONS</h4>
+                                <div>
+                                    <button type="button" class="btn btn-custom text-white fw-semibold" style="background:#0097A7; border-radius:10px; min-width:160px;" data-bs-toggle="modal" data-bs-target="#addInterventionModal">Add Intervention</button>
+                                    <a class="btn btn-custom text-white fw-semibold ms-2" 
+                                        style="background:#0097A7; border-radius:10px; min-width:160px;" 
+                                        href="@Url.Action("AddMedicationOrder", "Medication", new { patientId = ViewBag.PatientId, problemId = problem.PsyProblemListId })">
+                                        Add Medication
+                                    </a>
                                 </div>
-                            }
-                            else
-                            {
-                                @foreach (var intervention in problem.Interventions)
-                                {
-                                    <div class="p-3 rounded-3 mb-2 bg-white shadow-sm">
-                                        <div class="d-flex align-items-center">
-                                            <span class="fw-bold">@intervention.Description</span>
-                                            <span class="badge bg-inprogress ms-2">@intervention.Status</span>
-                                            <i class="bi bi-three-dots-vertical ms-auto"></i>
-                                        </div>
-                                        <div class="small text-muted mt-1">
-                                            Noted by: <span class="fw-semibold">@intervention.NotedBy</span>
-                                            <span class="ms-3">Date Added: @intervention.DateAdded?.ToShortDateString()</span>
-                                        </div>
-                                    </div>
-                                }
-                            }
+                            </div>
+                            <div class="bg-white rounded-3 shadow-sm p-3">
+                                <table class="table mb-0 align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:40px;">#</th>
+                                            <th>Description</th>
+                                            <th>Frequency</th>
+                                            <th>Status</th>
+                                            <th>Clinician</th>
+                                            <th style="width:40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (problem.Interventions == null || problem.Interventions.Count == 0)
+                                        {
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted py-5">
+                                                    This patient has no added interventions yet.<br />
+                                                    <a href="#" class="text-teal fw-semibold small text-decoration-none" data-bs-toggle="modal" data-bs-target="#addInterventionModal">+ Add Now</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            int idx = 1;
+                                            foreach (var intervention in problem.Interventions)
+                                            {
+                                                var isMedication = intervention?.MedicationOrderId.HasValue == true;
+                                                <tr>
+                                                    <td class="fw-semibold">@idx</td>
+                                                    <td>
+                                                        @if (isMedication)
+                                                        {
+                                                            <div class="fw-bold">Medication</div>
+                                                            <div class="text-muted small" style="font-size:1.05em;">@intervention.MedicationName</div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="fw-bold" style="font-size:1.05em;">@intervention?.ServiceTypeName - @intervention.UnitPerDose @intervention?.ServiceModalityName</div>
+                                                            <div class="text-muted small">@intervention.Description</div>
+                                                        }
+                                                    </td>
+                                                    <td class="fw-semibold">
+                                                        @if (isMedication)
+                                                        {
+                                                            @intervention.ScheduledType
+                                                        }
+                                                        else
+                                                        {
+                                                            @intervention.Frequency
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <span class="fw-semibold">@intervention.Status</span>
+                                                    </td>
+                                                    <td>
+                                                        <img src="~/Images/default.png" alt="Clinician" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" />
+                                                    </td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3">
+                                                                <li class="px-2 text-muted fw-semibold small">Options</li>
+
+                                                                @if (isMedication)
+                                                                {
+                                                                    <li>
+                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                           href="@Url.Action("EditMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                            Edit Medication
+                                                                        </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <form asp-action="RemoveMedicationOrder" asp-controller="Medication" method="post" class="m-0">
+                                                                            @Html.AntiForgeryToken()
+                                                                            <input type="hidden" name="id" value="@intervention.MedicationOrderId" />
+                                                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 border-0 bg-transparent">Remove Medication</button>
+                                                                        </form>
+                                                                    </li>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <li>
+                                                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
+                                                                            Edit Intervention
+                                                                        </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
+                                                                            Remove
+                                                                        </a>
+                                                                    </li>
+                                                                }
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                idx++;
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 }
@@ -540,36 +625,44 @@
 
     <!-- Add Intervention Modal -->
     <div class="modal fade" id="addInterventionModal" tabindex="-1" aria-labelledby="addInterventionModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg"> <!-- Changed to modal-lg -->
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header" style="background:#00798A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
                     <h5 class="modal-title fw-bold" id="addInterventionModalLabel">Add Intervention</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body pt-4 pb-2">
+                <div class="modal-body p-4"> <!-- Added more padding -->
                     <form asp-action="AddIntervention" asp-controller="TreatmentPlan" method="post">
+                        <input type="hidden" name="problemId" value="@activeProblem?.PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
-                        <input type="hidden" name="problemId" value="@Model.Problems.FirstOrDefault()?.PsyProblemListId" />
                         
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Service Type</label>
-                            <select name="ServiceType" class="form-select">
+                            <select name="ServiceType" id="ServiceType" class="form-select">
                                 <option value="" selected disabled>Select Service Type</option>
-                                <option value="individual">Individual Therapy</option>
-                                <option value="group">Group Therapy</option>
-                                <option value="family">Family Therapy</option>
-                                <option value="medication">Medication Management</option>
+                                @{
+                                    var serviceTypes = ViewBag.ServiceTypes as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+                                                        ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+                                }
+                                @foreach (var serviceType in serviceTypes)
+                                {
+                                    <option value="@serviceType.Value">@serviceType.Text</option>
+                                }
                             </select>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Service (Modality)</label>
-                            <select name="ServiceModality" class="form-select">
-                                <option value="" selected disabled>Select Service Modality</option>
-                                <option value="cbt">Cognitive Behavioral Therapy</option>
-                                <option value="dbt">Dialectical Behavior Therapy</option>
-                                <option value="psychodynamic">Psychodynamic Therapy</option>
-                                <option value="supportive">Supportive Therapy</option>
+                            <select name="ServiceModality" id="ServiceModality" class="form-select">
+                                <option value="" selected disabled>Select Service (Modality)</option>
+                                @{
+                                    var services = ViewBag.Services as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+                                                   ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+                                }
+                                @foreach (var service in services)
+                                {
+                                    <option value="@service.Value">@service.Text</option>
+                                }
                             </select>
                         </div>
                         
@@ -595,45 +688,37 @@
 
     <!-- Custom styles for modal -->
     <style>
-        #addInterventionModal .modal-header {
-            background: #00798A;
-            color: #fff;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+        #addInterventionModal .modal-lg {
+            max-width: 800px; /* Increased width */
         }
-        #addInterventionModal .form-control[readonly] {
-            background-color: #fff;
-            border: 1px solid #ced4da;
-            color: #d32f2f;
-            font-weight: 500;
+
+        #addInterventionModal .form-control,
+        #addInterventionModal .form-select {
+            padding: 0.75rem 1rem; /* Increased padding */
+            font-size: 1rem;
         }
+
+        #addInterventionModal .form-label {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        #addInterventionModal textarea.form-control {
+            min-height: 120px; /* Taller textarea */
+        }
+
+        #addInterventionModal .modal-body {
+            padding: 2rem; /* Increased padding */
+        }
+
         #addInterventionModal .btn {
-            background: #00798A;
-            color: #fff;
-            border-radius: 8px;
-            min-width: 120px;
-            font-weight: 600;
+            padding: 0.6rem 1.5rem; /* Larger buttons */
         }
 
-        /* Ensure dropdown menu is above other elements */
-        .dropdown-menu {
-            z-index: 1055 !important; /* higher than modal and other content */
-            position: absolute !important;
-        }
-
-        /* Ensure dropdown menu is above other elements and not clipped */
-        .nav-item.position-relative { overflow: visible; }
-        .nav-item .dropdown-menu {
-            z-index: 1060 !important;
-            position: absolute !important;
-            right: 100  px;
-            top: 40px;
-        }
-
-        .dropdown-menu .dropdown-item {
-            color: #222 !important;
-            background: #fff !important;
-            opacity: 1 !important;
+        /* Improved spacing between form groups */
+        #addInterventionModal .mb-3,
+        #addInterventionModal .mb-4 {
+            margin-bottom: 1.5rem !important;
         }
     </style>
 
@@ -813,4 +898,55 @@
                 });
             });
         });
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-bs-target="#addInterventionModal"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var activeTabBtn = document.querySelector('#problemTab button.active');
+            if (!activeTabBtn) activeTabBtn = document.querySelector('#problemTab button');
+            var problemId = activeTabBtn.getAttribute('data-bs-id');
+            document.querySelector('#addInterventionModal input[name="problemId"]').value = problemId;
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    var tabButtons = document.querySelectorAll('#problemTab button');
+    var tabPanes = document.querySelectorAll('#problemTabContent .tab-pane');
+
+    // Restore active tab from localStorage
+    var savedTabId = localStorage.getItem('activeProblemTabId');
+    var activeBtn = savedTabId ? document.getElementById(savedTabId) : tabButtons[0];
+    var activeTarget = activeBtn.getAttribute('data-bs-target');
+
+    tabButtons.forEach(function(btn) {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+    });
+    activeBtn.classList.add('active');
+    activeBtn.setAttribute('aria-selected', 'true');
+
+    tabPanes.forEach(function(pane) {
+        if ('#' + pane.id === activeTarget) {
+            pane.classList.add('show', 'active');
+        } else {
+            pane.classList.remove('show', 'active');
+        }
+    });
+
+    // Highlight sidebar
+    document.querySelectorAll('.nav-item .d-flex').forEach(function(item) {
+        item.classList.remove('bg-lightblue');
+        item.classList.add('bg-light');
+    });
+    activeBtn.closest('.nav-item').querySelector('.d-flex').classList.remove('bg-light');
+    activeBtn.closest('.nav-item').querySelector('.d-flex').classList.add('bg-lightblue');
+
+    // Save tab on click
+    tabButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            localStorage.setItem('activeProblemTabId', this.id);
+        });
+    });
+});
     </script>

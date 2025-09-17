@@ -44,8 +44,8 @@ namespace SafehavenPMS.Controllers
                     ServiceName = serviceType,
                     Description = description,
                     CreatedAt = DateTime.Now,
-                    CreatedBy = "User" //Change to oroginal User Soon
-
+                    CreatedBy = "User", //Change to oroginal User Soon
+                    Status = "Active"
                 };
 
                 _context.ServiceTypes.Add(newServiceType);

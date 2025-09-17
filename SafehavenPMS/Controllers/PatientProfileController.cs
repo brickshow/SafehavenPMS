@@ -1,10 +1,12 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using SafehavenPMS.ViewModel.PatientProfile;
+using System.Linq;
 
 namespace SafehavenPMS.Controllers
 {
@@ -49,6 +51,30 @@ namespace SafehavenPMS.Controllers
 
             var treatmentPlanViewModel = new PatientTreatmentPlanTabViewModel();
 
+            // Fetch all interventions for the patient
+            var interventions = await _context.Interventions
+                .Include(i => i.ServiceType)
+                .Include(i => i.ServiceModality)
+                .Where(i => i.PatientId == patient.PatientId)
+                .ToListAsync();
+
+            var interventionsByProblem = interventions
+                .GroupBy(i => i.PsyProblemListId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(i => new InterventionViewModel
+                    {
+                        InterventionId = i.InterventionId,
+                        ServiceTypeName = i.ServiceType?.ServiceName,
+                        ServiceModalityName = i.ServiceModality?.ServiceName,
+                        Description = i.Description,
+                        Frequency = i.DurationFrequency,
+                        Status = i.Status,
+                        NotedBy = i.NotedBy,
+                        DateAdded = i.DateAdded
+                    }).ToList()
+                );
+
             if (assessment?.ProblemLists != null)
             {
                 foreach (var problem in assessment.ProblemLists)
@@ -67,11 +93,55 @@ namespace SafehavenPMS.Controllers
                             NotedBy = g.NotedBy,
                             TargetDate = g.TargetDate
                         }).ToList() ?? new List<GoalViewModel>(),
-                        Interventions = new List<InterventionViewModel>() // TODO: Map interventions if you have an interventions table
+                        Interventions = interventionsByProblem.ContainsKey(problem.PsyProblemListId)
+                            ? interventionsByProblem[problem.PsyProblemListId]
+                            : new List<InterventionViewModel>()
                     };
                     treatmentPlanViewModel.Problems.Add(problemVm);
                 }
             }
+
+            // <<-- NEW: include medication orders as InterventionViewModel entries per problem
+            var meds = await _context.MedicationOrders
+                        .Include(m => m.Medicine)
+                        .Where(m => m.PatientId == patient.PatientId)
+                        .ToListAsync();
+
+            var medsByProblem = meds
+                .GroupBy(m => m.PsyProblemListId ?? 0)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(m => new InterventionViewModel
+                    {
+                        InterventionId = 0,
+                        ServiceTypeName = null,
+                        ServiceModalityName = null,
+                        Description = string.IsNullOrWhiteSpace(m.Note) ? $"Medication order for {m.Medicine?.GenericName}" : m.Note,
+                        Frequency = null,
+                        Status = m.Status,
+                        ScheduledType = m.ScheduledType,
+                        NotedBy = m.CreatedBy,
+                        DateAdded = m.CreatedAt,
+                        MedicationOrderId = m.MedicationOrderId,
+                        MedicineId = m.MedicineId,
+                        MedicationName = m.Medicine != null
+                            ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Form} {m.Medicine.Strength} {m.Medicine.Unit}"
+                            : null,
+                        UnitPerDose = m.UnitPerDose + (m.Medicine != null ? $" {m.Medicine.Form}" : string.Empty)
+                    }).ToList()
+                );
+
+            // attach medication entries to matching problems in the treatment plan viewmodel
+            foreach (var problemVm in treatmentPlanViewModel.Problems)
+            {
+                var key = problemVm.PsyProblemListId;
+                if (medsByProblem.ContainsKey(key))
+                {
+                    // append medication-derived intervention viewmodels
+                    problemVm.Interventions.AddRange(medsByProblem[key]);
+                }
+            }
+            // -- END NEW
 
             var viewModel = new PatientProfilePageViewModel
             {
@@ -116,11 +186,45 @@ namespace SafehavenPMS.Controllers
                 },
 
                 ProgressNotesTab = new PatientProgressNotesTabViewModel(),
-                ActivityLogTab = new PatientActivityLogTabViewModel()
+                ActivityLogTab = new PatientActivityLogTabViewModel(),
+                Interventions = interventions
             };
+
+
+            //Display the Intervention in console
+            foreach (var intervention in interventions)
+            {
+                Console.WriteLine($"Intervention ID: {intervention.InterventionId}, Description: {intervention.Description}");
+            }
+
 
             //ViewBag for patient ID
             ViewBag.PatientId = patient.PatientId;
+
+            // Strongly-typed select lists for the view (avoid anonymous/SelectList runtime issues)
+            var serviceTypesList = await _context.ServiceTypes
+                                        .Where(st => st.Status == "Active")
+                                        .ToListAsync();
+
+            ViewBag.ServiceTypes = serviceTypesList
+                .Select(st => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = st.ServiceTypeId.ToString(),
+                    Text = st.ServiceName
+                })
+                .ToList();
+
+            var servicesList = await _context.Services
+                                    .ToListAsync();
+
+            ViewBag.Services = servicesList
+                .Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = s.ServiceId.ToString(),
+                    Text = s.ServiceName
+                })
+                .ToList();
+
             return View(viewModel);
         }
         

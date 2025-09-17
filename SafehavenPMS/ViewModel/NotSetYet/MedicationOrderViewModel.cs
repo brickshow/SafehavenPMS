@@ -69,6 +69,9 @@ namespace SafehavenPMS.ViewModel
 
         public bool NoDiscontinueDate { get; set; } = false;
 
+        // Add this property to carry the problem id from Treatment Plan
+        public int? PsyProblemListId { get; set; }
+
         // Dropdowns for Razor
         public IEnumerable<SelectListItem>? PatientList { get; set; }
         public IEnumerable<SelectListItem>? MedicineList { get; set; }

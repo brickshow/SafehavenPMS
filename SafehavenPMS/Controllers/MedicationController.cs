@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.Enum;
+using SafehavenPMS.Helpers; // add this
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using System.Runtime.ConstrainedExecution;
@@ -14,6 +15,7 @@ namespace SafehavenPMS.Controllers
     public class MedicationController : Controller
     {
         private readonly SafehavenPMSContext _context;
+        private const string TempOrdersSessionKey = "TempMedicationOrders"; // add this
 
         public MedicationController(SafehavenPMSContext context)
         {
@@ -307,7 +309,7 @@ namespace SafehavenPMS.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> AddMedicationOrder(int? medicineId, int? patientId)
+        public async Task<IActionResult> AddMedicationOrder(int? medicineId, int? patientId, int? problemId)
         {
             var medicines = await _context.Medicines.ToListAsync();
             var patients = await _context.Patients
@@ -337,6 +339,24 @@ namespace SafehavenPMS.Controllers
                 medicineId
             );
 
+             // Read temporary orders from session
+        var tempList = HttpContext.Session.GetObject<List<MedicationOrderViewModel>>(TempOrdersSessionKey) ?? new List<MedicationOrderViewModel>();
+
+        // Fill display names using loaded patients/medicines so view shows readable items
+        var patientDict = patients.ToDictionary(p => p.PatientId, p => $"{p.Firstname} {p.Lastname}");
+        var medicineDict = medicines.ToDictionary(m => m.MedicineId, m => $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}");
+
+        foreach (var t in tempList)
+        {
+            if (string.IsNullOrWhiteSpace(t.PatientName) && patientDict.ContainsKey(t.PatientId))
+                t.PatientName = patientDict[t.PatientId];
+
+            if (string.IsNullOrWhiteSpace(t.MedicineName) && medicineDict.ContainsKey(t.MedicineId))
+                t.MedicineName = medicineDict[t.MedicineId];
+        }
+        ViewBag.SelectedPatientID = patientId; // Pass selected patient ID to ViewBag
+        ViewBag.TempOrders = tempList;
+        ViewBag.ProblemId = problemId; // Pass problemId to ViewBag if needed in the view
 
             return View(new MedicationOrderViewModel());
         }
@@ -404,6 +424,7 @@ namespace SafehavenPMS.Controllers
                 var medicationOrder = new MedicationOrder
                 {
                     PatientId = model.PatientId,
+                    PsyProblemListId = model.PsyProblemListId, // map problem list if applicable
                     MedicineId = model.MedicineId,
                     UnitPerDose = model.UnitPerDose,
                     Note = model.Note,
@@ -421,26 +442,20 @@ namespace SafehavenPMS.Controllers
                     CreatedBy = User.Identity?.Name ?? "System"
                 };
 
-                _context.MedicationOrders.Add(medicationOrder);
-                await _context.SaveChangesAsync();
+                // Read existing temp list from session, append, save back
+                var tempList = HttpContext.Session.GetObject<List<MedicationOrder>>(TempOrdersSessionKey) ?? new List<MedicationOrder>();
+                tempList.Add(medicationOrder);
+                HttpContext.Session.SetObject(TempOrdersSessionKey, tempList);
 
-                // 3️⃣ Success → Redirect to Index
-                TempData["SuccessMessage"] = "Medication order added successfully!";
-                return RedirectToAction("Index");
-            }
-            catch (DbUpdateException dbEx)
-            {
-                Console.WriteLine($"Database error: {dbEx.Message}");
-                TempData["ErrorMessage"] = "An error occurred while saving the medication order. Please try again.";
+                TempData["SuccessMessage"] = "Medication order added to temporary list. Click Submit Order to save to database.";
+                return RedirectToAction("AddMedicationOrder", new { patientId = model.PatientId });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Unexpected error: {ex.Message}");
-                TempData["ErrorMessage"] = "An unexpected error occurred. Please contact support.";
+                TempData["ErrorMessage"] = "An unexpected error occurred.";
+                return RedirectToAction("AddMedicationOrder");
             }
-
-            // 4️⃣ On any failure → Redirect to Index
-            return RedirectToAction("Index");
         }
 
         //Action to mark Medication order as Completed
@@ -711,6 +726,111 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index");
         }
 
+
+        //This action will submit all temporary medication orders to the database and redirect to PatientProfile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitOrders()
+        {
+            var tempList = HttpContext.Session.GetObject<List<MedicationOrderViewModel>>(TempOrdersSessionKey)
+                           ?? new List<MedicationOrderViewModel>();
+
+            if (!tempList.Any())
+            {
+                TempData["ErrorMessage"] = "No medication orders to submit.";
+                return RedirectToAction(nameof(AddMedicationOrder));
+            }
+
+            try
+            {
+                var toSave = new List<MedicationOrder>();
+
+                foreach (var t in tempList)
+                {
+                    // Validate required foreign keys exist
+                    var patientExists = await _context.Patients.AnyAsync(p => p.PatientId == t.PatientId);
+                    var medicineExists = await _context.Medicines.AnyAsync(m => m.MedicineId == t.MedicineId);
+                    if (!patientExists || !medicineExists)
+                    {
+                        // skip invalid entry
+                        continue;
+                    }
+
+                    string status;
+                    if (t.StartDate.Date == DateTime.Today)
+                        status = MedicationOrderStatus.Active.ToString();
+                    else if (t.StartDate.Date > DateTime.Today)
+                        status = MedicationOrderStatus.NotStarted.ToString();
+                    else
+                        status = MedicationOrderStatus.Active.ToString();
+
+                    var entity = new MedicationOrder
+                    {
+                        PatientId = t.PatientId,
+                        PsyProblemListId = t.PsyProblemListId,
+                        MedicineId = t.MedicineId,
+                        UnitPerDose = t.UnitPerDose,
+                        Note = t.Note,
+                        ScheduledType = t.ScheduledType,
+                        DaysInterval = t.ScheduledType == "NonDaily" ? t.DaysInterval : null,
+                        Breakfast = t.Breakfast,
+                        Lunch = t.Lunch,
+                        Dinner = t.Dinner,
+                        Bedtime = t.Bedtime,
+                        StartDate = t.StartDate,
+                        DiscontinueDate = t.NoDiscontinueDate ? null : t.DiscontinueDate,
+                        NoDiscontinueDate = t.NoDiscontinueDate,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = t.CreatedBy ?? User.Identity?.Name ?? "System",
+                        Status = status
+                    };
+
+                    toSave.Add(entity);
+                }
+
+                if (toSave.Any())
+                {       
+                    await _context.MedicationOrders.AddRangeAsync(toSave);
+                    await _context.SaveChangesAsync();
+    
+                    HttpContext.Session.Remove(TempOrdersSessionKey);
+                    TempData["SuccessMessage"] = "Medication orders submitted and saved.";
+                    return RedirectToAction("Index", "PatientProfile", new { id = toSave.First().PatientId });
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No valid medication orders to save.";
+                    return RedirectToAction(nameof(AddMedicationOrder));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving medication orders: {ex}");
+                TempData["ErrorMessage"] = "An error occurred while saving medication orders.";
+                return RedirectToAction(nameof(AddMedicationOrder));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RemoveTempOrder(int index)
+        {
+            var tempList = HttpContext.Session.GetObject<List<MedicationOrderViewModel>>(TempOrdersSessionKey) 
+                           ?? new List<MedicationOrderViewModel>();
+
+            if (index >= 0 && index < tempList.Count)
+            {
+                tempList.RemoveAt(index);
+                HttpContext.Session.SetObject(TempOrdersSessionKey, tempList);
+                TempData["SuccessMessage"] = "Removed item from temporary list.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Unable to remove item (invalid index).";
+            }
+
+            return RedirectToAction(nameof(AddMedicationOrder));
+        }
 
     }
 }

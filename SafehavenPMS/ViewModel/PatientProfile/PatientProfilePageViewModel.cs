@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SafehavenPMS.Models; // For Intervention
 using SafehavenPMS.ViewModel.PatientProfile;
 
 namespace SafehavenPMS.ViewModel
@@ -24,6 +25,9 @@ namespace SafehavenPMS.ViewModel
         public PatientTreatmentPlanTabViewModel TreatmentPlanTab { get; set; }
         public PatientProgressNotesTabViewModel ProgressNotesTab { get; set; }
         public PatientActivityLogTabViewModel ActivityLogTab { get; set; }
+
+        // Add this property to hold all interventions for the patient
+        public List<Intervention> Interventions { get; set; } = new List<Intervention>();
 
         public PatientProfilePageViewModel()
         {

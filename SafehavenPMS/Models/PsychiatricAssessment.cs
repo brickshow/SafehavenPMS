@@ -44,15 +44,17 @@ namespace SafehavenPMS.Models
         //Audit fields
         public DateTime? UpdatedAt { get; set; }
         public string? UpdatedBy { get; set; }
-        
+
         public DateTime? CreatedAt { get; set; }
         public string? CreatedBy { get; set; }
-        
-        
+
+
 
         // Navigation property
         public PsychiatricAssessment? PsychiatricAssessment { get; set; }
         public List<Goal> Goals { get; set; } = new List<Goal>();
+        public List<MedicationOrder> MedicationOrders { get; set; } = new List<MedicationOrder>();
+        public ICollection<Intervention> Interventions { get; set; } = new List<Intervention>();
     }
 
       public class PsyDiagnosisList

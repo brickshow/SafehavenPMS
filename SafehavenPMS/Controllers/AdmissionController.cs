@@ -97,14 +97,17 @@ namespace SafehavenPMS.Controllers
                     ApprovalDate = p.ApprovalDate,
                     Status = p.Patient.PatientStatus,
                 };
-            }).ToList();
+                }).ToList();
 
-            Console.WriteLine($"Model items: {model.Count}");
-            ViewBag.TotalPatientCount = model.Count;
-            ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
-            ViewBag.TotalAdmittedCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
+                Console.WriteLine($"Model items: {model.Count}");
+                ViewBag.TotalPatientCount = model.Count;
+                ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
+                ViewBag.TotalAdmittedCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
 
-            return View(model);
+                ViewBag.ServiceTypes = new SelectList(await _context.ServiceTypes.ToListAsync(), "ServiceTypeId", "ServiceName");
+                ViewBag.Services = new SelectList(await _context.Services.ToListAsync(), "ServiceId", "ServiceName");
+
+                return View(model);
             }
             catch (Exception ex)
             {

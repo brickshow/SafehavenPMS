@@ -53,6 +53,8 @@ namespace SafehavenPMS.Data
         public DbSet<ServiceType> ServiceTypes { get; set; }
         public DbSet<Service> Services { get; set; }
 
+        public DbSet<Intervention> Interventions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Many-to-many: Patient ↔ ClinicalStaff
@@ -239,6 +241,34 @@ namespace SafehavenPMS.Data
                 .WithOne(p => p.IntakeForm)
                 .HasForeignKey<IntakeForm>(i => i.PatientId)
                 .IsRequired(false)  // Make the relationship optional
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Intervention → Patient (many-to-one)
+            modelBuilder.Entity<Intervention>()
+                .HasOne(i => i.Patient)
+                .WithMany(p => p.Interventions)
+                .HasForeignKey(i => i.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Intervention → PsyProblemList (many-to-one)
+            modelBuilder.Entity<Intervention>()
+                .HasOne(i => i.Problem)
+                .WithMany(pl => pl.Interventions)
+                .HasForeignKey(i => i.PsyProblemListId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Intervention → ServiceType (many-to-one)
+            modelBuilder.Entity<Intervention>()
+                .HasOne(i => i.ServiceType)
+                .WithMany()
+                .HasForeignKey(i => i.ServiceTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Intervention → Service (many-to-one)
+            modelBuilder.Entity<Intervention>()
+                .HasOne(i => i.ServiceModality)
+                .WithMany()
+                .HasForeignKey(i => i.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
