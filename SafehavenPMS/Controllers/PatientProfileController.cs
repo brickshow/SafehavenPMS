@@ -140,6 +140,11 @@ namespace SafehavenPMS.Controllers
                     // append medication-derived intervention viewmodels
                     problemVm.Interventions.AddRange(medsByProblem[key]);
                 }
+
+                // Sort combined interventions by DateAdded/CreatedAt (most recent first)
+                problemVm.Interventions = problemVm.Interventions
+                    .OrderByDescending(i => i.DateAdded ?? DateTime.MinValue)
+                    .ToList();
             }
             // -- END NEW
 

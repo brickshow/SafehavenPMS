@@ -137,7 +137,6 @@
                                             <td class="text-start">
                                                 <strong>@med.MedicineName</strong><br>
                                                 @med.UnitPerDoseDisplay<br>
-                                                <small class="text-muted">D/C Date: @(med.DiscontinueDate?.ToString("MM-dd-yy") ?? "Not Set")</small><br>
                                                 @if (!string.IsNullOrEmpty(med.Note))
                                                 {
                                                     <small>@med.Note</small>

@@ -50,6 +50,7 @@ namespace SafehavenPMS.Controllers
                 MedicationOrders = medicationOrders.Select(m => new MedicationOrderViewModel
                 {
                     MedicationOrderId = m.MedicationOrderId,
+        
 
                     // Patient
                     PatientId = m.PatientId,
@@ -59,8 +60,9 @@ namespace SafehavenPMS.Controllers
 
                     // Medicine
                     MedicineId = m.MedicineId,
+                    
                     MedicineName = m.Medicine != null
-                                    ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Form} {m.Medicine.Unit}"
+                                    ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Form}"
                                     : string.Empty,
                     // Dosage
                     UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
@@ -128,9 +130,9 @@ namespace SafehavenPMS.Controllers
                             MedicationOrderId = m.MedicationOrderId,
                             PatientId = m.PatientId,
                             MedicineId = m.MedicineId,
-                            MedicineName = m.Medicine != null
-                                            ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Form} {m.Medicine.Unit}"
-                                            : string.Empty,
+                              MedicineName = m.Medicine != null
+                                    ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Unit} {m.Medicine.Form}"
+                                    : string.Empty,
                             UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
                             Note = m.Note,
                             ScheduledType = m.ScheduledType,
@@ -332,7 +334,7 @@ namespace SafehavenPMS.Controllers
                 medicines.Where(a => a.Status == Enum.MedicineStatus.Active.ToString())
                 .Select(m => new {
                     MedicineId = m.MedicineId,
-                    DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                    DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength.ToString("0.#")} {m.Unit}"
                 }),
                 "MedicineId",
                 "DisplayName",
@@ -394,7 +396,7 @@ namespace SafehavenPMS.Controllers
                                             .Where(a => a.Status == Enum.MedicineStatus.Active.ToString())
                                             .Select(m => new {
                                                 MedicineId = m.MedicineId,
-                                                DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                                                DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength.ToString("0.#")} {m.Unit}"
                                             }),
                                             "MedicineId",
                                             "DisplayName"
@@ -542,7 +544,7 @@ namespace SafehavenPMS.Controllers
                 .Where(a => a.Status == Enum.MedicineStatus.Active.ToString()).Select(m => new
                 {
                     MedicineId = m.MedicineId,
-                    DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                    DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength.ToString("0.#")} {m.Unit}"
                 }),
                 "MedicineId",
                 "DisplayName",
@@ -601,7 +603,7 @@ namespace SafehavenPMS.Controllers
                         _context.Medicines.Where(a => a.Status == Enum.MedicineStatus.Active.ToString()).Select(m => new
                         {
                             MedicineId = m.MedicineId,
-                            DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}"
+                            DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength.ToString("0.#")} {m.Unit}"
                         }),
                         "MedicineId",
                         "DisplayName",
@@ -750,6 +752,7 @@ namespace SafehavenPMS.Controllers
                     // Validate required foreign keys exist
                     var patientExists = await _context.Patients.AnyAsync(p => p.PatientId == t.PatientId);
                     var medicineExists = await _context.Medicines.AnyAsync(m => m.MedicineId == t.MedicineId);
+                    
                     if (!patientExists || !medicineExists)
                     {
                         // skip invalid entry
