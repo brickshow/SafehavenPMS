@@ -548,28 +548,43 @@
                 </div>
                 <div class="modal-body pt-4 pb-2">
                     <form asp-action="AddIntervention" asp-controller="TreatmentPlan" method="post">
+                        <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
+                        <input type="hidden" name="problemId" value="@Model.Problems.FirstOrDefault()?.PsyProblemListId" />
+                        
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Service Type</label>
-                            <select>
-                                <option value="value"></option>
+                            <select name="ServiceType" class="form-select">
+                                <option value="" selected disabled>Select Service Type</option>
+                                <option value="individual">Individual Therapy</option>
+                                <option value="group">Group Therapy</option>
+                                <option value="family">Family Therapy</option>
+                                <option value="medication">Medication Management</option>
                             </select>
                         </div>
+                        
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Service (Modality)</label>
+                            <select name="ServiceModality" class="form-select">
+                                <option value="" selected disabled>Select Service Modality</option>
+                                <option value="cbt">Cognitive Behavioral Therapy</option>
+                                <option value="dbt">Dialectical Behavior Therapy</option>
+                                <option value="psychodynamic">Psychodynamic Therapy</option>
+                                <option value="supportive">Supportive Therapy</option>
+                            </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Description</label>
-                            <input type="text" name="Description" class="form-control" />
-                        </div>
+                        
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Duration/Frequency</label>
-                            <input type="text" name="DurationFrequency" class="form-control" />
+                            <input type="text" name="DurationFrequency" class="form-control" placeholder="e.g. 1 hour weekly" />
                         </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Description</label>
-                        <input type="text" name="DurationFrequency" class="form-control" />
-                    </div>
-                        <div class="d-flex justify-content-end">
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="Description" class="form-control" rows="3" placeholder="Enter intervention description"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
                             <button type="submit" class="btn" style="background:#00798A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Add</button>
                         </div>
                     </form>
