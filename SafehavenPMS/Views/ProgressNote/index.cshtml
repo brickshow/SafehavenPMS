@@ -1,0 +1,228 @@
+@{
+    ViewBag.Title = "Progress Notes";
+}
+<div class="header">
+    <div class="d-flex justify-content-start flex-column align-items-start mb-2">
+        <div class="d-flex align-items-center g-4">
+            <div class="d-flex justify-content-center align-items-center">
+                <i class='bx bxs-user fs-2 me-2'></i>
+                <h5 class="text-custom mb-0">Progress Notes</h5>
+            </div>
+        @* <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
+            <i class='bx bx-user-plus me-1'></i>
+            New Progress Note
+        </a> *@
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+<div class="container-fluid px-0" style="background:#fafafa;">
+    <div class="row g-0">
+        <!-- Left Panel: Patients List -->
+        <div class="col-md-5 px-4 pt-4 bg-white" style="min-width:400px;">
+            <h5 class="mb-3 fw-bold">Patients (9)</h5>
+            <div class="d-flex gap-2 mb-3">
+                <input type="text" class="form-control" placeholder="Search by name" style="max-width:180px;">
+                <select class="form-select" style="max-width:120px;">
+                    <option>Service</option>
+                </select>
+                <select class="form-select" style="max-width:120px;">
+                    <option>Status</option>
+                </select>
+            </div>
+            <table class="table table-patients mb-0">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Service</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Example Patient Row: Active -->
+                    <tr class="patient-row patient-row-active">
+                        <td>Sha Sha Ramos</td>
+                        <td>Individual Therapy</td>
+                        <td>
+                            <span class="status-pill pill-notstarted text-nowrap">Not Started</span>
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3"
+                                    style="min-width: 180px;">
+                                    <li class="px-2 text-muted fw-semibold small">Options</li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                            View Treatment Plan
+                                        </a>
+                                    @* </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                            Mark as Completed
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                            View Treatment Plan
+                                        </a>
+                                    </li> *@
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Right Panel: Progress Notes -->
+        <div class="col-md-7 right-panel px-4 pt-4 bg-white ">
+            <div class="d-flex justify-content-between bg-white align-items-center mb-2">
+                <div>
+                    <div class="fw-bold" style="font-size:1.15em;">
+                        Cognitive behavioral therapy - 1x per week [ frequency ]
+                        <span class="status-pill pill-active ms-2">Active</span>
+                    </div>
+                    <div class="text-muted" style="font-size:1em;">Short description of the intervention here
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end mb-3">
+                <a href="@Url.Action("Create", "ProgressNote")" class="btn btn-progress-note">+New Progress Note</a>
+            </div>
+            <div style="max-height:340px; overflow-y:auto;">
+                <!-- Progress Note Cards -->
+                <div class="progress-note-card px-3 py-2 mb-2">
+                    <div class="progress-note-date">11/12/24</div>
+                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....                    </div>
+                </div>
+                <div class="progress-note-card px-3 py-2 mb-2">
+                    <div class="progress-note-date">11/13/24</div>
+                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....
+                    </div>
+                </div>
+                <div class="progress-note-card px-3 py-2 mb-2">
+                    <div class="progress-note-date">11/14/24</div>
+                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....
+                    </div>
+                </div>
+                <div class="progress-note-card px-3 py-2 mb-2">
+                    <div class="progress-note-date">11/15/24</div>
+                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-pill {
+        border-radius: 6px;
+        padding: 2px 16px;
+        font-size: 1em;
+        font-weight: 500;
+        display: inline-block;
+    }
+
+    .pill-notstarted {
+        background: #d3edea;
+        color: #4a6c6a;
+    }
+
+    .pill-active {
+        background: #c7f7e2;
+        color: #2e7d32;
+    }
+
+    .pill-discontinued {
+        background: #f8d7da;
+        color: #a94442;
+    }
+
+    .pill-completed {
+        background: #dbeafe;
+        color: #3b5998;
+    }
+
+    .patient-row-active {
+        background: #eaf6f8 !important;
+    }
+
+    .patient-row {
+        cursor: pointer;
+    }
+
+    .progress-note-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .progress-note-date {
+        font-weight: 600;
+        font-size: 1.1em;
+    }
+
+    .progress-note-expand {
+        color: red;
+        font-size: 0.95em;
+        cursor: pointer;
+    }
+
+    .important-filter {
+        color: red;
+        font-size: 1em;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .profile-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #bbb;
+        display: inline-block;
+    }
+
+    .right-panel {
+        border-left: 1px solid #e0e0e0;
+        min-height: 100vh;
+    }
+
+    .clinician-label {
+        font-weight: 600;
+    }
+
+    .last-note-label {
+        font-size: 0.95em;
+        color: #888;
+    }
+
+    .btn-progress-note {
+        background: #00bcd4;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 8px;
+        min-width: 180px;
+    }
+
+    .table-patients th,
+    .table-patients td {
+        vertical-align: middle;
+    }
+
+    .table-patients {
+        background: #fff;
+    }
+
+    .action-links {
+        color: red;
+        font-size: 0.98em;
+        font-weight: 500;
+    }
+</style>

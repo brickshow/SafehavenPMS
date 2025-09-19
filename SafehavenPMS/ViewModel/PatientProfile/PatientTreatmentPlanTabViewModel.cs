@@ -36,6 +36,7 @@ namespace SafehavenPMS.ViewModel.PatientProfile
         public string? Frequency { get; set; }
         public string? Status { get; set; }
         public string? NotedBy { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? DateAdded { get; set; }
 
         // Added fields for medication display
@@ -45,5 +46,9 @@ namespace SafehavenPMS.ViewModel.PatientProfile
         
         public string? MedicationName { get; set; }
         public string? UnitPerDose { get; set; }
+        public int ServiceTypeId { get; internal set; }
+        public int ServiceId { get; internal set; }
+        public int PatientId { get; internal set; }
+        public int PsyProblemListId { get; internal set; }
     }
 }

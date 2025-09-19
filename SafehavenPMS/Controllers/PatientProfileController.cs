@@ -125,7 +125,7 @@ namespace SafehavenPMS.Controllers
                         MedicationOrderId = m.MedicationOrderId,
                         MedicineId = m.MedicineId,
                         MedicationName = m.Medicine != null
-                            ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Form} {m.Medicine.Strength} {m.Medicine.Unit}"
+                            ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Unit} {m.Medicine.Form}"
                             : null,
                         UnitPerDose = m.UnitPerDose + (m.Medicine != null ? $" {m.Medicine.Form}" : string.Empty)
                     }).ToList()
