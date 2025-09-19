@@ -5,7 +5,7 @@
     ViewBag.Title = "Services";
 }
 
-<div class="header">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center g-4">
             <div class="d-flex justify-content-center align-items-center">
@@ -47,6 +47,22 @@
                     data-bs-target="#addServiceModal">
             + Add Service
         </a>
+
+        <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview"
+                        type="button" role="tab" aria-controls="overview" aria-selected="true">
+                    Active
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview"
+                        type="button" role="tab" aria-controls="overview" aria-selected="true">
+                    Archived
+                </button>
+            </li>
+        </ul>
+
     </div>
     <hr class="mt-0 mb-2" />
 </div>
@@ -124,7 +140,6 @@
                 <tr>
                     <th>No.</th>
                     <th>Service Name</th>
-                    <th>Service Type</th>
                     <th>Assigned Role</th>
                     <th class="text-center">Actions</th>
                 </tr>
@@ -144,8 +159,7 @@
                         <tr>
                             <td>@row</td>
                             <td>@(string.IsNullOrWhiteSpace(service.ServiceName) ? "-" : service.ServiceName)</td>
-                            <td>@(service.ServiceType != null ? service.ServiceType.ServiceName : "-")</td>
-                            <td>@(string.IsNullOrWhiteSpace(service.AssignedRole) ? "-" : service.AssignedRole)</td>
+                            <td>@(string.IsNullOrWhiteSpace(service.AssignedRole) ? "-" : service.AssignedRole)</td> 
                             <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -164,7 +178,9 @@
                                         </li>
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                               href="#">
+                                               href="#"
+                                               data-bs-target="#archiveConfirmationModal-@service.ServiceId"
+                                               data-bs-toggle="modal">
                                                 <span class="badge-dot bg-primary"></span>
                                                 Archive Service
                                             </a>
@@ -231,29 +247,19 @@
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="ServiceName" name="serviceName" required />
                         </div>
-                    </div>
-                    <div class="mb-4 row align-items-center">
-                        <label for="ServiceTypeId" class="col-sm-3 col-form-label fw-semibold">Service Type</label>
-                        <div class="col-sm-9">
-                            <select class="form-select" id="ServiceTypeId" name="serviceTypeId" required>
-                                <option value="">Select Service Type</option>
-                                @foreach (var item in ViewBag.ServiceTypes as SelectList)
-                                {
-                                    <option value="@item.Value">@item.Text</option>
-                                }
-                            </select>
-                        </div>
-                    </div>
+                    </div>                 
                     <div class="mb-4 row align-items-center">
                         <label for="AssignedRole" class="col-sm-3 col-form-label fw-semibold">Assigned Role</label>
                         <div class="col-sm-9">
-                            <input type="text" class="form-control" id="AssignedRole" name="assignedRole" />
-                        </div>
-                    </div>
-                    <div class="mb-4 row align-items-center">
-                        <label for="Description" class="col-sm-3 col-form-label fw-semibold">Description</label>
-                        <div class="col-sm-9">
-                            <textarea class="form-control" id="Description" name="description" rows="3"></textarea>
+                                <select name="assignedRole" class="form-select flex-grow-1 uniform-input">
+                                    <option value="">-- Select Position --</option>
+                                    <option value="Physician">Physician</option>
+                                    <option value="Psychiatrist">Psychiatrist</option>
+                                    <option value="Psychologist">Psychologist</option>
+                                    <option value="Social Worker">Social Worker</option>
+                                    <option value="Occupational Therapist">Occupational Therapist</option>
+                                    <option value="Recovery Coach">Recovery Coach</option>
+                                </select>
                         </div>
                     </div>
                 </div>
@@ -284,27 +290,17 @@
                             </div>
                         </div>
                         <div class="mb-4 row align-items-center">
-                            <label for="ServiceTypeId-@service.ServiceId" class="col-sm-3 col-form-label fw-semibold">Service Type</label>
-                            <div class="col-sm-9">
-                                <select class="form-select" id="ServiceTypeId-@service.ServiceId" name="serviceTypeId" required>
-                                    <option value="">Select Service Type</option>
-                                    @foreach (var item in ViewBag.ServiceTypes as SelectList)
-                                    {
-                                         <option value="@item.Value">@item.Text</option>
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-4 row align-items-center">
                             <label for="AssignedRole-@service.ServiceId" class="col-sm-3 col-form-label fw-semibold">Assigned Role</label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" id="AssignedRole-@service.ServiceId" name="assignedRole" value="@service.AssignedRole" />
-                            </div>
-                        </div>
-                        <div class="mb-4 row align-items-center">
-                            <label for="Description-@service.ServiceId" class="col-sm-3 col-form-label fw-semibold">Description</label>
-                            <div class="col-sm-9">
-                                <textarea class="form-control" id="Description-@service.ServiceId" name="description" rows="3">@service.Description</textarea>
+                                <select name="assignedRole" class="form-select flex-grow-1 uniform-input" id="AssignedRole-@service.ServiceId">
+                                    <option value="">-- Select Position --</option>
+                                    <option value="Physician" selected="@(service.AssignedRole == "Physician" ? "selected" : null)">Physician</option>
+                                    <option value="Psychiatrist" selected="@(service.AssignedRole == "Psychiatrist" ? "selected" : null)">Psychiatrist</option>
+                                    <option value="Psychologist" selected="@(service.AssignedRole == "Psychologist" ? "selected" : null)">Psychologist</option>
+                                    <option value="Social Worker" selected="@(service.AssignedRole == "Social Worker" ? "selected" : null)">Social Worker</option>
+                                    <option value="Occupational Therapist" selected="@(service.AssignedRole == "Occupational Therapist" ? "selected" : null)">Occupational Therapist</option>
+                                    <option value="Recovery Coach" selected="@(service.AssignedRole == "Recovery Coach" ? "selected" : null)">Recovery Coach</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -312,6 +308,52 @@
                         <button type="submit" class="btn" style="background: linear-gradient(90deg, #069FB2, #058594); color: #fff; min-width: 180px; font-weight: 600; box-shadow: 2px 2px 6px #05859433;">Save Changes</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+}
+
+@* Confirmation Modal for Archiving *@
+<div class="modal fade" id="archiveConfirmationModal" tabindex="-1" aria-labelledby="archiveConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header" style="background-color: #dc3545;">
+                <h5 class="modal-title text-white" id="archiveConfirmationModalLabel">Confirm Archive</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to archive this service?
+            </div>
+            <div class="modal-footer justify-content-end border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="Archive" asp-controller="Services" method="post" class="d-inline">
+                    <input type="hidden" id="archiveServiceId" name="serviceId" value="" />
+                    <button type="submit" class="btn btn-danger">Archive</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@foreach (var service in Model)
+{
+    <div class="modal fade" id="archiveConfirmationModal-@service.ServiceId" tabindex="-1" aria-labelledby="archiveConfirmationModalLabel-@service.ServiceId" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header" style="background-color: #dc3545;">
+                    <h5 class="modal-title text-white" id="archiveConfirmationModalLabel-@service.ServiceId">Confirm Archive</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to archive this service?
+                </div>
+                <div class="modal-footer justify-content-end border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="Archive" asp-controller="Services" method="post" class="d-inline">
+                        <input type="hidden" name="serviceId" value="@service.ServiceId" />
+                        <button type="submit" class="btn btn-danger">Archive</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -422,6 +464,21 @@
     .dropdown-menu.dropdown-menu-end {
         transform: translateX(-10px); /* or try -12px or -8px to adjust the alignment */
     }
+
+      .nav-tabs .nav-link {
+        color: #767676;
+        background-color: transparent;
+        border: none;
+        font-weight: normal;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #00A3B4;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid #00A3B4;
+            font-weight: bold;
+        }
 
 </style>
 

@@ -21,7 +21,7 @@ namespace SafehavenPMS.Controllers
         public async Task<IActionResult> Index()
         {
             var services = await _context.Services
-                .Include(s => s.ServiceType)
+                .Where(s => !s.IsArchived)
                 .ToListAsync();
 
             ViewBag.ServiceTypes = new SelectList(await _context.ServiceTypes.ToListAsync(), "ServiceTypeId", "ServiceName");
@@ -32,11 +32,11 @@ namespace SafehavenPMS.Controllers
         // POST: Services/Add
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add(string? serviceName, string? description, int serviceTypeId, string? assignedRole)
+        public async Task<IActionResult> Add(string? serviceName, string? assignedRole)
         {
-            if (string.IsNullOrWhiteSpace(serviceName) || serviceTypeId == 0 || string.IsNullOrWhiteSpace(assignedRole))
+            if (string.IsNullOrWhiteSpace(serviceName) || string.IsNullOrWhiteSpace(assignedRole))
             {
-                TempData["ErrorMessage"] = "Service name, type, and assigned role are required.";
+                TempData["ErrorMessage"] = "Service name and assigned role are required.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -45,8 +45,6 @@ namespace SafehavenPMS.Controllers
                 var newService = new Service
                 {
                     ServiceName = serviceName,
-                    Description = description,
-                    ServiceTypeId = serviceTypeId,
                     AssignedRole = assignedRole,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "User" // Replace with actual user
@@ -67,11 +65,11 @@ namespace SafehavenPMS.Controllers
         // POST: Services/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int serviceId, string serviceName, string description, int serviceTypeId, string assignedRole)
+        public async Task<IActionResult> Edit(int serviceId, string serviceName, string assignedRole)
         {
-            if (string.IsNullOrWhiteSpace(serviceName) || serviceTypeId == 0)
+            if (string.IsNullOrWhiteSpace(serviceName) || string.IsNullOrWhiteSpace(assignedRole))
             {
-                TempData["ErrorMessage"] = "Service name and type are required.";
+                TempData["ErrorMessage"] = "Service name and assigned role are required.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -85,8 +83,6 @@ namespace SafehavenPMS.Controllers
                 }
 
                 service.ServiceName = serviceName;
-                service.Description = description;
-                service.ServiceTypeId = serviceTypeId;
                 service.AssignedRole = assignedRole;
                 service.UpdatedAt = DateTime.Now;
                 service.UpdatedBy = "User"; // Replace with actual user
@@ -97,6 +93,35 @@ namespace SafehavenPMS.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Failed to update service. " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Services/Archive
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Archive(int serviceId)
+        {
+            try
+            {
+                var service = await _context.Services.FindAsync(serviceId);
+                if (service == null)
+                {
+                    TempData["ErrorMessage"] = "Service not found.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                service.IsArchived = true;
+                service.UpdatedAt = DateTime.Now;
+                service.UpdatedBy = "User"; // Replace with actual user
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Service archived successfully!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Failed to archive service. " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index));

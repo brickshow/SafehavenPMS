@@ -34,7 +34,7 @@
                                 aria-selected="@(isActive == "active" ? "true" : "false")"
                                 style="outline:none;">
                                 <div class="d-flex align-items-center gap-5">
-                                    <span class="fw-semibold" style="font-size:1.1em;">@problem.Problems</span>
+                                    <span class="fw-medium" style="font-size:1.1em;">@problem.Problems</span>
                                     <span class="badge bg-active ms-2">@problem.Status</span>
                                 </div>
                                 
@@ -92,14 +92,19 @@
                         id="problem@(i+1)"
                         role="tabpanel"
                         aria-labelledby="problem@(i+1)-tab">
-                        <div class="mt-3">
+                        <div class="mt-3 mx-3">
                             <div class="d-flex align-items-center mb-2">
-                                <h5 class="fw-bold mb-0">@problem.Problems</h5>
+                                <h5 class="fw-medium mb-0">@problem.Problems</h5>
                                 <span class="badge bg-active ms-2">@problem.Status</span>
                             </div>
-                            <div class="small text-muted mb-3">
-                                Noted by: <span class="fw-semibold">-</span>
-                            </div>
+                            <div class="d-flex justify-content-between align-items-center small text-muted mb-3">
+    <div>
+        Noted by: <span class="fw-semibold">sjdsajhdjah</span>
+    </div>
+    <div>
+        Date Diagnosed: <span class="fw-semibold">09-19-25</span>
+    </div>
+</div>
                             <hr />
                         </div>
 
@@ -209,7 +214,7 @@
                        <!-- Interventions Section -->
                         <div class="mt-4 bg-light p-4">
                             <div class="d-flex align-items-center justify-content-between mb-3">
-                                <h4 class="fw-bold mb-0">INTERVENTIONS</h4>
+                                <h4 class="fw-semibold mb-0">Interventions</h4>
                                 <div>
                                     <button type="button" class="btn btn-custom text-white fw-semibold" style="background:#0097A7; border-radius:10px; min-width:160px;" data-bs-toggle="modal" data-bs-target="#addInterventionModal">Add Intervention</button>
                                     <a class="btn btn-custom text-white fw-semibold ms-2" 
@@ -223,12 +228,12 @@
                                 <table class="table mb-0 align-middle">
                                     <thead>
                                         <tr>
-                                            <th style="width:40px;">#</th>
-                                            <th>Description</th>
-                                            <th>Frequency</th>
-                                            <th>Status</th>
-                                            <th>Clinician</th>
-                                            <th style="width:40px;"></th>
+                                            <th style="width:40px; color:rgb(117, 116, 116);">#</th>
+                                            <th style="color:rgb(117, 116, 116);">Description</th>
+                                            <th style="color:rgb(117, 116, 116);">Frequency</th>
+                                            <th style="color:rgb(117, 116, 116);">Status</th>
+                                            <th style="color:rgb(117, 116, 116);">Clinician</th>
+                                            <th style="width:40px; color:rgb(117, 116, 116);"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -261,7 +266,7 @@
                                                             <div class="text-muted small">@intervention.Description</div>
                                                         }
                                                     </td>
-                                                    <td class="fw-semibold">
+                                                    <td class="fw-normal">
                                                         @if (isMedication)
                                                         {
                                                             @intervention.ScheduledType
@@ -272,7 +277,38 @@
                                                         }
                                                     </td>
                                                     <td>
-                                                        <span class="fw-semibold">@intervention.Status</span>
+                                                      <span class="fw-normal">
+                                                        @if (isMedication)
+                                                        {
+                                                            if (intervention?.Status == "NotStarted")
+                                                            {
+                                                                @:Not Started
+                                                            }
+                                                            else if (intervention?.Status == "Active")
+                                                            {
+                                                                @:Active
+                                                            }
+                                                            else
+                                                            {
+                                                                @(intervention?.Status ?? "")
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (intervention?.Status == "NotStarted")
+                                                            {
+                                                                @:Not Started
+                                                            }
+                                                            else if (intervention?.Status == "Active")
+                                                            {
+                                                                @:Active
+                                                            }
+                                                            else
+                                                            {
+                                                                @(intervention?.Status ?? "")
+                                                            }
+                                                        }
+</span>
                                                     </td>
                                                     <td>
                                                         <img src="~/Images/default.png" alt="Clinician" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" />
@@ -287,32 +323,72 @@
 
                                                                 @if (isMedication)
                                                                 {
-                                                                    <li>
-                                                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                                           href="@Url.Action("EditMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
-                                                                            Edit Medication
-                                                                        </a>
-                                                                    </li>
-                                                                    <li>
-                                                                        <form asp-action="RemoveMedicationOrder" asp-controller="Medication" method="post" class="m-0">
-                                                                            @Html.AntiForgeryToken()
-                                                                            <input type="hidden" name="id" value="@intervention.MedicationOrderId" />
-                                                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 border-0 bg-transparent">Remove Medication</button>
-                                                                        </form>
-                                                                    </li>
+
+                                                                    @if(intervention.Status == "Active")
+                                                                    {
+                                                                        <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("DiscontinueMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Discontinue Medication
+                                                                            </a>
+                                                                        </li>
+                                                                         <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("DiscontinueMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Mark as Completed
+                                                                            </a>
+                                                                        </li>
+                                                                    }
+                                                                    else if(intervention.Status == "NotStarted")
+                                                                    {
+                                                                        <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("StartMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Remove Medication
+                                                                            </a>
+                                                                        </li>
+                                                                    }else{
+                                                                        <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("StartMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Mark as Active
+                                                                            </a>
+                                                                        </li>
+                                                                    }
                                                                 }
                                                                 else
                                                                 {
-                                                                    <li>
-                                                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
-                                                                            Edit Intervention
-                                                                        </a>
-                                                                    </li>
-                                                                    <li>
-                                                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
-                                                                            Remove
-                                                                        </a>
-                                                                    </li>
+                                                                   @if(intervention.Status == "Active")
+                                                                    {
+                                                                        <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("DiscontinueMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Discontinue Medication
+                                                                            </a>
+                                                                        </li>
+                                                                         <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("DiscontinueMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Mark as Completed
+                                                                            </a>
+                                                                        </li>
+                                                                    }
+                                                                    else if(intervention.Status == "NotStarted")
+                                                                    {
+                                                                        <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("StartMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Remove Medication
+                                                                            </a>
+                                                                        </li>
+                                                                    }else{
+                                                                        <li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                               href="@Url.Action("StartMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
+                                                                                Mark as Active
+                                                                            </a>
+                                                                        </li>
+                                                                    }
                                                                 }
                                                             </ul>
                                                         </div>
@@ -331,156 +407,6 @@
         </div>
     </div>
 
-@* Modal in adding problem *@
-
-<!-- #region Modal For Goal-->
-
-    @* Add Goal Modal *@
-    <div class="modal fade" id="addGoalModal" tabindex="-1" aria-labelledby="addGoalModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius:10px;">
-                <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                    <h5 class="modal-title fw-bold" id="addGoalModalLabel">Add Goal</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form asp-action="AddGoal" asp-controller="TreatmentPlan" method="post">
-                        <input type="hidden" name="PsyProblemListId" id="PsyProblemListId" />
-                        <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
-                        <div class="mb-3">
-                            <label for="goalDescription" class="form-label fw-semibold">Goal</label>
-                            <input type="text" name="description" class="form-control" id="description" placeholder="Enter goal" />
-                        </div>
-                        <div class="mb-4">
-                            <label for="targetDate" class="form-label fw-semibold">Target Date</label>
-                            <input type="date" name="targetDate" class="form-control" id="targetDate" />
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Add</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Goal Modal -->
-    @foreach (var problem in Model.Problems)
-    {
-        if (problem.Goals != null)
-        {
-            foreach (var goal in problem.Goals)
-            {
-                <div class="modal fade" id="EditGoalModal-@goal.GoalId" tabindex="-1" aria-labelledby="editGoalModalLabel-@goal.GoalId" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" style="border-radius:10px;">
-                            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                                <h5 class="modal-title fw-bold" id="editGoalModalLabel-@goal.GoalId">Edit Goal</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form asp-action="EditGoal" asp-controller="TreatmentPlan" method="post">
-                                    <input type="hidden" name="goalId" value="@goal.GoalId" />
-                                    <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
-                                    <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
-                                    <div class="mb-3">
-                                        <label for="editDescription-@goal.GoalId" class="form-label fw-semibold">Goal</label>
-                                        <input type="text" name="description" class="form-control" id="editDescription-@goal.GoalId" value="@goal.Description" placeholder="Enter goal" />
-                                    </div>
-                                    <div class="mb-4">
-                                        <label for="editTargetDate-@goal.GoalId" class="form-label fw-semibold">Target Date</label>
-                                        <input type="date" name="targetDate" class="form-control" id="editTargetDate-@goal.GoalId" value="@(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("yyyy-MM-dd") : "")" />
-                                    </div>
-                                    <div class="d-flex justify-content-end">
-                                        <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Save</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
-    }
-
-    @* Mark As Completed Confirmation Modal *@
-    @foreach (var problem in Model.Problems)
-    {
-        if (problem.Goals != null)
-        {
-            foreach (var goal in problem.Goals)
-            {
-                <div class="modal fade" id="MarkAsCompletedModal-@goal.GoalId" tabindex="-1" aria-labelledby="markAsCompletedModalLabel-@goal.GoalId" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" style="border-radius:10px;">
-                            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                                <h5 class="modal-title fw-bold" id="markAsCompletedModalLabel-@goal.GoalId">Mark Goal as Completed</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form asp-action="MarkGoalAsCompleted" asp-controller="TreatmentPlan" method="post">
-                                    <input type="hidden" name="goalId" value="@goal.GoalId" />
-                                    <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
-                                    <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
-                                    <div class="mb-3">
-                                        <p class="fw-semibold mb-0">Are you sure you want to mark this goal as completed?</p>
-                                        <div class="mt-2 text-muted">
-                                            <strong>Goal:</strong> @goal.Description <br />
-                                            <strong>Target Date:</strong> @(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("yyyy-MM-dd") : "-")
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-end gap-2">
-                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
-                                        <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
-    }
-
-    @* Discontinue Goal Confirmation Modal *@
-    @foreach (var problem in Model.Problems)
-    {
-        if (problem.Goals != null)
-        {
-            foreach (var goal in problem.Goals)
-            {
-                <div class="modal fade" id="DiscontinueGoalModal-@goal.GoalId" tabindex="-1" aria-labelledby="discontinueGoalModalLabel-@goal.GoalId" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" style="border-radius:10px;">
-                            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
-                                <h5 class="modal-title fw-bold" id="discontinueGoalModalLabel-@goal.GoalId">Discontinue Goal</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form asp-action="DiscontinueGoal" asp-controller="TreatmentPlan" method="post">
-                                    <input type="hidden" name="goalId" value="@goal.GoalId" />
-                                    <input type="hidden" name="PsyProblemListId" value="@problem.PsyProblemListId" />
-                                    <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
-                                    <div class="mb-3">
-                                        <p class="fw-semibold mb-0">Are you sure you want to discontinue this goal?</p>
-                                        <div class="mt-2 text-muted">
-                                            <strong>Goal:</strong> @goal.Description <br />
-                                            <strong>Target Date:</strong> @(goal.TargetDate.HasValue ? goal.TargetDate.Value.ToString("yyyy-MM-dd") : "-")
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-end gap-2">
-                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
-                                        <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
-    }
-<!-- #endregion -->
 
 
 <!-- Add Problem Modal -->
@@ -636,7 +562,7 @@
                         <input type="hidden" name="problemId" value="@activeProblem?.PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                         
-                        <div class="mb-3">
+                        @* <div class="mb-3">
                             <label class="form-label fw-semibold">Service Type</label>
                             <select name="ServiceType" id="ServiceType" class="form-select">
                                 <option value="" selected disabled>Select Service Type</option>
@@ -649,10 +575,10 @@
                                     <option value="@serviceType.Value">@serviceType.Text</option>
                                 }
                             </select>
-                        </div>
+                        </div> *@
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Service (Modality)</label>
+                            <label class="form-label fw-semibold">Service</label>
                             <select name="ServiceModality" id="ServiceModality" class="form-select">
                                 <option value="" selected disabled>Select Service (Modality)</option>
                                 @{
@@ -666,9 +592,15 @@
                             </select>
                         </div>
                         
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Duration/Frequency</label>
-                            <input type="text" name="DurationFrequency" class="form-control" placeholder="e.g. 1 hour weekly" />
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-semibold">Duration/Frequency</label>
+                                <input type="text" name="DurationFrequency" class="form-control" placeholder="e.g. 1 hour weekly" />
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-semibold">Start Date</label>
+                                <input type="date" name="StartDate" class="form-control" />
+                            </div>
                         </div>
                         
                         <div class="mb-4">

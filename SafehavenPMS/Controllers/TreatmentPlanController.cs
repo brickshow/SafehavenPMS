@@ -213,24 +213,35 @@ namespace SafehavenPMS.Controllers
         public async Task<IActionResult> AddIntervention(
             int patientId,
             int problemId,
-            int ServiceType,
+            DateTime StartDate,
             int ServiceModality,
             string DurationFrequency,
             string Description)
         {
             // Validate required fields
-            if (ServiceType == 0 || ServiceModality == 0)
-                return BadRequest("Service Type and Service Modality are required.");
+            if (ServiceModality == 0)
+                return BadRequest("Service is required.");
+
+            string status = string.Empty;
+            //Save status based on start date
+            if (StartDate > DateTime.Now)
+            {
+                status = "Not Started";
+            }
+            if (StartDate <= DateTime.Now)
+            {
+                status = "Active";
+            }
 
             var intervention = new Intervention
             {
                 PatientId = patientId,
                 PsyProblemListId = problemId,
-                ServiceTypeId = ServiceType,
                 ServiceId = ServiceModality,
                 DurationFrequency = DurationFrequency,
                 Description = Description,
-                Status = "Active",
+                Status = status,
+                StartDate = StartDate,
                 NotedBy = User.Identity?.Name ?? "System",
                 DateAdded = DateTime.Now
             };

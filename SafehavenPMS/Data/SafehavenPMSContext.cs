@@ -228,12 +228,7 @@ namespace SafehavenPMS.Data
                 .HasForeignKey(d => d.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ServiceType (1) <-> (Many) Service
-            modelBuilder.Entity<Service>()
-                .HasOne(s => s.ServiceType)
-                .WithMany()
-                .HasForeignKey(s => s.ServiceTypeId)
-                .OnDelete(DeleteBehavior.Restrict);
+            
 
             // Update IntakeForm → Patient relationship
             modelBuilder.Entity<IntakeForm>()

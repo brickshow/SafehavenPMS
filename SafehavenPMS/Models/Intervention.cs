@@ -15,8 +15,7 @@ namespace SafehavenPMS.Models
         [Required]
         public int PsyProblemListId { get; set; }
 
-        [Required]
-        public int ServiceTypeId { get; set; }
+        public int? ServiceTypeId { get; set; }
 
         [Required]
         public int ServiceId { get; set; }
@@ -33,6 +32,7 @@ namespace SafehavenPMS.Models
         public string NotedBy { get; set; }
 
         public DateTime? DateAdded { get; set; }
+        public DateTime? StartDate { get; set; }
 
         // Navigation properties
         [ForeignKey("PatientId")]
