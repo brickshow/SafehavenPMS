@@ -356,11 +356,12 @@ namespace SafehavenPMS.Controllers
             if (string.IsNullOrWhiteSpace(t.MedicineName) && medicineDict.ContainsKey(t.MedicineId))
                 t.MedicineName = medicineDict[t.MedicineId];
         }
-        ViewBag.SelectedPatientID = patientId; // Pass selected patient ID to ViewBag
+        ViewBag.SelectedPatientID = patientId;
         ViewBag.TempOrders = tempList;
         ViewBag.ProblemId = problemId; // Pass problemId to ViewBag if needed in the view
 
-            return View(new MedicationOrderViewModel());
+    // Retain problemId in the view model
+    return View(new MedicationOrderViewModel { PatientId = patientId ?? 0, PsyProblemListId = problemId ?? 0 });
         }
 
         [HttpPost]
@@ -382,24 +383,28 @@ namespace SafehavenPMS.Controllers
                 if (!ModelState.IsValid)
                 {
                     ViewBag.PatientList = new SelectList(
-                                          _context.Patients.Select(p => new {
+                                          _context.Patients.Select(p => new
+                                          {
                                               PatientId = p.PatientId,
                                               FullName = (p.Firstname ?? "") + " " + (p.Lastname ?? "")
                                           }),
                                           "PatientId",
-                                          "FullName"
+                                          "FullName",
+                                          model.PatientId // <-- retain selected patient
                                       );
 
                     // Build SelectList for medicines in the format: Generic Name (Brand Name) - Form Strength Unit
                     ViewBag.MedicineList = new SelectList(
                                             _context.Medicines
                                             .Where(a => a.Status == Enum.MedicineStatus.Active.ToString())
-                                            .Select(m => new {
+                                            .Select(m => new
+                                            {
                                                 MedicineId = m.MedicineId,
                                                 DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength.ToString("0.#")} {m.Unit}"
                                             }),
                                             "MedicineId",
-                                            "DisplayName"
+                                            "DisplayName",
+                                            model.MedicineId
                                         );
 
 
@@ -450,13 +455,15 @@ namespace SafehavenPMS.Controllers
                 HttpContext.Session.SetObject(TempOrdersSessionKey, tempList);
 
                 TempData["SuccessMessage"] = "Medication order added to temporary list. Click Submit Order to save to database.";
-                return RedirectToAction("AddMedicationOrder", new { patientId = model.PatientId });
+                Console.WriteLine($"Patient ID: {model.PatientId}");
+                return RedirectToAction("AddMedicationOrder", new { patientId = model.PatientId, problemId = model.PsyProblemListId });
+                
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Unexpected error: {ex.Message}");
                 TempData["ErrorMessage"] = "An unexpected error occurred.";
-                return RedirectToAction("AddMedicationOrder");
+                return RedirectToAction("AddMedicationOrder", new { patientId = model.PatientId, problemId = model.PsyProblemListId });
             }
         }
 
@@ -835,5 +842,23 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction(nameof(AddMedicationOrder));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkMedicationDiscontinued(int id)
+        {
+            var medication = await _context.MedicationOrders.FindAsync(id);
+            if (medication == null)
+            {
+                TempData["ErrorMessage"] = "Medication order not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            medication.Status = "Discontinued";
+            _context.Update(medication);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Medication order marked as discontinued.";
+            return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
+        }
     }
 }

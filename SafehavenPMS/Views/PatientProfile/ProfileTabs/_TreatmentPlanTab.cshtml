@@ -262,7 +262,7 @@
                                                         }
                                                         else
                                                         {
-                                                            <div class="fw-bold" style="font-size:1.05em;">@intervention?.ServiceTypeName - @intervention.UnitPerDose @intervention?.ServiceModalityName</div>
+                                                            <div class="fw-bold" style="font-size:1.05em;">@intervention?.ServiceModalityName</div>
                                                             <div class="text-muted small">@intervention.Description</div>
                                                         }
                                                     </td>
@@ -327,10 +327,14 @@
                                                                     @if(intervention.Status == "Active")
                                                                     {
                                                                         <li>
-                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                                               href="@Url.Action("DiscontinueMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
-                                                                                Discontinue Medication
-                                                                            </a>
+                                                                            <li>
+                                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                                    href="#"
+                                                                                    data-bs-toggle="modal"
+                                                                                    data-bs-target="#confirmDiscontinueMedicationModal-@intervention.MedicationOrderId">
+                                                                                        Discontinue Medication
+                                                                                </a>
+                                                                            </li>
                                                                         </li>
                                                                          <li>
                                                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
@@ -363,7 +367,7 @@
                                                                         <li>
                                                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                                                href="@Url.Action("DiscontinueMedicationOrder", "Medication", new { id = intervention.MedicationOrderId })">
-                                                                                Discontinue Medication
+                                                                                Discontinue
                                                                             </a>
                                                                         </li>
                                                                          <li>
@@ -562,21 +566,6 @@
                         <input type="hidden" name="problemId" value="@activeProblem?.PsyProblemListId" />
                         <input type="hidden" name="patientId" value="@ViewBag.PatientId" />
                         
-                        @* <div class="mb-3">
-                            <label class="form-label fw-semibold">Service Type</label>
-                            <select name="ServiceType" id="ServiceType" class="form-select">
-                                <option value="" selected disabled>Select Service Type</option>
-                                @{
-                                    var serviceTypes = ViewBag.ServiceTypes as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
-                                                        ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-                                }
-                                @foreach (var serviceType in serviceTypes)
-                                {
-                                    <option value="@serviceType.Value">@serviceType.Text</option>
-                                }
-                            </select>
-                        </div> *@
-
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Service</label>
                             <select name="ServiceModality" id="ServiceModality" class="form-select">
@@ -595,7 +584,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-4">
                                 <label class="form-label fw-semibold">Duration/Frequency</label>
-                                <input type="text" name="DurationFrequency" class="form-control" placeholder="e.g. 1 hour weekly" />
+                                <input type="text" name="DurationFrequency" class="form-control" placeholder="e.g. 1 hour weekly" required/>
                             </div>
                             <div class="col-md-6 mb-4">
                                 <label class="form-label fw-semibold">Start Date</label>
@@ -618,6 +607,39 @@
         </div>
     </div>
 
+<!-- Confirmation Modal for Discontinue Medication -->
+@foreach (var problem in Model.Problems)
+{
+    if (problem.Interventions != null)
+    {
+        foreach (var intervention in problem.Interventions.Where(i => i.MedicationOrderId.HasValue))
+        {
+            <div class="modal fade" id="confirmDiscontinueMedicationModal-@intervention.MedicationOrderId" tabindex="-1" aria-labelledby="confirmDiscontinueMedicationLabel-@intervention.MedicationOrderId" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="border-radius:10px;">
+                        <div class="modal-header" style="background:#0097A7; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                            <h5 class="modal-title fw-bold" id="confirmDiscontinueMedicationLabel-@intervention.MedicationOrderId">Discontinue Medication</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="fw-semibold mb-0">Are you sure you want to discontinue this medication?</p>
+                            <div class="mt-2 text-muted">
+                                <strong>Medication:</strong> @intervention.MedicationName
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                                <form asp-action="MarkMedicationDiscontinued" asp-controller="Medication" method="post" style="display:inline;">
+                                    <input type="hidden" name="id" value="@intervention.MedicationOrderId" />
+                                    <button type="submit" class="btn" style="background:#0097A7; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+}
     <!-- Custom styles for modal -->
     <style>
         #addInterventionModal .modal-lg {
