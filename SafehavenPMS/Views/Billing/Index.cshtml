@@ -21,18 +21,12 @@
             <a href="@Url.Action("AddMedicine", "Medication")" id="add-medicine-button" class="add-availability btn-custom btn-primary text-decoration-none">
                 Generate Invoice
             </a>
-            <a href="javascript:void(0)"
-               id="add-miscellaneous-button"
-               class="add-availability btn-custom btn-primary text-decoration-none"
-               data-bs-toggle="modal"
-               data-bs-target="#addMiscellaneousModal">
-                Add Miscellaneous
+            <a href="@Url.Action("AddMiscellaneousItem", "Billing")" class="add-availability btn-custom btn-primary text-decoration-none">
+                Add Miscellaneous   
             </a>
         </div>
             
-        @await Html.PartialAsync("BillingTabs/_AddMiscellaneousItem")
     </div>
-
 
     @* Tabs *@
     <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">

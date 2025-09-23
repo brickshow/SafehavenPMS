@@ -11,7 +11,7 @@
 
             <!-- Body -->
             <div class="modal-body">
-                <form asp-action="AddMiscellaneousItem" method="post" id="miscellaneousForm">
+                <form asp-action="AddMiscellaneousItem" asp-controller="Billing" method="post" id="miscellaneousForm">
                     <!-- Patient Section -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Patient</label>
@@ -41,10 +41,10 @@
                     <div id="itemRows">
                         <div class="row g-2 align-items-center mb-2">
                             <div class="col-md-7">
-                                <input type="text" name="ItemDescriptions" class="form-control" placeholder="Item Description" />
+                                <input type="text" name="ItemDescriptions" class="form-control" placeholder="Item Description" required />
                             </div>
                             <div class="col-md-4">
-                                <input type="number" name="Amounts" class="form-control text-end" placeholder="Amount" />
+                                <input type="number" name="Amounts" class="form-control text-end" placeholder="Amount" min="0.01" step="0.01" required />
                             </div>
                             <div class="col-md-1 text-center">
                                 <button type="button" class="btn btn-outline-danger btn-sm removeRow">
@@ -78,48 +78,124 @@
     </div>
 </div>
 
-@section Scripts {
-        <script>
-            // Add new item row
-            document.getElementById("addRow").addEventListener("click", function () {
-                var row = `
-                    <div class="row g-2 align-items-center mb-2">
-                        <div class="col-md-7">
-                            <input type="text" name="ItemDescriptions" class="form-control" placeholder="Item Description" />
-                        </div>
-                        <div class="col-md-4">
-                            <input type="number" name="Amounts" class="form-control text-end" placeholder="Amount" />
-                        </div>
-                        <div class="col-md-1 text-center">
-                            <button type="button" class="btn btn-outline-danger btn-sm removeRow">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>`;
-                document.getElementById("itemRows").insertAdjacentHTML("beforeend", row);
-            });
+<script>
+(function () {
+    const modal = document.getElementById('addMiscellaneousModal');
+    if (!modal) return;
 
-            // Remove row
-            document.addEventListener("click", function (e) {
-                if (e.target.closest(".removeRow")) {
-                    e.target.closest(".row").remove();
-                    calculateTotal();
-                }
-            });
+    const form = modal.querySelector('#miscellaneousForm');
+    const containerSelector = '#itemRows';
+    const descName = "ItemDescriptions";
+    const amtName = "Amounts";
 
-            // Calculate total
-            document.addEventListener("input", function (e) {
-                if (e.target.name === "Amounts") {
-                    calculateTotal();
-                }
-            });
+    function createRow() {
+        const div = document.createElement('div');
+        div.className = 'row g-2 align-items-center mb-2';
+        div.innerHTML = `
+            <div class="col-md-7">
+                <input type="text" name="${descName}" class="form-control" placeholder="Item Description" required />
+            </div>
+            <div class="col-md-4">
+                <input type="number" name="${amtName}" class="form-control text-end" placeholder="Amount" min="0.01" step="0.01" required />
+            </div>
+            <div class="col-md-1 text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm removeRow" aria-label="Remove row">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>`;
+        return div;
+    }
 
-            function calculateTotal() {
-                let total = 0;
-                document.querySelectorAll("input[name='Amounts']").forEach(i => {
-                    total += parseFloat(i.value) || 0;
-                });
-                document.getElementById("totalAmount").textContent = total.toLocaleString();
+    // Add row button - require current last row to be filled before adding new one
+    const addBtn = modal.querySelector('#addRow');
+    addBtn?.addEventListener('click', function (e) {
+        const container = modal.querySelector(containerSelector);
+        if (!container) return;
+
+        const lastRow = container.querySelector('.row:last-child');
+        if (lastRow) {
+            const desc = (lastRow.querySelector(`input[name='${descName}']`)?.value || "").trim();
+            const amt = parseFloat(lastRow.querySelector(`input[name='${amtName}']`)?.value) || 0;
+            if (!desc || amt <= 0) {
+                // visually mark invalid fields and stop
+                if (!desc) lastRow.querySelector(`input[name='${descName}']`)?.classList.add('is-invalid');
+                if (amt <= 0) lastRow.querySelector(`input[name='${amtName}']`)?.classList.add('is-invalid');
+                lastRow.querySelector(`input[name='${descName}']`)?.focus();
+                return;
             }
-        </script>
-}
+        }
+
+        container.appendChild(createRow());
+        calculateTotal();
+    });
+
+    // Remove row (delegated)
+    modal.addEventListener('click', function (e) {
+        const rem = e.target.closest('.removeRow');
+        if (!rem) return;
+        const row = rem.closest('.row');
+        if (!row) return;
+        const container = modal.querySelector(containerSelector);
+        // ensure at least one row remains; if removing last row, replace with a fresh empty required row
+        row.remove();
+        if (container && container.querySelectorAll('.row').length === 0) {
+            container.appendChild(createRow());
+        }
+        calculateTotal();
+    });
+
+    // calculate on input (delegated) and remove invalid marker on input
+    modal.addEventListener('input', function (e) {
+        if (!e.target) return;
+        if (e.target.name === amtName || e.target.name === descName) {
+            e.target.classList.remove('is-invalid');
+            calculateTotal();
+        }
+    }, { passive: true });
+
+    function calculateTotal() {
+        let total = 0;
+        const container = modal.querySelector(containerSelector);
+        if (!container) return;
+        container.querySelectorAll(`input[name='${amtName}']`).forEach(i => {
+            total += parseFloat(i.value) || 0;
+        });
+        const target = modal.querySelector('#totalAmount');
+        if (target) target.textContent = total.toLocaleString();
+    }
+
+    // Form submit: validate all rows, prevent submit if invalid
+    form?.addEventListener('submit', function (e) {
+        const container = modal.querySelector(containerSelector);
+        if (!container) return;
+        let valid = true;
+        container.querySelectorAll('.row').forEach(row => {
+            const descEl = row.querySelector(`input[name='${descName}']`);
+            const amtEl = row.querySelector(`input[name='${amtName}']`);
+            const desc = (descEl?.value || "").trim();
+            const amt = parseFloat(amtEl?.value) || 0;
+
+            if (!desc) {
+                descEl?.classList.add('is-invalid');
+                valid = false;
+            }
+            if (amt <= 0) {
+                amtEl?.classList.add('is-invalid');
+                valid = false;
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+            const firstInvalid = modal.querySelector('.is-invalid');
+            firstInvalid?.focus();
+            // optional: show bootstrap toast/alert instead of default alert
+            alert('Please fill item description and an amount greater than 0 for all rows.');
+        }
+    });
+
+    // initial total calculation
+    calculateTotal();
+
+})();
+</script>

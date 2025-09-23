@@ -24,7 +24,9 @@ namespace SafehavenPMS.ViewModel.Billing
 
     public class BillablesPageViewModel
     {
+        public int? PatientId { get; set; }
         public List<BillableItemViewModel> Items { get; set; } = new();
+        public MiscellaneousItemViewModel miscellaneousItemViewModel { get; set; } = new();
         public int TotalCount => Items?.Count ?? 0;
     }
 }

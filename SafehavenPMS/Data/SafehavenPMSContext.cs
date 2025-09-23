@@ -57,6 +57,7 @@ namespace SafehavenPMS.Data
 
         // Progress notes entity
         public DbSet<ProgressNote> ProgressNotes { get; set; }
+        public DbSet<SafehavenPMS.Models.MiscellaneousItem> MiscellaneousItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

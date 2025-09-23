@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SafehavenPMS.Controllers
 {
-    public class BillingController : Controller
+    public partial class BillingController : Controller
     {
         private readonly SafehavenPMSContext _context;
 
@@ -49,5 +49,15 @@ namespace SafehavenPMS.Controllers
 
             return View(viewModel);
         }
+
+        // GET: /Billing/AddMiscellaneousItem
+        [HttpGet]
+        public IActionResult AddMiscellaneousItem()
+        {
+            var vm = new MiscellaneousItemViewModel();
+            return View(vm); // returns Views/Billing/AddMiscellaneous.cshtml
+        }
+
+        // existing POST AddMiscellaneousItem should remain to handle form submission
     }
 }
