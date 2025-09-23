@@ -1,0 +1,125 @@
+﻿@model SafehavenPMS.ViewModel.Billing.MiscellaneousItemViewModel
+
+<div class="modal fade" id="addMiscellaneousModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow-lg">
+            <!-- Header -->
+            <div class="modal-header" style="background-color:#0097a7; color:#fff;">
+                <h5 class="modal-title">Add Miscellaneous Item</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body">
+                <form asp-action="AddMiscellaneousItem" method="post" id="miscellaneousForm">
+                    <!-- Patient Section -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Patient</label>
+                        <div class="input-group">
+                            <input type="text" id="patientSearch" class="form-control" placeholder="Search patient name/id ..." />
+                            <button type="button" class="btn btn-info text-white">Search</button>
+                        </div>
+
+                        <!-- Selected Patient Card -->
+                        <div class="card shadow-sm mt-3">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" 
+                                         style="width:60px; height:60px; border:1px solid #ddd;">
+                                        <span class="text-danger fw-bold">profile</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="mb-0 fw-bold">Sha Sha Rizon Ramos</p>
+                                    <small class="text-muted">56Y | F</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item Rows -->
+                    <div id="itemRows">
+                        <div class="row g-2 align-items-center mb-2">
+                            <div class="col-md-7">
+                                <input type="text" name="ItemDescriptions" class="form-control" placeholder="Item Description" />
+                            </div>
+                            <div class="col-md-4">
+                                <input type="number" name="Amounts" class="form-control text-end" placeholder="Amount" />
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <button type="button" class="btn btn-outline-danger btn-sm removeRow">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Row Button -->
+                    <div class="text-end mb-3">
+                        <button type="button" id="addRow" class="btn btn-sm btn-outline-primary">
+                            + Add Item
+                        </button>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                        <h5 class="mb-0 fw-bold">TOTAL</h5>
+                        <h5 class="mb-0 fw-bold text-dark">₱<span id="totalAmount">1,800</span></h5>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="modal-footer mt-3">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info text-white">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <script>
+            // Add new item row
+            document.getElementById("addRow").addEventListener("click", function () {
+                var row = `
+                    <div class="row g-2 align-items-center mb-2">
+                        <div class="col-md-7">
+                            <input type="text" name="ItemDescriptions" class="form-control" placeholder="Item Description" />
+                        </div>
+                        <div class="col-md-4">
+                            <input type="number" name="Amounts" class="form-control text-end" placeholder="Amount" />
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <button type="button" class="btn btn-outline-danger btn-sm removeRow">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                document.getElementById("itemRows").insertAdjacentHTML("beforeend", row);
+            });
+
+            // Remove row
+            document.addEventListener("click", function (e) {
+                if (e.target.closest(".removeRow")) {
+                    e.target.closest(".row").remove();
+                    calculateTotal();
+                }
+            });
+
+            // Calculate total
+            document.addEventListener("input", function (e) {
+                if (e.target.name === "Amounts") {
+                    calculateTotal();
+                }
+            });
+
+            function calculateTotal() {
+                let total = 0;
+                document.querySelectorAll("input[name='Amounts']").forEach(i => {
+                    total += parseFloat(i.value) || 0;
+                });
+                document.getElementById("totalAmount").textContent = total.toLocaleString();
+            }
+        </script>
+}
