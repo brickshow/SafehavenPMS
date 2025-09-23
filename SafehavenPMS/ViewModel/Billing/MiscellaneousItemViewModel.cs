@@ -9,6 +9,7 @@ namespace SafehavenPMS.ViewModel.Billing
         [Required]
         public int PatientId { get; set; }
 
+
         [Required]
         public List<string> ItemDescriptions { get; set; } = new List<string>();
 
