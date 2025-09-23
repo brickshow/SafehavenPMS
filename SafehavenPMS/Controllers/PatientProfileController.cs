@@ -131,13 +131,19 @@ namespace SafehavenPMS.Controllers
                     }).ToList()
                 );
 
+                foreach (var m in meds)
+                {
+                    Console.WriteLine($"MedicationOrderId: {m.MedicationOrderId}, PsyProblemListId: {m.PsyProblemListId}, Medicine: {m.Medicine?.GenericName}");
+                }
+
             // attach medication entries to matching problems in the treatment plan viewmodel
             foreach (var problemVm in treatmentPlanViewModel.Problems)
             {
                 var key = problemVm.PsyProblemListId;
+
+                // Only add medications assigned to this problem (exclude unassigned)
                 if (medsByProblem.ContainsKey(key))
                 {
-                    // append medication-derived intervention viewmodels
                     problemVm.Interventions.AddRange(medsByProblem[key]);
                 }
 

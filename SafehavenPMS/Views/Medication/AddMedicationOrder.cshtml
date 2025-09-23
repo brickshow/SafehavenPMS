@@ -24,7 +24,9 @@
             <div class="card shadow-sm mb-4">
                 <form asp-action="AddMedicationOrder" asp-controller="Medication" method="post">
                     @* carry problem id from Treatment Plan into the posted model *@
-                    <input asp-for="PsyProblemListId" type="hidden" value="@ViewBag.ProblemId" />
+                    <input asp-for="PsyProblemListId" type="hidden" value="@ViewBag.ProblemId"/>
+                    <input asp-for="PatientId" type="hidden" value="@ViewBag.SelectedPatientID"/>
+                    @Html.AntiForgeryToken()
                     <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
                         Patient Medication Details
                     </div>
@@ -46,6 +48,18 @@
                                 <label asp-for="PatientId" class="form-label"></label>
                                 <select asp-for="PatientId" class="form-select" asp-items="ViewBag.PatientList" disabled>
                                     <option value="">Select patient</option>
+                                    @{
+                                        var selectedPatientId = Model.PatientId != null && Model.PatientId != 0 ? Model.PatientId.ToString() : (ViewBag.SelectedPatientID != null ? ViewBag.SelectedPatientID.ToString() : "");
+                                        var patientList = ViewBag.PatientList as SelectList;
+                                    }
+                                    @if (patientList != null)
+                                    {
+                                        foreach (var item in patientList)
+                                        {
+                                            var selected = (!string.IsNullOrEmpty(selectedPatientId) && item.Value == selectedPatientId) ? "selected" : "";
+                                            @Html.Raw($"<option value=\"{item.Value}\" {selected}>{item.Text}</option>")
+                                        }
+                                    }
                                 </select>
                                 <span asp-validation-for="PatientId" class="text-danger"></span>
                             </div>
@@ -59,7 +73,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-2">
                                         <label asp-for="MedicineId" class="form-label">Medicine Name:</label>
-                                        <select asp-for="MedicineId" class="form-select" asp-items="ViewBag.MedicineList">
+                                        <select asp-for="MedicineId" class="form-select" asp-items="ViewBag.MedicineList" required>
                                             <option value="">Select Medicine</option>
                                         </select>
                                     </div>
@@ -147,7 +161,7 @@
 
                                     @* Discontinue Date: 3 columns *@
                                     <div class="col-md-3">
-                                        <label asp-for="DiscontinueDate" class="form-label">Discontinue Date:</label>
+                                        <label asp-for="DiscontinueDate" class="form-label">End Date:</label>
                                         <input asp-for="DiscontinueDate" id="DiscontinueDate" type="date" class="form-control" value="2025-01-28">
                                         <span asp-validation-for="DiscontinueDate" class="text-danger"></span>
                                     </div>
@@ -156,7 +170,7 @@
                                     <div class="col-md-6">
                                         <div class="form-check mt-4">
                                             <input asp-for="NoDiscontinueDate" class="form-check-input" type="checkbox" id="noDiscontinue">
-                                            <label asp-for="NoDiscontinueDate" class="form-check-label" for="noDiscontinue">No Discontinue Date</label>
+                                            <label asp-for="NoDiscontinueDate" class="form-check-label" for="noDiscontinue">No End Date</label>
                                         </div>
                                     </div>
                                 </div>
