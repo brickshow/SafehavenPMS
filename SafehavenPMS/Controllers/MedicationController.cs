@@ -841,24 +841,5 @@ namespace SafehavenPMS.Controllers
 
             return RedirectToAction(nameof(AddMedicationOrder));
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkMedicationDiscontinued(int id)
-        {
-            var medication = await _context.MedicationOrders.FindAsync(id);
-            if (medication == null)
-            {
-                TempData["ErrorMessage"] = "Medication order not found.";
-                return RedirectToAction("Index", "PatientProfile");
-            }
-
-            medication.Status = "Discontinued";
-            _context.Update(medication);
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Medication order marked as discontinued.";
-            return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
-        }
     }
 }

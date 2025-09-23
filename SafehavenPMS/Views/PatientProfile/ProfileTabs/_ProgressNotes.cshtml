@@ -1,0 +1,408 @@
+@model SafehavenPMS.ViewModel.PatientProgressNotesTabViewModel
+@{
+    // sample count; replace with real model data when available
+    var total = 6;
+}
+
+<div class="progressnotes-partial container-fluid p-3">
+    <div class="row gx-3" style="min-height:420px;">
+        <!-- Left column: Intervention list (uses bootstrap tabs, no custom JS) -->
+        <div class="col-lg-4 col-md-12 mb-3 mb-lg-0">
+            <div class="card list-panel h-100 shadow-sm" style="border:1px solid #e6e9ea;">
+                <div class="card-body p-3 d-flex flex-column" style="gap:12px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Intervention List</h5>
+                        <div class="d-flex align-items-center" style="gap:8px;">
+                            <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Create", "Intervention")">+ Add</a>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border dropdown-toggle" type="button" id="interventionFilter" data-bs-toggle="dropdown" aria-expanded="false">@Model.InterventionFilter</button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="interventionFilter">
+                                    <li><a class="dropdown-item" href="?filter=All">All</a></li>
+                                    <li><a class="dropdown-item" href="?filter=Active">Active</a></li>
+                                    <li><a class="dropdown-item" href="?filter=Completed">Completed</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="list-scroll" style="overflow:auto; flex:1;">
+                        <ul class="nav flex-column" id="interventionTab" role="tablist">
+                            @if (Model?.Interventions != null && Model.Interventions.Any())
+                            {
+                                var firstId = Model.SelectedInterventionId ?? Model.Interventions.First().InterventionId;
+                                foreach (var interv in Model.Interventions)
+                                {
+                                    var isActive = firstId == interv.InterventionId;
+                                    var ariaSel = isActive ? "true" : "false";
+                            <li class="nav-item" role="presentation">
+                                <div class="d-flex align-items-center justify-content-between @(isActive ? "bg-lightblue" : "bg-white") px-2 py-2" style="border:1px solid #e5e5e5;">
+                                    <button class="w-100 bg-white border-0 text-start p-0 m-0"
+                                            id="interv@(interv.InterventionId)-tab"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#interv@(interv.InterventionId)"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="interv@(interv.InterventionId)"
+                                            aria-selected="@ariaSel"
+                                            style="outline:none; text-decoration:none; color:inherit;">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="me-2">
+                                                <div class="fw-bold">@interv.Title</div>
+                                                <div class="small text-muted">@interv.Description</div>
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-start text-start" style="min-width:72px;">
+                                                <div><span class="badge @(interv.Status == "Active" ? "bg-success" : "bg-secondary")">@interv.Status</span></div>
+                                            </div>
+                                        </div>
+                                    </button>
+
+                                    <div class="dropdown ms-2" style="position:relative;">
+                                        <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="d-flex align-items-center px-2">
+                                            <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 180px;">
+                                            <li class="px-2 text-muted fw-semibold small">Options</li>
+                                            <li><a class="dropdown-item" href="@Url.Action("Edit", "Intervention", new { id = interv.InterventionId })">Edit Intervention</a></li>
+                                            <li><a class="dropdown-item" href="@Url.Action("Details", "Intervention", new { id = interv.InterventionId })">View Details</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </li>
+                                }
+                            }
+                            else
+                            {
+                                <li class="nav-item text-muted px-2">No interventions found.</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column: tab content for each intervention -->
+        <div class="col-lg-8 col-md-12 ">
+            <div class="d-flex flex-column h-100" style="gap:12px;">
+                <div class="tab-content" id="interventionTabContent">
+                    @if (Model?.Interventions != null && Model.Interventions.Any())
+                    {
+                        var firstId = Model.SelectedInterventionId ?? Model.Interventions.First().InterventionId;
+                        foreach (var interv in Model.Interventions)
+                        {
+                            var paneActive = firstId == interv.InterventionId ? "show active" : "";
+                    <div class="tab-pane fade @paneActive" id="interv@(interv.InterventionId)" role="tabpanel" aria-labelledby="interv@(interv.InterventionId)-tab">
+                        <div class="d-flex flex-column bg-white flex-md-row justify-content-between align-items-start p-3 intervention-details" style="border:1px solid #e6e9ea;">
+                            <div class="flex-grow-1 me-3">
+                                <h5 class="mb-1 intervention-title">@interv.Title</h5>
+                                <div class="text-muted small short-desc">@interv.Description</div>
+                            </div>
+
+                            <div class="text-end small text-muted intervention-meta" style="min-width:220px;">
+                                <div class="clinician"><strong>Clinician:</strong> @interv.Clinician</div>
+                                <div class="lastnote"><strong>Last Note:</strong> @interv.LastNoteDisplay</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex bg-light justify-content-between align-items-center mt-2">
+                            <h6 class="mb-0" style="letter-spacing:1px; font-weight:700;">PROGRESS NOTES</h6>
+                            <div>
+                                <a href="@Url.Action("Create", "ProgressNote", new { patientId = Model.PatientId, interventionId = interv.InterventionId })" class="btn btn-custom">+ Add Progress Note</a>
+                            </div>
+                        </div>
+
+                        <div class="card note-panel h-100 mt-2" style="border:1px solid #e6e9ea;">
+                            <div class="card-body p-3 d-flex flex-column" style="gap:14px; min-height:0;">
+                                <div class="notes-list rounded" style="overflow:auto; flex:1; padding-top:6px;">
+                                    @if (interv.ProgressNotes != null && interv.ProgressNotes.Any())
+                                    {
+                                        foreach (var note in interv.ProgressNotes.OrderByDescending(x => x.CreatedAt))
+                                        {
+                                            <a href="#" data-bs-toggle="modal" data-bs-target="#noteModal@(note.ProgressNoteId)" style="text-decoration: none; color: inherit;">
+                                                <div class="card mb-3" style="border:1px solid #e6e9ea;">
+                                                    <div class="p-2">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="fw-bold">@note.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body p-3">
+                                                        @if (!string.IsNullOrEmpty(note.SoapRaw))
+                                                        {
+                                                            var soapParts = note.SoapRaw.Split('|');
+                                                            var subjectivePart = soapParts.FirstOrDefault(p => p.StartsWith("S:"));
+                                                            if (subjectivePart != null)
+                                                            {
+                                                                var parts = subjectivePart.Split(':');
+                                                                if (parts.Length == 2)
+                                                                {
+                                                                    <div class="mb-2">
+                                                                        <span class="fw-bold me-2">@parts[0] -</span>
+                                                                        <span class="text-muted">@parts[1]</span>
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            @if (!string.IsNullOrEmpty(note.Subjective))
+                                                            {
+                                                                <div class="mb-2">
+                                                                    <span class="fw-bold me-2">S -</span>
+                                                                    <span class="text-muted">@note.Subjective</span>
+                                                                </div>
+                                                            }
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted small">No progress notes for this intervention.</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="p-3 text-muted">No interventions available.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model?.Interventions != null && Model.Interventions.Any())
+    {
+        foreach (var interv in Model.Interventions)
+        {
+            if (interv.ProgressNotes != null && interv.ProgressNotes.Any())
+            {
+                foreach (var note in interv.ProgressNotes.OrderByDescending(x => x.CreatedAt))
+                {
+                    <!-- Modal for full note details -->
+                    <div class="modal fade" id="noteModal@(note.ProgressNoteId)" tabindex="-1" aria-labelledby="noteModalLabel@(note.ProgressNoteId)" aria-hidden="true">
+                        <div class="modal-dialog" style="width: 75%; max-width: none;">
+                            <div class="modal-content">
+                                <div class="modal-header" style="background:#0097A7; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                                    <h5 class="modal-title" id="noteModalLabel@(note.ProgressNoteId)">Progress Note Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="mb-3">
+                                        <strong>Date:</strong> @note.CreatedAt.ToString("MMM dd, yyyy")
+                                    </div>
+                                    <div>
+                                        @if (!string.IsNullOrEmpty(note.SoapRaw))
+                                        {
+                                            var soapParts = note.SoapRaw.Split('|');
+                                            foreach (var part in soapParts)
+                                            {
+                                                var colonIndex = part.IndexOf(':');
+                                                if (colonIndex > -1)
+                                                {
+                                                    var label = part.Substring(0, colonIndex);
+                                                    var content = part.Substring(colonIndex + 1);
+                                                    <div class="mb-3 d-flex align-items-center">
+                                                        <label class="form-label fw-bold soap-letter me-2" style="font-size:22px;">@label</label>
+                                                        <textarea class="form-control flex-fill soap-content" rows="3" readonly>@content</textarea>
+                                                    </div>
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (!string.IsNullOrEmpty(note.Subjective))
+                                            {
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">S</label>
+                                                    <textarea class="form-control" rows="3" readonly>@note.Subjective</textarea>
+                                                </div>
+                                            }
+                                            if (!string.IsNullOrEmpty(note.Objective))
+                                            {
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">O</label>
+                                                    <textarea class="form-control" rows="3" readonly>@note.Objective</textarea>
+                                                </div>
+                                            }
+                                            if (!string.IsNullOrEmpty(note.Assessment))
+                                            {
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">A</label>
+                                                    <textarea class="form-control" rows="3" readonly>@note.Assessment</textarea>
+                                                </div>
+                                            }
+                                            if (!string.IsNullOrEmpty(note.Plan))
+                                            {
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">P</label>
+                                                    <textarea class="form-control" rows="3" readonly>@note.Plan</textarea>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        }
+    }
+</div>
+
+<style>
+    /* remove rounded corners site-wide for this partial */
+    .list-group-item,
+    .card,
+    .list-panel .badge,
+    .dropdown-menu {
+        border-radius: 0 !important;
+    }
+
+    .list-panel .badge { font-size:0.75rem; padding:6px 8px; }
+    .note-panel h5 { font-weight:600; }
+    .soap-letter { width:22px; text-align:center; }
+    .list-scroll::-webkit-scrollbar, .notes-list::-webkit-scrollbar { width:10px; }
+    .list-scroll::-webkit-scrollbar-thumb, .notes-list::-webkit-scrollbar-thumb { background:#ddd; }
+
+    @@media (max-width: 991px) {
+        .note-panel .text-end { text-align: left !important; min-width: auto !important; margin-top:8px; }
+    }
+    @@media (max-width: 767px) {
+        .col-lg-4, .col-lg-8 { flex: 0 0 100%; max-width: 100%; }
+        .list-panel, .note-panel { margin-bottom: 12px; }
+    }
+
+    .bg-lightblue {
+        background: #D6F2F7 !important;
+    }
+
+    .soap-content {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+</style>    
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var triggerTabList = [].slice.call(document.querySelectorAll('#interventionTab button'));
+
+    // Hide all tab panes except the first one on page load
+    var tabPanes = document.querySelectorAll('#interventionTabContent .tab-pane');
+    tabPanes.forEach(function(pane, idx) {
+        if (idx === 0) {
+            pane.classList.add('show', 'active');
+        } else {
+            pane.classList.remove('show', 'active');
+        }
+    });
+
+    // Function to update intervention item highlighting
+    function updateInterventionHighlight(selectedButton) {
+        document.querySelectorAll('#interventionTab .nav-item .d-flex').forEach(function(item) {
+            item.classList.remove('bg-lightblue');
+            item.classList.add('bg-light');
+        });
+        if (selectedButton) {
+            var container = selectedButton.closest('.nav-item').querySelector('.d-flex');
+            if (container) {
+                container.classList.remove('bg-light');
+                container.classList.add('bg-lightblue');
+            }
+        }
+    }
+
+    function showTabPane(tabId) {
+        tabPanes.forEach(function(pane) {
+            if ('#' + pane.id === tabId) {
+                pane.classList.add('show', 'active');
+            } else {
+                pane.classList.remove('show', 'active');
+            }
+        });
+    }
+
+    triggerTabList.forEach(function (triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl);
+
+        triggerEl.addEventListener('click', function (event) {
+            event.preventDefault();
+            tabTrigger.show();
+            updateInterventionHighlight(this);
+            showTabPane(this.getAttribute('data-bs-target'));
+        });
+
+        // Initialize the first item as active (server may have set aria-selected)
+        if (triggerEl.getAttribute('aria-selected') === 'true') {
+            updateInterventionHighlight(triggerEl);
+        }
+    });
+
+    // Make the whole intervention item clickable except the dropdown
+    document.querySelectorAll('#interventionTab .d-flex').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            if (e.target.closest('.dropdown')) return;
+            var btn = item.querySelector('button');
+            if (!btn) return;
+            var tabTrigger = new bootstrap.Tab(btn);
+            tabTrigger.show();
+            updateInterventionHighlight(btn);
+            showTabPane(btn.getAttribute('data-bs-target'));
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tabButtons = document.querySelectorAll('#interventionTab button');
+    var tabPanes = document.querySelectorAll('#interventionTabContent .tab-pane');
+
+    // Restore active tab from localStorage
+    var savedTabId = localStorage.getItem('activeInterventionTabId');
+    var activeBtn = savedTabId ? document.getElementById(savedTabId) : (tabButtons[0] || null);
+    if (!activeBtn) return;
+    var activeTarget = activeBtn.getAttribute('data-bs-target');
+
+    tabButtons.forEach(function(btn) {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+    });
+    activeBtn.classList.add('active');
+    activeBtn.setAttribute('aria-selected', 'true');
+
+    tabPanes.forEach(function(pane) {
+        if ('#' + pane.id === activeTarget) {
+            pane.classList.add('show', 'active');
+        } else {
+            pane.classList.remove('show', 'active');
+        }
+    });
+
+    // Highlight sidebar
+    document.querySelectorAll('#interventionTab .nav-item .d-flex').forEach(function(item) {
+        item.classList.remove('bg-lightblue');
+        item.classList.add('bg-light');
+    });
+    var activeContainer = activeBtn.closest('.nav-item')?.querySelector('.d-flex');
+    if (activeContainer) {
+        activeContainer.classList.remove('bg-light');
+        activeContainer.classList.add('bg-lightblue');
+    }
+
+    // Save tab on click
+    tabButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            localStorage.setItem('activeInterventionTabId', this.id);
+        });
+    });
+});
+</script>

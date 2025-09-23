@@ -1,0 +1,30 @@
+using System;
+using System.Collections.Generic;
+
+namespace SafehavenPMS.ViewModel.Billing
+{
+    public class BillableItemViewModel
+    {
+        public int? BillableId { get; set; }
+        public int? MedicationId { get; set; }
+
+        // add patient display name
+        public string? PatientName { get; set; }
+
+        public int? PatientId { get; set; }
+        public string? CreatedBy { get; set; }
+
+        public DateTime DateAdded { get; set; }
+        public string? Description { get; set; }
+        public string? Category { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal Total => UnitPrice * Quantity;
+    }
+
+    public class BillablesPageViewModel
+    {
+        public List<BillableItemViewModel> Items { get; set; } = new();
+        public int TotalCount => Items?.Count ?? 0;
+    }
+}

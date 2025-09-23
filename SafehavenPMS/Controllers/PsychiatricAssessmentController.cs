@@ -378,13 +378,13 @@ namespace safehavenpms.Controllers
             var incomingProblems = model.ProblemList?.Problems ?? new List<string>();
             // normalize/trim and remove empty entries
             var cleaned = incomingProblems
-                          .Where(p => !string.IsNullOrWhiteSpace(p))
-                          .Select(p => p.Trim())
-                          .ToList();
+                        .Where(p => !string.IsNullOrWhiteSpace(p))
+                        .Select(p => p.Trim())
+                        .ToList();
 
             // find or create assessment record for the patient
             var assessment = await _context.PsychiatricAssessments
-                                           .FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+                                        .FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
 
             if (assessment == null)
             {
@@ -402,20 +402,25 @@ namespace safehavenpms.Controllers
                 // use the concrete entity type defined in Models (PsyProblemList)
                 var problemSet = _context.Set<PsyProblemList>();
 
-                // remove existing entries for this assessment
-                var existing = await problemSet
-                                     .Where(p => p.PsychiatricAssessmentId == assessment.PsychiatricAssessmentId)
-                                     .ToListAsync();
+                // Retain existing rows. Add only new problems (case-insensitive dedupe).
+                var existingTexts = await problemSet
+                    .Where(p => p.PsychiatricAssessmentId == assessment.PsychiatricAssessmentId)
+                    .Select(p => p.Problem)
+                    .ToListAsync();
 
-                if (existing.Any())
-                {
-                    problemSet.RemoveRange(existing);
-                    await _context.SaveChangesAsync();
-                }
+                // Normalize incoming and remove duplicates inside the incoming payload
+                var incomingUnique = cleaned
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Select(s => s.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
-                // The UI posts newest-first (index 0 = newest). Persist in that same order.
-                foreach (var p in cleaned)
+                // Add only those not already present
+                foreach (var p in incomingUnique)
                 {
+                    if (existingTexts.Any(e => string.Equals(e?.Trim(), p, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
                     var item = new PsyProblemList
                     {
                         PsychiatricAssessmentId = assessment.PsychiatricAssessmentId,
@@ -426,18 +431,18 @@ namespace safehavenpms.Controllers
                     };
                     problemSet.Add(item);
                 }
-
-                //Update status to In Progress
-                assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
-
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Problem saved successfully.";
-            }
-            catch (Exception ex)
-            {
-                // prefer logging if available; surface a friendly message
-                TempData["Error"] = "Error saving problem: " + ex.Message;
-            }
+ 
+                 //Update status to In Progress
+                 assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
+ 
+                 await _context.SaveChangesAsync();
+                 TempData["SuccessMessage"] = "Problem saved successfully.";
+             }
+             catch (Exception ex)
+             {
+                 // prefer logging if available; surface a friendly message
+                 TempData["Error"] = "Error saving problem: " + ex.Message;
+             }
 
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
         }

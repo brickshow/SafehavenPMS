@@ -55,6 +55,9 @@ namespace SafehavenPMS.Data
 
         public DbSet<Intervention> Interventions { get; set; }
 
+        // Progress notes entity
+        public DbSet<ProgressNote> ProgressNotes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Many-to-many: Patient ↔ ClinicalStaff
@@ -265,6 +268,33 @@ namespace SafehavenPMS.Data
                 .WithMany()
                 .HasForeignKey(i => i.ServiceId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ProgressNote configuration
+            modelBuilder.Entity<ProgressNote>(entity =>
+            {
+                entity.HasKey(p => p.ProgressNoteId);
+
+                // ProgressNote -> Patient (many-to-one)
+                // Patient does not define a ProgressNotes navigation property, configure without it
+                entity.HasOne(p => p.Patient)
+                      .WithMany()
+                      .HasForeignKey(p => p.PatientId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // ProgressNote -> Intervention (many-to-one, optional)
+                entity.HasOne(p => p.Intervention)
+                      .WithMany() // no navigation property on Intervention
+                      .HasForeignKey(p => p.InterventionId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Basic column sizing
+                entity.Property(p => p.Clinician).HasMaxLength(200);
+                entity.Property(p => p.SoapRaw).HasMaxLength(8000);
+                entity.Property(p => p.Subjective).HasMaxLength(2000);
+                entity.Property(p => p.Objective).HasMaxLength(2000);
+                entity.Property(p => p.Assessment).HasMaxLength(2000);
+                entity.Property(p => p.Plan).HasMaxLength(2000);
+            });
         }
     }
 }

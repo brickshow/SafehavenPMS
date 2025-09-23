@@ -20,98 +20,12 @@ namespace SafehavenPMS.Controllers
             _context = context;
         }
 
-        // Add Goal for PsychiatricAssessment Problem
-        [HttpPost]
-        public async Task<IActionResult> AddGoal(int patientId, int psyProblemListId, string description, DateTime? targetDate)
+        public IActionResult Index()
         {
-            if (string.IsNullOrWhiteSpace(description))
-            {
-                return BadRequest("Goal description is required.");
-            }
-
-            var problem = await _context.PsyProblemLists
-                .Include(p => p.Goals)
-                .FirstOrDefaultAsync(p => p.PsyProblemListId == psyProblemListId);
-
-            if (problem == null)
-            {
-                return NotFound("Psychiatric Problem not found.");
-            }
-
-            var goal = new Goal
-            {
-                Description = description,
-                TargetDate = targetDate,
-                Status = "In Progress",
-                NotedBy = User.Identity?.Name ?? "System",
-                PsyProblemListId = psyProblemListId,
-                CreatedBy = User.Identity?.Name ?? "System",
-                CreatedAt = DateTime.Now
-            };
-
-            _context.Goals.Add(goal);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Index", "PatientProfile", new { id = patientId });
+            return View();
         }
 
-        [HttpPost]
-        public async Task<IActionResult> EditGoal(int patientId, int goalId, int psyProblemListId, string description, DateTime? targetDate)
-        {
-            if (string.IsNullOrWhiteSpace(description))
-            {
-                return BadRequest("Goal description is required.");
-            }
-
-            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.PsyProblemListId == psyProblemListId);
-            if (goal == null)
-            {
-                return NotFound("Goal not found.");
-            }
-
-            goal.Description = description;
-            goal.TargetDate = targetDate;
-            goal.UpdatedAt = DateTime.Now;
-            goal.UpdatedBy = User.Identity?.Name ?? "System";
-
-            _context.Goals.Update(goal);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Index", "PatientProfile", new { id = patientId });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> MarkGoalAsCompleted(int patientId, int goalId, int psyProblemListId)
-        {
-            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.PsyProblemListId == psyProblemListId);
-            if (goal == null)
-                return NotFound();
-
-            goal.Status = "Completed";
-            goal.UpdatedAt = DateTime.Now;
-            goal.UpdatedBy = User.Identity?.Name ?? "System";
-            _context.Goals.Update(goal);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Index", "PatientProfile", new { id = patientId });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DiscontinueGoal(int patientId, int goalId, int psyProblemListId)
-        {
-            var goal = await _context.Goals.FirstOrDefaultAsync(g => g.GoalId == goalId && g.PsyProblemListId == psyProblemListId);
-            if (goal == null)
-                return NotFound();
-
-            goal.Status = "Discontinue";
-            goal.UpdatedAt = DateTime.Now;
-            goal.UpdatedBy = User.Identity?.Name ?? "System";
-            _context.Goals.Update(goal);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Index", "PatientProfile", new { id = patientId });
-        }
-
+        
         // Add Psychiatric Problem
         [HttpPost]
         public async Task<IActionResult> AddProblem(int patientId, string problemText, int psychiatricAssessmentId)
@@ -251,6 +165,141 @@ namespace SafehavenPMS.Controllers
 
             // Redirect back to patient profile or treatment plan view
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkMedicationDiscontinued(int id)
+        {
+            var medication = await _context.MedicationOrders.FindAsync(id);
+            if (medication == null)
+            {
+                TempData["ErrorMessage"] = "Medication order not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            medication.Status = "Discontinued";
+            _context.Update(medication);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Medication order marked as discontinued.";
+            return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
+        }
+
+
+        //Action to mark medication as completed
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkMedicationCompleted(int id)
+        {
+            var medication = await _context.MedicationOrders.FindAsync(id);
+            if (medication == null)
+            {
+                TempData["ErrorMessage"] = "Medication order not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            medication.Status = "Completed";
+            _context.Update(medication);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Medication order marked as completed.";
+            return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMedicationOrder(int id)
+        {
+            var medication = await _context.MedicationOrders.FindAsync(id);
+            if (medication == null)
+            {
+                TempData["ErrorMessage"] = "Medication order not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            medication.Status = "Removed";
+            _context.Update(medication);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Medication order removed.";
+            return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkMedicationActive(int id)
+        {
+            var medication = await _context.MedicationOrders.FindAsync(id);
+            if (medication == null)
+            {
+                TempData["ErrorMessage"] = "Medication order not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            medication.Status = "Active";
+            _context.Update(medication);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Medication order marked as active.";
+            return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkInterventionDiscontinued(int id)
+        {
+            var intervention = await _context.Interventions.FindAsync(id);
+            if (intervention == null)
+            {
+                TempData["ErrorMessage"] = "Intervention not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            intervention.Status = "Discontinued";
+            _context.Update(intervention);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Intervention marked as discontinued.";
+            return RedirectToAction("Index", "PatientProfile", new { id = intervention.PatientId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkInterventionCompleted(int id)
+        {
+            var intervention = await _context.Interventions.FindAsync(id);
+            if (intervention == null)
+            {
+                TempData["ErrorMessage"] = "Intervention not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            intervention.Status = "Completed";
+            _context.Update(intervention);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Intervention marked as completed.";
+            return RedirectToAction("Index", "PatientProfile", new { id = intervention.PatientId });
+        }
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteIntervention(int id)
+        {
+            var intervention = await _context.Interventions.FindAsync(id);
+            if (intervention == null)
+            {
+                TempData["ErrorMessage"] = "Intervention not found.";
+                return RedirectToAction("Index", "PatientProfile");
+            }
+
+            intervention.Status = "Removed";
+            _context.Update(intervention);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Intervention removed.";
+            return RedirectToAction("Index", "PatientProfile", new { id = intervention.PatientId });
         }
     }
 }
