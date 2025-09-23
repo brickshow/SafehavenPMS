@@ -1,0 +1,118 @@
+@model SafehavenPMS.ViewModel.Billing.BillablesPageViewModel
+
+@{
+    ViewBag.Title = "Billing";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="@Url.Action("Index", "ClinicalStaff")" class="me-3">
+            </a>
+            <div>
+                <div class="d-flex flex-row justify-content-start align-items-center" style="gap:10px">
+                    <i class='bx bxs-wallet fs-2'></i>
+                    <h4 class="mb-0 text-custom">Billing</h4>
+                </div>
+            </div>
+        </div>
+        <div>
+            <a href="@Url.Action("AddMedicine", "Medication")" id="add-medicine-button" class="add-availability btn-custom btn-primary text-decoration-none">
+                Generate Invoice
+            </a>
+            <a href="@Url.Action("AddMedicationOrder", "Medication")" id="add-medication-order-button" class="add-availability btn-custom btn-primary text-decoration-none">
+                Add Miscellaneous
+            </a>
+        </div>
+       
+    </div>
+
+
+    @* Tabs *@
+    <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="billable-tab" data-bs-toggle="tab" data-bs-target="#billable"
+                    type="button" role="tab" aria-controls="billable" aria-selected="true">
+                Billables
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="invoice-tab" data-bs-toggle="tab" data-bs-target="#invoice"
+                    type="button" role="tab" aria-controls="invoice" aria-selected="false">
+                Invoices
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment"
+                    type="button" role="tab" aria-controls="payment" aria-selected="false">
+                Payments
+            </button>
+        </li>
+                <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payhistory-tab" data-bs-toggle="tab" data-bs-target="#payhistory"
+                    type="button" role="tab" aria-controls="payhistory" aria-selected="false">
+                Payment History
+            </button>
+        </li>
+    </ul>
+
+
+    @* Tab Content *@
+    <div class="tab-content" id="staffTabContent">
+        <div class="tab-pane fade show active" id="billable" role="tabpanel" aria-labelledby="billable-tab">
+            @await Html.PartialAsync("BillingTabs/_Billables", Model.Items)
+        </div>
+
+        <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+        </div>
+
+        <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-tabs .nav-link {
+        color: #767676;
+        background-color: transparent;
+        border: none;
+        font-weight: normal;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #00A3B4;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid #00A3B4;
+            font-weight: bold;
+        }
+
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Get saved tab from localStorage
+        var activeTab = localStorage.getItem('activeTab');
+
+        // Default tab is overview
+        var defaultTabId = "overview-tab";
+        var tabToActivate = activeTab || defaultTabId;
+
+        var tabEl = document.getElementById(tabToActivate);
+        if(tabEl){
+            var tab = new bootstrap.Tab(tabEl);
+            tab.show();
+        }
+
+        // Save tab on click and toggle buttons
+        document.querySelectorAll('#staffTab button[data-bs-toggle="tab"]').forEach(function(tabButton) {
+            tabButton.addEventListener('shown.bs.tab', function (event) {
+                var tabId = event.target.id;
+                localStorage.setItem('activeTab', tabId);
+
+                toggleAddButtons(tabId);
+            });
+        })
+    });
+</script>
+

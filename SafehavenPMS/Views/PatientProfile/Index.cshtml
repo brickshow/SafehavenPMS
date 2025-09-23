@@ -7,7 +7,7 @@
 <div>
     <div class="d-flex justify-content-start align-items-start mb-3">
         <div class="d-flex align-items-center">
-            <a href="javascript:history.back()" class="me-2 text-decoration-none text-muted"><i class="bx bx-reply fs-4"></i></a>
+            <a href="javascript:history.back()" class="me-2 text-decoration-none text-muted"><i class="text-custom bx bx-reply fs-1"></i></a>
 
             <img src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? Url.Content("~/Images/sample.JPG") : Model.AvatarUrl)"
                  class="rounded-circle me-3"
@@ -36,11 +36,10 @@
                 <a class="nav-link" id="medical-history-tab" data-bs-toggle="tab" href="#tab-medical-history" role="tab" aria-controls="tab-medical-history" aria-selected="false">Medical History</a>
             </li>
 
-            @if(Model.TreatmentPlanTab != null && Model.TreatmentPlanTab.Problems != null && Model.TreatmentPlanTab.Problems.Any()){
-                <li class="nav-item">
-                    <a class="nav-link" id="treatment-tab" data-bs-toggle="tab" href="#tab-treatment" role="tab" aria-controls="tab-treatment" aria-selected="false">Treatment Plan</a>
-                </li>
-            }
+            <li class="nav-item">
+                <a class="nav-link" id="treatment-tab" data-bs-toggle="tab" href="#tab-treatment" role="tab" aria-controls="tab-treatment" aria-selected="false">Treatment Plan</a>
+            </li>
+            
             <li class="nav-item">
                 <a class="nav-link" id="progress-note-tab" data-bs-toggle="tab" href="#tab-progress-note" role="tab" aria-controls="tab-progress-note" aria-selected="false">Progress Note</a>
             </li>
@@ -62,8 +61,9 @@
         @* Add treatment partial here *@
         @await Html.PartialAsync("ProfileTabs/_TreatmentPlanTab", Model.TreatmentPlanTab)
     </div>
-    <div class="tab-pane fade" id="tab-case" role="tabpanel" aria-labelledby="case-tab">
+    <div class="tab-pane fade" id="tab-progress-note" role="tabpanel" aria-labelledby="progress-note-tab">
         @* Add case documentation partial here *@
+        @await Html.PartialAsync("ProfileTabs/_ProgressNotes", Model.ProgressNotesTab)
     </div>
     <div class="tab-pane fade" id="tab-prescription" role="tabpanel" aria-labelledby="prescription-tab">
         @* Add prescription & medication partial here *@

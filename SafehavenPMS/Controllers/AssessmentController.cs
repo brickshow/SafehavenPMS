@@ -495,12 +495,9 @@ namespace SafehavenPMS.Controllers
                     assessmentForm.HistoryPresent.AmountConsumedFirstUse = model.HistoryPresent.AmountConsumedFirstUse ?? string.Empty;
                 }
 
-                // Update patient status
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
-                }
-                    
+                // Update patient status -> use helper to ensure Waitlisted -> OnAssessment, retain OnAssessment otherwise
+                await EnsurePatientStatusOnAssessment(patient.PatientId);
+
                 // patient.UpdatedAt = DateTime.Now;
                 // patient.UpdatedBy = User.Identity.Name ?? "System";
 
@@ -579,11 +576,7 @@ namespace SafehavenPMS.Controllers
                 }
 
                 // Update patient status
-                var patient = await _context.Patients.FindAsync(model.PatientId);
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
-                }
+                await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Drug history has been saved successfully.";
@@ -720,11 +713,7 @@ namespace SafehavenPMS.Controllers
                 }
 
                 // Update patient status
-                var patient = await _context.Patients.FindAsync(model.PatientId);
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
-                }
+                await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Medical history has been saved successfully.";
@@ -808,11 +797,7 @@ namespace SafehavenPMS.Controllers
                 assessmentForm.PhysicalExam.ExtremitiesFindings = model.PhysicalExam.ExtremitiesFindings;
 
                 // Update patient status
-                var patient = await _context.Patients.FindAsync(model.PatientId);
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
-                }
+                await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Physical examination has been saved successfully.";
@@ -956,11 +941,7 @@ namespace SafehavenPMS.Controllers
                 }
 
                 // Update patient status
-                var patient = await _context.Patients.FindAsync(model.PatientId);
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
-                }
+                await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 // Save changes
                 await _context.SaveChangesAsync();
@@ -1017,6 +998,32 @@ namespace SafehavenPMS.Controllers
                     _context.ProblemLists.RemoveRange(assessmentForm.Problems);
                 }
 
+                // Use PsychiatricAssessment (parent entity) when clearing/adding psy problems
+                PsychiatricAssessment? psyAssessment = null;
+                if (model.PatientId.HasValue)
+                {
+                    psyAssessment = await _context.PsychiatricAssessments
+                        .FirstOrDefaultAsync(pa => pa.PatientId == model.PatientId.Value);
+
+                    // Create a PsychiatricAssessment record if none exists so we can attach PsyProblemList items
+                    if (psyAssessment == null)
+                    {
+                        psyAssessment = new PsychiatricAssessment
+                        {
+                            PatientId = model.PatientId.Value,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = User.Identity?.Name ?? "System"
+                        };
+                        _context.PsychiatricAssessments.Add(psyAssessment);
+                        await _context.SaveChangesAsync(); // get ID
+                    }
+
+                    // Remove existing PsyProblemList entries that belong to this PsychiatricAssessment
+                    var existingPsy = _context.PsyProblemLists
+                        .Where(p => p.PsychiatricAssessmentId == psyAssessment.PsychiatricAssessmentId);
+                    _context.PsyProblemLists.RemoveRange(existingPsy);
+                }
+
                 // Add new problems from the viewmodel
                 if (model.ProblemList?.Problems != null && model.ProblemList.Problems.Count > 0)
                 {
@@ -1029,6 +1036,7 @@ namespace SafehavenPMS.Controllers
                                 InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
                                 Problem = problemText,
                                 CreatedAt = DateTime.Now,
+                                Status = "Active",
                                 CreatedBy = User.Identity?.Name ?? "System"
                             };
 
@@ -1038,16 +1046,26 @@ namespace SafehavenPMS.Controllers
                             }
 
                             assessmentForm.Problems.Add(problem);
+
+                            // Also add to PsyProblemLists linked to the PsychiatricAssessment (parent)
+                            if (psyAssessment != null)
+                            {
+                                var psyProblem = new PsyProblemList
+                                {
+                                    PsychiatricAssessmentId = psyAssessment.PsychiatricAssessmentId,
+                                    Problem = problemText,
+                                    Status = "Active",
+                                    CreatedAt = DateTime.Now,
+                                    CreatedBy = User.Identity?.Name ?? "System"
+                                };
+                                _context.PsyProblemLists.Add(psyProblem);
+                            }
                         }
                     }
                 }
 
                 // Update patient status
-                var patient = await _context.Patients.FindAsync(model.PatientId);
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
-                }
+                await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 // Save all changes
                 await _context.SaveChangesAsync();
@@ -1117,11 +1135,7 @@ namespace SafehavenPMS.Controllers
                 assessmentForm.Recommendation.Reason = model.Recommendation.Reason;
 
                 // Update patient status
-                var patient = await _context.Patients.FindAsync(model.PatientId);
-                if (patient != null)
-                {
-                    patient.PatientStatus = PatientStatusEnum.OnAssessment.ToString();
-                }
+                await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Recommendation has been saved successfully.";
@@ -1163,7 +1177,7 @@ namespace SafehavenPMS.Controllers
 
                 if (assessmentForm == null)
                 {
-                    TempData["ErrorMessage"] = "Assessment form not found for this patient.";
+                    TempData["ErrorMessage"] =  "Assessment form not found for this patient.";
                     return RedirectToAction("Index");
                 }
 
@@ -1334,6 +1348,30 @@ namespace SafehavenPMS.Controllers
                 TempData["ErrorMessage"] = "An unexpected error occurred while saving the mental status examination.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model?.PatientId });
             }
+        }
+
+        // Helper to set patient status for assessment stage:
+        // - If patient is Waitlisted => change to OnAssessment
+        // - If patient is already OnAssessment => keep as OnAssessment
+        // - Otherwise leave status unchanged (SubmitAssessment will change to PendingApproval)
+        private async Task EnsurePatientStatusOnAssessment(int? patientId)
+        {
+            if (!patientId.HasValue) return;
+
+            var patient = await _context.Patients.FindAsync(patientId.Value);
+            if (patient == null) return;
+
+            var Pending = PatientStatusEnum.PendingAssessment.ToString();
+            var onAssessment = PatientStatusEnum.OnAssessment.ToString();
+
+            if (patient.PatientStatus == Pending)
+            {
+                patient.PatientStatus = onAssessment;
+            }
+            // if already onAssessment -> keep it
+            // do not override PendingApproval, Admitted, etc.
+
+            await _context.SaveChangesAsync();
         }
     }
 }

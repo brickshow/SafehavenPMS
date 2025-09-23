@@ -1,228 +1,412 @@
+@model IEnumerable<SafehavenPMS.Models.Intervention>
+
+@using SafehavenPMS.Models
+
 @{
-    ViewBag.Title = "Progress Notes";
+    ViewBag.Title = "Patient Interventions";
+    // start row counter once (handles paging)
+    int row = 1;
+    try
+    {
+        int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+        int pageSize = ViewBag.PageSize != null ? (int)ViewBag.PageSize : 10;
+        if (pageSize > 0) row = ((currentPage - 1) * pageSize) + 1;
+    }
+    catch { row = 1; }
 }
+
 <div class="header">
-    <div class="d-flex justify-content-start flex-column align-items-start mb-2">
-        <div class="d-flex align-items-center g-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-4">
             <div class="d-flex justify-content-center align-items-center">
                 <i class='bx bxs-user fs-2 me-2'></i>
-                <h5 class="text-custom mb-0">Progress Notes</h5>
+                <h5 class="text-custom mb-0">@ViewBag.Title</h5>
             </div>
+            <div class="top-content m-2 d-flex justify-content-between align-content-center">
+                <div class="top-left-corner d-flex flex-row align-items-center gap-2">
+                    @* Search bar *@
+                    <form asp-controller="Patient" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                        <div class="search-input-wrapper d-flex flex-row gap-2">
+                            <i class='bx bx-search search-icon'></i>
+                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+                        </div>
+                        <button type="submit" class="btn-custom" style="height:30px">Search</button>
+                    </form>
+
+                    <!-- Sort by -->
+                    <div class="sort-by d-flex align-items-center">
+                        <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm">
+                            <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
+                                <span class="me-2">Sort by</span>
+                                <div class="number-box d-flex align-items-center gap-1">
+                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
+                                        <span class="number">A</span>
+                                        <span class="number">Z</span>
+                                    </div>
+                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
+                                </div>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         @* <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
             <i class='bx bx-user-plus me-1'></i>
-            New Progress Note
+            New Patient Intake
         </a> *@
     </div>
     <hr class="mt-0 mb-2" />
 </div>
 
-<div class="container-fluid px-0" style="background:#fafafa;">
-    <div class="row g-0">
-        <!-- Left Panel: Patients List -->
-        <div class="col-md-5 px-4 pt-4 bg-white" style="min-width:400px;">
-            <h5 class="mb-3 fw-bold">Patients (9)</h5>
-            <div class="d-flex gap-2 mb-3">
-                <input type="text" class="form-control" placeholder="Search by name" style="max-width:180px;">
-                <select class="form-select" style="max-width:120px;">
-                    <option>Service</option>
-                </select>
-                <select class="form-select" style="max-width:120px;">
-                    <option>Status</option>
-                </select>
+
+<!-- Table Container -->
+<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["SuccessMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
             </div>
-            <table class="table table-patients mb-0">
-                <thead>
-                    <tr>
-                        <th>Patient</th>
-                        <th>Service</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Example Patient Row: Active -->
-                    <tr class="patient-row patient-row-active">
-                        <td>Sha Sha Ramos</td>
-                        <td>Individual Therapy</td>
-                        <td>
-                            <span class="status-pill pill-notstarted text-nowrap">Not Started</span>
-                        </td>
-                        <td>
-                            <div class="dropdown">
-                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bx bx-dots-vertical fs-5 text-muted"></i>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3"
-                                    style="min-width: 180px;">
-                                    <li class="px-2 text-muted fw-semibold small">Options</li>
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                            View Treatment Plan
-                                        </a>
-                                    @* </li>
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                            Mark as Completed
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                            View Treatment Plan
-                                        </a>
-                                    </li> *@
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
-        <!-- Right Panel: Progress Notes -->
-        <div class="col-md-7 right-panel px-4 pt-4 bg-white ">
-            <div class="d-flex justify-content-between bg-white align-items-center mb-2">
-                <div>
-                    <div class="fw-bold" style="font-size:1.15em;">
-                        Cognitive behavioral therapy - 1x per week [ frequency ]
-                        <span class="status-pill pill-active ms-2">Active</span>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" id="errorToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["Error"]
                     </div>
-                    <div class="text-muted" style="font-size:1em;">Short description of the intervention here
-                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
             </div>
-            <div class="d-flex justify-content-end mb-3">
-                <a href="@Url.Action("Create", "ProgressNote")" class="btn btn-progress-note">+New Progress Note</a>
+        </div>
+    }
+
+    <div class="table-header d-flex justify-content-center align-items-center text-center">
+        <h5 class="mb-0">@(ViewBag.TotalPatientCount > 0 ? ViewBag.TotalPatientCount + " Patients" : "No Patients found")</h5>
+    </div>
+
+    @* Print and show number of row section *@
+    <div class="d-flex justify-content-between align-items-center m-2 mt-4">
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Show</span>
+            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                <input type="hidden" name="status" value="@ViewBag.Status" />
+                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
+                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-center">
+            <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
+        </div>
+    </div>
+
+    <div class="table-responsive-custom">
+        <table class="table mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>No.</th>
+                    <th>Patient</th>
+                    <th>Service</th>
+                    <th>Description</th>
+                    <th>Frequency</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model?.Any() != true)
+                {
+                    <tr>
+                        <td colspan="9" class="text-center">No patients found.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var intervention in Model)
+                    {
+                        <tr>
+                           <td>@row</td>
+                            <td>@intervention.Patient?.Firstname @intervention.Patient?.Lastname</td>
+                            <td>@intervention.ServiceModality?.ServiceName</td>
+                            <td>@intervention.Description</td>
+                            <td>@intervention.DurationFrequency</td>
+                            <td class="text-center">
+                                @if(intervention.Status == "Active")
+                                {
+                                    <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Active
+                                    </div>
+                                }
+                                @if(intervention.Status == "Not Started")
+                                {
+                                    <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Not Started
+                                    </div>
+                                }
+                                @if(intervention.Status == "Completed")
+                                {
+                                    <div style="background-color: rgba(0, 123, 255, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Completed
+                                    </div>
+                                }
+                                @if(intervention.Status == "Discontinued")
+                                {
+                                    <div style="background-color: rgba(220, 53, 69, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Discontinued
+                                    </div>
+                                }
+                            </td>
+
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+                                         <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                               href="@Url.Action("ProgressNoteLists", "ProgressNote", new { patientId = intervention.PatientId })">
+                                                <span class="badge-dot bg-success"></span>
+                                                View Progress Notes
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        row++;
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+   
+    <div class="bot-content py-3">
+        <div class="d-flex justify-content-between align-items-center px-3">
+            <div style="opacity:.5;">
+                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalPatientCount ?? 0)</span>
             </div>
-            <div style="max-height:340px; overflow-y:auto;">
-                <!-- Progress Note Cards -->
-                <div class="progress-note-card px-3 py-2 mb-2">
-                    <div class="progress-note-date">11/12/24</div>
-                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....                    </div>
-                </div>
-                <div class="progress-note-card px-3 py-2 mb-2">
-                    <div class="progress-note-date">11/13/24</div>
-                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....
-                    </div>
-                </div>
-                <div class="progress-note-card px-3 py-2 mb-2">
-                    <div class="progress-note-date">11/14/24</div>
-                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....
-                    </div>
-                </div>
-                <div class="progress-note-card px-3 py-2 mb-2">
-                    <div class="progress-note-date">11/15/24</div>
-                    <div>S - Patient reported feeling anxious in social situations, especially during group activit....
-                    </div>
-                </div>
-            </div>
-            <div class="mt-3"></div>
+            <nav aria-label="Clinical staff list pagination">
+                <ul class="pagination mb-0">
+                    <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Previous">
+                            <i class='bx bx-chevron-left fs-5'></i>
+                        </a>
+                    </li>
+                    @if (ViewBag.PageSize != null && (int)ViewBag.PageSize > 0)
+                    {
+                        int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+                        int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+                        int startPage = Math.Max(1, currentPage - 2);
+                        int endPage = Math.Min(totalPages, currentPage + 2);
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", "Patient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
+                            </li>
+                        }
+                    }
+                    <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Next">
+                            <i class='bx bx-chevron-right fs-5'></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </div>
 
+@await Html.PartialAsync("_AddAppointmentModal")
+
 <style>
-    .status-pill {
-        border-radius: 6px;
-        padding: 2px 16px;
-        font-size: 1em;
-        font-weight: 500;
-        display: inline-block;
+    .custom-btn {
+        background-color: white;
+        width: 250px;
+        height: 35px;
+        margin: 20px;
+        box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);
+        border: none; /* remove border */
+        outline: none; /* remove outline */
     }
 
-    .pill-notstarted {
-        background: #d3edea;
-        color: #4a6c6a;
-    }
+        .custom-btn:hover {
+            transform: translateY(-1px);
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(5, 133, 148, 0.3);
+        }
 
-    .pill-active {
-        background: #c7f7e2;
-        color: #2e7d32;
-    }
+        .custom-btn.active {
+            background: linear-gradient(to right, #069FB2, #058594) !important;
+            color: white !important;
+            box-shadow: none;
+        }
 
-    .pill-discontinued {
-        background: #f8d7da;
-        color: #a94442;
-    }
-
-    .pill-completed {
-        background: #dbeafe;
-        color: #3b5998;
-    }
-
-    .patient-row-active {
-        background: #eaf6f8 !important;
-    }
-
-    .patient-row {
-        cursor: pointer;
-    }
-
-    .progress-note-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        border: 1px solid #e0e0e0;
-    }
-
-    .progress-note-date {
+    .table-header {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
         font-weight: 600;
-        font-size: 1.1em;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
     }
 
-    .progress-note-expand {
-        color: red;
-        font-size: 0.95em;
-        cursor: pointer;
+    .table-responsive-custom {
+        overflow: visible !important;
     }
 
-    .important-filter {
-        color: red;
-        font-size: 1em;
-        font-weight: 500;
-        text-align: center;
+    .dropdown-menu {
+        position: absolute !important;
+        z-index: 1055 !important;
     }
 
-    .profile-avatar {
+    .table td, .table th {
+        white-space: nowrap;
+    }
+
+    .dropdown {
+        position: relative;
+        z-index: auto !important;
+    }
+
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
+
+    .print-button {
         width: 40px;
         height: 40px;
-        border-radius: 50%;
-        background: #bbb;
+        border-radius: 6px;
+        background-color: white;
+        border: 1px solid #e9ecef;
+        color: #495057;
+        transition: background-color 0.3s;
+    }
+
+        .print-button:hover {
+            background-color: #e9ecef;
+        }
+
+    @@media print {
+        .header, .bot-content, .print-button, .top-content {
+            display: none;
+        }
+
+        .table-header-custom {
+            background-color: #015F6B;
+            -webkit-print-color-adjust: exact;
+        }
+    }
+
+    .badge-dot {
         display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
     }
 
-    .right-panel {
-        border-left: 1px solid #e0e0e0;
-        min-height: 100vh;
+    .bg-primary {
+        background-color: #7D4CDB;
+    }
+    /* Purple */
+    .bg-warning {
+        background-color: #FF9900;
+    }
+    /* Orange */
+    .bg-success {
+        background-color: #22C55E;
+    }
+    /* Green */
+    .bg-danger {
+        background-color: #F44336;
+    }
+    /* Red */
+
+    .dropdown-menu.dropdown-menu-end {
+        transform: translateX(-10px); /* or try -12px or -8px to adjust the alignment */
     }
 
-    .clinician-label {
-        font-weight: 600;
+    .staff-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid #e9ecef;
+        position: relative;
     }
 
-    .last-note-label {
-        font-size: 0.95em;
-        color: #888;
+    /* Pure-CSS styled tooltip (no JavaScript) */
+    .staff-avatar[data-tooltip] {
+        /* keep relative for pseudo elements */
+        position: relative;
+        cursor: default;
     }
 
-    .btn-progress-note {
-        background: #00bcd4;
+    .staff-avatar[data-tooltip]:hover::after {
+        content: attr(data-tooltip);                 /* read text from attribute */
+        position: absolute;
+        left: 50%;
+        bottom: 120%;                                /* place above the avatar */
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.75);
         color: #fff;
-        font-weight: 600;
-        border-radius: 8px;
-        min-width: 180px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 9999;
+        pointer-events: none;
+        opacity: 1;
     }
 
-    .table-patients th,
-    .table-patients td {
-        vertical-align: middle;
-    }
-
-    .table-patients {
-        background: #fff;
-    }
-
-    .action-links {
-        color: red;
-        font-size: 0.98em;
-        font-weight: 500;
+    .staff-avatar[data-tooltip]:hover::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: calc(120% - 6px);                    /* small arrow under tooltip */
+        transform: translateX(-50%);
+        border-width: 6px;
+        border-style: solid;
+        border-color: rgba(0,0,0,0.75) transparent transparent transparent;
+        z-index: 9999;
+        pointer-events: none;
     }
 </style>
+
+<script>
+       function setPatientInfo(patientId, patientName, staffName) {
+        console.log('setPatientInfo called with:', patientId, patientName, staffName); // Debug log
+        document.getElementById('modalPatientId').value = patientId;
+        document.querySelector('input[name="PatientName"]').value = patientName;
+        document.querySelector('input[name="StaffName"]').value = staffName;
+    }
+
+        // Add click handler
+    document.querySelectorAll('.custom-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // remove active from all
+        document.querySelectorAll('.custom-btn').forEach(b => b.classList.remove('active'));
+        // add active to clicked
+        this.classList.add('active');
+      });
+    });
+</script>

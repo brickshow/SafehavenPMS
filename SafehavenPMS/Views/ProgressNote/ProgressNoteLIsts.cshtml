@@ -1,0 +1,138 @@
+@* Static-only Progress Note list view — removed all model bindings and JavaScript *@
+
+@model IEnumerable<SafehavenPMS.Models.Intervention>
+@using SafehavenPMS.Models
+@{
+    // Static-only view: no model binding, no runtime data
+    ViewBag.Title = "Progress Notes";
+    var selected = ViewBag.SelectedIntervention as SafehavenPMS.Models.Intervention;
+    int? selectedId = ViewBag.SelectedInterventionId as int?;
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="@Url.Action("Index")" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+<div class="progressnote-page container-fluid py-3">
+    @* <!-- Header / Intervention summary (static) -->
+    <div class="intervention-header p-3 mb-3 rounded-2 d-flex justify-content-between align-items-start" style="border:1px solid #616f745e; background:white;">
+        <div>
+        <div class="d-flex align-items-center gap-3 mb-2">
+            <h4 class="mb-1" style="font-weight:700;">Cognitive behavioral therapy - 1x per week</h4>
+            <span class="badge " style="background:#c6f6d5; color:#064; font-weight:700;">Active</span>
+        </div>
+            <div class="text-muted small">Short description of the intervention here</div>
+        </div>
+        <div class="text-end mt-auto">
+            <div class="small text-muted d-flex flex-row justify-content-end align-items-end mt-2 gap-4">
+                <div class="mt-1 me-3">Patient: <strong>Katie Duterte</strong></div>
+                <div class="mt-1 me-3">Clinician: <strong>Katie Duterte</strong></div>
+                <div class="mt-1">Last Note: <strong>11/12/24 09:34</strong></div>
+            </div>  
+        </div>
+    </div> *@
+
+    <div class="row gx-3" style="min-height:520px;">
+        <!-- Left column: interventions (server-rendered clickable links) -->
+        <div class="col-md-4">
+            <div class="list-panel bg-white rounded-2 shadow-sm" style="height:100%; overflow:hidden; display:flex; flex-direction:column;border:1px solid #616f745e; ">
+                <div class="list-scroll p-2" style="overflow:auto; flex:1;">
+                    <h5 class="mb-1">Interventions</h5>
+                    <div class="mb-2">
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var i in Model)
+                            {
+                                var serviceLabel = i.ServiceType?.ServiceName ?? i.Problem?.Problem ?? "Intervention";
+                                var durationLabel = i.ServiceModality?.ServiceName ?? (i.DurationFrequency ?? "");
+                                var selDateLabel = selected.DateAdded.HasValue ? selected.DateAdded.Value.ToString("MM/dd/yy") : "";
+                                var isActive = selectedId.HasValue && selectedId.Value == i.InterventionId;
+                                var itemBg = isActive ? "background:#eaf8f9;" : "background:white;";
+                                <a class="list-item p-2 d-block" href="@Url.Action("ProgressNoteLists", "ProgressNote", new { patientId = ViewBag.PatientId, selectedId = i.InterventionId })"
+                                   style="border:1px solid #e6eef0; cursor:pointer; @itemBg margin-bottom:8px; text-decoration:none; color:inherit;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="fw-bold">@serviceLabel</div>
+                                            <div class="text-muted small">@durationLabel</div>
+                                        </div>
+                                        <div class="text-end small">
+                                            <div><span class="badge" style="background:#c6f6d5; color:#222;">@i.Status</span></div>
+                                            <div class="text-muted mt-2 small">@selDateLabel</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted small mt-1">@i.Description</div>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted small">No interventions found for this patient.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Right column: server-rendered SOAP / Note viewer -->
+        <div class="col-md-8">
+            <div class="note-panel bg-white rounded p-3" style="height:100%; overflow:auto;border:1px solid #616f745e;">
+                <div id="notePlaceholder">
+                    @if (selected != null)
+                    {
+                        var svcLabel = selected.ServiceType?.ServiceName ?? selected.Problem?.Problem ?? "Intervention";
+                        var durLabel = selected.ServiceModality?.ServiceName ?? selected.DurationFrequency ?? "";
+                        <div class="note-top d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <div class="small text-muted">@((selected.DateAdded.HasValue) ? selected.DateAdded.Value.ToString("MM/dd/yy") : "")</div>
+                                <h5 class="mb-1">@svcLabel</h5>
+                                <div class="text-muted small">@durLabel</div>
+                            </div>
+                            <div class="text-end small text-muted">
+                                Noted by: <strong>@(selected.NotedBy ?? "-")</strong>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3 align-items-start">
+                            <div class="col-auto pe-0">
+                                <div class="fw-bold" style="font-size:1.25rem;">@((selected.DateAdded.HasValue) ? selected.DateAdded.Value.ToString("MM/dd/yy") : "")</div>
+                            </div>
+                            <div class="col">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <div class="soap-letter fw-bold">S</div>
+                                    </div>
+                                    <div class="flex-fill">
+                                        <div class="p-2 border rounded">@Html.Raw(System.Net.WebUtility.HtmlEncode(selected.Description ?? "-"))</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">Select an intervention to view its note.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .intervention-header h4 { font-size:1.25rem; }
+    .list-panel { background:#fafcfd; }
+    .list-item:hover { box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    .soap-letter { font-size:1.4rem; color:#222; margin-bottom:6px; }
+    .soap-box { background:#fff; min-height:56px; }
+    .note-panel { min-height:420px; }
+    .list-scroll::-webkit-scrollbar { width:10px; }
+    .list-scroll::-webkit-scrollbar-thumb { background:#ddd; border-radius:6px; }
+</style>

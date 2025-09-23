@@ -11,9 +11,12 @@ namespace SafehavenPMS.ViewModel.PatientProfile
     public class ProblemViewModel
     {
         public int? InitialAssessmentFormId { get; set; }
+        public int? PatientId { get; set; }
         public int PsyProblemListId { get; set; }
         public string? Problems { get; set; }
         public string? Status { get; set; }
+        public string? NotedBy { get; set; }
+        public DateTime? DateAdded { get; set; }
         public List<GoalViewModel> Goals { get; set; } = new List<GoalViewModel>();
         public List<InterventionViewModel> Interventions { get; set; } = new List<InterventionViewModel>();
     }
@@ -46,9 +49,11 @@ namespace SafehavenPMS.ViewModel.PatientProfile
         
         public string? MedicationName { get; set; }
         public string? UnitPerDose { get; set; }
-        public int ServiceTypeId { get; internal set; }
-        public int ServiceId { get; internal set; }
-        public int PatientId { get; internal set; }
-        public int PsyProblemListId { get; internal set; }
+
+        // changed to nullable + public setters so controller can map safely
+        public int? ServiceTypeId { get; set; }
+        public int? ServiceId { get; set; }
+        public int? PatientId { get; set; }
+        public int? PsyProblemListId { get; set; }
     }
 }

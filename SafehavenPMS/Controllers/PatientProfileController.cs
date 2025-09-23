@@ -25,7 +25,6 @@ namespace SafehavenPMS.Controllers
             if (id == null)
             {
                 TempData["ErrorMessage"] = "Patient ID not found.";
-                // Return an empty model to avoid null reference
                 return View(new PatientProfilePageViewModel());
             }
 
@@ -39,11 +38,9 @@ namespace SafehavenPMS.Controllers
             if (patient == null)
             {
                 TempData["ErrorMessage"] = "Patient not found.";
-                // Return an empty model to avoid null reference
                 return View(new PatientProfilePageViewModel());
             }
 
-            // Fetch InitialAssessmentForm and ProblemList for TreatmentPlan
             var assessment = await _context.PsychiatricAssessments
                 .Include(a => a.ProblemLists)
                     .ThenInclude(p => p.Goals)
@@ -51,63 +48,108 @@ namespace SafehavenPMS.Controllers
 
             var treatmentPlanViewModel = new PatientTreatmentPlanTabViewModel();
 
-            // Fetch all interventions for the patient
-            var interventions = await _context.Interventions
-                .Include(i => i.ServiceType)
-                .Include(i => i.ServiceModality)
+            // Only show problems coming from PsychiatricAssessment (PsyProblemList)
+            var psyProblemListProblems = new List<ProblemViewModel>();
+             if (assessment?.ProblemLists != null)
+             {
+                 foreach (var problem in assessment.ProblemLists)
+                 {
+                     psyProblemListProblems.Add(new ProblemViewModel
+                     {
+                         PsyProblemListId = problem.PsyProblemListId,
+                         InitialAssessmentFormId = assessment.PsychiatricAssessmentId,
+                         Problems = problem.Problem,
+                         Status = problem.Status,
+                         DateAdded = problem.CreatedAt,
+                         Goals = problem.Goals?.Select(g => new GoalViewModel
+                         {
+                             GoalId = g.GoalId,
+                             Description = g.Description,
+                             Status = g.Status,
+                             NotedBy = g.NotedBy,
+                             TargetDate = g.TargetDate
+                         }).ToList() ?? new List<GoalViewModel>(),
+                         Interventions = new List<InterventionViewModel>()
+                     });
+                 }
+             }
+
+            // Show only PsyProblemList items
+            var allProblems = psyProblemListProblems.ToList();
+            
+            foreach (var problem in allProblems)
+            {
+                Console.WriteLine($"Problem: {problem.Problems}, Status: {problem.Status}, DateAdded: {problem.DateAdded}");
+            }
+
+            // Declare interventionsByProblem and medsByProblem before use
+            var interventionsByProblem = new Dictionary<int, List<InterventionViewModel>>();
+            var medsByProblem = new Dictionary<int, List<InterventionViewModel>>();
+
+            // Fetch interventions from the database and group by PsyProblemListId
+            var interventionEntities = await _context.Interventions
+                .Include(i => i.ServiceModality) // <-- Add this line
                 .Where(i => i.PatientId == patient.PatientId)
                 .ToListAsync();
 
-            var interventionsByProblem = interventions
+            interventionsByProblem = interventionEntities
                 .GroupBy(i => i.PsyProblemListId)
                 .ToDictionary(
                     g => g.Key,
                     g => g.Select(i => new InterventionViewModel
                     {
                         InterventionId = i.InterventionId,
-                        ServiceTypeName = i.ServiceType?.ServiceName,
                         ServiceModalityName = i.ServiceModality?.ServiceName,
                         Description = i.Description,
                         Frequency = i.DurationFrequency,
                         Status = i.Status,
                         NotedBy = i.NotedBy,
-                        DateAdded = i.DateAdded
+                        DateAdded = i.DateAdded,
+                        MedicationOrderId = null,
+                        MedicineId = null,
+                        MedicationName = null,
+                        UnitPerDose = null
                     }).ToList()
                 );
 
-            if (assessment?.ProblemLists != null)
+            // After fetching and grouping interventions
+            foreach (var kvp in interventionsByProblem)
             {
-                foreach (var problem in assessment.ProblemLists)
+                Console.WriteLine($"ProblemListId: {kvp.Key}");
+                foreach (var intervention in kvp.Value)
                 {
-                    var problemVm = new ProblemViewModel
-                    {
-                        PsyProblemListId = problem.PsyProblemListId,
-                        InitialAssessmentFormId = assessment.PsychiatricAssessmentId,
-                        Problems = problem.Problem,
-                        Status = problem.Status,
-                        Goals = problem.Goals?.Select(g => new GoalViewModel
-                        {
-                            GoalId = g.GoalId,
-                            Description = g.Description,
-                            Status = g.Status,
-                            NotedBy = g.NotedBy,
-                            TargetDate = g.TargetDate
-                        }).ToList() ?? new List<GoalViewModel>(),
-                        Interventions = interventionsByProblem.ContainsKey(problem.PsyProblemListId)
-                            ? interventionsByProblem[problem.PsyProblemListId]
-                            : new List<InterventionViewModel>()
-                    };
-                    treatmentPlanViewModel.Problems.Add(problemVm);
+                    Console.WriteLine($"  InterventionId:{intervention.ServiceModalityName} {intervention.InterventionId}, Description: {intervention.Description}, Status: {intervention.Status}, DateAdded: {intervention.DateAdded}");
                 }
             }
 
-            // <<-- NEW: include medication orders as InterventionViewModel entries per problem
-            var meds = await _context.MedicationOrders
-                        .Include(m => m.Medicine)
-                        .Where(m => m.PatientId == patient.PatientId)
-                        .ToListAsync();
+            // Attach interventions and medications to each problem
+            foreach (var problemVm in allProblems)
+            {
+                var key = problemVm.PsyProblemListId;
 
-            var medsByProblem = meds
+                if (interventionsByProblem.TryGetValue(key, out var interventionsList))
+                {
+                    problemVm.Interventions.AddRange(interventionsList);
+                }
+
+                if (medsByProblem.TryGetValue(key, out var medsList))
+                {
+                    problemVm.Interventions.AddRange(medsList);
+                }
+
+                problemVm.Interventions = problemVm.Interventions
+                    .OrderByDescending(i => i.DateAdded ?? DateTime.MinValue)
+                    .ToList();
+            }
+
+            treatmentPlanViewModel.Problems = allProblems;
+
+            var meds = await _context.MedicationOrders
+                .Include(m => m.Medicine)
+                .Where(m => m.PatientId == patient.PatientId && m.Status != "Removed" && m.Status != "Deleted")
+                .ToListAsync();
+
+            medsByProblem = meds
                 .GroupBy(m => m.PsyProblemListId ?? 0)
                 .ToDictionary(
                     g => g.Key,
@@ -125,34 +167,144 @@ namespace SafehavenPMS.Controllers
                         MedicationOrderId = m.MedicationOrderId,
                         MedicineId = m.MedicineId,
                         MedicationName = m.Medicine != null
-                            ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Unit} {m.Medicine.Form}"
+                            ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength} {m.Medicine.Unit} {m.Medicine.Form}"
                             : null,
                         UnitPerDose = m.UnitPerDose + (m.Medicine != null ? $" {m.Medicine.Form}" : string.Empty)
                     }).ToList()
                 );
 
-                foreach (var m in meds)
-                {
-                    Console.WriteLine($"MedicationOrderId: {m.MedicationOrderId}, PsyProblemListId: {m.PsyProblemListId}, Medicine: {m.Medicine?.GenericName}");
-                }
+            foreach (var m in meds)
+            {
+                Console.WriteLine($"MedicationOrderId: {m.MedicationOrderId}, PsyProblemListId: {m.PsyProblemListId}, Medicine: {m.Medicine?.GenericName}");
+            }
 
-            // attach medication entries to matching problems in the treatment plan viewmodel
+            // After merging allProblems
+            foreach (var problem in allProblems)
+            {
+                Console.WriteLine($"Problem: {problem.Problems}, Status: {problem.Status}, DateAdded: {problem.DateAdded}");
+            }
+
             foreach (var problemVm in treatmentPlanViewModel.Problems)
             {
                 var key = problemVm.PsyProblemListId;
 
-                // Only add medications assigned to this problem (exclude unassigned)
-                if (medsByProblem.ContainsKey(key))
+                if (medsByProblem.TryGetValue(key, out var medsList))
                 {
-                    problemVm.Interventions.AddRange(medsByProblem[key]);
+                    problemVm.Interventions.AddRange(medsList);
                 }
 
-                // Sort combined interventions by DateAdded/CreatedAt (most recent first)
                 problemVm.Interventions = problemVm.Interventions
                     .OrderByDescending(i => i.DateAdded ?? DateTime.MinValue)
                     .ToList();
             }
-            // -- END NEW
+
+            // load progress notes for this patient via interventions
+            var progressNotes = await _context.ProgressNotes
+                .Include(pn => pn.Intervention)
+                .Where(pn => pn.Intervention != null && pn.Intervention.PatientId == patient.PatientId)
+                .ToListAsync();
+
+            // Group notes by intervention
+            var notesByIntervention = progressNotes
+                .GroupBy(n => n.InterventionId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(n => new ProgressNoteSummaryViewModel
+                    {
+                        ProgressNoteId = n.ProgressNoteId,
+                        CreatedAt = n.CreatedAt,
+                        Clinician = n.Clinician ?? "-",
+                        SoapRaw = n.SoapRaw ?? "",
+                        Subjective = n.Subjective ?? "",
+                        Objective = n.Objective ?? "",
+                        Assessment = n.Assessment ?? "",
+                        Plan = n.Plan ?? ""
+                    })
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToList()
+                );
+
+            // Debug output to see the grouping
+            Console.WriteLine("\nNotes grouped by intervention:");
+            foreach (var kvp in notesByIntervention)
+            {
+                Console.WriteLine($"Intervention {kvp.Key} has {kvp.Value.Count} notes");
+                foreach (var note in kvp.Value)
+                {
+                    Console.WriteLine($"  Note {note.ProgressNoteId}: {note.CreatedAt}");
+                    Console.WriteLine($"  SOAP: {note.SoapRaw}");
+                }
+            }
+
+            // map interventions -> summary VM (for Progress Notes tab)
+            var interventionSummaries = interventionEntities
+                .Select(i => new InterventionSummaryViewModel
+                {
+                    InterventionId = i.InterventionId,
+                    Title = i.ServiceModality?.ServiceName ?? "Intervention",
+                    Description = i.Description ?? "",
+                    Status = i.Status ?? "Active",
+                    Clinician = i.NotedBy ?? "",
+                    LastNoteDate = (notesByIntervention.TryGetValue(i.InterventionId, out var nlist) && nlist.Any())
+                        ? nlist.First().CreatedAt
+                        : i.DateAdded,
+                    ProgressNotes = notesByIntervention.ContainsKey(i.InterventionId)
+                        ? notesByIntervention[i.InterventionId]
+                        : new List<ProgressNoteSummaryViewModel>()
+                })
+                .ToList();
+
+            // attach progress notes to each intervention summary
+            foreach (var s in interventionSummaries)
+            {
+                if (notesByIntervention.TryGetValue(s.InterventionId, out var noteList))
+                {
+                    s.ProgressNotes = noteList;
+                    s.LastNoteDate = noteList.FirstOrDefault()?.CreatedAt ?? s.LastNoteDate;
+                }
+                else
+                {
+                    s.ProgressNotes = new List<ProgressNoteSummaryViewModel>();
+                }
+            }
+
+            // --- NEW: attach progress notes to interventions grouped by problem (so TreatmentPlan shows notes per intervention) ---
+            foreach (var kvp in interventionsByProblem)
+            {
+                var list = kvp.Value;
+                foreach (var ivm in list)
+                {
+                    // safe: only set if there are notes for this intervention
+                    if (ivm?.InterventionId != null && notesByIntervention.TryGetValue(ivm.InterventionId, out var pnList))
+                    {
+                        // try strongly-typed assignment first (common case)
+                        var prop = ivm.GetType().GetProperty("ProgressNotes");
+                        if (prop != null && prop.PropertyType.IsAssignableFrom(typeof(List<ProgressNoteSummaryViewModel>)))
+                        {
+                            prop.SetValue(ivm, pnList);
+                        }
+
+                        // update last note date if property exists
+                        var lastProp = ivm.GetType().GetProperty("LastNoteDate");
+                        if (lastProp != null && lastProp.PropertyType == typeof(DateTime?))
+                        {
+                            lastProp.SetValue(ivm, pnList.FirstOrDefault()?.CreatedAt ?? (DateTime?)ivm.DateAdded);
+                        }
+                    }
+                    else
+                    {
+                        // ensure ProgressNotes exists and is an empty list to avoid nulls in views (if property present)
+                        var prop = ivm?.GetType().GetProperty("ProgressNotes");
+                        if (prop != null && prop.PropertyType.IsAssignableFrom(typeof(List<ProgressNoteSummaryViewModel>)))
+                        {
+                            prop.SetValue(ivm, new List<ProgressNoteSummaryViewModel>());
+                        }
+                    }
+                }
+            }
+            // --- end new code ---
+            
+            var interventions = new List<Intervention>();
 
             var viewModel = new PatientProfilePageViewModel
             {
@@ -182,54 +334,58 @@ namespace SafehavenPMS.Controllers
                     FamilyConstellation = patient.IntakeForm?.FamilyMembers?
                         .Select(fm => new FamilyConstellationViewModel
                         {
-                            Name = fm.Name,
-                            Relationship = fm.Relationship,
-                            Age = fm.Age.ToString(),
-                            Comments = fm.Comments,
+                            Name = fm?.Name ?? string.Empty,
+                            Relationship = fm?.Relationship ?? string.Empty,
+                            Age = fm?.Age.ToString() ?? string.Empty,
+                            Comments = fm?.Comments ?? string.Empty,
                         }).ToList() ?? new List<FamilyConstellationViewModel>()
                 },
                 MedicalHistoryTab = new PatientMedicalHistoryTabViewModel(),
                 ClinicalFormTab = new PatientClinicalFormTabViewModel(),
-
                 TreatmentPlanTab = new PatientTreatmentPlanTabViewModel
                 {
                     Problems = treatmentPlanViewModel.Problems
                 },
-
-                ProgressNotesTab = new PatientProgressNotesTabViewModel(),
+                ProgressNotesTab = new PatientProgressNotesTabViewModel()
+                {
+                    PatientId = patient.PatientId,
+                    Interventions = interventionSummaries ?? new List<InterventionSummaryViewModel>(),
+                    // Prefer selecting the first intervention that has progress notes, otherwise the first intervention
+                    SelectedInterventionId = (interventionSummaries != null
+                        ? interventionSummaries.FirstOrDefault(i => i.ProgressNotes != null && i.ProgressNotes.Any())?.InterventionId
+                            ?? interventionSummaries.FirstOrDefault()?.InterventionId
+                        : (int?)null),
+                    InterventionFilter = "All",
+                },
                 ActivityLogTab = new PatientActivityLogTabViewModel(),
-                Interventions = interventions
+                Interventions = interventions,
+
+                
             };
 
-
-            //Display the Intervention in console
             foreach (var intervention in interventions)
             {
                 Console.WriteLine($"Intervention ID: {intervention.InterventionId}, Description: {intervention.Description}");
             }
 
-
-            //ViewBag for patient ID
             ViewBag.PatientId = patient.PatientId;
 
-            // Strongly-typed select lists for the view (avoid anonymous/SelectList runtime issues)
             var serviceTypesList = await _context.ServiceTypes
-                                        .Where(st => st.Status == "Active")
-                                        .ToListAsync();
+                                    .Where(st => st.Status == "Active")
+                                    .ToListAsync();
 
             ViewBag.ServiceTypes = serviceTypesList
-                .Select(st => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                .Select(st => new SelectListItem
                 {
                     Value = st.ServiceTypeId.ToString(),
                     Text = st.ServiceName
                 })
                 .ToList();
 
-            var servicesList = await _context.Services
-                                    .ToListAsync();
+            var servicesList = await _context.Services.ToListAsync();
 
             ViewBag.Services = servicesList
-                .Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                .Select(s => new SelectListItem
                 {
                     Value = s.ServiceId.ToString(),
                     Text = s.ServiceName
@@ -238,7 +394,7 @@ namespace SafehavenPMS.Controllers
 
             return View(viewModel);
         }
-        
+
         //Helper to calculate age
         public string CalculateAge(DateTime birthDate)
         {
@@ -247,5 +403,9 @@ namespace SafehavenPMS.Controllers
             if (birthDate.Date > today.AddYears(-age)) age--;
             return age.ToString();
         }
+        
+        
     }
 }
+
+
