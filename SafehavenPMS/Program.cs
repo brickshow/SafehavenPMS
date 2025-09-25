@@ -43,6 +43,44 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 var app = builder.Build();
 
+// --- Add this seeding block ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<SafehavenPMSContext>();
+        // apply migrations (optional)
+        context.Database.Migrate();
+
+        // only create admin if not exists
+        if (!context.Users.Any(u => u.Username == "admin"))
+        {
+            var admin = new User
+            {
+                Username = "admin",
+                Email = "admin@example.com",
+                Role = "Admin",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // use ASP.NET Core password hasher to hash default password
+            var hasher = new PasswordHasher<User>();
+            admin.PasswordHash = hasher.HashPassword(admin, "Admin@123"); // change default password after first login
+
+            context.Users.Add(admin);
+            context.SaveChanges();
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+// --- end seeding block ---
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
