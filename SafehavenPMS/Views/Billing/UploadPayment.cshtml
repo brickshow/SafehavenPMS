@@ -1,0 +1,232 @@
+@model SafehavenPMS.ViewModel.Billing.UploadPaymentViewModel
+
+@{
+    ViewBag.Title = "Upload Payment";
+    Layout = "_Layout";
+}
+
+@* Content Header (matches AddNewPatient style) *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="javascript:history.back()" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+
+<div class="add-satff-content">
+<div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+    Upload Payment
+</div>
+    <form asp-controller="Billing" asp-action="UploadPayment" method="post" enctype="multipart/form-data" novalidate class="p-3">
+        <input type="hidden" asp-for="InvoiceId" />
+       
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="mb-3">
+                    <label asp-for="PaymentMethod" class="form-label">Payment Method</label>
+                    <input asp-for="PaymentMethod" class="form-control uniform-input" />
+                    <span asp-validation-for="PaymentMethod" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3 gx-3">
+            <div class="col-md-8">
+                <label asp-for="TransactionNumber" class="form-label">Transaction No./Reference No.</label>
+                <input asp-for="TransactionNumber" class="form-control uniform-input" />
+                <span asp-validation-for="TransactionNumber" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="TransactionDate" class="form-label">Transaction Date</label>
+                <input asp-for="TransactionDate" type="date" class="form-control uniform-input" />
+                <span asp-validation-for="TransactionDate" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row mb-3 gx-3">
+            <div class="col-md-6">
+                <label asp-for="AmountPaid" class="form-label">Amount Paid</label>
+                <input asp-for="AmountPaid" type="number" step="0.01" class="form-control uniform-input" />
+                <span asp-validation-for="AmountPaid" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Remarks" class="form-label">Remarks</label>
+                <input asp-for="Remarks" class="form-control uniform-input" />
+                <span asp-validation-for="Remarks" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <label class="form-label">Proof of Payment</label>
+                <div id="dropZone" class="upload-dropzone d-flex align-items-center justify-content-center"
+                     onclick="document.getElementById('proofInput').click();">
+                    <div class="text-center">
+                        <i class="bx bx-cloud-upload fs-1 text-muted"></i>
+                        <div class="small text-muted mt-2">Upload file here or click to select</div>
+                        <div id="fileName" class="small text-muted mt-1"></div>
+                    </div>
+                    <input asp-for="ProofFile" id="proofInput" type="file" class="d-none" accept="image/*,application/pdf" />
+                </div>
+
+                <!-- preview container -->
+                <div id="filePreview" class="mt-2 text-center"></div>
+                <span asp-validation-for="ProofFile" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="p-3 d-flex justify-content-end gap-2">
+            <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+            <button type="submit" class="btn-next btn-primary px-4">Submit</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .add-satff-content {
+        background: white;
+        width: 100%;
+        margin:auto;
+        /* center horizontally */
+        /* width: 100%; */
+        max-width: 600px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-label {
+        font-weight: 400;
+        margin-bottom: .5rem;
+    }
+
+    .uniform-input {
+        min-width: 0;
+    }
+
+    .upload-dropzone {
+        min-height: 120px;
+        border: 1px dashed #d6d6d6;
+        border-radius: 6px;
+        cursor: pointer;
+        background: #fafafa;
+        transition: background .15s ease, border-color .15s ease;
+        position: relative;
+        padding: 12px;
+    }
+
+    .upload-dropzone:hover {
+        background: #f3f7f7;
+        border-color: #cfdfe0;
+    }
+
+    .btn-cancel {
+        background: #bdbdbd;
+        color: #fff;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 6px;
+    }
+
+    .btn-next.btn-primary {
+        background: linear-gradient(90deg,#069FB2,#058594);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 6px;
+    }
+
+    .text-danger { color: #d9534f; }
+
+    @@media (max-width: 767px) {
+        .upload-dropzone { min-height: 100px; }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('proofInput');
+            var drop = document.getElementById('dropZone');
+            var fileName = document.getElementById('fileName');
+            var preview = document.getElementById('filePreview');
+            var currentUrl = null;
+
+            function clearPreview() {
+                if (currentUrl) {
+                    URL.revokeObjectURL(currentUrl);
+                    currentUrl = null;
+                }
+                preview.innerHTML = '';
+                fileName.textContent = '';
+            }
+
+            function handleFile(file) {
+                clearPreview();
+                if (!file) return;
+                fileName.textContent = file.name;
+                currentUrl = URL.createObjectURL(file);
+
+                if (file.type && file.type.startsWith('image/')) {
+                    var img = document.createElement('img');
+                    img.src = currentUrl;
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '50%';
+                    img.style.borderRadius = '6px';
+                    img.alt = file.name;
+                    preview.appendChild(img);
+                } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                    var a = document.createElement('a');
+                    a.href = currentUrl;
+                    a.target = '_blank';
+                    a.className = 'd-inline-block text-decoration-none';
+                    a.innerHTML = '<i class="bx bx-file-pdf fs-1 text-muted"></i><div class="small text-muted mt-1">' + file.name + '</div>';
+                    preview.appendChild(a);
+                } else {
+                    var p = document.createElement('div');
+                    p.className = 'small text-muted';
+                    p.textContent = file.name;
+                    preview.appendChild(p);
+                }
+            }
+
+            drop.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                drop.classList.add('dragover');
+            });
+
+            drop.addEventListener('dragleave', function () {
+                drop.classList.remove('dragover');
+            });
+
+            drop.addEventListener('drop', function (e) {
+                e.preventDefault();
+                drop.classList.remove('dragover');
+                var files = e.dataTransfer.files;
+                if (files && files.length) {
+                    input.files = files;
+                    handleFile(files[0]);
+                }
+            });
+
+            input.addEventListener('change', function () {
+                if (input.files && input.files.length) {
+                    handleFile(input.files[0]);
+                } else {
+                    clearPreview();
+                }
+            });
+
+            // revoke object URL on page unload
+            window.addEventListener('beforeunload', function () {
+                if (currentUrl) URL.revokeObjectURL(currentUrl);
+            });
+        })();
+    </script>
+}

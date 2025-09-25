@@ -119,11 +119,6 @@
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="TreatmenPlan" asp-action="Index">
-                            <span>Treatment Plan</span>
-                        </a>
-                    </li>
-                    <li>
                         <a asp-controller="ProgressNote" asp-action="Index">
                             <span>Progress Notes</span>
                         </a>
@@ -163,6 +158,27 @@
                 </ul>
             </li>
 
+             <!-- Assessment -->
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Assessment" ? "active" : "")">
+                <a href="#" class="nav-parent">
+                    <i class='bx bxs-user-detail'></i>
+                    <span class="link_name">Scheduling</span>
+                    <i class='bx bx-chevron-down caret'></i>
+                </a>
+                <ul class="submenu">
+                    <li>
+                        <a asp-controller="Assessment" asp-action="Index">
+                            <span>Doctor's Calendar</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="PsychiatricAssessment" asp-action="Index">
+                            <span>General Scheduling</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
             <!-- Scheduling -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Scheduling" ? "active" : "")">
                 <a asp-controller="Scheduling" asp-action="Index">
@@ -191,7 +207,44 @@
                 </ul>
             </li>
 
-            @* Administration *@
+        
+            <!-- Clinical Staff -->
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClinicalStaff" ? "active" : "")">
+                <a asp-controller="ClinicalStaff" asp-action="Index">
+                    <i class='bx bxs-group'></i>
+                    <span class="link_name">Clinical Staff</span>
+                </a>
+            @* </li>
+            <!-- Doctor Schedule -->
+            <li class="navigation">
+                <a asp-controller="Appointment" asp-action="Index">
+                    <i class='bx bxs-calendar-event'></i>
+                    <span class="link_name">Doctor Schedule</span>
+                </a>
+            </li> *@
+            <!-- Medication -->
+            <li class="navigation">
+                <a asp-controller="Medication" asp-action="Index">
+                    <i class='bx bxs-capsule'></i>
+                    <span class="link_name">Medication</span>
+                </a>
+            </li>
+            <!-- Billing -->
+            <li class="navigation">
+                <a asp-controller="Billing" asp-action="Index">
+                    <i class='bx bxs-receipt'></i>
+                    <span class="link_name">Billing</span>
+                </a>
+            </li>
+
+            <li class="navigation">
+                <a asp-controller="Billing" asp-action="Index">
+                    <i class='bx bxs-receipt'></i>
+                    <span class="link_name">Canteen</span>
+                </a>
+            </li>
+
+                @* Administration *@
             <!-- Administration -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "ServiceAdministration" ? "active" : "")">
                 <a href="#" class="nav-parent">
@@ -210,50 +263,22 @@
                             <span>Services</span>
                         </a>
                     </li>
+
+                     <li>
+                        <a asp-controller="Services" asp-action="Index">
+                            <span>Setup Billing</span>
+                        </a>
+                    </li>
                 </ul>
             </li>
-            <!-- Clinical Staff -->
-            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClinicalStaff" ? "active" : "")">
-                <a asp-controller="ClinicalStaff" asp-action="Index">
-                    <i class='bx bxs-group'></i>
-                    <span class="link_name">Clinical Staff</span>
-                </a>
-            </li>
-            <!-- Doctor Schedule -->
-            <li class="navigation">
-                <a asp-controller="Appointment" asp-action="Index">
-                    <i class='bx bxs-calendar-event'></i>
-                    <span class="link_name">Doctor Schedule</span>
-                </a>
-            </li>
-            <!-- Medication -->
-            <li class="navigation">
-                <a asp-controller="Medication" asp-action="Index">
-                    <i class='bx bxs-capsule'></i>
-                    <span class="link_name">Medication</span>
-                </a>
-            </li>
-            <!-- Billing -->
-            <li class="navigation">
-                <a asp-controller="Billing" asp-action="Index">
-                    <i class='bx bxs-receipt'></i>
-                    <span class="link_name">Billing</span>
-                </a>
-            </li>
-            <!-- Email -->
+            @* <!-- Email -->
             <li class="navigation">
                 <a asp-controller="Email" asp-action="Index">
                     <i class='bx bxs-envelope'></i>
                     <span class="link_name">Email</span>
                 </a>
-            </li>
-            <!-- Templates -->
-            <li class="navigation">
-                <a asp-controller="Templates" asp-action="Index">
-                    <i class='bx bxs-file-blank'></i>
-                    <span class="link_name">Templates</span>
-                </a>
-            </li>
+            </li> *@
+
             <!-- Users -->
             <li class="navigation">
                 <a asp-controller="User" asp-action="Index">
@@ -261,13 +286,13 @@
                     <span class="link_name">Users</span>
                 </a>
             </li>
-            <!-- Settings -->
+            @* <!-- Settings -->
             <li class="navigation">
                 <a asp-controller="Settings" asp-action="Index">
                     <i class='bx bxs-cog'></i>
                     <span class="link_name">Settings</span>
                 </a>
-            </li>
+            </li> *@
         </ul>
         }
         

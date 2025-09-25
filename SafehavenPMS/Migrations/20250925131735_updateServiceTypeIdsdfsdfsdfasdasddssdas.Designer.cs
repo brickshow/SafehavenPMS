@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250925131735_updateServiceTypeIdsdfsdfsdfasdasddssdas")]
+    partial class updateServiceTypeIdsdfsdfsdfasdasddssdas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -775,9 +778,6 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -1419,58 +1419,6 @@ namespace SafehavenPMS.Migrations
                     b.HasKey("PatientId");
 
                     b.ToTable("Patients");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Payment", b =>
-                {
-                    b.Property<int>("PaymentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentId"));
-
-                    b.Property<decimal>("AmountPaid")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ProofFileName")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("TransactionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("TransactionNumber")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("PaymentId");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.HasIndex("PatientId");
-
-                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PhysicalExam", b =>
@@ -2382,23 +2330,6 @@ namespace SafehavenPMS.Migrations
                         .IsRequired();
 
                     b.Navigation("ClinicalStaff");
-
-                    b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Payment", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId");
-
-                    b.Navigation("Invoice");
 
                     b.Navigation("Patient");
                 });

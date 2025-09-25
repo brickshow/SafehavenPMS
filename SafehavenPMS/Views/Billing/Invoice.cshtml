@@ -1,0 +1,226 @@
+@model SafehavenPMS.ViewModel.Billing.InvoiceListItemViewModel
+
+@{
+    Layout = "_Layout";
+    ViewBag.Title = "Invoice Details";
+    var currency = "₱";
+
+    var lines = (IEnumerable<dynamic>)(ViewBag.Lines ?? new List<dynamic>());
+    var billables = (IEnumerable<dynamic>)(ViewBag.Billables ?? new List<dynamic>());
+
+    // combine billables (converted shape) + invoice-lines that do not reference a billable (e.g. standard fee)
+    var billableItems = billables.Select(b => new {
+        InvoiceLineId = 0,
+        Category = (string)(b.Category ?? string.Empty),
+        Description = (string)(b.Description ?? string.Empty),
+        Quantity = (decimal)(b.Quantity ?? 1m),
+        UnitPrice = (decimal)(b.UnitPrice ?? 0m),
+        Amount = (decimal)(b.Amount ?? 0m),
+        DateAdded = (DateTime)b.DateAdded,
+        ReferenceBillableId = (int?)b.BillableId
+    });
+
+    var standaloneLines = lines.Where(l => l.ReferenceBillableId == null || (int?)l.ReferenceBillableId == 0);
+
+    var combined = billableItems
+                    .Concat(standaloneLines.Select(l => new {
+                        InvoiceLineId = (int)l.InvoiceLineId,
+                        Category = (string)(l.Category ?? string.Empty),
+                        Description = (string)(l.Description ?? string.Empty),
+                        Quantity = (decimal)(l.Quantity ?? 1m),
+                        UnitPrice = (decimal)(l.UnitPrice ?? 0m),
+                        Amount = (decimal)(l.Amount ?? 0m),
+                        DateAdded = (DateTime)l.DateAdded,
+                        ReferenceBillableId = (int?)l.ReferenceBillableId
+                    }))
+                    .OrderBy(x => x.Category)
+                    .ThenBy(x => x.DateAdded)
+                    .ToList();
+
+    string periodLabel = Model?.Period ?? (Model?.Month != null && Model?.Year != null
+                        ? new DateTime(Model.Year.Value, Model.Month.Value, 1).ToString("MMMM yyyy")
+                        : string.Empty);
+
+    decimal subtotal = (Model?.TotalAmount != 0) ? Model.TotalAmount : (combined.Any() ? combined.Sum(c => (decimal)c.Amount) : 0m);
+    decimal amountDue = (Model?.AmountDue != 0) ? Model.AmountDue : subtotal;
+    decimal standardFeeAmount = combined.Where(c => ((string)c.Category).Contains("StandardMonthlyFee", StringComparison.OrdinalIgnoreCase)
+                                                  || ((string)c.Description).Contains("Standard Monthly", StringComparison.OrdinalIgnoreCase))
+                                       .Sum(c => (decimal)c.Amount);
+    string invoiceNumber = Model?.InvoiceNumber ?? "—";
+    string patientName = Model?.PatientName ?? "—";
+    string status = Model?.Status ?? "NotYetPaid";
+
+    // added: whether current user is in Family role
+    var isFamily = User.IsInRole("Family");
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="javascript:history.back()" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+<div class="container-fluid invoice-page py-4">
+    <div class="row gx-4 @(isFamily ? "" : "justify-content-center")">
+        <div class="col-lg-8">
+            <div class="card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h2 class="mb-0">Monthly Invoice</h2>
+                        <div class="text-muted">@periodLabel</div>
+                    </div>
+                    <div class="text-end">
+                        <img src="~/images/safehaven-logo.png" alt="Safehaven" style="max-height:64px;" onerror="this.style.display='none'"/>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-12 d-flex justify-content-end align-items-end">
+                        <div class="text-end">
+                            <div class="small text-muted">Invoice ID</div>
+                            <div class="h4 fw-bold mt-1">@invoiceNumber</div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-8">
+                        <div class="fw-bold">Standard Monthly Program Fee</div>
+                        <div class="text-muted">Treatment Fee, Food, Accommodation &amp; Amenities</div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6 class="fw-bold">Items</h6>
+
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th style="width:140px">Date</th>
+                                    <th>Item Description</th>
+                                    <th style="width:160px">Category</th>
+                                    <th style="width:120px" class="text-end">Unit Price</th>
+                                    <th style="width:70px" class="text-center">Qty</th>
+                                    <th style="width:140px" class="text-end">Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!combined.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">No billable items.</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    foreach (var l in combined)
+                                    {
+                                        <tr>
+                                            <td class="text-muted">@l.DateAdded.ToString("MMM dd, yyyy")  </td>
+                                            <td>@l.Description</td>
+                                            <td class="text-muted">@l.Category</td>
+                                            <td class="text-end">@currency@String.Format("{0:N0}", (decimal)l.UnitPrice)</td>
+                                            <td class="text-center">@(((decimal)l.Quantity) == 0 ? "-" : ((decimal)l.Quantity).ToString("0"))</td>
+                                            <td class="text-end">@currency@String.Format("{0:N0}", (decimal)l.Amount)</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <div style="width:360px;">
+                        <div class="d-flex justify-content-between border-bottom pb-2">
+                            <div class="small text-muted">Subtotal</div>
+                        <div class="fw-bold">@currency @subtotal.ToString("N0")</div>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2">
+                            <div class="small text-muted">Amount Due</div>
+                            <div class="h5 fw-bold text-danger">@currency @amountDue.ToString("N0")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if(User.IsInRole("Family")){
+             <!-- right column unchanged -->
+        <div class="col-lg-4">
+            <div class="card p-3 mb-4">
+                <h6 class="fw-bold">Our Payment Information</h6>
+                <p class="text-muted small">Please send your payment to any of the following:</p>
+
+                <dl class="row small">
+                    <dt class="col-5 text-muted">Bank Name</dt>
+                    <dd class="col-7">BPI (Bank of the Philippine Islands)</dd>
+
+                    <dt class="col-5 text-muted">Account Name</dt>
+                    <dd class="col-7">Safehaven Recovery Village</dd>
+
+                    <dt class="col-5 text-muted">Account Number</dt>
+                    <dd class="col-7">1234-5678-9012</dd>
+                </dl>
+
+                <div class="d-grid mt-2">
+                    <a class="btn btn-teal btn-lg text-white" asp-action="UploadPayment" asp-route-id="@Model?.InvoiceId">Upload Payment</a>
+                </div>
+
+                <hr />
+
+                <div>
+                    <h6 class="fw-bold small">Additional Notes</h6>
+                    <p class="small text-muted mb-0">
+                        If you have any questions about this invoice, please contact our billing office at (212) 5643 or safehaven@gmail.com
+                    </p>
+                </div>
+            </div>
+
+            <div class="card p-3">
+                <h6 class="fw-bold small">Invoice Summary</h6>
+                <ul class="list-unstyled small mb-0">
+                    <li><strong>Invoice #:</strong> @invoiceNumber</li>
+                    <li><strong>Patient:</strong> @patientName</li>
+                    <li><strong>Period:</strong> @periodLabel</li>
+                    <li><strong>Due Date:</strong> @(Model?.DueDate.ToString("yyyy-MM-dd") ?? "—")</li>
+                    <li><strong>Status:</strong> <span class="badge @(status == "Paid" ? "bg-success" : status == "Partial" ? "bg-info" : "bg-warning text-dark")">@status</span></li>
+                </ul>
+            </div>
+        </div>
+        }
+       
+    </div>
+</div>
+
+<style>
+    .card { border-radius:8px; box-shadow:0 1px 6px rgba(0,0,0,0.04); }
+    .btn-teal { background: linear-gradient(90deg,#069FB2,#058594); border:none; color:#fff; }
+    .btn-teal:hover { opacity:0.95; }
+    .invoice-page h2 { font-weight:700; }
+    .table th, .table td { vertical-align: middle; border-top: none; padding-top: .75rem; padding-bottom: .75rem; }
+    .table td { white-space:nowrap; }
+
+    /* center single-column invoice when user is NOT in Family role */
+    .invoice-page .row.justify-content-center {
+        max-width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @@media (max-width: 991px) {
+        .invoice-page .row { gap:1rem; }
+    }
+    @@media print {
+        .btn, .card .btn { display:none !important; }
+    }
+</style>

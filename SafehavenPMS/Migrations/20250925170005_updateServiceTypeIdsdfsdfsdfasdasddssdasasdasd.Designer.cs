@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250925170005_updateServiceTypeIdsdfsdfsdfasdasddssdasasdasd")]
+    partial class updateServiceTypeIdsdfsdfsdfasdasddssdasasdasd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1442,9 +1445,6 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PatientId")
-                        .HasColumnType("int");
-
                     b.Property<string>("PaymentMethod")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1467,8 +1467,6 @@ namespace SafehavenPMS.Migrations
                     b.HasKey("PaymentId");
 
                     b.HasIndex("InvoiceId");
-
-                    b.HasIndex("PatientId");
 
                     b.ToTable("Payments");
                 });
@@ -2394,13 +2392,7 @@ namespace SafehavenPMS.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId");
-
                     b.Navigation("Invoice");
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PhysicalExam", b =>

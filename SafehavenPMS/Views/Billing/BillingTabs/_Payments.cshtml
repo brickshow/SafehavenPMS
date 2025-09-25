@@ -1,0 +1,132 @@
+@model IEnumerable<SafehavenPMS.ViewModel.Billing.UploadPaymentViewModel>
+
+@{
+    ViewBag.Title = "Payments";
+    var payments = Model?.ToList() ?? new List<SafehavenPMS.ViewModel.Billing.UploadPaymentViewModel>();
+}
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <input id="paymentDateFilter" class="form-control" placeholder="Date (month/year)" />
+    </div>
+    <div class="col-md-6 text-end">
+        <form method="get" asp-controller="Billing" asp-action="Index" class="d-flex justify-content-end">
+            <input name="q" class="form-control" placeholder="Search by patient, invoice or transaction #" />
+            <button type="submit" class="btn btn-teal ms-2">Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header table-header text-white">
+        <h5 class="mb-0">@(payments.Count > 0 ? $"{payments.Count} Payments" : "No payments found")</h5>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive-custom p-3">
+            <table class="table mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Payment #</th>
+                        <th>Invoice</th>
+                        <th>Patient</th>
+                        <th>Transaction Date</th>
+                        <th>Method</th>
+                        <th>Transaction #</th>
+                        <th class="text-end">Amount Paid</th>
+                        <th class="text-center">Receipt</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!payments.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center">No payments available.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var p in payments)
+                        {
+                        <tr>
+                            <td>@p.PatientId</td>
+                            <td>@(p.InvoiceId > 0 ? $"#{p.InvoiceId}" : "—")</td>
+                            <td>@(p.PatientId > 0 ? $"Patient #{p.PatientId}" : "—")</td>
+                            <td>@(p.TransactionDate.HasValue ? p.TransactionDate.Value.ToString("yyyy-MM-dd") : "—")</td>
+                            <td>@(string.IsNullOrEmpty(p.PaymentMethod) ? "—" : p.PaymentMethod)</td>
+                            <td>@(string.IsNullOrEmpty(p.TransactionNumber) ? "—" : p.TransactionNumber)</td>
+                            <td class="text-end">@string.Format("{0:N2}", p.AmountPaid)</td>
+                            <td class="text-center">
+                                @if (p.InvoiceId > 0)
+                                {
+                                    <a asp-action="DownloadPaymentProof" asp-route-id="@p.InvoiceId" title="View receipt" class="text-decoration-none">
+                                        <i class="bx bx-file fs-4"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (p.InvoiceId > 0)
+                                {
+                                    <a asp-action="Invoice" asp-route-id="@p.InvoiceId" title="View Invoice" class="text-muted me-2">
+                                        <i class="bx bx-show fs-5"></i>
+                                    </a>
+                                }
+                                <a asp-action="DownloadPaymentProof" asp-route-id="@p.InvoiceId" title="Download Receipt" class="text-muted">
+                                    <i class="bx bx-download fs-5"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-header {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .table-responsive-custom {
+        overflow: visible !important;
+    }
+
+    .btn-teal {
+        background: linear-gradient(to right,#069FB2,#058594);
+        color: #fff;
+        border: none;
+    }
+
+    .btn-teal:hover {
+        opacity: .95;
+    }
+
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    .card .card-header.table-header {
+        border-bottom: none;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    @@media print {
+        .header, .bot-content, .print-button, .top-content, .btn, .dropdown { display: none !important; }
+    }
+</style>

@@ -27,8 +27,10 @@ namespace SafehavenPMS.ViewModel.Billing
     {
         public int? PatientId { get; set; }
         public List<BillableItemViewModel> Items { get; set; } = new();
+        public List<UploadPaymentViewModel> UploadPayments { get; set; } = new();
         public List<MiscellaneousItemViewModel> MiscellaneousItems { get; set; } = new();
         public MiscellaneousItemViewModel miscellaneousItemViewModel { get; set; } = new();
+        public List<InvoiceListItemViewModel> Invoices { get; set; } = new();
         public int TotalCount => Items?.Count ?? 0;
     }
 }

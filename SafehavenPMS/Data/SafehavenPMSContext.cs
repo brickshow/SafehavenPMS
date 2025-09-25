@@ -59,8 +59,13 @@ namespace SafehavenPMS.Data
 
         // Progress notes entity
         public DbSet<ProgressNote> ProgressNotes { get; set; }
+
+        //Fo billing Entities
+        public DbSet<Payment> Payments { get; set; }
         public DbSet<SafehavenPMS.Models.MiscellaneousItem> MiscellaneousItems { get; set; }
         public DbSet<SafehavenPMS.Models.Billable> Billables { get; set; }
+        public DbSet<SafehavenPMS.Models.Invoice> Invoices { get; set; }
+        public DbSet<SafehavenPMS.Models.InvoiceLine> InvoiceLines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

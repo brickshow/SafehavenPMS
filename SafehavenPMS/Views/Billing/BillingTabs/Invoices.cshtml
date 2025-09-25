@@ -1,0 +1,191 @@
+@model IEnumerable<SafehavenPMS.ViewModel.Billing.InvoiceListItemViewModel>
+
+@{
+    ViewBag.Title = "Invoices";
+    var invoices = Model?.ToList() ?? new List<SafehavenPMS.ViewModel.Billing.InvoiceListItemViewModel>();
+    int totalCount = invoices.Count;
+    int unpaidCount = invoices.Count(i => string.Equals(i.Status, "NotYetPaid", StringComparison.OrdinalIgnoreCase) || string.Equals(i.Status, "Unpaid", StringComparison.OrdinalIgnoreCase));
+    int paidCount = invoices.Count(i => string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase));
+    int partialCount = invoices.Count(i => string.Equals(i.Status, "Partial", StringComparison.OrdinalIgnoreCase) || string.Equals(i.Status, "PartiallyPaid", StringComparison.OrdinalIgnoreCase));
+    int overdueCount = invoices.Count(i => i.DueDate < DateTime.UtcNow.Date && (string.Equals(i.Status, "NotYetPaid", StringComparison.OrdinalIgnoreCase) || string.Equals(i.Status, "Partial", StringComparison.OrdinalIgnoreCase) || string.Equals(i.Status, "Unpaid", StringComparison.OrdinalIgnoreCase)));
+}
+
+@* <div class="row g-3 mb-3">
+    <div class="col-auto">
+        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
+            <div class="h3 mb-0 text-teal">@totalCount</div>
+            <div class="small text-muted">Total Invoices</div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
+            <div class="h3 mb-0 text-teal">@unpaidCount</div>
+            <div class="small text-muted">Unpaid</div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
+            <div class="h3 mb-0 text-teal">@paidCount</div>
+            <div class="small text-muted">Paid</div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
+            <div class="h3 mb-0 text-teal">@partialCount</div>
+            <div class="small text-muted">Partial</div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
+            <div class="h3 mb-0 text-teal">@overdueCount</div>
+            <div class="small text-muted">Overdue</div>
+        </div>
+    </div>
+</div> *@
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <input id="dateFilter" class="form-control" placeholder="Date (month/year)" />
+    </div>
+    <div class="col-md-4">
+        <form method="get" asp-action="Index" class="d-flex">
+            <input name="q" class="form-control" placeholder="Search patient by id or name" />
+            <button type="submit" class="btn btn-teal ms-2">Search</button>
+        </form>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Status</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "" })">All</a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "NotYetPaid" })">Not yet paid</a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Partial" })">Partially Paid</a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Paid" })">Paid</a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Overdue" })">Overdue</a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Voided" })">Voided</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header table-header text-white">
+        <h5 class="mb-0">@(totalCount > 0 ? $"{totalCount} Invoices" : "No invoices found")</h5>
+    </div>
+
+    <div class="card-body p-0">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success m-3">@TempData["Success"]</div>
+        }
+        <div class="table-responsive-custom p-3">
+            <table class="table mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Patient</th>
+                        <th>Period</th>
+                        <th>Due Date</th>
+                        <th class="text-end">Total Amount</th>
+                        <th class="text-end">Amount Due</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!invoices.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center">No invoices available.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var inv in invoices)
+                        {
+                          //  string periodLabel = inv.Period ?? (inv.Month > 0 ? new DateTime(inv.Year, inv.Month, 1).ToString("MMMM yyyy") : $"{inv.Month}/{inv.Year}");
+                            string status = inv.Status ?? "NotYetPaid";
+                            string badgeClass = status switch
+                            {
+                                var s when s.Equals("Paid", StringComparison.OrdinalIgnoreCase) => "badge bg-success",
+                                var s when s.Equals("Partial", StringComparison.OrdinalIgnoreCase) || s.Equals("PartiallyPaid", StringComparison.OrdinalIgnoreCase) => "badge bg-info",
+                                var s when s.Equals("Overdue", StringComparison.OrdinalIgnoreCase) => "badge bg-pink",
+                                var s when s.Equals("Voided", StringComparison.OrdinalIgnoreCase) => "badge bg-secondary",
+                                _ => "badge bg-warning text-dark"
+                            };
+
+                            <tr>
+                                <td>@inv.InvoiceNumber</td>
+                                <td>@inv.PatientName</td>
+                                <td>@inv.Period</td>
+                                <td>@inv.DueDate.ToString("yyyy-MM-dd")</td>
+                                <td class="text-end">@inv.TotalAmount.ToString("N2")</td>
+                                <td class="text-end">@inv.AmountDue.ToString("N2")</td>
+                                <td class="text-center">
+                                    <span class="@badgeClass" style="padding:6px 10px; border-radius:20px; display:inline-block;">
+                                        @status.Replace("NotYetPaid", "Not yet paid").Replace("PartiallyPaid","Partially Paid")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Invoice" asp-route-id="@inv.InvoiceId" title="View Invoice" class="text-muted me-2">
+                                        <i class="bx bx-show fs-5"></i>
+                                    </a>
+                                    @* <a asp-action="DownloadInvoicePdf" asp-route-id="@inv.InvoiceId" title="Download PDF" class="text-muted">
+                                        <i class="bx bx-download fs-5"></i>
+                                    </a> *@
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-header {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .table-responsive-custom {
+        overflow: visible !important;
+    }
+
+    .badge.bg-pink {
+        background-color: #FF6FB5;
+        color: #212529;
+    }
+
+    .btn-teal {
+        background: linear-gradient(to right,#069FB2,#058594);
+        color: #fff;
+        border: none;
+    }
+
+    .btn-teal:hover {
+        opacity: .95;
+    }
+
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    .card .card-header.table-header {
+        border-bottom: none;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    @@media print {
+        .header, .bot-content, .print-button, .top-content, .btn, .dropdown { display: none !important; }
+    }
+</style>

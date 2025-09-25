@@ -8,19 +8,22 @@ using SafehavenPMS.ViewModel;
 using SafehavenPMS.ViewModel.Billing;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using SafehavenPMS.Services;
 
 namespace SafehavenPMS.Controllers
 {
     public partial class BillingController : Controller
     {
         private readonly SafehavenPMSContext _context;
-
-        public BillingController(SafehavenPMSContext context)
+        private readonly CloudinaryServices _cloudinary;
+        public BillingController(SafehavenPMSContext context, CloudinaryServices cloudinary)
         {
             _context = context;
+            _cloudinary = cloudinary;
         }
 
         public async Task<IActionResult> Index()
@@ -29,6 +32,14 @@ namespace SafehavenPMS.Controllers
                                 .Include(p => p.Patient)
                                 .ToListAsync();
 
+            var invoice = await _context.Invoices
+                                .Include(i => i.Lines)
+                                .Include(i => i.Patient)
+                                .ToListAsync();
+
+            var uploadPayments = await _context.Payments
+                                .Include(p => p.Patient)
+                                .ToListAsync();
             // var medItems = medOrders.Select(b => new BillableItemViewModel
             // {
             //     PatientId = b.PatientId,
@@ -60,19 +71,46 @@ namespace SafehavenPMS.Controllers
             // }).ToList();
 
             var viewModel = new BillablesPageViewModel
-            
             {
                 Items = billables.Select(b => new BillableItemViewModel
                 {
                     PatientId = b.PatientId,
-                    PatientName = b.Patient != null ? $"{b.Patient.Firstname} {b.Patient.Lastname}" : null,
+                    PatientName = b.Patient != null ? $"{b.Patient.Firstname} {b.Patient.Lastname}" : string.Empty,
                     ReferenceType = b.ReferenceType,
                     Category = b.Category,
                     Description = b.Description,
                     Quantity = b.Quantity,
                     UnitPrice = b.Amount,
                     CreatedBy = b.CreatedBy
-                }).ToList()
+                }).ToList(),
+
+                // The BillablesPageViewModel expects a list of Invoice entities; assign the loaded entity list directly.
+                Invoices = invoice.Select(i => new InvoiceListItemViewModel
+                {
+                    InvoiceId = i.InvoiceId,
+                    PatientId = i.PatientId,
+                    PatientName = i.Patient != null ? $"{i.Patient.Firstname} {i.Patient.Lastname}" : string.Empty,
+                    InvoiceNumber = i.InvoiceNumber,
+                    Month = i.Month,
+                    Year = i.Year,
+                    DueDate = i.DueDate,
+                    TotalAmount = i.TotalAmount,
+                    AmountDue = i.TotalAmount, // This should be calculated based on payments made; using TotalAmount as a placeholder.
+                    Status = i.Status ?? "NotYetPaid"
+                }).ToList(),
+
+                UploadPayments = uploadPayments.Select(p => new UploadPaymentViewModel
+                {
+                    PaymentId = p.PaymentId,
+                    InvoiceId = p.InvoiceId,
+                    PatientId = p.PatientId,
+                    PatientName = p.Patient != null ? $"{p.Patient.Firstname} {p.Patient.Lastname}" : string.Empty,
+                    AmountPaid = p.AmountPaid,
+                    PaymentMethod = p.PaymentMethod,
+                    Remarks = p.Remarks,
+                    CreatedAt = p.CreatedAt,
+                    CreatedBy = p.CreatedBy
+                }).ToList(),
             };
 
             return View(viewModel);
@@ -232,63 +270,258 @@ namespace SafehavenPMS.Controllers
             return View(vm);
         }
 
+        // NEW: handle form post, call BillingHelper to generate invoices
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult GenerateInvoiceConfirm(GenerateInvoiceViewModel model)
+        public async Task<IActionResult> GenerateInvoiceConfirm(GenerateInvoiceViewModel model)
+        {
+            if (model == null)
+                return BadRequest();
+
+            if (!model.Month.HasValue || !model.Year.HasValue)
+            {
+                TempData["Warning"] = "Please select month and year.";
+                return RedirectToAction(nameof(GenerateInvoice));
+            }
+
+            // prepare parameters
+            int month = model.Month.Value;
+            int year = model.Year.Value;
+            decimal standardFee = 35000;
+            DateTime dueDate = model.DueDate ?? DateTime.UtcNow.Date;
+            string createdBy = User?.Identity?.Name ?? "system";
+
+            // call helper to generate invoices for all patients for the period
+            var invoices = await BillingHelper.GenerateMonthlyInvoicesAsync(
+                _context,
+                month,
+                year,
+                standardFee,
+                dueDate,
+                createdBy,
+                persist: true);
+
+            TempData["Success"] = $"Monthly invoices generated for {new DateTime(year, month, 1):MMMM yyyy}.";
+            TempData["GeneratedCount"] = invoices.Count;
+            try
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(invoices, new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                Console.WriteLine("Generated invoices:");
+                Console.WriteLine(json);
+            }   
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error serializing invoices: " + ex.Message);
+            }
+            return RedirectToAction("index");
+        }
+
+        // GET: /Billing/Invoice/5
+        [HttpGet]
+        public async Task<IActionResult> Invoice(int id)
+        {
+            if (id <= 0) return RedirectToAction(nameof(Index));
+
+            var inv = await _context.Invoices
+                .Include(i => i.Patient)
+                .Include(i => i.Lines)
+                .FirstOrDefaultAsync(i => i.InvoiceId == id);
+
+            if (inv == null)
+            {
+                TempData["ErrorMessage"] = "Invoice not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var firstLine = inv.Lines.OrderBy(l => l.DateAdded).FirstOrDefault();
+
+            var vm = new InvoiceListItemViewModel
+            {
+                InvoiceId = inv.InvoiceId,
+                PatientId = inv.PatientId,
+                PatientName = inv.Patient != null ? $"{inv.Patient.Firstname} {inv.Patient.Lastname}" : string.Empty,
+                InvoiceNumber = inv.InvoiceNumber ?? $"INV-{inv.InvoiceId:D6}",
+                Month = inv.Month,
+                Year = inv.Year,
+                DueDate = inv.DueDate,
+                TotalAmount = inv.TotalAmount,
+                AmountDue = inv.TotalAmount, // replace with remaining-balance calculation if you track payments
+                Status = inv.Status ?? "NotYetPaid",
+
+                // keep single-line compatibility fields populated
+                InvoiceLineId = firstLine?.InvoiceLineId ?? 0,
+                Category = firstLine?.Category ?? string.Empty,
+                Description = firstLine?.Description ?? string.Empty,
+                Quantity = firstLine?.Quantity ?? 1m,
+                UnitPrice = firstLine?.UnitPrice ?? 0m,
+                Amount = firstLine?.Amount ?? 0m,
+                DateAdded = firstLine?.DateAdded ?? DateTime.UtcNow,
+                ReferenceBillableId = firstLine?.ReferenceBillableId
+            };
+
+            // prepare invoice lines for view (anonymous projection)
+            var lines = inv.Lines
+                  .OrderBy(l => l.Category)
+                  .ThenBy(l => l.DateAdded)
+                  .Select(l => new
+                  {
+                      InvoiceLineId = l.InvoiceLineId,
+                      Category = l.Category,
+                      Description = l.Description,
+                      Quantity = l.Quantity,
+                      UnitPrice = l.UnitPrice,
+                      Amount = l.Amount,
+                      DateAdded = l.DateAdded,
+                      ReferenceBillableId = l.ReferenceBillableId
+                  })
+                  .ToList();
+
+    ViewBag.Lines = lines;
+
+    // prepare billables for the same patient/period (if month/year present on invoice)
+    List<object> billables;
+    // inv.Month and inv.Year are integers (not nullable) so check their values directly.
+    if (inv.Month > 0 && inv.Year > 0)
+    {
+        var periodStart = new DateTime(inv.Year, inv.Month, 1);
+        var periodEnd = periodStart.AddMonths(1).AddTicks(-1);
+
+        billables = await _context.Billables
+            .Where(b => b.PatientId == inv.PatientId && b.DateAdded >= periodStart && b.DateAdded <= periodEnd)
+            .OrderBy(b => b.Category)
+            .ThenBy(b => b.DateAdded)
+            .Select(b => new
+            {
+                BillableId = b.BillableId,
+                DateAdded = b.DateAdded,
+                Description = b.Description,
+                Category = b.Category,
+                Quantity = b.Quantity,
+                UnitPrice = b.UnitPrice,
+                Amount = b.Amount
+            })
+            .ToListAsync<object>();
+    }
+    else
+    {
+        // fallback: include all billables for patient
+        billables = await _context.Billables
+            .Where(b => b.PatientId == inv.PatientId)
+            .OrderBy(b => b.Category)
+            .ThenBy(b => b.DateAdded)
+            .Select(b => new
+            {
+                BillableId = b.BillableId,
+                DateAdded = b.DateAdded,
+                Description = b.Description,
+                Category = b.Category,
+                Quantity = b.Quantity,
+                UnitPrice = b.UnitPrice,
+                Amount = b.Amount
+            })
+            .ToListAsync<object>();
+    }
+
+    ViewBag.Billables = billables;
+
+    return View("Invoice", vm);
+}
+
+        // Optional: Download PDF stub (implement PDF generation as needed)
+        [HttpGet]
+        public async Task<IActionResult> DownloadInvoicePdf(int id)
+        {
+            var inv = await _context.Invoices.Include(i => i.Lines).Include(i => i.Patient).FirstOrDefaultAsync(i => i.InvoiceId == id);
+            if (inv == null) return NotFound();
+
+            // TODO: generate PDF bytes from Invoice view or template
+            byte[] pdfBytes = System.Text.Encoding.UTF8.GetBytes($"Invoice PDF for {inv.InvoiceNumber ?? inv.InvoiceId.ToString()} (stub)");
+            return File(pdfBytes, "application/pdf", $"{inv.InvoiceNumber ?? $"invoice-{inv.InvoiceId}"}.pdf");
+        }
+
+        // GET: Billing/UploadPayment/5
+        [HttpGet]
+        public IActionResult UploadPayment(int id)
+        {
+            if (id <= 0) return RedirectToAction(nameof(Index));
+
+            var vm = new UploadPaymentViewModel
+            {
+                InvoiceId = id,
+                TransactionDate = DateTime.Today,
+                PaymentMethod = "BPI" // default selection
+            };
+
+            return View(vm);
+        }
+
+        // POST: Billing/UploadPayment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadPayment(UploadPaymentViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                return View("GenerateInvoice", model);
+                return View(model);
             }
 
-            // show confirmation view
-            return View("GenerateInvoiceConfirm", model);
-        }
+            string? proofUrl = null;
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GenerateInvoice(GenerateInvoiceViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View("GenerateInvoice", model);
+            if (model.ProofFile != null && model.ProofFile.Length > 0)
+            {
+                try
+                {
+                    using (var stream = model.ProofFile.OpenReadStream())
+                    {
+                        proofUrl = await _cloudinary.UploadImageAsync(stream, model.ProofFile.FileName);
+                    }
+                }
+                catch (Exception)
+                {
+                    // fallback: save locally if cloud upload fails
+                    var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "payments");
+                    if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
 
-            // server-side check whether invoices for that month/year already exist
-            // bool exists = await _context.Set<Invoice>()
-            //     .AnyAsync(i => i.Month == model.Month && i.Year == model.Year);
+                    var ext = Path.GetExtension(model.ProofFile.FileName);
+                    var savedFileName = $"{Guid.NewGuid():N}{ext}";
+                    var filePath = Path.Combine(uploadsRoot, savedFileName);
 
-            string displayPeriod = $"{model.MonthName} {model.Year}";
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.ProofFile.CopyToAsync(stream);
+                    }
 
-            // if (exists)
-            // {
-            //     TempData["Warning"] = $"Invoices for {displayPeriod} already exist.";
-            //     return RedirectToAction(nameof(GenerateInvoice));
-            // }
+                    proofUrl = $"/uploads/payments/{savedFileName}";
+                }
+            }
 
-            // TODO: replace this placeholder with your real invoice creation logic
-            // Example: create invoices for patients who should be billed
-            int createdCount = 0;
-            var billablePatients = await _context.Set<Patient>().Where(p => /* your criteria */ true).ToListAsync();
+            // persist payment record
+            var payment = new Payment
+            {
+                InvoiceId = model.InvoiceId,
+                // set PatientId from invoice to keep in sync
+                PatientId = (await _context.Invoices.Where(i => i.InvoiceId == model.InvoiceId)
+                                                    .Select(i => (int?)i.PatientId)
+                                                    .FirstOrDefaultAsync()),
+                PaymentMethod = model.PaymentMethod,
+                TransactionNumber = model.TransactionNumber,
+                TransactionDate = model.TransactionDate,
+                AmountPaid = model.AmountPaid ?? 0m,
+                Remarks = model.Remarks,
+                // Payment.ProofFileName is an IFormFile in the model; assign the uploaded file (model.ProofFile) instead of the string URL.
+                ProofFileName = model.ProofFile,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = User?.Identity?.Name ?? "system"
+            };
 
-            // foreach (var p in billablePatients)
-            // {
-            //     var invoice = new Invoice
-            //     {
-            //         PatientId = p.Id,
-            //         Month = model.Month.Value,
-            //         Year = model.Year.Value,
-            //         DueDate = model.DueDate.Value,
-            //         CreatedAt = DateTime.UtcNow,
-            //         Amount = 0m // compute real amount
-            //     };
-            //     _context.Add(invoice);
-            //     createdCount++;
-            // }
-
+            _context.Payments.Add(payment);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"Monthly Invoices Generated Successfully for {displayPeriod}";
-            TempData["GeneratedCount"] = createdCount.ToString();
-            return RedirectToAction(nameof(GenerateInvoice));
+            TempData["SuccessMessage"] = "Payment uploaded successfully.";
+            return RedirectToAction("Index");
         }
     }
 }
