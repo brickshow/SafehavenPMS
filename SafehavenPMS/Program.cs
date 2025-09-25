@@ -1,87 +1,70 @@
-
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.Services;
+using System;
+using System.Linq;
+using Microsoft.AspNetCore.Identity;    
+using SafehavenPMS.Models;
+using SafehavenPMS.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Register DbContext (update connection string name as needed)
+builder.Services.AddDbContext<SafehavenPMSContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register email service if used by controllers
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Add MVC
 builder.Services.AddControllersWithViews();
 
-//Adding sessions
+// Enable session
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    //Sessions will expires within 30 minutes
     options.IdleTimeout = TimeSpan.FromMinutes(30);
-
-    // Make the session cookie HTTP only for security
     options.Cookie.HttpOnly = true;
-
-    // Mark the session cookie as essential for GDPR compliance
     options.Cookie.IsEssential = true;
 });
 
-//Configure Entity Framework Core with SQL Server
-builder.Services.AddDbContext<SafehavenPMS.Data.SafehavenPMSContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Register the background service that will run in the background
-// This service (AppointmentStatusUpdater) will check periodically
-// if any appointments have already ended, and automatically update
-// their status from "Confirmed" to "Done".
+// 🔐 Add cookie authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Login/Login";      // redirect here if not logged in
+        options.LogoutPath = "/Login/Logout";    // optional logout path
+        options.AccessDeniedPath = "/Login/AccessDenied"; // if role restricted
+        options.Cookie.Name = "Safehaven.Auth";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    });
 
 var app = builder.Build();
 
-// Enable session middleware in the request pipeline
-app.UseSession();
-
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
+// Middleware order matters 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
 app.UseRouting();
 
+app.UseAuthentication(); // must be before UseAuthorization
 app.UseAuthorization();
 
-app.MapStaticAssets();
+app.UseSession();
+
+
+// Default route
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
-
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-//    try
-//    {
-//        var context = services.GetRequiredService<SafehavenPMSContext>();
-//        context.Database.Migrate();
-
-
-//        // Seed Religions
-//        var religionPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Religion.json");
-//        await DataSeeder.SeedReligionsAsync(context, religionPath);
-
-//        // Seed Nationalities
-//        var nationalityPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "SeedData", "Nationality.json");
-//        await DataSeeder.SeedNationalitiesAsync(context, nationalityPath);
-
-//    }
-//    catch (Exception ex)
-//    {
-//        Console.WriteLine(ex.ToString());
-//        var logger = services.GetRequiredService<ILogger<Program>>();
-//        logger.LogError(ex, "An error occurred while seeding the database.");
-//    }
-//}
-
-
+    pattern: "{controller=Login}/{action=Login}/{id?}");
 
 app.Run();
+

@@ -20,6 +20,8 @@ namespace SafehavenPMS.Data
         public DbSet<MedicationOrder> MedicationOrders { get; set; }
         public DbSet<Admission> Admissions { get; set; }
 
+        public DbSet<User> Users { get; set; }
+
         public DbSet<AdministrationLog> AdministrationLogs { get; set; }
 
         //Intake forms Entities
@@ -57,6 +59,8 @@ namespace SafehavenPMS.Data
 
         // Progress notes entity
         public DbSet<ProgressNote> ProgressNotes { get; set; }
+        public DbSet<SafehavenPMS.Models.MiscellaneousItem> MiscellaneousItems { get; set; }
+        public DbSet<SafehavenPMS.Models.Billable> Billables { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

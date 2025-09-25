@@ -1,0 +1,314 @@
+@model IEnumerable<SafehavenPMS.Models.User>
+
+@{
+    ViewBag.Title = "Users";
+}
+
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center g-4">
+            <div class="d-flex justify-content-center align-items-center">
+                <i class='bx bxs-user fs-2 me-2'></i>
+                <h5 class="text-custom mb-0">Users</h5>
+            </div>
+
+            <div class="top-content m-2 d-flex justify-content-between align-content-center">
+                <div class="top-left-corner d-flex flex-row align-items-center gap-2">
+
+                    @* Search + Filters (follow Patient.Index pattern using ViewBag) *@
+                    @{
+                        var searchQuery = (ViewBag.SearchQuery ?? String.Empty).ToString();
+                        var roleVal = (ViewBag.Role ?? String.Empty).ToString();
+                        var showInactiveVal = (ViewBag.ShowInactive ?? "").ToString(); // ensure string
+                    }
+                    <form asp-action="Index" asp-controller="User" method="get" class="d-flex flex-row align-items-center gap-2">
+                        <div class="search-input-wrapper d-flex flex-row gap-2 align-items-center">
+                            <i class='bx bx-search search-icon'></i>
+                            <input name="searchQuery" value="@(searchQuery)" class="form-control search-input" placeholder="Search users by name, username or email..." />
+                        </div>
+
+                        @* role filter (keep commented if not used) *@
+                        @* 
+                        <select name="role" class="form-select" style="width:180px;">
+                            <option value="" @(string.IsNullOrEmpty(roleVal) ? "selected" : "")>All roles</option>
+                            <option value="Medical Doctor" @(roleVal == "Medical Doctor" ? "selected" : "")>Medical Doctor</option>
+                            <option value="Therapist" @(roleVal == "Therapist" ? "selected" : "")>Therapist</option>
+                            <option value="Social Worker" @(roleVal == "Social Worker" ? "selected" : "")>Social Worker</option>
+                        </select>
+                        *@
+
+                        <div class="form-check d-flex align-items-center ms-1">
+                            <input class="form-check-input" type="checkbox" name="showInactive" value="1" id="showInactive" @(showInactiveVal == "1" ? "checked" : "") />
+                            <label class="form-check-label ms-1" for="showInactive">Show inactive</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-secondary">Filter</button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        @* <a href="@Url.Action("Create", "User")" class="btn-custom text-decoration-none btn-primary">
+            <i class='bx bx-user-plus me-1'></i>
+            New User
+        </a> *@
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+<!-- Table Container (copied Patient layout) -->
+<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius:10px">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="successToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["SuccessMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" id="errorToast">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["Error"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="table-header d-flex justify-content-center align-items-center text-center">
+        <h5 class="mb-0">@(ViewBag.TotalUserCount > 0 ? ViewBag.TotalUserCount + " Users" : "No Users found")</h5>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center m-2 mt-4">
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Show</span>
+            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                <input type="hidden" name="status" value="@ViewBag.Status" />
+                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
+                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-center">
+            <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
+        </div>
+    </div>
+
+    <div class="table-responsive-custom">
+        <table class="table mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>No.</th>
+                    <th>User</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Action</th> 
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model?.Any() ?? true)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center">No users found.</td>
+                    </tr>
+                }
+                else
+                {
+                    int startRow = ((ViewBag.CurrentPage as int? ?? 1) - 1) * (ViewBag.PageSize as int? ?? Model.Count());
+                    int row = startRow + 1;
+                    foreach (var u in Model)
+                    {
+                        <tr>
+                            <td>@row</td>
+                            <td>
+                                @{
+                                    var full = string.Empty;
+                                    if (u.ClinicalStaff != null)
+                                    {
+                                        full = $"{u.ClinicalStaff.Firstname} {u.ClinicalStaff.Lastname}".Trim();
+                                    }
+                                    if (string.IsNullOrWhiteSpace(full))
+                                    {
+                                        full = u.Username;
+                                    }
+                                }
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold">@full</span>
+                                    <small class="text-muted">@u.Role</small>
+                                </div>
+                            </td>
+                            <td>@u.Username</td>
+                            <td>@u.Role</td>
+                            <td>@u.Email</td>
+                            <td class="text-center">
+                                @if (u.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 180px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" asp-controller="User" asp-action="Details">
+                                                View
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#confirmDeactivateModal"
+                                               data-user-id="@u.UserId"
+                                               data-user-name="@full">
+                                                <i class="bx bx-trash"></i> Deactivate
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        row++;
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="bot-content py-3">
+        <div class="d-flex justify-content-between align-items-center px-3">
+            <div style="opacity:.5;">
+                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalUserCount ?? 0)</span>
+            </div>
+            <nav aria-label="User list pagination">
+                <ul class="pagination mb-0">
+                    <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "User", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = showInactiveVal })" aria-label="Previous">
+                            <i class='bx bx-chevron-left fs-5'></i>
+                        </a>
+                    </li>
+                    @if (ViewBag.PageSize != null && (int)ViewBag.PageSize > 0)
+                    {
+                        int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+                        int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+                        int startPage = Math.Max(1, currentPage - 2);
+                        int endPage = Math.Min(totalPages, currentPage + 2);
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", "User", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = showInactiveVal })">@i</a>
+                            </li>
+                        }
+                    }
+                    <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "User", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = showInactiveVal })" aria-label="Next">
+                            <i class='bx bx-chevron-right fs-5'></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Deactivation Confirmation -->
+<div class="modal fade" id="confirmDeactivateModal" tabindex="-1" aria-labelledby="confirmDeactivateLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="deactivateForm" asp-controller="User" asp-action="Deactivate" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeactivateLabel">Confirm Deactivation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to deactivate <strong id="deactivateUserName"></strong>?
+                </div>
+
+                <input type="hidden" name="id" id="deactivateUserId" value="" />
+                <input type="hidden" name="searchQuery" value="@(ViewBag.SearchQuery ?? String.Empty)" />
+                <input type="hidden" name="role" value="@(ViewBag.Role ?? String.Empty)" />
+                <input type="hidden" name="showInactive" value="@(showInactiveVal ?? "")" />
+                <input type="hidden" name="page" value="@(ViewBag.CurrentPage ?? 1)" />
+                <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 10)" />
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Deactivate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-header {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+    .table-responsive-custom { overflow: visible !important; }
+    .print-button { width: 40px; height: 40px; border-radius: 6px; background-color: white; border: 1px solid #e9ecef; color: #495057; transition: background-color 0.3s; }
+    .print-button:hover { background-color: #e9ecef; }
+    .rotate-180 { transform: rotate(180deg); }
+</style>
+
+@section Scripts {
+    <script>
+        // submit filter on Enter
+        document.querySelectorAll('.search-input').forEach(function (el) {
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.closest('form')?.submit();
+                }
+            });
+        });
+
+        (function () {
+            var modalEl = document.getElementById('confirmDeactivateModal');
+            if (!modalEl) return;
+
+            modalEl.addEventListener('show.bs.modal', function (event) {
+                var trigger = event.relatedTarget;
+                if (!trigger) return;
+                var userId = trigger.getAttribute('data-user-id') || '';
+                var userName = trigger.getAttribute('data-user-name') || '';
+
+                document.getElementById('deactivateUserId').value = userId;
+                document.getElementById('deactivateUserName').textContent = userName;
+            });
+        })();
+    </script>
+}

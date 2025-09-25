@@ -34,6 +34,31 @@
     <link rel="stylesheet" href="https://cdn.lineicons.com/2.0/LineIcons.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SafeHavenPatientManagementSystem.styles.css" asp-append-version="true" />
+    <style>
+        /* hide submenus by default and show when .show applied */
+        ul.submenu {
+            display: none;
+            margin: 0;
+            padding-left: 12px;
+        }
+        ul.submenu.show {
+            display: block;
+        }
+
+        /* caret rotation when parent open */
+        .nav-parent .caret {
+            transition: transform .18s ease;
+            display: inline-block;
+        }
+        li.open > a .caret {
+            transform: rotate(-180deg);
+        }
+
+        /* safety: also allow li.open to show submenu */
+        li.open > .submenu {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar close">
@@ -44,7 +69,30 @@
         </div>
 
         <!-- Navigation Links -->
-        <ul class="nav-links">
+        @* Family Portal *@
+         <!-- Navigation Links -->
+        @* Sidebar navigation: show only Billing for Family users, otherwise show full menu *@
+        @if (User.IsInRole("Family"))
+        {
+            <ul class="nav-links">
+                <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <a asp-controller="Home" asp-action="Index">
+                    <i class='bx bxs-dashboard'></i>
+                    <span class="link_name">Dashboard</span>
+                </a>
+                </li>
+
+                <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Billing" ? "active" : "")">
+                    <a asp-controller="Billing" asp-action="Index">
+                        <i class='bx bxs-receipt'></i>
+                        <span class="link_name">Billing</span>
+                    </a>
+                </li>
+            </ul>
+        }
+        else
+        {
+         <ul class="nav-links">
             <!-- Dashboard -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
                 <a asp-controller="Home" asp-action="Index">
@@ -62,7 +110,7 @@
                 <ul class="submenu">
                     <li>
                         <a asp-controller="Patient" asp-action="AddNewPatient">
-                            <span>Register Patient </span>
+                            <span>Register Patient</span>
                         </a>
                     </li>
                     <li>
@@ -74,13 +122,14 @@
                         <a asp-controller="TreatmenPlan" asp-action="Index">
                             <span>Treatment Plan</span>
                         </a>
-                       <li>
+                    </li>
+                    <li>
                         <a asp-controller="ProgressNote" asp-action="Index">
                             <span>Progress Notes</span>
                         </a>
                     </li>
                 </ul>
-            </li>
+             </li>
 
             <!-- Patient Movements -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "PatientMovement" ? "active" : "")">
@@ -155,15 +204,13 @@
                         <a asp-controller="ServiceType" asp-action="Index">
                             <span>Service Type</span>
                         </a> *@
-                    </li>
+                    <!-- commented ServiceType item above -->
                     <li>
                         <a asp-controller="Services" asp-action="Index">
                             <span>Services</span>
                         </a>
                     </li>
                 </ul>
-            </li>
-
             </li>
             <!-- Clinical Staff -->
             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "ClinicalStaff" ? "active" : "")">
@@ -209,7 +256,7 @@
             </li>
             <!-- Users -->
             <li class="navigation">
-                <a asp-controller="Users" asp-action="Index">
+                <a asp-controller="User" asp-action="Index">
                     <i class='bx bxs-user-account'></i>
                     <span class="link_name">Users</span>
                 </a>
@@ -222,23 +269,22 @@
                 </a>
             </li>
         </ul>
+        }
+        
         <!-- Bottom Section with DateTime and Logout -->
         <div class="sidebar-footer">
-            <form asp-area="Identity" asp-page="/Account/Logout"
-                  asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
-                  method="post">
-                <button type="submit" class="logout-button">
-                    <i class='bx bx-log-out'></i>
-                    <span>Logout</span>
-                </button>
-            </form>
+            <!-- trigger modal instead of direct form submit -->
+            <a href="#" class="logout-button btn btn-link p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                <i class='bx bx-log-out'></i>
+                <span>Logout</span>
+            </a>
         </div>
     </div>
     <!-- Main Content Section -->
     <section class="home-section">
         <div class="home-content">
             <div class="home-content-left">
-                <i class='bx bx-menu'></i>
+                <i class='bx bx-menu'></i>  
             </div>
             <div class="home-content-right">
                 <!-- Message icon -->
@@ -262,17 +308,41 @@
             @RenderBody()
         </div>
     </section>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-controller="Login" asp-action="Logout" method="post" id="logoutModalForm">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to sign out?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Logout</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Global Appointment Modal -->
     @await Html.PartialAsync("_AddAppointmentModal")
 
+    <!-- Bootstrap JS (bundle includes Popper). Required for modal to work. -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @* OR local copy:
+       <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script> *@
+
     @await RenderSectionAsync("Scripts", required: false)
 
 
-
+    
     @* Loader *@
     <div id="loadingOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;align-items:center;justify-content:center;">
         @* Imported from UIVerse *@
@@ -318,5 +388,33 @@
     window.addEventListener('pageshow', function () {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) overlay.style.display = 'none';
+    });
+
+    // NEW: sidebar toggle and submenu behavior (improved)
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.querySelector('.home-content-left i'); // menu icon
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', function () {
+                sidebar.classList.toggle('close');
+            });
+        }
+
+        // Attach click handlers to the anchor with class "nav-parent"
+        document.querySelectorAll('a.nav-parent').forEach(function (anchor) {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const li = anchor.closest('li');
+                if (!li) return;
+
+                // toggle visual open state on the li
+                li.classList.toggle('open');
+
+                // toggle the submenu visibility
+                const submenu = li.querySelector('.submenu');
+                if (submenu) submenu.classList.toggle('show');
+            });
+        });
     });
 </script>

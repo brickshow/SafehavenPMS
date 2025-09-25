@@ -77,9 +77,10 @@
                 <div class="row g-3 justify-content-center">
                     <!-- Physician -->
                     <div class="col-md-6">
-                        <label class="form-label">Physician</label>
-                        <input type="hidden" asp-for="PhysicianId" value="@Model.PhysicianId" />
-                        <input type="text" class="form-control" value="@Model.PhysicianName " readonly />
+                        <label asp-for="PhysicianId" class="form-label">Physician</label>
+                        <select asp-for="PhysicianId" asp-items="ViewBag.Physicians" class="form-select">
+                            <option value="">--Select--</option>
+                        </select>
                     </div>
 
                     <!-- Psychologist -->
@@ -113,6 +114,44 @@
                             <option value="">--Select--</option>
                         </select>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        @* Family feilds for family portal *@
+        <div class="section-header bg-teal text-white p-2 mb-3 w-100" style="background-color: #015F6B;">
+            Family / Responsible for Payment
+        </div>
+
+        <div class="container mb-3">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="FamilyName" class="form-label">Full Name</label>
+                    <input asp-for="FamilyName" class="form-control" />
+                    <span asp-validation-for="FamilyName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="FamilyRelationship" class="form-label">Relationship</label>
+                    <input asp-for="FamilyRelationship" class="form-control" />
+                    <span asp-validation-for="FamilyRelationship" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="FamilyPhone" class="form-label">Phone</label>
+                    <input asp-for="FamilyPhone" class="form-control" />
+                    <span asp-validation-for="FamilyPhone" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="FamilyEmail" class="form-label">Email</label>
+                    <input asp-for="FamilyEmail" class="form-control" />
+                    <span asp-validation-for="FamilyEmail" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 d-flex align-items-center">
+                    <input type="checkbox" id="ActivatePortal" asp-for="ActivatePortal" class="form-check-input me-2" />
+                    <label for="ActivatePortal" class="form-check-label">Create portal access for this family member</label>
                 </div>
             </div>
         </div>
@@ -152,4 +191,18 @@
             console.error("Error fetching:", err);
         }
     });
+
+    // show/hide portal fields
+    (function () {
+        const chk = document.getElementById('isPortalUser');
+        const portalFields = document.querySelectorAll('.portal-fields');
+        function toggle() {
+            portalFields.forEach(f => f.style.display = chk.checked ? 'block' : 'none');
+        }
+        if (chk) {
+            chk.addEventListener('change', toggle);
+            // initial state from server-side value
+            toggle();
+        }
+    })();
 </script>

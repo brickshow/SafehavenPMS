@@ -8,6 +8,8 @@ namespace SafehavenPMS.Models
         [Key]
         public int MedicationOrderId { get; set; }
 
+        public int? AdministrationLogId { get; set; }
+
         // Patient
         [Required]
         public int PatientId { get; set; }

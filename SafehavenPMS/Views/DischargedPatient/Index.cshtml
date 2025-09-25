@@ -111,6 +111,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Patient</th>
+                    <th>Admission Date</th>
                     <th>Discharged Date</th>
                     <th>Reason</th>
                     <th class="text-center">Status</th>
@@ -132,6 +133,7 @@
                         <tr>
                             <td>@row</td>
                             <td>@(discharged.PatientName ?? "-")</td>
+                            <td></td>
                             <td>@(discharged.DischargeDate?.ToString("MMM dd, yyyy") ?? "-")</td>
                             <td>@(discharged.Reason ?? "-")</td>
                             <td class="text-center">

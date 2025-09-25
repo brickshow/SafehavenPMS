@@ -1,0 +1,314 @@
+@model SafehavenPMS.ViewModel.Billing.MiscellaneousItemViewModel
+
+@{
+    ViewBag.Title = "Add Miscellaneous";
+}
+
+@* Content Header *@
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="@Url.Action("Index")" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <!-- Header -->
+        <div class="p-2" style="background-color:#0097a7; color:#fff;">
+            <h5 class="modal-title">Add Miscellaneous Item</h5>
+        </div>
+
+        <div class="card-body">
+            <form asp-action="AddMiscellaneousItem" asp-controller="Billing" method="post" id="miscellaneousForm">
+                @Html.AntiForgeryToken()
+
+                <!-- Patient Section -->
+                <div class="mb-3">
+                    <label class="form-labelSSSSSS fw-semibold">Patient</label>
+
+                    <!-- make wrapper position-relative so absolute dropdown can match input width -->
+                    <div class="position-relative">
+                        <div class="input-group">
+                            <input type="text" id="patientSearch" class="form-control" placeholder="Search patient name/id ..." autocomplete="off" />
+                            <button type="button" class="btn btn-info text-white">Search</button>
+                        </div>
+
+                        <!-- suggestions dropdown now full width of the input-group -->
+                        <ul id="patientSuggestions"
+                            class="list-group position-absolute w-100 start-0"
+                            style="z-index:1055; display:none; max-height:240px; overflow:auto;">
+                        </ul>
+                    </div>
+
+                    <input asp-for="PatientId" id="PatientId" type="hidden" />
+                </div>
+
+                <h6 class="fw-semibold">Items</h6>
+
+                <div class="mb-3">
+                    <div id="itemRows">
+                        @if (Model?.ItemDescriptions != null && Model.Amounts != null && Model.ItemDescriptions.Count > 0)
+                        {
+                            @for (var i = 0; i < Model.ItemDescriptions.Count; i++)
+                            {
+                                <div class="row g-2 align-items-center mb-2 item-entry">
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control"
+                                               name="ItemDescriptions[@i]"
+                                               id="ItemDescriptions_@i"
+                                               value="@(Model.ItemDescriptions[i] ?? "")"
+                                               placeholder="Item Description" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="number" class="form-control text-end"
+                                               name="Amounts[@i]"
+                                               id="Amounts_@i"
+                                               value="@(Model.Amounts.Count > i ? Model.Amounts[i].ToString("F2") : "0.00")"
+                                               placeholder="Amount" min="0.01" step="0.01" required />
+                                    </div>
+                                    <div class="col-md-1 text-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeItem(this)" aria-label="Remove row">
+                                            <i class="bx bxs-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- initial empty state: nothing server-rendered; JS will ensure at least one row exists -->
+                        }
+                    </div>
+                </div>
+
+                <!-- single-line add controls (ProblemList style) -->
+                <div class="row g-2 align-items-center mb-3">
+                    <div class="col-md-7">
+                        <input type="text" id="newDescription" class="form-control" placeholder="Enter item description" />
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" id="newAmount" class="form-control text-end" placeholder="Amount" min="0.01" step="0.01" />
+                    </div>
+                    <div class="col-md-1 text-center">
+                        <button type="button" class="btn btn-sm btn-teal" onclick="addItem()">
+                            <i class="bx bx-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-3">
+                    <h5 class="mb-0 fw-bold">TOTAL</h5>
+                    <h5 class="mb-0 fw-bold text-dark">₱<span id="totalAmount">0</span></h5>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end">
+                    <a class="btn btn-secondary" asp-action="Index" asp-controller="Billing">Cancel</a>
+                    <button type="submit" class="btn btn-info text-white">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+(function () {
+    // Patient search (existing)
+    const input = document.getElementById('patientSearch');
+    const list = document.getElementById('patientSuggestions');
+    const hiddenId = document.getElementById('PatientId');
+    let debounce;
+
+    if (input && list) {
+        function render(items) {
+            if (!items || items.length === 0) { list.style.display = 'none'; list.innerHTML = ''; return; }
+            list.innerHTML = items.map(it => `<li class="list-group-item list-group-item-action" data-id="${it.id}">${it.text}</li>`).join('');
+            list.style.display = 'block';
+        }
+
+        async function fetchMatches(q) {
+            try {
+                const res = await fetch('/Billing/SearchPatients?q=' + encodeURIComponent(q), { credentials: 'same-origin' });
+                if (!res.ok) return render([]);
+                const data = await res.json();
+                render(data);
+            } catch (e) { console.error(e); render([]); }
+        }
+
+        input.addEventListener('input', () => {
+            const q = input.value.trim();
+            if (hiddenId) hiddenId.value = ''; // clear previously selected id when typing
+            if (q.length < 1) { list.style.display = 'none'; list.innerHTML = ''; return; }
+            clearTimeout(debounce);
+            debounce = setTimeout(() => fetchMatches(q), 200);
+        }, { passive: true });
+
+        list.addEventListener('click', (e) => {
+            const li = e.target.closest('li[data-id]');
+            if (!li) return;
+            input.value = li.textContent.trim();
+            if (hiddenId) hiddenId.value = li.getAttribute('data-id');
+            list.style.display = 'none';
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (list.style.display !== 'block') return;
+            const active = list.querySelector('.active');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = active ? (active.nextElementSibling || active) : list.querySelector('li');
+                active?.classList.remove('active');
+                next?.classList.add('active');
+                next?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prev = active ? (active.previousElementSibling || active) : list.querySelector('li:last-child');
+                active?.classList.remove('active');
+                prev?.classList.add('active');
+                prev?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter') {
+                const pick = list.querySelector('.active') || list.querySelector('li');
+                if (pick) { e.preventDefault(); pick.click(); }
+            } else if (e.key === 'Escape') {
+                list.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
+        });
+    }
+
+    // Items add/remove (ProblemList style)
+    const container = document.getElementById('itemRows');
+    const form = document.getElementById('miscellaneousForm');
+
+    function reindexItems() {
+        if (!container) return;
+        const entries = container.querySelectorAll('.item-entry');
+        entries.forEach((row, i) => {
+            const desc = row.querySelector('input[type="text"]');
+            const amt = row.querySelector('input[type="number"]');
+            if (desc) { desc.name = `ItemDescriptions[${i}]`; desc.id = `ItemDescriptions_${i}`; }
+            if (amt) { amt.name = `Amounts[${i}]`; amt.id = `Amounts_${i}`; }
+        });
+    }
+
+    window.addItem = function () {
+        const descEl = document.getElementById('newDescription');
+        const amtEl = document.getElementById('newAmount');
+        const desc = (descEl?.value || '').trim();
+        const amt = parseFloat(amtEl?.value || 0);
+
+        if (!desc) { alert('Enter item description'); descEl?.focus(); return; }
+        if (!(amt > 0)) { alert('Enter amount greater than 0'); amtEl?.focus(); return; }
+
+        const index = container.querySelectorAll('.item-entry').length;
+        const div = document.createElement('div');
+        div.className = 'row g-2 align-items-center mb-2 item-entry';
+        div.innerHTML = `
+            <div class="col-md-7">
+                <input type="text" class="form-control" name="ItemDescriptions[${index}]" id="ItemDescriptions_${index}" value="${escapeHtml(desc)}" placeholder="Item Description" required />
+            </div>
+            <div class="col-md-4">
+                <input type="number" class="form-control text-end" name="Amounts[${index}]" id="Amounts_${index}" value="${amt.toFixed(2)}" placeholder="Amount" min="0.01" step="0.01" required />
+            </div>
+            <div class="col-md-1 text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeItem(this)" aria-label="Remove row">
+                    <i class="bx bxs-trash"></i>
+                </button>
+            </div>`;
+        container.appendChild(div);
+
+        // clear inputs
+        descEl.value = '';
+        amtEl.value = '';
+
+        reindexItems();
+        calculateTotal();
+    };
+
+    window.removeItem = function (btn) {
+        const row = btn.closest('.item-entry');
+        if (!row || !container) return;
+        row.remove();
+        reindexItems();
+        calculateTotal();
+    };
+
+    function calculateTotal() {
+        let total = 0;
+        if (!container) return;
+        container.querySelectorAll('input[name^="Amounts"]').forEach(i => {
+            total += parseFloat(i.value) || 0;
+        });
+        const target = document.getElementById('totalAmount');
+        if (target) target.textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // helper to escape user input for insertion into HTML value attribute
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // ensure at least one row exists (if none server-rendered)
+    if (container && container.querySelectorAll('.item-entry').length === 0) {
+        // nothing pre-rendered — leave blank and wait for user to add via inputs
+    }
+
+    // Form submit validation (patient + items)
+    form?.addEventListener('submit', function (e) {
+        if (!hiddenId || !hiddenId.value || hiddenId.value === "0") {
+            e.preventDefault();
+            input?.classList.add('is-invalid');
+            input?.focus();
+            alert('Please select a patient from the list.');
+            return;
+        }
+
+        if (!container) return;
+        const entries = container.querySelectorAll('.item-entry');
+        if (entries.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one item.');
+            return;
+        }
+
+        let valid = true;
+        entries.forEach(row => {
+            const descEl = row.querySelector('input[type="text"]');
+            const amtEl = row.querySelector('input[type="number"]');
+            if (!descEl || !amtEl) { valid = false; return; }
+            const desc = (descEl.value || '').trim();
+            const amt = parseFloat(amtEl.value || 0);
+            if (!desc || !(amt > 0)) {
+                valid = false;
+                if (!desc) descEl.classList.add('is-invalid');
+                if (!(amt > 0)) amtEl.classList.add('is-invalid');
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+            const firstInvalid = form.querySelector('.is-invalid');
+            firstInvalid?.focus();
+            alert('Please fix item rows (description and amount > 0).');
+            return;
+        }
+    });
+
+    // initial total
+    calculateTotal();
+})();
+</script>

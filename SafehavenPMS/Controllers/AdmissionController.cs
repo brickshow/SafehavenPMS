@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using SafehavenPMS.Data;
 using SafehavenPMS.Enum;
 using SafehavenPMS.Models;
+using SafehavenPMS.Services;
 using SafehavenPMS.ViewModel;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace SafehavenPMS.Controllers
@@ -14,10 +17,13 @@ namespace SafehavenPMS.Controllers
     public class AdmissionController : Controller
     {
         private readonly SafehavenPMSContext _context;
+        private readonly IEmailService _emailService;
 
-        public AdmissionController(SafehavenPMSContext context)
+        // ...existing code...
+        public AdmissionController(SafehavenPMSContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         // Action to list admissions or initial assessments with search, sort, paging
@@ -158,8 +164,6 @@ namespace SafehavenPMS.Controllers
                         .Select(c => c.ClinicalStaff.ClinicalStaffID)
                         .FirstOrDefault();
 
-
-
                     // Provide a readable physician name for the read-only field in the view
                     var physician = patient.ClinicalStaffPatients?
                         .Select(c => c.ClinicalStaff)
@@ -168,6 +172,16 @@ namespace SafehavenPMS.Controllers
 
                     if (physician != null)
                         vm.PhysicianName = $"{physician.Firstname} {physician.Lastname}";
+
+                    // // NEW: populate clinical team members for display
+                    // vm.ClinicalTeam = patient.ClinicalStaffPatients?
+                    //     .Where(c => c.ClinicalStaff != null)
+                    //     .Select(c => new AdmitPatientViewModel.ClinicalTeamMember
+                    //     {
+                    //         Id = c.ClinicalStaff.ClinicalStaffID,
+                    //         FullName = $"{c.ClinicalStaff.Firstname} {c.ClinicalStaff.Lastname}".Trim(),
+                    //         Position = c.ClinicalStaff.Position ?? ""
+                    //     }).ToList() ?? new List<AdmitPatientViewModel.ClinicalTeamMember>();
                 }
             }
 
@@ -185,118 +199,159 @@ namespace SafehavenPMS.Controllers
             return years.ToString();
         }
 
-        // POST: AdmitPatient - create an admission for a patient
-        [HttpPost]
+          [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdmitPatient(AdmitPatientViewModel model)
         {
             if (!ModelState.IsValid)
             {
-                foreach (var state in ModelState) // log each validation error
-                {
-                    var key = state.Key;
-                    foreach (var error in state.Value.Errors)
-                    {
-                        Console.WriteLine($"Field: {key}, Error: {error.ErrorMessage}");
-                    }
-                }
-                await PopulateClinicalStaffDropdowns(); // repopulate dropdowns for redisplay
-                return View(model); // return view with validation messagescd 
-            }
-
-            var patient = await _context.Admissions
-                .Include(p => p.Patient)
-                .Include(p => p.ClinicalStaffPatients)
-                .FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
-
-            if (patient == null)
-            {
-                ModelState.AddModelError("", "Patient not found.");
                 await PopulateClinicalStaffDropdowns();
                 return View(model);
             }
 
-            // Generate next CaseId "CASE-000001"
-            var newCaseId = await GenerateNextCaseIdAsync();
-
-
-
-            // Update admission entity
-
-            patient.CaseId = newCaseId;
-            patient.PatientId = model.PatientId;
-            patient.PhysicianId = model.PhysicianId;
-            patient.PsychologistId = model.PsychologistId;
-            patient.PsychometricianId = model.PsychometricianId;
-            patient.SocialWorkerId = model.SocialWorkerId;
-            patient.RecoveryCoachId = model.RecoveryCoachId;
-            patient.CreatedAt = DateTime.Now;
-            patient.CreatedBy = User?.Identity?.Name ?? "System";
-            patient.Status = AdmissionStatus.Active.ToString();
-
-
-            // Use transaction to ensure consistency when creating admission + clinical staff link + updating patient
-            using (var tx = await _context.Database.BeginTransactionAsync())
+            var patient = await _context.Patients.FindAsync(model.PatientId);
+            if (patient == null)
             {
-                try
-                {
-                    // Add ClinicalStaffPatient entries for selected roles (avoid duplicates)
-                    var staffIds = new int?[]
-                    {
-                        model.PhysicianId,
-                        model.PsychologistId,
-                        model.PsychometricianId,
-                        model.SocialWorkerId,
-                        model.RecoveryCoachId
-                    }.Where(id => id.HasValue).Select(id => id!.Value).Distinct();
-
-                    foreach (var staffId in staffIds)
-                    {
-                        var exists = await _context.ClinicalStaffPatients
-                            .AnyAsync(csp => csp.PatientId == patient.PatientId && csp.ClinicalStaffId == staffId);
-
-                        if (!exists)
-                        {
-                            _context.ClinicalStaffPatients.Add(new ClinicalStaffPatient
-                            {
-                                PatientId = patient.PatientId,
-                                ClinicalStaffId = staffId
-                            });
-                        }
-                    }
-
-                    // Update patient status
-                    patient.Patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
-
-
-                    // Prepopulate Psychiatric fields
-                    var psychiatricAssessment = new PsychiatricAssessment
-                    {
-                        PatientId = patient.PatientId,
-                        Type = "Psychiatric Assessment",
-                        Date = DateTime.Now,
-                        Time = DateTime.Now.ToString("hh:mm tt"),
-                        Status = "Pending",
-                        CreatedAt = DateTime.Now,
-                        CreatedBy = User?.Identity?.Name ?? "System"
-                    };
-                    _context.PsychiatricAssessments.Add(psychiatricAssessment);
-
-                    await _context.SaveChangesAsync();
-                    await tx.CommitAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error admitting patient: " + ex);
-                    await tx.RollbackAsync();
-                    ModelState.AddModelError("", "Unable to admit patient. Please try again.");
-                    await PopulateClinicalStaffDropdowns();
-                    return View(model);
-                }
+                return NotFound();
             }
 
-            TempData["SuccessMessage"] = $"Patient {model.FullName} admitted successfully!";
-            return RedirectToAction("Index");
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // create admission
+                var admission = new Admission
+                {
+                    PatientId = model.PatientId,
+                    PhysicianId = model.PhysicianId,
+                    PsychologistId = model.PsychologistId,
+                    PsychometricianId = model.PsychometricianId,
+                    SocialWorkerId = model.SocialWorkerId,
+                    RecoveryCoachId = model.RecoveryCoachId,
+                    CreatedAt = DateTime.UtcNow,
+                    Status = "Active" // adjust as appropriate
+                };
+
+                _context.Admissions.Add(admission);
+                await _context.SaveChangesAsync(); // need AdmissionId for joins
+
+                // prepare selected staff ids
+                var selectedStaffIds = new int?[]
+                {
+                    model.PhysicianId,
+                    model.PsychologistId,
+                    model.PsychometricianId,
+                    model.SocialWorkerId,
+                    model.RecoveryCoachId
+                }
+                .Where(x => x.HasValue)
+                .Select(x => x!.Value)
+                .Distinct()
+                .ToList();
+
+                Console.WriteLine("SelectedStaffIds: " + (selectedStaffIds.Any() ? string.Join(",", selectedStaffIds) : "(none)"));
+
+                // Query DB for existing ClinicalStaffPatient entries for this patient to avoid duplicate PK inserts
+                var persistedStaffIds = await _context.ClinicalStaffPatients
+                    .Where(c => c.PatientId == model.PatientId)
+                    .Select(c => c.ClinicalStaffId)
+                    .ToListAsync();
+
+                Console.WriteLine("PersistedStaffIds for patient " + model.PatientId + ": " +
+                                  (persistedStaffIds.Any() ? string.Join(",", persistedStaffIds) : "(none)"));
+
+                // Only add joins that are selected but not already persisted
+                var toAddIds = selectedStaffIds.Where(id => !persistedStaffIds.Contains(id)).ToList();
+
+                var joins = toAddIds
+                    .Select(id => new ClinicalStaffPatient
+                    {
+                        PatientId = model.PatientId,
+                        ClinicalStaffId = id
+                    })
+                    .ToList();
+
+                Console.WriteLine($"ClinicalStaffPatient to add: {joins.Count}");
+                foreach (var j in joins) Console.WriteLine($"  Add ClinicalStaffId={j.ClinicalStaffId} PatientId={j.PatientId}");
+
+                if (joins.Any())
+                {
+                    await _context.ClinicalStaffPatients.AddRangeAsync(joins);
+                }
+
+                // // If portal activation requested, create User and email credentials
+                // if (model.ActivatePortal && !string.IsNullOrWhiteSpace(model.FamilyEmail))
+                // {
+                    // per request: username = patient id (for now)
+                    var username = model.PatientId.ToString();
+                    var password = GeneratePassword(10);
+
+                    var user = new User
+                    {
+                        Username = username,
+                        Email = model.FamilyEmail,
+                        Role = "Family",
+                        IsActive = true,
+                        PatientId = model.PatientId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    // use ASP.NET Core PasswordHasher (same approach as AccountController)
+                    var hasher = new PasswordHasher<User>();
+                    user.PasswordHash = hasher.HashPassword(user, password);
+
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+
+                    // Send credentials (best-effort; do not fail whole transaction if email fails)
+                    try
+                    {
+                        await _emailService.SendStaffCredentialsAsync(user.Email, user.Username, password, model.FamilyName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Email send failed: " + ex);
+                    }
+                // }
+
+                // update patient status to Admitted
+                patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
+
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                TempData["SuccessMessage"] = "Patient admitted successfully.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                Console.WriteLine("AdmitPatient failed: " + ex);
+                ModelState.AddModelError("", "Unable to admit patient. See logs.");
+                await PopulateClinicalStaffDropdowns();
+                return View(model);
+            }
+        }
+
+        // helper: generate a reasonably strong random password
+        private static string GeneratePassword(int length = 10)
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
+            var data = RandomNumberGenerator.GetBytes(length);
+            var result = new char[length];
+            for (int i = 0; i < length; i++)
+            {
+                result[i] = chars[data[i] % chars.Length];
+            }
+            return new string(result);
+        }
+
+        // helper: PBKDF2 hash using provided Base64 salt
+        private static string HashPassword(string password, string base64Salt)
+        {
+            var salt = Convert.FromBase64String(base64Salt);
+            using var derive = new Rfc2898DeriveBytes(password, salt, 100_000, HashAlgorithmName.SHA256);
+            var hashed = derive.GetBytes(32);
+            return Convert.ToBase64String(hashed);
         }
 
         // helper to produce next CaseId in the format CASE-000001
@@ -449,51 +504,143 @@ namespace SafehavenPMS.Controllers
             return View(vm); // return edit view with VM
         }
 
-        // POST: Edit admission
+        // ...existing code...
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, AdmitPatientViewModel model)
         {
-            if (!ModelState.IsValid) // validate model
+            Console.WriteLine($"Edit POST start: id={id} model.PatientId={model?.PatientId} " +
+                            $"PhysicianId={model?.PhysicianId} PsychologistId={model?.PsychologistId} " +
+                            $"PsychometricianId={model?.PsychometricianId} SocialWorkerId={model?.SocialWorkerId} " +
+                            $"RecoveryCoachId={model?.RecoveryCoachId}");
+
+            if (!ModelState.IsValid)
             {
-                await PopulateClinicalStaffDropdowns(); // repopulate dropdowns for redisplay
-                return View(model); // return view with validation errors
+                Console.WriteLine("ModelState invalid");
+                await PopulateClinicalStaffDropdowns();
+                return View(model);
             }
 
-            // Load admission including patient in case patient fields need to be updated
+            // Load admission including patient and existing clinical staff joins
             var admission = await _context.Admissions
                 .Include(a => a.Patient)
+                .Include(a => a.ClinicalStaffPatients)
                 .FirstOrDefaultAsync(a => a.AdmissionId == id);
 
             if (admission == null)
             {
-                return NotFound(); // admission not found
+                Console.WriteLine($"Admission not found for id={id}");
+                return NotFound();
             }
 
-        
+            Console.WriteLine($"Loaded admission: AdmissionId={admission.AdmissionId}, PatientId={admission.PatientId}, ExistingJoins={admission.ClinicalStaffPatients?.Count ?? 0}");
 
-            // Optional: update patient fields if desired (commented out)
-            // admission.Patient.Occupation = model.Occupation;
-            // admission.Patient.Religion = model.Religion;
-            // admission.Patient.PhoneNumber = model.PhoneNumber;
-
+            using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                _context.Update(admission); // mark admission modified
-                await _context.SaveChangesAsync(); // save changes to DB
+                // Update admission staff selections
+                admission.PhysicianId = model.PhysicianId;
+                admission.PsychologistId = model.PsychologistId;
+                admission.PsychometricianId = model.PsychometricianId;
+                admission.SocialWorkerId = model.SocialWorkerId;
+                admission.RecoveryCoachId = model.RecoveryCoachId;
 
-                TempData["SuccessMessage"] = "Admission updated successfully!"; // success message
+                // Optional: update patient fields if present on model
+                if (admission.Patient != null)
+                {
+                    _context.Patients.Update(admission.Patient);
+                    Console.WriteLine($"Patient updated in context: PatientId={admission.Patient.PatientId}");
+                }
+
+                // Sync ClinicalStaffPatients join table using PatientId
+                var selectedStaffIds = new int?[]
+                {
+                    model.PhysicianId,
+                    model.PsychologistId,
+                    model.PsychometricianId,
+                    model.SocialWorkerId,
+                    model.RecoveryCoachId
+                }
+                .Where(x => x.HasValue)
+                .Select(x => x!.Value)
+                .Distinct()
+                .ToList();
+
+                Console.WriteLine("SelectedStaffIds: " + (selectedStaffIds.Any() ? string.Join(",", selectedStaffIds) : "(none)"));
+
+                var existingJoins = admission.ClinicalStaffPatients?.ToList() ?? new List<ClinicalStaffPatient>();
+                Console.WriteLine("ExistingJoins:");
+                foreach (var j in existingJoins)
+                {
+                    Console.WriteLine($"  Join PatientId={j.PatientId} ClinicalStaffId={j.ClinicalStaffId}");
+                }
+
+                // remove joins that are no longer selected
+                var toRemove = existingJoins.Where(j => !selectedStaffIds.Contains(j.ClinicalStaffId)).ToList();
+                Console.WriteLine($"ToRemove count: {toRemove.Count}");
+                foreach (var r in toRemove) Console.WriteLine($"  Remove ClinicalStaffId={r.ClinicalStaffId}");
+
+                if (toRemove.Any())
+                {
+                    _context.ClinicalStaffPatients.RemoveRange(toRemove);
+                }
+
+                // --- REPLACE: robust add logic that checks DB for persisted rows ---
+                // Query DB for currently persisted ClinicalStaffIds for this patient (avoid race/track issues)
+                var persistedStaffIds = await _context.ClinicalStaffPatients
+                    .Where(c => c.PatientId == admission.PatientId)
+                    .Select(c => c.ClinicalStaffId)
+                    .ToListAsync();
+
+                Console.WriteLine("PersistedStaffIds: " + (persistedStaffIds.Any() ? string.Join(",", persistedStaffIds) : "(none)"));
+
+                // Only add IDs that are selected but not already persisted
+                var toAddIds = selectedStaffIds.Where(id => !persistedStaffIds.Contains(id)).ToList();
+
+                var toAdd = toAddIds
+                    .Select(id => new ClinicalStaffPatient
+                    {
+                        PatientId = admission.PatientId,
+                        ClinicalStaffId = id,
+                    })
+                    .ToList();
+
+                Console.WriteLine($"ToAdd count: {toAdd.Count}");
+                foreach (var a in toAdd) Console.WriteLine($"  Add ClinicalStaffId={a.ClinicalStaffId}");
+
+                if (toAdd.Any())
+                {
+                    await _context.ClinicalStaffPatients.AddRangeAsync(toAdd);
+                }
+                // --- END REPLACE ---
+                
+                _context.Admissions.Update(admission);
+                Console.WriteLine("Saving changes...");
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                Console.WriteLine("Save/Commit succeeded for Edit.");
+                TempData["SuccessMessage"] = "Admission updated successfully!";
+                return RedirectToAction("Index");
             }
             catch (DbUpdateException ex)
             {
-                ModelState.AddModelError("", "Unable to save changes. Please try again."); // show generic error
-                Console.WriteLine(ex); // log exception
-                await PopulateClinicalStaffDropdowns(); // repopulate dropdowns for view
-                return View(model); // return view with error
+                await tx.RollbackAsync();
+                Console.WriteLine("DbUpdateException in Edit: " + ex);
+                ModelState.AddModelError("", "Unable to save changes. Please try again.");
+                await PopulateClinicalStaffDropdowns();
+                return View(model);
             }
-
-            return RedirectToAction("Index"); // redirect to list after success
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                Console.WriteLine("Exception in Edit: " + ex);
+                ModelState.AddModelError("", "Unable to save changes. Please try again.");
+                await PopulateClinicalStaffDropdowns();
+                return View(model);
+            }
         }
+        // ...existing code...
 
         // // POST: Transfer patient to another facility
         // [HttpPost]

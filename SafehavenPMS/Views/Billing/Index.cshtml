@@ -17,17 +17,19 @@
                 </div>
             </div>
         </div>
-        <div>
-            <a href="@Url.Action("AddMedicine", "Medication")" id="add-medicine-button" class="add-availability btn-custom btn-primary text-decoration-none">
-                Generate Invoice
-            </a>
-            <a href="@Url.Action("AddMedicationOrder", "Medication")" id="add-medication-order-button" class="add-availability btn-custom btn-primary text-decoration-none">
-                Add Miscellaneous
-            </a>
-        </div>
+        @if(User.IsInRole("Admin") || User.IsInRole("Finance Officer")){
+            <div>
+                <a href="@Url.Action("GenerateInvoice", "Billing")" id="add-medicine-button" class="add-availability btn-custom btn-primary text-decoration-none">
+                    Generate Invoice
+                </a>
+                <a href="@Url.Action("AddMiscellaneousItem", "Billing")" class="add-availability btn-custom btn-primary text-decoration-none">
+                    Add Miscellaneous   
+                </a>
+            </div>
+        }
        
+            
     </div>
-
 
     @* Tabs *@
     <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">
