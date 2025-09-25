@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250923084544_updateServiceTypeIdsdfsdfsdfasdasddsfsdasd")]
+    partial class updateServiceTypeIdsdfsdfsdfasdasddsfsdasd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -191,56 +194,6 @@ namespace SafehavenPMS.Migrations
                     b.HasIndex("ClinicalStaffID");
 
                     b.ToTable("Availabilities");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Billable", b =>
-                {
-                    b.Property<int>("BillableId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BillableId"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("DateAdded")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("ReferenceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ReferenceType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("BillableId");
-
-                    b.HasIndex("PatientId");
-
-                    b.ToTable("Billables");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaff", b =>
@@ -1212,8 +1165,6 @@ namespace SafehavenPMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PatientId");
-
                     b.ToTable("MiscellaneousItems");
                 });
 
@@ -1822,70 +1773,6 @@ namespace SafehavenPMS.Migrations
                     b.ToTable("SurgicalHistories");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.User", b =>
-                {
-                    b.Property<int>("UserId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
-
-                    b.Property<int?>("ClinicalStaffID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
-                    b.Property<string>("PasswordSalt")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
-                    b.Property<int?>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("UserId");
-
-                    b.HasIndex("ClinicalStaffID");
-
-                    b.HasIndex("PatientId");
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.AdministrationLog", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.MedicationOrder", "Medication")
@@ -1963,17 +1850,6 @@ namespace SafehavenPMS.Migrations
                         .IsRequired();
 
                     b.Navigation("ClinicalStaff");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.Billable", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.ClinicalStaffPatient", b =>
@@ -2193,17 +2069,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("InitialAssessmentForm");
                 });
 
-            modelBuilder.Entity("SafehavenPMS.Models.MiscellaneousItem", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Patient");
-                });
-
             modelBuilder.Entity("SafehavenPMS.Models.NewAppointment", b =>
                 {
                     b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
@@ -2324,21 +2189,6 @@ namespace SafehavenPMS.Migrations
                         .IsRequired();
 
                     b.Navigation("InitialAssessmentForm");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.User", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.ClinicalStaff", "ClinicalStaff")
-                        .WithMany()
-                        .HasForeignKey("ClinicalStaffID");
-
-                    b.HasOne("SafehavenPMS.Models.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId");
-
-                    b.Navigation("ClinicalStaff");
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.Admission", b =>

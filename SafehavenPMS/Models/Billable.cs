@@ -9,13 +9,29 @@ namespace SafehavenPMS.Models
         [Key]
         public int BillableId { get; set; }
 
-        public int? PatientId { get; set; } // optional for generic items
-        public string Category { get; set; } = "Misc"; // "Medication" | "Canteen" | "Miscellaneous"
-        public string Description { get; set; } = string.Empty;
-        public int Quantity { get; set; } = 1;
+        [Required]
+        public int PatientId { get; set; }
+
+        [Required]
+        [StringLength(64)]
+        public string Category { get; set; }
+
+        [Required]
+        [StringLength(250)]
+        public string Description { get; set; }
+
+        public decimal Quantity { get; set; } = 1m;
         public decimal UnitPrice { get; set; } = 0m;
-        public decimal Total => UnitPrice * Quantity;
+
+        // stored computed amount = Quantity * UnitPrice (set in code before save)
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Amount { get; set; }
+
         public DateTime DateAdded { get; set; } = DateTime.UtcNow;
-        public string? CreatedBy { get; set; }
+        public string CreatedBy { get; set; }
+        public int? ReferenceId { get; set; }   // optional FK to source record (MedicationOrderId, MiscId, etc.)
+        public string? ReferenceType { get; set; } // optional tag: "MedicationOrder","Miscellaneous"
+    
+        public Patient? Patient { get; set; }
     }
 }

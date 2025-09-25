@@ -1,0 +1,79 @@
+@* @model SafehavenPMS.Models.GenerateInvoiceViewModel *@
+@{
+    Layout = "_Layout";
+    var currentYear = DateTime.UtcNow.Year;
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-teal text-white">
+            <h5 class="mb-0">Generate Monthly Invoice</h5>
+        </div>
+
+        <div class="card-body">
+            @* show TempData messages *@
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">
+                    <strong>@TempData["Success"]</strong>
+                    <div>Number of Invoices Generated: <strong>@TempData["GeneratedCount"]</strong></div>
+                </div>
+            }
+            else if (TempData["Warning"] != null)
+            {
+                <div class="alert alert-warning">
+                    <strong>@TempData["Warning"]</strong>
+                </div>
+            }
+
+            <form asp-action="GenerateInvoiceConfirm" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
+
+                <div class="col-md-6">
+                    <label class="form-label">Month of</label>
+                    <select class="form-select" asp-items="@(new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
+                        Enumerable.Range(1,12).Select(m => new { Value = m, Text = new DateTime(2000, m, 1).ToString("MMMM") }),
+                        "Value","Text"))">
+                        <option value="">Select month</option>
+                    </select>
+                    <span  class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Year</label>
+                    <select  class="form-select">
+                        <option value="">Select year</option>
+                        @for (int y = currentYear - 3; y <= currentYear + 1; y++)
+                        {
+                            if (Model != null && Model.Year == y)
+                            {
+                                <option value="@y" selected>@y</option>
+                            }
+                            else
+                            {
+                                <option value="@y">@y</option>
+                            }
+                        }
+                    </select>
+                    <span  class="text-danger"></span>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Due Date</label>
+                    <input  class="form-control" type="date" />
+                    <span  class="text-danger"></span>
+                </div>
+
+                <div class="col-12 mt-3 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-teal">Generate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @* if you have server-side validation with unobtrusive, include validation script bundle in layout.
+       No custom JS is used. *@
+}

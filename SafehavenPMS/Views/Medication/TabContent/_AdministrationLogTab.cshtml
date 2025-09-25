@@ -135,40 +135,53 @@
                                         var med = log.Medications[i];
                                         <tr>
                                             <td class="text-start">
-                                                <strong>@med.MedicineName</strong><br>
-                                                @med.UnitPerDoseDisplay<br>
+                                                <strong>@med.MedicineName</strong><br />
+                                                @med.UnitPerDoseDisplay<br />
                                                 @if (!string.IsNullOrEmpty(med.Note))
                                                 {
                                                     <small>@med.Note</small>
                                                 }
+
+                                                @* include Admin log id + date so backend updates existing row by date instead of creating duplicate *@
                                                 <input type="hidden" name="medications[@i].PatientId" value="@med.PatientId" />
                                                 <input type="hidden" name="medications[@i].MedicationOrderId" value="@med.MedicationOrderId" />
                                             </td>
+
                                             <td>
-                                                <input type="checkbox" name="Medications[@i].BreakfastTaken" value="true"
-                                                @(med.Breakfast ? "" : "disabled")
-                                                @(med.BreakfastTaken ? "checked" : "") class="larger-checkbox" />
-                                                <input type="hidden" name="Medications[@i].BreakfastTaken" value="false" />
-                                            </td>
-                                            <td>
-                                                <input type="checkbox" name="Medications[@i].LunchTaken" value="true"
-                                                @(med.Lunch ? "" : "disabled")
-                                                @(med.LunchTaken ? "checked" : "") class="larger-checkbox" />
-                                                <input type="hidden" name="Medications[@i].LunchTaken" value="false" />
-                                            </td>
-                                            <td>
-                                                <input type="checkbox" name="Medications[@i].DinnerTaken" value="true"
-                                                @(med.Dinner ? "" : "disabled")
-                                                @(med.DinnerTaken ? "checked" : "") class="larger-checkbox" />
-                                                <input type="hidden" name="Medications[@i].DinnerTaken" value="false" />
-                                            </td>
-                                            <td>
-                                                <input type="checkbox" name="Medications[@i].BedtimeTaken" value="true"
-                                                @(med.Bedtime ? "" : "disabled")
-                                                @(med.BedtimeTaken ? "checked" : "") class="larger-checkbox" />
-                                                <input type="hidden" name="Medications[@i].BedtimeTaken" value="false" />
+                                                <input type="hidden" name="medications[@i].BreakfastTaken" value="false" />
+                                                <input type="checkbox"
+                                                       name="medications[@i].BreakfastTaken"
+                                                       value="true"
+                                                       @(med.Breakfast ? "" : "disabled")
+                                                       @(med.BreakfastTaken ? "checked" : "") class="larger-checkbox" />
                                             </td>
 
+                                            <td>
+                                                <input type="hidden" name="medications[@i].LunchTaken" value="false" />
+                                                <input type="checkbox"
+                                                       name="medications[@i].LunchTaken"
+                                                       value="true"
+                                                       @(med.Lunch ? "" : "disabled")
+                                                       @(med.LunchTaken ? "checked" : "") class="larger-checkbox" />
+                                            </td>
+
+                                            <td>
+                                                <input type="hidden" name="medications[@i].DinnerTaken" value="false" />
+                                                <input type="checkbox"
+                                                       name="medications[@i].DinnerTaken"
+                                                       value="true"
+                                                       @(med.Dinner ? "" : "disabled")
+                                                       @(med.DinnerTaken ? "checked" : "") class="larger-checkbox" />
+                                            </td>
+
+                                            <td>
+                                                <input type="hidden" name="medications[@i].BedtimeTaken" value="false" />
+                                                <input type="checkbox"
+                                                       name="medications[@i].BedtimeTaken"
+                                                       value="true"
+                                                       @(med.Bedtime ? "" : "disabled")
+                                                       @(med.BedtimeTaken ? "checked" : "") class="larger-checkbox" />
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>

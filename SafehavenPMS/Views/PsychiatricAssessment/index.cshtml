@@ -125,8 +125,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Patient</th>
-                    <th>Type</th>
-                    <th>Date</th>
+                    <th>Scheduled Date</th>
                     <th>Time</th>
                     <th>Completed Date</th>
                     <th class="text-center">Status</th>
@@ -148,7 +147,6 @@
                         <tr>
                             <td>@row</td>
                             <td>@(pending.FullName ?? "-")</td>
-                            <td>@(pending.Type ?? "-")</td>
                             <td>@(pending.Date?.ToString("MMM dd, yyyy") ?? "-")</td>
                             <td>@(pending.Date  ?.ToString("hh:mm tt") ?? "-")</td>
                             <td>
@@ -194,7 +192,7 @@
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                    href="@Url.Action("PsychiatricAssessmentForm", "PsychiatricAssessment", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Create Assessment Form
+                                                    Start Psychiatric Assessment
                                                 </a>
                                             </li>
                                         }
@@ -211,7 +209,7 @@
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                    href="@Url.Action("PsychiatricAssessmentForm", "PsychiatricAssessment", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Assessment Form
+                                                    Edit Assessment
                                                 </a>
                                             </li>
 
@@ -239,7 +237,7 @@
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                    href="@Url.Action("PsychiatricAssessmentForm", "PsychiatricAssessment", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
-                                                    Edit Psychiatric Assessment
+                                                    Edit Assessment
                                                 </a>
                                             </li>
                                         }

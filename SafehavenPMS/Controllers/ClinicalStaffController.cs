@@ -309,7 +309,7 @@ namespace SafehavenPMS.Controllers
             model.ImageProfile = null;
 
             TempData["SuccessMessage"] = "Clinical staff added successfully!";
-            return RedirectToAction("Index");
+            return RedirectToAction("Confirmation", "Account", new { id = staff.ClinicalStaffID } );
         }
 
 

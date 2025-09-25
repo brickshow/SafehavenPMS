@@ -26,50 +26,80 @@
 
         <div class="card-body">
             <form asp-action="AddMiscellaneousItem" asp-controller="Billing" method="post" id="miscellaneousForm">
+                @Html.AntiForgeryToken()
+
                 <!-- Patient Section -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Patient</label>
-                    <div class="input-group">
-                        <input type="text" id="patientSearch" class="form-control" placeholder="Search patient name/id ..." />
-                        <button type="button" class="btn btn-info text-white">Search</button>
+                    <label class="form-labelSSSSSS fw-semibold">Patient</label>
+
+                    <!-- make wrapper position-relative so absolute dropdown can match input width -->
+                    <div class="position-relative">
+                        <div class="input-group">
+                            <input type="text" id="patientSearch" class="form-control" placeholder="Search patient name/id ..." autocomplete="off" />
+                            <button type="button" class="btn btn-info text-white">Search</button>
+                        </div>
+
+                        <!-- suggestions dropdown now full width of the input-group -->
+                        <ul id="patientSuggestions"
+                            class="list-group position-absolute w-100 start-0"
+                            style="z-index:1055; display:none; max-height:240px; overflow:auto;">
+                        </ul>
                     </div>
 
-                    <!-- Selected Patient Card -->
-                    <div class="card shadow-sm mt-3">
-                        <div class="card-body d-flex align-items-center">
-                            <div class="me-3">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                                     style="width:60px; height:60px; border:1px solid #ddd;">
-                                    <span class="text-danger fw-bold">profile</span>
-                                </div>
-                            </div>
-                            <div>
-                                <p class="mb-0 fw-bold">Sha Sha Rizon Ramos</p>
-                                <small class="text-muted">56Y | F</small>
-                            </div>
-                        </div>
-                    </div>
+                    <input asp-for="PatientId" id="PatientId" type="hidden" />
                 </div>
 
                 <h6 class="fw-semibold">Items</h6>
-                <div id="itemRows">
-                    <div class="row g-2 align-items-center mb-2">
-                        <div class="col-md-7">
-                            <input type="text" name="ItemDescriptions" class="form-control" placeholder="Item Description" required />
-                        </div>
-                        <div class="col-md-4">
-                            <input type="number" name="Amounts" class="form-control text-end" placeholder="Amount" min="0.01" step="0.01" required />
-                        </div>
-                        <div class="col-md-1 text-center">
-                            <button type="button" class="btn btn-outline-danger btn-sm removeRow" aria-label="Remove row">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
+
+                <div class="mb-3">
+                    <div id="itemRows">
+                        @if (Model?.ItemDescriptions != null && Model.Amounts != null && Model.ItemDescriptions.Count > 0)
+                        {
+                            @for (var i = 0; i < Model.ItemDescriptions.Count; i++)
+                            {
+                                <div class="row g-2 align-items-center mb-2 item-entry">
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control"
+                                               name="ItemDescriptions[@i]"
+                                               id="ItemDescriptions_@i"
+                                               value="@(Model.ItemDescriptions[i] ?? "")"
+                                               placeholder="Item Description" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="number" class="form-control text-end"
+                                               name="Amounts[@i]"
+                                               id="Amounts_@i"
+                                               value="@(Model.Amounts.Count > i ? Model.Amounts[i].ToString("F2") : "0.00")"
+                                               placeholder="Amount" min="0.01" step="0.01" required />
+                                    </div>
+                                    <div class="col-md-1 text-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeItem(this)" aria-label="Remove row">
+                                            <i class="bx bxs-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- initial empty state: nothing server-rendered; JS will ensure at least one row exists -->
+                        }
                     </div>
                 </div>
 
-                <div class="text-end mb-3">
-                    <button type="button" id="addRow" class="btn btn-sm btn-outline-primary">+ Add Item</button>
+                <!-- single-line add controls (ProblemList style) -->
+                <div class="row g-2 align-items-center mb-3">
+                    <div class="col-md-7">
+                        <input type="text" id="newDescription" class="form-control" placeholder="Enter item description" />
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" id="newAmount" class="form-control text-end" placeholder="Amount" min="0.01" step="0.01" />
+                    </div>
+                    <div class="col-md-1 text-center">
+                        <button type="button" class="btn btn-sm btn-teal" onclick="addItem()">
+                            <i class="bx bx-plus"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-3">
@@ -86,199 +116,199 @@
     </div>
 </div>
 
-@section Scripts {
+
 <script>
 (function () {
-    const containerSelector = '#itemRows';
-    const descName = "ItemDescriptions";
-    const amtName = "Amounts";
+    // Patient search (existing)
+    const input = document.getElementById('patientSearch');
+    const list = document.getElementById('patientSuggestions');
+    const hiddenId = document.getElementById('PatientId');
+    let debounce;
 
-    function createRow() {
-        const div = document.createElement('div');
-        div.className = 'row g-2 align-items-center mb-2';
-        div.innerHTML = `
-            <div class="col-md-7">
-                <input type="text" name="${descName}" class="form-control" placeholder="Item Description" required />
-            </div>
-            <div class="col-md-4">
-                <input type="number" name="${amtName}" class="form-control text-end" placeholder="Amount" min="0.01" step="0.01" required />
-            </div>
-            <div class="col-md-1 text-center">
-                     <button type="button" class="btn btn-outline-danger btn-sm removeRow" aria-label="Remove row">
-            <i class="bx bx-trash"></i>
-        </button>
-            </div>`;
-        return div;
+    if (input && list) {
+        function render(items) {
+            if (!items || items.length === 0) { list.style.display = 'none'; list.innerHTML = ''; return; }
+            list.innerHTML = items.map(it => `<li class="list-group-item list-group-item-action" data-id="${it.id}">${it.text}</li>`).join('');
+            list.style.display = 'block';
+        }
+
+        async function fetchMatches(q) {
+            try {
+                const res = await fetch('/Billing/SearchPatients?q=' + encodeURIComponent(q), { credentials: 'same-origin' });
+                if (!res.ok) return render([]);
+                const data = await res.json();
+                render(data);
+            } catch (e) { console.error(e); render([]); }
+        }
+
+        input.addEventListener('input', () => {
+            const q = input.value.trim();
+            if (hiddenId) hiddenId.value = ''; // clear previously selected id when typing
+            if (q.length < 1) { list.style.display = 'none'; list.innerHTML = ''; return; }
+            clearTimeout(debounce);
+            debounce = setTimeout(() => fetchMatches(q), 200);
+        }, { passive: true });
+
+        list.addEventListener('click', (e) => {
+            const li = e.target.closest('li[data-id]');
+            if (!li) return;
+            input.value = li.textContent.trim();
+            if (hiddenId) hiddenId.value = li.getAttribute('data-id');
+            list.style.display = 'none';
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (list.style.display !== 'block') return;
+            const active = list.querySelector('.active');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = active ? (active.nextElementSibling || active) : list.querySelector('li');
+                active?.classList.remove('active');
+                next?.classList.add('active');
+                next?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prev = active ? (active.previousElementSibling || active) : list.querySelector('li:last-child');
+                active?.classList.remove('active');
+                prev?.classList.add('active');
+                prev?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter') {
+                const pick = list.querySelector('.active') || list.querySelector('li');
+                if (pick) { e.preventDefault(); pick.click(); }
+            } else if (e.key === 'Escape') {
+                list.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
+        });
     }
 
-    // rows add/remove & validation
-    const addBtn = document.getElementById('addRow');
-    addBtn?.addEventListener('click', function () {
-        const container = document.querySelector(containerSelector);
+    // Items add/remove (ProblemList style)
+    const container = document.getElementById('itemRows');
+    const form = document.getElementById('miscellaneousForm');
+
+    function reindexItems() {
         if (!container) return;
+        const entries = container.querySelectorAll('.item-entry');
+        entries.forEach((row, i) => {
+            const desc = row.querySelector('input[type="text"]');
+            const amt = row.querySelector('input[type="number"]');
+            if (desc) { desc.name = `ItemDescriptions[${i}]`; desc.id = `ItemDescriptions_${i}`; }
+            if (amt) { amt.name = `Amounts[${i}]`; amt.id = `Amounts_${i}`; }
+        });
+    }
 
-        const lastRow = container.querySelector('.row:last-child');
-        if (lastRow) {
-            const desc = (lastRow.querySelector(`input[name='${descName}']`)?.value || "").trim();
-            const amt = parseFloat(lastRow.querySelector(`input[name='${amtName}']`)?.value) || 0;
-            if (!desc || amt <= 0) {
-                if (!desc) lastRow.querySelector(`input[name='${descName}']`)?.classList.add('is-invalid');
-                if (amt <= 0) lastRow.querySelector(`input[name='${amtName}']`)?.classList.add('is-invalid');
-                lastRow.querySelector(`input[name='${descName}']`)?.focus();
-                return;
-            }
-        }
-        container.appendChild(createRow());
+    window.addItem = function () {
+        const descEl = document.getElementById('newDescription');
+        const amtEl = document.getElementById('newAmount');
+        const desc = (descEl?.value || '').trim();
+        const amt = parseFloat(amtEl?.value || 0);
+
+        if (!desc) { alert('Enter item description'); descEl?.focus(); return; }
+        if (!(amt > 0)) { alert('Enter amount greater than 0'); amtEl?.focus(); return; }
+
+        const index = container.querySelectorAll('.item-entry').length;
+        const div = document.createElement('div');
+        div.className = 'row g-2 align-items-center mb-2 item-entry';
+        div.innerHTML = `
+            <div class="col-md-7">
+                <input type="text" class="form-control" name="ItemDescriptions[${index}]" id="ItemDescriptions_${index}" value="${escapeHtml(desc)}" placeholder="Item Description" required />
+            </div>
+            <div class="col-md-4">
+                <input type="number" class="form-control text-end" name="Amounts[${index}]" id="Amounts_${index}" value="${amt.toFixed(2)}" placeholder="Amount" min="0.01" step="0.01" required />
+            </div>
+            <div class="col-md-1 text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeItem(this)" aria-label="Remove row">
+                    <i class="bx bxs-trash"></i>
+                </button>
+            </div>`;
+        container.appendChild(div);
+
+        // clear inputs
+        descEl.value = '';
+        amtEl.value = '';
+
+        reindexItems();
         calculateTotal();
-    });
+    };
 
-    document.addEventListener('click', function (e) {
-        const rem = e.target.closest('.removeRow');
-        if (rem) {
-            const row = rem.closest('.row');
-            if (!row) return;
-            const container = document.querySelector(containerSelector);
-            row.remove();
-            if (container && container.querySelectorAll('.row').length === 0) {
-                container.appendChild(createRow());
-            }
-            calculateTotal();
-        }
-    });
-
-    document.addEventListener('input', function (e) {
-        if (!e.target) return;
-        if (e.target.name === amtName || e.target.name === descName) {
-            e.target.classList.remove('is-invalid');
-            calculateTotal();
-        }
-    }, { passive: true });
+    window.removeItem = function (btn) {
+        const row = btn.closest('.item-entry');
+        if (!row || !container) return;
+        row.remove();
+        reindexItems();
+        calculateTotal();
+    };
 
     function calculateTotal() {
         let total = 0;
-        const container = document.querySelector(containerSelector);
         if (!container) return;
-        container.querySelectorAll(`input[name='${amtName}']`).forEach(i => {
+        container.querySelectorAll('input[name^="Amounts"]').forEach(i => {
             total += parseFloat(i.value) || 0;
         });
         const target = document.getElementById('totalAmount');
-        if (target) target.textContent = total.toLocaleString();
+        if (target) target.textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // form validation
-    const form = document.getElementById('miscellaneousForm');
+    // helper to escape user input for insertion into HTML value attribute
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // ensure at least one row exists (if none server-rendered)
+    if (container && container.querySelectorAll('.item-entry').length === 0) {
+        // nothing pre-rendered — leave blank and wait for user to add via inputs
+    }
+
+    // Form submit validation (patient + items)
     form?.addEventListener('submit', function (e) {
-        const container = document.querySelector(containerSelector);
-        if (!container) return;
-        let valid = true;
-        container.querySelectorAll('.row').forEach(row => {
-            const descEl = row.querySelector(`input[name='${descName}']`);
-            const amtEl = row.querySelector(`input[name='${amtName}']`);
-            const desc = (descEl?.value || "").trim();
-            const amt = parseFloat(amtEl?.value) || 0;
-
-            if (!desc) { descEl?.classList.add('is-invalid'); valid = false; }
-            if (amt <= 0) { amtEl?.classList.add('is-invalid'); valid = false; }
-        });
-
-        const hiddenPatient = document.getElementById('PatientId');
-        if (!hiddenPatient || !hiddenPatient.value || hiddenPatient.value === "0") {
+        if (!hiddenId || !hiddenId.value || hiddenId.value === "0") {
             e.preventDefault();
-            document.getElementById('patientSearch')?.classList.add('is-invalid');
+            input?.classList.add('is-invalid');
+            input?.focus();
             alert('Please select a patient from the list.');
             return;
         }
 
-        if (!valid) {
+        if (!container) return;
+        const entries = container.querySelectorAll('.item-entry');
+        if (entries.length === 0) {
             e.preventDefault();
-            const firstInvalid = document.querySelector('.is-invalid');
-            firstInvalid?.focus();
-            alert('Please fill item description and an amount greater than 0 for all rows.');
-        }
-    });
-
-    calculateTotal();
-
-    // --- patient search (server endpoint /Billing/SearchPatients expected) ---
-    const input = document.getElementById('patientSearch');
-    const suggestions = document.getElementById('patientSuggestions');
-    const hiddenId = document.getElementById('PatientId');
-    const selCard = document.getElementById('selectedPatientCard');
-    const selName = document.getElementById('selectedPatientName');
-    const selMeta = document.getElementById('selectedPatientMeta');
-    let debounceTimer = 0;
-
-    function renderList(items) {
-        if (!items || items.length === 0) {
-            suggestions.style.display = 'none';
-            suggestions.innerHTML = '';
+            alert('Please add at least one item.');
             return;
         }
-        suggestions.innerHTML = items.map(i =>
-            `<li class="list-group-item list-group-item-action" data-id="${i.id}" data-text="${(i.text||'')}">${i.text}${i.extra ? ' · ' + i.extra : ''}</li>`
-        ).join('');
-        suggestions.style.display = 'block';
-    }
 
-    function pickItem(el) {
-        if (!el) return;
-        const id = el.getAttribute('data-id');
-        const text = el.getAttribute('data-text') || el.textContent.trim();
-        input.value = text;
-        hiddenId.value = id || '';
-        if (selCard) {
-            selName.textContent = text;
-            selMeta.textContent = el.textContent.replace(text, '').trim();
-            selCard.classList.remove('d-none');
+        let valid = true;
+        entries.forEach(row => {
+            const descEl = row.querySelector('input[type="text"]');
+            const amtEl = row.querySelector('input[type="number"]');
+            if (!descEl || !amtEl) { valid = false; return; }
+            const desc = (descEl.value || '').trim();
+            const amt = parseFloat(amtEl.value || 0);
+            if (!desc || !(amt > 0)) {
+                valid = false;
+                if (!desc) descEl.classList.add('is-invalid');
+                if (!(amt > 0)) amtEl.classList.add('is-invalid');
+            }
+        });
+
+        if (!valid) {
+            e.preventDefault();
+            const firstInvalid = form.querySelector('.is-invalid');
+            firstInvalid?.focus();
+            alert('Please fix item rows (description and amount > 0).');
+            return;
         }
-        suggestions.style.display = 'none';
-    }
-
-    input?.addEventListener('input', function () {
-        const q = input.value.trim();
-        hiddenId.value = '';
-        if (q.length < 2) { suggestions.style.display = 'none'; suggestions.innerHTML = ''; return; }
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(async () => {
-            try {
-                const url = '/Billing/SearchPatients?q=' + encodeURIComponent(q);
-                const res = await fetch(url, { credentials: 'same-origin' });
-                if (!res.ok) { renderList([]); return; }
-                const data = await res.json();
-                renderList(data);
-            } catch (err) { console.error(err); renderList([]); }
-        }, 250);
-    }, { passive: true });
-
-    suggestions?.addEventListener('click', function (e) {
-        const li = e.target.closest('li[data-id]');
-        if (!li) return;
-        pickItem(li);
     });
 
-    input?.addEventListener('keydown', function (e) {
-        const visible = suggestions.style.display === 'block';
-        if (!visible) return;
-        const active = suggestions.querySelector('.active');
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (!active) { suggestions.querySelector('li')?.classList.add('active'); }
-            else { active.classList.remove('active'); active.nextElementSibling?.classList.add('active'); }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (!active) return;
-            active.classList.remove('active');
-            active.previousElementSibling?.classList.add('active');
-        } else if (e.key === 'Enter') {
-            const toPick = suggestions.querySelector('.active') || suggestions.querySelector('li');
-            if (toPick) { e.preventDefault(); pickItem(toPick); }
-        } else if (e.key === 'Escape') { suggestions.style.display = 'none'; }
-    });
-
-    document.addEventListener('click', function (e) {
-        if (!input.contains(e.target) && !suggestions.contains(e.target)) { suggestions.style.display = 'none'; }
-    });
-
+    // initial total
+    calculateTotal();
 })();
 </script>
-}

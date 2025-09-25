@@ -75,5 +75,9 @@ namespace SafehavenPMS.ViewModel
         // Dropdowns for Razor
         public IEnumerable<SelectListItem>? PatientList { get; set; }
         public IEnumerable<SelectListItem>? MedicineList { get; set; }
+
+        // Administration link (populate from AdministrationLogs when building VM)
+        public int AdministrationLogId { get; set; }           // NEW
+        public DateTime AdministrationDate { get; set; }       // NEW
     }
 }

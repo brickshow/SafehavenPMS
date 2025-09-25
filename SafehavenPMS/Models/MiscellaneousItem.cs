@@ -10,5 +10,7 @@ namespace SafehavenPMS.Models
         public decimal Amount { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? CreatedBy { get; set; }
+
+        public Patient? Patient { get; set; }
     }
 }

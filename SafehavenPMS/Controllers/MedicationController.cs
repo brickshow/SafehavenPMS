@@ -681,59 +681,99 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpPost]
-        public IActionResult SaveAdministrationLog(List<AdministrationLog> medications)
+        public async Task<IActionResult> SaveAdministrationLog(List<AdministrationLog> medications)
         {
             // Remove Patient validation so it won't throw required error
             foreach (var key in ModelState.Keys.Where(k => k.Contains("Patient")).ToList())
-            {
                 ModelState.Remove(key);
-            }
 
-            // Log ModelState errors if any
             if (!ModelState.IsValid)
             {
                 foreach (var entry in ModelState)
-                {
                     foreach (var error in entry.Value.Errors)
-                    {
                         Console.WriteLine($"Field: {entry.Key} - Error: {error.ErrorMessage}");
-                    }
-                }
                 return RedirectToAction("Index");
             }
 
-            // Debugging: Log everything about the posted medications
-            Console.WriteLine($"Number of meds posted: {medications.Count}");
-            for (int i = 0; i < medications.Count; i++)
-            {
-                var med = medications[i];
-                Console.WriteLine($"--- Medication [{i}] ---");
-                Console.WriteLine($"MedicationOrderId: {med.MedicationOrderId}");
-                Console.WriteLine($"PatientId: {med.PatientId}");
-                Console.WriteLine($"Breakfast: {med.BreakfastTaken}");
-                Console.WriteLine($"Lunch: {med.LunchTaken}");
-                Console.WriteLine($"Dinner: {med.DinnerTaken}");
-            }
+            if (medications == null || medications.Count == 0)
+                return RedirectToAction("Index");
 
-            // Validate MedicationOrderId existence before saving
+            var logsToAdd = new List<AdministrationLog>();
+            var billablesToAdd = new List<Billable>();
+            var now = DateTime.Now;
+            var currentUser = User?.Identity?.Name ?? "system";
+
             foreach (var med in medications)
             {
-                var exists = _context.MedicationOrders
-                             .Any(m => m.MedicationOrderId == med.MedicationOrderId);
+                // validate medication order exists and load medicine for pricing
+                var order = await _context.MedicationOrders
+                                        .Include(o => o.Medicine)
+                                        .FirstOrDefaultAsync(o => o.MedicationOrderId == med.MedicationOrderId);
 
-                if (!exists)
+                if (order == null)
                 {
-                    Console.WriteLine($"Invalid MedicationOrderId: {med.MedicationOrderId} - Skipping insert.");
+                    Console.WriteLine($"Invalid MedicationOrderId: {med.MedicationOrderId} - Skipping.");
                     continue;
                 }
 
-                med.AdministrationDate = DateTime.Now;
-                _context.AdministrationLogs.Add(med);
+                med.PatientId = order.PatientId;
+                med.AdministrationDate = now;
+                logsToAdd.Add(med);
+
+                var medicine = order.Medicine;
+                decimal unitPrice = medicine?.Price ?? 0m;
+                decimal quantity = order.UnitPerDose > 0 ? order.UnitPerDose : 1m;
+
+                void AddBillable(string mealLabel)
+                {
+                    var desc = (medicine?.GenericName ?? "Medicine") + $" - {mealLabel}";
+                    if (!string.IsNullOrWhiteSpace(medicine?.Unit))
+                        desc += $" ({quantity} {medicine.Unit})";
+
+                    billablesToAdd.Add(new Billable
+                    {
+                        PatientId = order.PatientId,
+                        Category = "Medication",
+                        Description = desc,
+                        Quantity = quantity,
+                        UnitPrice = unitPrice,
+                        Amount = quantity * unitPrice,
+                        DateAdded = now,
+                        CreatedBy = currentUser,
+                        ReferenceId = med.MedicationOrderId,
+                        ReferenceType = null // will set after SaveChanges to use DB-assigned BillableId
+                    });
+                }
+
+                if (med.BreakfastTaken) AddBillable("Breakfast");
+                if (med.LunchTaken) AddBillable("Lunch");
+                if (med.DinnerTaken) AddBillable("Dinner");
+                if (med.BedtimeTaken) AddBillable("Bedtime");
             }
 
-            _context.SaveChanges();
-            return RedirectToAction("Index");
-        }
+            if (logsToAdd.Any())
+                await _context.AdministrationLogs.AddRangeAsync(logsToAdd);
+
+            if (billablesToAdd.Any())
+                await _context.Billables.AddRangeAsync(billablesToAdd);
+
+            // First save to get DB-generated BillableId values
+            await _context.SaveChangesAsync();
+
+            // Now set ReferenceType based on the assigned BillableId to guarantee uniqueness
+            if (billablesToAdd.Any())
+            {
+                foreach (var b in billablesToAdd)
+                {
+                    b.ReferenceType = $"BILL-{b.BillableId:D5}";
+                }
+
+                _context.Billables.UpdateRange(billablesToAdd);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+}
 
 
         //This action will submit all temporary medication orders to the database and redirect to PatientProfile
