@@ -77,7 +77,7 @@ namespace SafehavenPMS.ViewModel
         public IEnumerable<SelectListItem>? MedicineList { get; set; }
 
         // Administration link (populate from AdministrationLogs when building VM)
-        public int AdministrationLogId { get; set; }           // NEW
-        public DateTime AdministrationDate { get; set; }       // NEW
+        public int? AdministrationLogId { get; set; }           // NEW
+        public DateTime? AdministrationDate { get; set; }       // NEW
     }
 }

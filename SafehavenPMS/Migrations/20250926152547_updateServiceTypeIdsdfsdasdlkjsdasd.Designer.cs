@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250926152547_updateServiceTypeIdsdfsdasdlkjsdasd")]
+    partial class updateServiceTypeIdsdfsdasdlkjsdasd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,8 +63,8 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<string>("RecordedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("RecordedBy")
+                        .HasColumnType("int");
 
                     b.HasKey("AdministrationId");
 
@@ -769,9 +772,6 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("InvoiceRefId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("Month")
                         .HasColumnType("int");
 
@@ -1451,9 +1451,6 @@ namespace SafehavenPMS.Migrations
                     b.Property<string>("PaymentMethod")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("PaymentRefId")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProofFileName")
                         .HasMaxLength(300)

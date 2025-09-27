@@ -142,45 +142,51 @@
                                                     <small>@med.Note</small>
                                                 }
 
-                                                @* include Admin log id + date so backend updates existing row by date instead of creating duplicate *@
-                                                <input type="hidden" name="medications[@i].PatientId" value="@med.PatientId" />
-                                                <input type="hidden" name="medications[@i].MedicationOrderId" value="@med.MedicationOrderId" />
+                                                @* index + ids for model binding *@
+                                                <input type="hidden" name="Medications.Index" value="@i" />
+                                                <input type="hidden" name="Medications[@i].PatientId" value="@med.PatientId" />
+                                                <input type="hidden" name="Medications[@i].MedicationOrderId" value="@med.MedicationOrderId" />
                                             </td>
 
-                                            <td>
-                                                <input type="hidden" name="medications[@i].BreakfastTaken" value="false" />
+                                            <td class="text-center">
                                                 <input type="checkbox"
-                                                       name="medications[@i].BreakfastTaken"
+                                                       name="Medications[@i].BreakfastTaken"
                                                        value="true"
                                                        @(med.Breakfast ? "" : "disabled")
                                                        @(med.BreakfastTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].BreakfastTaken" value="false" />
+                                                @* <div class="small text-muted">Time:@(DateTime.Now.ToString("hh:mm tt"))</div>
+                                                <div class="small text-muted">By:@(User.Identity.Name)</div> *@
                                             </td>
 
-                                            <td>
-                                                <input type="hidden" name="medications[@i].LunchTaken" value="false" />
+                                            <td class="text-center">
                                                 <input type="checkbox"
-                                                       name="medications[@i].LunchTaken"
+                                                       name="Medications[@i].LunchTaken"
                                                        value="true"
                                                        @(med.Lunch ? "" : "disabled")
                                                        @(med.LunchTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].LunchTaken" value="false" />
+                                                @* <div class="small text-muted">sched:@(med.Lunch) taken:@(med.LunchTaken)</div> *@
                                             </td>
 
-                                            <td>
-                                                <input type="hidden" name="medications[@i].DinnerTaken" value="false" />
+                                            <td class="text-center">
                                                 <input type="checkbox"
-                                                       name="medications[@i].DinnerTaken"
+                                                       name="Medications[@i].DinnerTaken"
                                                        value="true"
                                                        @(med.Dinner ? "" : "disabled")
                                                        @(med.DinnerTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].DinnerTaken" value="false" />
+                                                @* <div class="small text-muted">sched:@(med.Dinner) taken:@(med.DinnerTaken)</div> *@
                                             </td>
 
-                                            <td>
-                                                <input type="hidden" name="medications[@i].BedtimeTaken" value="false" />
+                                            <td class="text-center">
                                                 <input type="checkbox"
-                                                       name="medications[@i].BedtimeTaken"
+                                                       name="Medications[@i].BedtimeTaken"
                                                        value="true"
                                                        @(med.Bedtime ? "" : "disabled")
                                                        @(med.BedtimeTaken ? "checked" : "") class="larger-checkbox" />
+                                                <input type="hidden" name="Medications[@i].BedtimeTaken" value="false" />
+                                                @* <div class="small text-muted">sched:@(med.Bedtime) taken:@(med.BedtimeTaken)</div> *@
                                             </td>
                                         </tr>
                                     }

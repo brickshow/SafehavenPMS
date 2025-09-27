@@ -27,15 +27,18 @@
             <table class="table mb-0 align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Payment #</th>
-                        <th>Invoice</th>
+                        <th>#</th>
                         <th>Patient</th>
                         <th>Transaction Date</th>
-                        <th>Method</th>
-                        <th>Transaction #</th>
-                        <th class="text-end">Amount Paid</th>
-                        <th class="text-center">Receipt</th>
-                        <th class="text-center">Actions</th>
+                        <th>Receipt</th>
+                        <th>Reference No.</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Status</th>
+                        @* show Actions column only when current user is NOT in Family role *@
+                        @if (!User.IsInRole("Family"))
+                        {
+                            <th class="text-center">Actions</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -49,38 +52,199 @@
                     {
                         foreach (var p in payments)
                         {
+                            // stable id for modal: prefer PaymentId, fallback to PatientId, fallback to Guid
+                            var idToken = (p.PaymentId != null && p.PaymentId != 0) ? p.PaymentId.ToString()
+                                         : (p.PatientId != null && p.PatientId != 0) ? p.PatientId.ToString()
+                                         : Guid.NewGuid().ToString("N");
                         <tr>
                             <td>@p.PatientId</td>
-                            <td>@(p.InvoiceId > 0 ? $"#{p.InvoiceId}" : "—")</td>
-                            <td>@(p.PatientId > 0 ? $"Patient #{p.PatientId}" : "—")</td>
-                            <td>@(p.TransactionDate.HasValue ? p.TransactionDate.Value.ToString("yyyy-MM-dd") : "—")</td>
-                            <td>@(string.IsNullOrEmpty(p.PaymentMethod) ? "—" : p.PaymentMethod)</td>
-                            <td>@(string.IsNullOrEmpty(p.TransactionNumber) ? "—" : p.TransactionNumber)</td>
-                            <td class="text-end">@string.Format("{0:N2}", p.AmountPaid)</td>
-                            <td class="text-center">
-                                @if (p.InvoiceId > 0)
+                            <td>@p.PatientName</td>
+                            <td>@p.CreatedAt.ToString("MMM dd, yyyy")</td>
+
+                            <td>
+                                @if (!string.IsNullOrEmpty(p.PhotoUrl))
                                 {
-                                    <a asp-action="DownloadPaymentProof" asp-route-id="@p.InvoiceId" title="View receipt" class="text-decoration-none">
-                                        <i class="bx bx-file fs-4"></i>
-                                    </a>
+                                    var ext = System.IO.Path.GetExtension(p.PhotoUrl)?.ToLowerInvariant() ?? "";
+                                    var isImage = new[] { ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp" }.Contains(ext);
+
+                                    if (isImage)
+                                    {
+                                        <!-- clickable thumbnail -> opens bootstrap modal -->
+                                        <a href="#" data-bs-toggle="modal" data-bs-target="#receiptModal-@idToken" title="View receipt">
+                                            <img src="@p.PhotoUrl" alt="Receipt" class="border" style="max-width:100px; max-height:100px; object-fit:cover;" />
+                                        </a>
+
+                                        <!-- per-row modal (Bootstrap 5, no custom JS required) -->
+                                        <div class="modal fade" id="receiptModal-@idToken" tabindex="-1" aria-labelledby="receiptModalLabel-@idToken" aria-hidden="true">
+                                          <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <div class="modal-content">
+                                              <div class="modal-header">
+                                                <h5 class="modal-title" id="receiptModalLabel-@idToken">Receipt</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                              </div>
+                                              <div class="modal-body text-center">
+                                                <img src="@p.PhotoUrl" alt="Receipt full" class="img-fluid" style="max-height:80vh;" />
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <!-- non-image file: open in new tab -->
+                                        <a href="@p.PhotoUrl" target="_blank" class="text-decoration-none">
+                                            <i class="bx bx-file fs-4"></i>
+                                            <span class="ms-1">Open</span>
+                                        </a>
+                                    }
                                 }
                                 else
                                 {
-                                    <span class="text-muted">—</span>
+                                    <span class="text-muted">No photo</span>
                                 }
                             </td>
-                            <td class="text-center">
-                                @if (p.InvoiceId > 0)
+
+                            <td>@p.TransactionNumber</td>
+                            <td class="text-end">@string.Format("{0:N2}", p.AmountPaid)</td>
+                           <td class="text-center">
+                                @if(p.Status == "Pending Review")
                                 {
-                                    <a asp-action="Invoice" asp-route-id="@p.InvoiceId" title="View Invoice" class="text-muted me-2">
-                                        <i class="bx bx-show fs-5"></i>
-                                    </a>
+                                    <div style="background-color: rgba(255, 193, 7, 0.5); color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Pending Review
+                                    </div>
                                 }
-                                <a asp-action="DownloadPaymentProof" asp-route-id="@p.InvoiceId" title="Download Receipt" class="text-muted">
-                                    <i class="bx bx-download fs-5"></i>
-                                </a>
+                                else if(p.Status == "Rejected")
+                                {
+                                    <div style="background-color: #F9BE8C; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Rejected
+                                    </div>
+                                }
+                                else 
+                                {
+                                    <div style="background-color: rgba(7, 255, 15, 0.5);; color: #212529; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        Verified
+                                    </div>
+                                }
                             </td>
+
+                            @* show Actions cell only when current user is NOT in Family role *@
+                            @if (!User.IsInRole("Family"))
+                            {
+                                <td class="position-relative text-center">
+                                    <div class="dropdown" data-bs-display="static">
+                                        <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                        </a>
+                                        @if(p.Status == "Pending Review")
+                                        {
+                                            <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
+                                            <li class="px-2 text-muted fw-semibold small">Options</li>
+                                                <!-- RECORD PAYMENT: open confirmation modal -->
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                href="#"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#recordPaymentModal-@idToken">
+                                                    <span class="badge-dot bg-success"></span>
+                                                    Record Payment
+                                                </a>
+                                            </li>
+
+                                            <!-- REJECT PAYMENT: (keeps existing behaviour, opens reject modal or action) -->
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                href="#"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#rejectPaymentModal-@idToken">
+                                                    <span class="badge-dot bg-danger"></span>
+                                                    Reject Payment
+                                                </a>
+                                            </li>
+                                        </ul>
+                                        }
+                                    </div>
+                                </td>
+                            }
                         </tr>
+
+                        @* show Actions cell only when current user is NOT in Family role *@
+                          <!-- Record Payment confirmation modal (per-row) -->
+                        <div class="modal fade" id="recordPaymentModal-@idToken" tabindex="-1" aria-labelledby="recordPaymentModalLabel-@idToken" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius:10px;">
+                            <div class="modal-header" style="background:#00646A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                                <h5 class="modal-title fw-bold" id="recordPaymentModalLabel-@idToken">Confirm Record Payment</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="fw-semibold mb-2">Are you sure you want to record this payment?</p>
+
+                                <div class="text-muted small mb-3">
+                                    <strong>Patient:</strong> @p.PatientName <br />
+                                    <strong>Amount:</strong> @string.Format("₱{0:N2}", p.AmountPaid) <br />
+                                    <strong>Reference:</strong> @(string.IsNullOrEmpty(p.TransactionNumber) ? "—" : p.TransactionNumber)
+                                </div>
+
+                                <form asp-controller="Billing" asp-action="RecordPayment" method="post" class="m-0">
+                                <input type="hidden" name="PaymentId" value="@p.PaymentId" />
+                                @* add antiforgery token if your controller expects it on POST *@
+                                @Html.AntiForgeryToken()
+
+                            <div class="mb-2">
+                                <label class="form-label small">Total Payment Received</label>
+                                <input type="number" step="0.01" min="0" name="AmountReceived" class="form-control form-control-sm" value="@p.AmountPaid" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small">Remarks (optional)</label>
+                                <textarea name="Remarks" class="form-control form-control-sm" rows="2" placeholder="Optional note about this payment"></textarea>
+                            </div>
+
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                                    <button type="submit" class="btn" style="background:#00646A; color:#fff; border-radius:8px; min-width:120px; font-weight:600;">Confirm</button>
+                            </div>
+                        </form>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+
+                        <!-- Reject Payment confirmation modal (optional) -->
+                        <div class="modal fade" id="rejectPaymentModal-@idToken" tabindex="-1" aria-labelledby="rejectPaymentModalLabel-@idToken" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius:10px;">
+                            <div class="modal-header" style="background:#C94A4A; color:#fff; border-top-left-radius:10px; border-top-right-radius:10px;">
+                                <h5 class="modal-title fw-bold" id="rejectPaymentModalLabel-@idToken">Reject Payment</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="fw-semibold mb-2">Are you sure you want to reject this payment?</p>
+
+                                <div class="text-muted small mb-3">
+                                    <strong>Patient:</strong> @p.PatientName <br />
+                                    <strong>Amount:</strong> @string.Format("₱{0:N2}", p.AmountPaid) <br />
+                                    <strong>Reference:</strong> @(string.IsNullOrEmpty(p.TransactionNumber) ? "—" : p.TransactionNumber)
+                                </div>
+
+                                <form asp-controller="Billing" asp-action="RejectPayment" method="post" class="m-0">
+                                    <input type="hidden" name="PaymentId" value="@p.PaymentId" />
+                                    @Html.AntiForgeryToken()
+
+                                    <div class="mb-3">
+                                        <label class="form-label small">Remarks (optional)</label>
+                                        <textarea name="Remarks" class="form-control form-control-sm" rows="3" placeholder="Reason for rejection"></textarea>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px; min-width:100px;">Cancel</button>
+                                        <button type="submit" class="btn btn-danger" style="border-radius:8px; min-width:120px; font-weight:600;">Reject</button>
+                                    </div>
+                                </form>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
                         }
                     }
                 </tbody>

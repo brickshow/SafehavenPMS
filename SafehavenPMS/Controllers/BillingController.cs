@@ -70,6 +70,13 @@ namespace SafehavenPMS.Controllers
             //     CreatedBy = m.CreatedBy
             // }).ToList();
 
+            // load payment history entries (use Set<T>() to avoid depending on DbSet property name)
+            var paymentHistories = await _context.PaymentHistories
+                                                 .Include(ph => ph.Payment)
+                                                 .Include(ph => ph.Invoice)
+                                                 .ThenInclude(i => i.Patient)
+                                                 .ToListAsync();
+
             var viewModel = new BillablesPageViewModel
             {
                 Items = billables.Select(b => new BillableItemViewModel
@@ -104,13 +111,39 @@ namespace SafehavenPMS.Controllers
                     PaymentId = p.PaymentId,
                     InvoiceId = p.InvoiceId,
                     PatientId = p.PatientId,
-                    PatientName = p.Patient != null ? $"{p.Patient.Firstname} {p.Patient.Lastname}" : string.Empty,
+                    // prevent NRE when p.Patient is null
+                    PatientName = p.Patient != null
+                                  ? $"{(p.Patient.Firstname ?? "").Trim()} {(p.Patient.Lastname ?? "").Trim()}".Trim()
+                                  : string.Empty,
                     AmountPaid = p.AmountPaid,
+                    TransactionNumber = p.TransactionNumber,
                     PaymentMethod = p.PaymentMethod,
+                    // support both property names if model differs (ProofUrl preferred)
+                    PhotoUrl = p.ProofFileName,
+                    Status = p.status,
                     Remarks = p.Remarks,
                     CreatedAt = p.CreatedAt,
                     CreatedBy = p.CreatedBy
                 }).ToList(),
+
+                PaymentHistories = paymentHistories.Select(ph => new PaymentHistoryItemViewModel
+                {
+                    PaymentHistoryId = ph.PaymentHistoryId,
+                    PaymentId = ph.PaymentId,
+                    PaymentRefNumber = ph.Payment?.PaymentRefId,
+                    InvoiceId = ph.InvoiceId,
+                    InvoiceRefNumber = ph.Invoice.InvoiceRefId,
+                    Period = ph.Period,
+                    Month = ph.Month,
+                    Year = ph.Year,
+                    DueDate = ph.DueDate,
+                    TotalAmount = ph.TotalAmount,
+                    AmountDue = ph.AmountDue,
+                    AmountToApply = ph.AmountToApply,
+                    Remarks = ph.Remarks,
+                    RecordedBy = ph.RecordedBy,
+                    CreatedAt = ph.CreatedAt
+                }).ToList()
             };
 
             return View(viewModel);
@@ -311,7 +344,7 @@ namespace SafehavenPMS.Controllers
                 });
                 Console.WriteLine("Generated invoices:");
                 Console.WriteLine(json);
-            }   
+            }
             catch (Exception ex)
             {
                 Console.WriteLine("Error serializing invoices: " + ex.Message);
@@ -379,56 +412,56 @@ namespace SafehavenPMS.Controllers
                   })
                   .ToList();
 
-    ViewBag.Lines = lines;
+            ViewBag.Lines = lines;
 
-    // prepare billables for the same patient/period (if month/year present on invoice)
-    List<object> billables;
-    // inv.Month and inv.Year are integers (not nullable) so check their values directly.
-    if (inv.Month > 0 && inv.Year > 0)
-    {
-        var periodStart = new DateTime(inv.Year, inv.Month, 1);
-        var periodEnd = periodStart.AddMonths(1).AddTicks(-1);
-
-        billables = await _context.Billables
-            .Where(b => b.PatientId == inv.PatientId && b.DateAdded >= periodStart && b.DateAdded <= periodEnd)
-            .OrderBy(b => b.Category)
-            .ThenBy(b => b.DateAdded)
-            .Select(b => new
+            // prepare billables for the same patient/period (if month/year present on invoice)
+            List<object> billables;
+            // inv.Month and inv.Year are integers (not nullable) so check their values directly.
+            if (inv.Month > 0 && inv.Year > 0)
             {
-                BillableId = b.BillableId,
-                DateAdded = b.DateAdded,
-                Description = b.Description,
-                Category = b.Category,
-                Quantity = b.Quantity,
-                UnitPrice = b.UnitPrice,
-                Amount = b.Amount
-            })
-            .ToListAsync<object>();
-    }
-    else
-    {
-        // fallback: include all billables for patient
-        billables = await _context.Billables
-            .Where(b => b.PatientId == inv.PatientId)
-            .OrderBy(b => b.Category)
-            .ThenBy(b => b.DateAdded)
-            .Select(b => new
+                var periodStart = new DateTime(inv.Year, inv.Month, 1);
+                var periodEnd = periodStart.AddMonths(1).AddTicks(-1);
+
+                billables = await _context.Billables
+                    .Where(b => b.PatientId == inv.PatientId && b.DateAdded >= periodStart && b.DateAdded <= periodEnd)
+                    .OrderBy(b => b.Category)
+                    .ThenBy(b => b.DateAdded)
+                    .Select(b => new
+                    {
+                        BillableId = b.BillableId,
+                        DateAdded = b.DateAdded,
+                        Description = b.Description,
+                        Category = b.Category,
+                        Quantity = b.Quantity,
+                        UnitPrice = b.UnitPrice,
+                        Amount = b.Amount
+                    })
+                    .ToListAsync<object>();
+            }
+            else
             {
-                BillableId = b.BillableId,
-                DateAdded = b.DateAdded,
-                Description = b.Description,
-                Category = b.Category,
-                Quantity = b.Quantity,
-                UnitPrice = b.UnitPrice,
-                Amount = b.Amount
-            })
-            .ToListAsync<object>();
-    }
+                // fallback: include all billables for patient
+                billables = await _context.Billables
+                    .Where(b => b.PatientId == inv.PatientId)
+                    .OrderBy(b => b.Category)
+                    .ThenBy(b => b.DateAdded)
+                    .Select(b => new
+                    {
+                        BillableId = b.BillableId,
+                        DateAdded = b.DateAdded,
+                        Description = b.Description,
+                        Category = b.Category,
+                        Quantity = b.Quantity,
+                        UnitPrice = b.UnitPrice,
+                        Amount = b.Amount
+                    })
+                    .ToListAsync<object>();
+            }
 
-    ViewBag.Billables = billables;
+            ViewBag.Billables = billables;
 
-    return View("Invoice", vm);
-}
+            return View("Invoice", vm);
+        }
 
         // Optional: Download PDF stub (implement PDF generation as needed)
         [HttpGet]
@@ -472,29 +505,10 @@ namespace SafehavenPMS.Controllers
 
             if (model.ProofFile != null && model.ProofFile.Length > 0)
             {
-                try
+                using (var stream = model.ProofFile.OpenReadStream())
                 {
-                    using (var stream = model.ProofFile.OpenReadStream())
-                    {
-                        proofUrl = await _cloudinary.UploadImageAsync(stream, model.ProofFile.FileName);
-                    }
-                }
-                catch (Exception)
-                {
-                    // fallback: save locally if cloud upload fails
-                    var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "payments");
-                    if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
-
-                    var ext = Path.GetExtension(model.ProofFile.FileName);
-                    var savedFileName = $"{Guid.NewGuid():N}{ext}";
-                    var filePath = Path.Combine(uploadsRoot, savedFileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await model.ProofFile.CopyToAsync(stream);
-                    }
-
-                    proofUrl = $"/uploads/payments/{savedFileName}";
+                    // use the dedicated receipt upload method
+                    proofUrl = await _cloudinary.UploadReceiptAsync(stream, model.ProofFile.FileName);
                 }
             }
 
@@ -511,17 +525,182 @@ namespace SafehavenPMS.Controllers
                 TransactionDate = model.TransactionDate,
                 AmountPaid = model.AmountPaid ?? 0m,
                 Remarks = model.Remarks,
-                // Payment.ProofFileName is an IFormFile in the model; assign the uploaded file (model.ProofFile) instead of the string URL.
-                ProofFileName = model.ProofFile,
+                // persist the uploaded URL/path
+                ProofFileName = proofUrl,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = User?.Identity?.Name ?? "system"
             };
 
+            // Add and save to obtain the generated PaymentId, then set PaymentRefId and persist the update.
             _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            payment.PaymentRefId = $"PAY-{payment.PaymentId:D7}";
+            _context.Payments.Update(payment);
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Payment uploaded successfully.";
             return RedirectToAction("Index");
+        }
+
+        // POST: /Billing/RecordPayment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordPayment(int PaymentId, decimal? AmountReceived, string? Remarks)
+        {
+            if (PaymentId <= 0)
+            {
+                TempData["ErrorMessage"] = "Invalid payment id.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var payment = await _context.Payments
+                                        .Include(p => p.Invoice)
+                                        .FirstOrDefaultAsync(p => p.PaymentId == PaymentId);
+
+            if (payment == null)
+            {
+                TempData["ErrorMessage"] = "Payment not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // validate AmountReceived when provided
+            if (AmountReceived.HasValue && AmountReceived.Value < 0m)
+            {
+                TempData["ErrorMessage"] = "Amount received must be zero or greater.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Update amount/remarks if provided from the modal form
+            if (AmountReceived.HasValue)
+            {
+                payment.AmountPaid = AmountReceived.Value;
+            }
+
+            if (!string.IsNullOrWhiteSpace(Remarks))
+            {
+                payment.Remarks = Remarks;
+            }
+
+            // mark payment verified
+            payment.status = "Verified";
+            // optionally set who verified
+            payment.CreatedBy = User?.Identity?.Name ?? payment.CreatedBy;
+
+            // ensure we update PaymentRefId if not present
+            if (string.IsNullOrEmpty(payment.PaymentRefId))
+            {
+                payment.PaymentRefId = $"PAY-{payment.PaymentId:D7}";
+            }
+
+            // prepare payment history entry
+            var invoice = payment.Invoice;
+            decimal invoiceTotal = invoice?.TotalAmount ?? 0m;
+
+            // compute current verified payments total for invoice (exclude this payment)
+            var verifiedSum = await _context.Payments
+                                    .Where(x => x.InvoiceId == payment.InvoiceId && x.status == "Verified" && x.PaymentId != payment.PaymentId)
+                                    .SumAsync(x => (decimal?)x.AmountPaid) ?? 0m;
+
+            // amount to apply is this payment's (possibly updated) amount
+            decimal amountToApply = payment.AmountPaid;
+            // remaining amount due after applying existing verified payments + this one
+            decimal amountDue = Math.Max(0m, invoiceTotal - (verifiedSum + amountToApply));
+
+            var ph = new PaymentHistory
+            {
+                PaymentId = payment.PaymentId,
+                PaymentRefNumber = payment.PaymentRefId,
+                InvoiceId = payment.InvoiceId,
+                InvoiceRefNumber = invoice?.InvoiceRefId,
+                Period = (invoice != null && invoice.Month > 0 && invoice.Year > 0) ? new DateTime(invoice.Year, invoice.Month, 1).ToString("MMM yyyy") : null,
+                Month = invoice?.Month,
+                Year = invoice?.Year,
+                DueDate = invoice?.DueDate,
+                TotalAmount = invoiceTotal,
+                AmountToApply = amountToApply,
+                AmountDue = amountDue,
+                Remarks = payment.Remarks,
+                RecordedBy = User?.Identity?.Name ?? payment.CreatedBy,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // persist changes
+            _context.Payments.Update(payment);
+            _context.PaymentHistories.Add(ph);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Payment recorded and marked as verified.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: /Billing/RejectPayment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectPayment(int PaymentId, string? Remarks)
+        {
+            if (PaymentId <= 0)
+            {
+                TempData["ErrorMessage"] = "Invalid payment id.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var payment = await _context.Payments
+                                        .Include(p => p.Invoice)
+                                        .FirstOrDefaultAsync(p => p.PaymentId == PaymentId);
+
+            if (payment == null)
+            {
+                TempData["ErrorMessage"] = "Payment not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // mark payment rejected
+            payment.status = "Rejected";
+            // store remarks (overwrite or append)
+            payment.Remarks = string.IsNullOrWhiteSpace(Remarks) ? payment.Remarks : Remarks;
+            // mark who performed the action
+            payment.CreatedBy = User?.Identity?.Name ?? payment.CreatedBy;
+
+            // ensure PaymentRefId exists
+            if (string.IsNullOrEmpty(payment.PaymentRefId))
+            {
+                payment.PaymentRefId = $"PAY-{payment.PaymentId:D7}";
+            }
+
+            // prepare a payment history entry documenting the rejection
+            var invoice = payment.Invoice;
+            decimal invoiceTotal = invoice?.TotalAmount ?? 0m;
+
+            // compute current verified payments total for invoice (excluding this rejected payment)
+            var verifiedSum = await _context.Payments
+                                    .Where(x => x.InvoiceId == payment.InvoiceId && x.status == "Verified")
+                                    .SumAsync(x => (decimal?)x.AmountPaid) ?? 0m;
+
+            var ph = new PaymentHistory
+            {
+                PaymentId = payment.PaymentId,
+                PaymentRefNumber = payment.PaymentRefId,
+                InvoiceId = payment.InvoiceId,
+                InvoiceRefNumber = invoice?.InvoiceRefId,
+                Period = (invoice != null && invoice.Month > 0 && invoice.Year > 0) ? new DateTime(invoice.Year, invoice.Month, 1).ToString("MMM yyyy") : null,
+                Month = invoice?.Month,
+                Year = invoice?.Year,
+                DueDate = invoice?.DueDate,
+                TotalAmount = invoiceTotal,
+                AmountToApply = 0m, // rejected => nothing applied
+                AmountDue = Math.Max(0, invoiceTotal - verifiedSum),
+                Remarks = $"Rejected: {payment.Remarks}",
+                RecordedBy = User?.Identity?.Name ?? payment.CreatedBy,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Payments.Update(payment);
+            _context.PaymentHistories.Add(ph);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Payment rejected.";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

@@ -72,11 +72,11 @@
 
         <div class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
             @* render payments partial if you have one *@
-            @* @await Html.PartialAsync("BillingTabs/Payments", Model.Payments) *@
+            @await Html.PartialAsync("BillingTabs/_Payments", Model.UploadPayments)
         </div>
 
         <div class="tab-pane fade" id="payhistory" role="tabpanel" aria-labelledby="payhistory-tab">
-            @* payment history content/partial here *@
+            @await Html.PartialAsync("BillingTabs/_PaymentHistory", Model.PaymentHistories)
         </div>
     </div>
 </div>

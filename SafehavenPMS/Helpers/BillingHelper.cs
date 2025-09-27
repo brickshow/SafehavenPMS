@@ -108,12 +108,13 @@ namespace SafehavenPMS.Helpers
             {
                 await db.SaveChangesAsync();
 
-                // optional: update invoice numbers to include persisted Id if you want unique sequence
-                // (example: append InvoiceId for readability)
+                // assign a stable sequential reference using the persisted InvoiceId
+                // format: INV-000000{n}  => InvoiceId 1 => INV-0000001
                 foreach (var inv in createdInvoices)
                 {
-                    // if you want to change InvoiceNumber after save, uncomment:
-                    // inv.InvoiceNumber = $"INV-{inv.InvoiceId:D6}";
+                    inv.InvoiceNumber = $"INV-{inv.InvoiceId:D7}";
+                    // mark modified so EF will persist the new invoice number
+                    db.Entry(inv).Property(i => i.InvoiceNumber).IsModified = true;
                 }
 
                 await db.SaveChangesAsync();
@@ -124,7 +125,7 @@ namespace SafehavenPMS.Helpers
 
         private static string GenerateInvoiceNumber(int patientId, int year, int month)
         {
-            // simple deterministic invoice number: INV-{YYYY}{MM}-{PatientId padded}
+            // simple deterministic invoice number used before persistence (keeps readability)
             return $"INV-{year}{month:00}-{patientId:D4}";
         }
     }

@@ -9,6 +9,8 @@ namespace SafehavenPMS.Models
         [Key]
         public int PaymentId { get; set; }
 
+        public string? PaymentRefId { get; set; }
+
         public int InvoiceId { get; set; }
         public virtual Invoice? Invoice { get; set; }
 
@@ -30,8 +32,10 @@ namespace SafehavenPMS.Models
         [MaxLength(500)]
         public string? Remarks { get; set; }
 
-        [MaxLength(300)]
-        public IFormFile? ProofFileName { get; set; }
+        public string status { get; set; } = "Pending Review";
+
+        [MaxLength(300)] 
+        public string? ProofFileName { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         [MaxLength(200)]

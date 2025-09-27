@@ -9,6 +9,7 @@ namespace SafehavenPMS.Models
     {
         [Key]
         public int InvoiceId { get; set; }
+        public string? InvoiceRefId { get; set; }
 
         [Required]
         public int PatientId { get; set; }

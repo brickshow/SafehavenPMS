@@ -69,6 +69,7 @@
 <div class="container bg-white mt-3 p-0">
     <form asp-action="AdmitPatient" asp-controller="Admission" method="post">
         <input type="hidden" asp-for="PatientId" value="@Model.PatientId">
+        <input type="hidden" asp-for="AdmissionId" value="@Model.AdmissionId">
         <div class="section-header bg-teal text-white p-2 mb-3 w-100" style="background-color: #015F6B;">
             Assign Clinical Staff
         </div>

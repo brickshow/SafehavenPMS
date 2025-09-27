@@ -23,22 +23,7 @@
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
 
-                    <!-- Sort by -->
-                    <div class="sort-by d-flex align-items-center">
-                        <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm">
-                            <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
-                                <span class="me-2">Sort by</span>
-                                <div class="number-box d-flex align-items-center gap-1">
-                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
-                                        <span class="number">A</span>
-                                        <span class="number">Z</span>
-                                    </div>
-                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
-                                </div>
-                            </button>
-                        </form>
-                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -128,6 +113,22 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-center">
+        <!-- Sort by -->
+                    <div class="sort-by d-flex align-items-center">
+                        <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm">
+                            <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
+                                <span class="me-2">Sort by</span>
+                                <div class="number-box d-flex align-items-center gap-1">
+                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
+                                        <span class="number">A</span>
+                                        <span class="number">Z</span>
+                                    </div>
+                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
+                                </div>
+                            </button>
+                        </form>
+                    </div>
             <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
         </div>
     </div>

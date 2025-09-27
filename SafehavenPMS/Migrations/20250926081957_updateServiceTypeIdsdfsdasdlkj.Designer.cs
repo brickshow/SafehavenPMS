@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SafehavenPMS.Data;
 
@@ -11,9 +12,11 @@ using SafehavenPMS.Data;
 namespace SafehavenPMS.Migrations
 {
     [DbContext(typeof(SafehavenPMSContext))]
-    partial class SafehavenPMSContextModelSnapshot : ModelSnapshot
+    [Migration("20250926081957_updateServiceTypeIdsdfsdasdlkj")]
+    partial class updateServiceTypeIdsdfsdasdlkj
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,8 +63,8 @@ namespace SafehavenPMS.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<string>("RecordedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("RecordedBy")
+                        .HasColumnType("int");
 
                     b.HasKey("AdministrationId");
 
@@ -769,9 +772,6 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("InvoiceRefId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("Month")
                         .HasColumnType("int");
 
@@ -1452,9 +1452,6 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("PaymentRefId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ProofFileName")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
@@ -1470,10 +1467,6 @@ namespace SafehavenPMS.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("PaymentId");
 
                     b.HasIndex("InvoiceId");
@@ -1481,70 +1474,6 @@ namespace SafehavenPMS.Migrations
                     b.HasIndex("PatientId");
 
                     b.ToTable("Payments");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.PaymentHistory", b =>
-                {
-                    b.Property<int>("PaymentHistoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentHistoryId"));
-
-                    b.Property<decimal>("AmountDue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("AmountToApply")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InvoiceId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("InvoiceRefNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("Month")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PaymentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PaymentRefNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Period")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("RecordedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("PaymentHistoryId");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.HasIndex("PaymentId");
-
-                    b.ToTable("PaymentHistory");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PhysicalExam", b =>
@@ -2475,25 +2404,6 @@ namespace SafehavenPMS.Migrations
                     b.Navigation("Invoice");
 
                     b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("SafehavenPMS.Models.PaymentHistory", b =>
-                {
-                    b.HasOne("SafehavenPMS.Models.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SafehavenPMS.Models.Payment", "Payment")
-                        .WithMany()
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Invoice");
-
-                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("SafehavenPMS.Models.PhysicalExam", b =>

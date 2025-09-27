@@ -11,6 +11,12 @@
         public string? ScheduleTimes { get; set; }
         public string? AdministrationStatus { get; set; }
 
+                // Daily administration details
+        public bool BreakfastTaken { get; set; } = false;
+        public bool LunchTaken { get; set; } = false;
+        public bool DinnerTaken { get; set; } = false;
+        public bool BedtimeTaken { get; set; } = false;
+
         // List of medications for this patient
         public List<MedicationOrderViewModel>? Medications { get; set; }
     }

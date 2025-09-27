@@ -40,7 +40,9 @@ namespace SafehavenPMS.ViewModel.Billing
         public IFormFile? ProofFile { get; set; }
 
         // Optional: store saved filename for UI/DB mapping
-        public string? SavedFileName { get; set; }
+        public string? PhotoUrl { get; set; }
+
+        public string? Status { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
