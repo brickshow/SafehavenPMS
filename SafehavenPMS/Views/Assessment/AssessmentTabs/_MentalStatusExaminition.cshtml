@@ -4,10 +4,10 @@
     <input type="hidden" asp-for="PatientId" value="@Model.PatientId" />
 
     <div class="card mb-4">
-        <div class="card-header bg-white" style="color: #015F6B;">
+        <div class="card-header bg-white mt-2" style="color: #015F6B;">
             <h5 class="mb-0">MENTAL STATUS EXAMINATION</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body pt-2 p-5">
             <div class="row g-4">
                 <div class="col-12">
                     <div class="mb-3 section-block">
@@ -27,7 +27,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.GeneralAppearanceOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.GeneralAppearanceOthers" />
                             </div>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.SpeechOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.SpeechOthers" />
                             </div>
                         </div>
                     </div>
@@ -79,7 +79,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.BehaviorOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.BehaviorOthers" />
                             </div>
                         </div>
                     </div>
@@ -105,7 +105,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.ViolenceOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.ViolenceOthers" />
                             </div>
                         </div>
                     </div>
@@ -143,7 +143,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.MoodOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.MoodOthers" />
                             </div>
                         </div>
                     </div>
@@ -169,7 +169,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.AffectOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.AffectOthers" />
                             </div>
                         </div>
                     </div>
@@ -193,7 +193,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.ThoughtsOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.ThoughtsOthers" />
                             </div>
                         </div>
                     </div>
@@ -215,7 +215,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.CognitionOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.CognitionOthers" />
                             </div>
                         </div>
                     </div>
@@ -253,7 +253,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.PerceptionsOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.PerceptionsOthers" />
                             </div>
                         </div>
                     </div>
@@ -271,7 +271,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.MemoryOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.MemoryOthers" />
                             </div>
                         </div>
                     </div>
@@ -305,7 +305,7 @@
                             </div>
                             <div class="form-check flex-grow-1 d-flex align-items-center">
                                 <label class="form-check-label me-2">Others:</label>
-                                <input class="form-control w-auto" type="text" asp-for="MentalStatusExamination.OrientationOthers" />
+                                <input class="form-control w-50" type="text" asp-for="MentalStatusExamination.OrientationOthers" />
                             </div>
                         </div>
                     </div>
@@ -347,8 +347,9 @@
                     </div>
                 </div>
             </div>
-            <div class="mt-4 text-end">
-                <button type="submit" class="btn btn-primary px-4">Save</button>
+             <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                <button type="submit" class="btn-next btn-primary px-4">Save</button>
             </div>
         </div>
     </div>
@@ -363,7 +364,7 @@
 
     .section-title {
         font-weight: 700;
-        color: #015F6B;
+        color: black;
         margin-bottom: 12px;
         display: block;
         font-size: 1rem;
@@ -436,11 +437,18 @@
     }
 
     /* reasonable width for the 'Others' input */
-    .section-block .form-control.w-auto {
-        width: 260px;
+    .section-block .form-control.w-50 {
+        width: 280px;
         max-width: 100%;
         min-width: 0;
     }
+
+.section-block .form-control.w-50 {
+    width: 500px;
+    max-width: 100%;
+    min-width: 0;
+}
+    
 
     /* reset bootstrap form-check default */
     .form-check {
@@ -469,7 +477,7 @@
             flex-direction: row;
         }
 
-        .section-block .form-control.w-auto {
+        .section-block .form-control.w-50 {
             width: 100% !important;
         }
     }

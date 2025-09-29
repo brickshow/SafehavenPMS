@@ -6,23 +6,25 @@
       <input type="hidden" asp-for="PatientId" value="@Model.PatientId"/>
     <div class="card shadow-sm mb-4" style="border-radius:6px;">
         <div class="card-body p-4">
-            <h6 class="text-uppercase" style="color:#0f7b7f; font-weight:700;">Counselor's / Case Worker's Impression</h6>
-
-            <div id="impressionsContainer" class="mb-2">
+            <div class="bg-white mt-2" style="color: #015F6B;">
+                <h5 class="mb-0"><b>COUNSELOR'S/CASE WORKER'S IMPRESSION</b></h5>
+            </div>
+            <div id="impressionsContainer" class="p-4 pt-4 pb-2">
                 <textarea class="form-control auto-expand"
                           id="impressionsTextArea"
                           asp-for="CouncilorImpression"
                           placeholder="Please write your professional impressions and observations here...">@Model.CouncilorImpression</textarea>
             </div>
         </div>
+         <div class="p-5 pt-0">
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                <button type="submit" class="btn-next btn-primary px-4">Save</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Save Button -->
-    <div class="d-flex justify-content-end mt-4 mb-4">
-        <button type="submit" class="btn btn-custom">
-            <i class="bx bx-save me-2"></i>Save
-        </button>
-    </div>
+   
 </form>
 
 

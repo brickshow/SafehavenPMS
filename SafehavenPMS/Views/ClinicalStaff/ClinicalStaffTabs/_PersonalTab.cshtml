@@ -5,10 +5,12 @@
 }
 
 @* About Patient Card *@
+<div class="about-staff-header mb-0 mt-0 d-flex justify-content-between align-items-center" style="background-color: #006d77; color: #fff; border-top-left-radius: 6px; border-top-right-radius: 6px;">
+    <span class="fw-semibold fs-5 p-3 pt-2 pb-2 d-inline-block">Personal Information</span>
+    <a href="@Url.Action("Edit", "ClinicalStaff", new { id = staff?.ClinicalStaffID })" class="text-decoration-none m-3 mt-2 mb-2 fw-semibold text-white px-4" style="color: #ffffff;">Edit</a>
+</div>
 <div class="bg-white rounded shadow-sm">
-    <div class="d-flex justify-content-end align-items-center m-2`">
-        <a href="@Url.Action("Edit", "ClinicalStaff", new { id = staff?.ClinicalStaffID })" class="text-decoration-none m-3">Edit</a>
-    </div>
+   
 
     <div class="row">
         <!-- Profile Picture (Left Side) -->
@@ -19,11 +21,11 @@
         </div>
 
         <!-- Personal Information + Case Details (Right Side) -->
-        <div class="col-md-8">
+        <div class="col-md-8 mt-4">
             <!-- Personal Information -->
             <div class="d-flex flex-row justify-content-between align-items-center title">
                 <hr class="flex-grow-1 mx-2" />
-                <span style="color:#015F6B">Staff Information</span>
+                <span style="color:#015F6B; font-size: 1.5rem;">Staff Information</span>
                 <hr class="flex-grow-1 mx-2" />
             </div>            
             <div class="row">

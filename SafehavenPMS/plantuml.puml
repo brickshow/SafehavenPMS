@@ -1,0 +1,623 @@
+﻿@startuml
+skinparam classAttributeIconSize 0
+
+package "SafehavenPMS.Models" {
+
+  class Patient {
+    +PatientId : int
+    +Firstname : string
+    +Lastname : string
+    +MiddleName : string
+    +PhoneNumber : string
+    +Sex : string
+    +Address : string
+    +DateOfBirth : DateTime
+    +PatientStatus : string
+    +Occupation : string
+    +Education : string
+    +Religion : string
+    +MaritalStatus : string
+    +PhotoUrl : string
+    +CreatedAt : DateTime
+    --
+    +IntakeForm : IntakeForm
+    +ClinicalStaffPatients : ICollection<ClinicalStaffPatient>
+    +MedicationOrders : ICollection<MedicationOrder>
+    +AdministrationLogs : ICollection<AdministrationLog>
+    +NewAppointments : ICollection<NewAppointment>
+    +InitialAssessmentForms : ICollection<InitialAssessmentForm>
+    +PsychiatricAssessments : ICollection<PsychiatricAssessment>
+    +Admissions : ICollection<Admission>
+    +Interventions : ICollection<Intervention>
+  }
+
+  class ClinicalStaff {
+    +ClinicalStaffID : int
+    +Firstname : string
+    +Lastname : string
+    +MiddleName : string?
+    +Sex : string
+    +Specialty : string
+    +PhoneNumber : string
+    +Position : string
+    +ProfilePictureURL : string
+    +PRC_Licensed : string
+    +Email : string
+    +HireDate : DateTime
+    +CreatedAt : DateTime
+    +Address : string
+    +IsActive : bool
+    +IsDeleted : bool
+    --
+    +ClinicalStaffPatients : ICollection<ClinicalStaffPatient>
+    +Availabilities : ICollection<Availability>
+    +Schedulings : ICollection<NewAppointment>
+  }
+
+  class ClinicalStaffPatient {
+    +PatientId : int
+    +ClinicalStaffId : int
+    --
+    +Patient : Patient
+    +ClinicalStaff : ClinicalStaff
+  }
+
+  class Availability {
+    +AvailabilityId : int
+    +ClinicalStaffID : int
+    --
+    +ClinicalStaff : ClinicalStaff
+    +Day : DayOfWeek
+    +SlotDate : DateTime?
+    +StartTime : TimeSpan
+    +EndTime : TimeSpan
+    +Notes : string?
+    +Status : string
+  }
+
+  class Medicine {
+    +MedicineId : int
+    +GenericName : string
+    +BrandName : string
+    +Form : string
+    +Strength : decimal
+    +Unit : string
+    +Price : decimal
+    +DateAdded : DateTime
+    +Status : string
+  }
+
+  class NewAppointment {
+    +NewAppointmentId : int
+    +PatientId : int
+    +ClinicalStaffId : int
+    +Type : string
+    +ScheduleDate : DateTime
+    +ScheduleTime : TimeSpan
+    +Status : string
+    +Notes : string
+    +CreatedAt : DateTime
+    +CreatedBy : string
+  }
+
+  class MedicationOrder {
+    +MedicationOrderId : int
+    +AdministrationLogId : int
+    +PatientId : int
+    +MedicineId : int
+    +PsyProblemListId : int
+    +UnitPerDose : int
+    +Note : string
+    +ScheduledType : string
+    +DaysInterval : int
+    +Breakfast : bool
+    +Lunch : bool
+    +Dinner : bool
+    +Bedtime : bool
+    +StartDate : DateTime
+    +DiscontinueDate : DateTime
+    +NoDiscontinueDate : bool
+    +CreatedAt : DateTime
+    +CreatedBy : string
+    +UpdatedAt : DateTime
+    +UpdatedBy : string
+    +Status : string
+  }
+
+  class Admission {
+    +AdmissionId : int
+    +CaseId : string
+    +PatientId : int
+    +PhysicianId : int
+    +PsychologistId : int
+    +PsychometricianId : int
+    +SocialWorkerId : int
+    +RecoveryCoachId : int
+    +ApprovalDate : DateTime
+    +CreatedBy : string
+    +CreatedAt : DateTime
+    +UpdatedBy : string
+    +UpdatedAt : DateTime
+    +EndDate : DateTime
+    +EndedBy : string
+    +Status : string
+    +ProgramType : string
+  }
+
+  class User {
+    +UserId : int
+    +Username : string
+    +Email : string
+    +Role : string
+    +IsActive : bool
+    +PasswordHash : string
+    +PasswordSalt : string
+    +CreatedAt : DateTime
+    +CreatedBy : string
+    +UpdatedAt : DateTime
+    +UpdatedBy : string
+    +PatientId : int
+    +ClinicalStaffID : int
+  }
+
+  class AdministrationLog {
+    +AdministrationId : int
+    +PatientId : int
+    +MedicationOrderId : int
+    +AdministrationDate : DateTime
+    +BreakfastTaken : bool
+    +LunchTaken : bool
+    +DinnerTaken : bool
+    +BedtimeTaken : bool
+    +Notes : string
+    +RecordedBy : string
+    +CreatedAt : DateTime
+  }
+
+  class IntakeForm {
+    +IntakeFormsId : int
+    +PatientId : int
+    +AccompaniedBy : string
+    +Affiliation : string
+    +PhoneNumber : string
+    +CreatedAt : DateTime
+    +CreatedBy : string
+    +UpdatedAt : DateTime
+    +UpdatedBy : string
+    +CompletedAt : DateTime
+    +ProblemPresentation : string
+    +CouncilorImpression : string
+    +OtherFamilyDetails : string
+    +PresentingComplaint : string
+  }
+
+  class FamilyMember {
+    +Id : int
+    +IntakeFormId : int
+    +Name : string
+    +Age : int
+    +Relationship : string
+    +Comments : string
+  }
+
+  class InitialAssessmentForm {
+    +InitialAssessmentFormId : int
+    +PatientId : int
+    +AssessedById : int
+    +AssessmentDate : DateTime
+    +ChiefComplaint : string
+    +HistoryOfPresentIllness : string
+    +PastPsychHistory : string
+    +MedicalHistory : string
+    +Allergies : string
+    +CurrentMedications : string
+    +Summary : string
+    +CreatedAt : DateTime
+    +UpdatedAt : DateTime
+  }
+
+  class HistoryPresent {
+    +HistoryPresentId : int
+    +InitialAssessmentFormId : int
+    +Details : string
+  }
+
+  class DrugUse {
+    +DrugUseId : int
+    +InitialAssessmentFormId : int
+    +Substance : string
+    +Frequency : string
+  }
+
+  class MedicalHistory {
+    +MedicalHistoryId : int
+    +InitialAssessmentFormId : int
+    +Details : string
+  }
+
+  class MedicalAllergy {
+    +MedicalAllergyId : int
+    +InitialAssessmentFormId : int
+    +Allergen : string
+    +Reaction : string
+  }
+
+  class SurgicalHistory {
+    +SurgicalHistoryId : int
+    +InitialAssessmentFormId : int
+    +Details : string
+  }
+
+  class PhysicalExam {
+    +PhysicalExamId : int
+    +InitialAssessmentFormId : int
+    +Findings : string
+  }
+
+  class Diagnosis {
+    +DiagnosisId : int
+    +InitialAssessmentFormId : int
+    +DiagnosisText : string
+  }
+
+  class SubstanceUseEntry {
+    +SubstanceUseEntryId : int
+    +DiagnosisId : int
+    +Substance : string
+    +Pattern : string
+  }
+
+  class ProblemList {
+    +ProblemListId : int
+    +InitialAssessmentFormId : int
+    +ProblemText : string
+  }
+
+  class Recommendation {
+    +RecommendationId : int
+    +InitialAssessmentFormId : int
+    +RecommendationText : string
+  }
+  class MentalStatusExamination {
+    +MentalStatusExaminationId : int
+    +InitialAssessmentFormId : int
+    +Appearance : string
+    +Behavior : string
+    +Speech : string
+    +Mood : string
+    +Affect : string
+    +ThoughtProcess : string
+    +ThoughtContent : string
+    +Perception : string
+    +Orientation : string
+    +Attention : string
+    +Memory : string
+    +Insight : string
+    +Judgement : string
+    +Cognition : string
+    +Findings : string
+    +CreatedAt : DateTime
+    --
+    +InitialAssessmentForm : InitialAssessmentForm
+  }
+
+  class PsychiatricAssessment {
+    +PsychiatricAssessmentId : int
+    +PatientId : int
+    +AssessmentDate : DateTime
+  }
+
+  class PsyProblemList {
+    +PsyProblemListId : int
+    +PsychiatricAssessmentId : int
+    +ProblemText : string
+  }
+
+  class PsyDiagnosisList {
+    +PsyDiagnosisListId : int
+    +PsychiatricAssessmentId : int
+    +DiagnosisText : string
+  }
+
+  class DischargedPatient {
+    +DischargedPatientId : int
+    +PatientId : int
+    +DischargeDate : DateTime
+    +DischargeSummary : string
+    +Destination : string
+    +FollowUpPlan : string
+  }
+
+  class Service {
+    +ServiceId : int
+    +Name : string
+    +Description : string
+    +AssignedRole : string
+    +IsActive : bool
+    +CreatedAt : DateTime
+    +UpdatedAt : DateTime
+  }
+
+  class Intervention {
+    +InterventionId : int
+    +PatientId : int
+    +PsyProblemListId : int
+    +ServiceTypeId : int
+    +ServiceId : int
+    +ClinicalStaffId : int
+    +Type : string
+    +Description : string
+    +Date : DateTime
+    +Outcome : string
+  }
+
+  class ProgressNote {
+    +ProgressNoteId : int
+    +PatientId : int
+    +InterventionId : int
+    +Clinician : string
+    +SoapRaw : string
+    +Subjective : string
+    +Objective : string
+    +Assessment : string
+    +Plan : string
+    +CreatedAt : DateTime
+    +UpdatedAt : DateTime
+  }
+
+  class Payment {
+    +PaymentId : int
+    +PatientId : int
+    +Amount : decimal
+    +Date : DateTime
+  }
+
+  class PaymentHistory {
+    +PaymentHistoryId : int
+    +PaymentId : int
+    +InvoiceId : int
+    +Amount : decimal
+    +Date : DateTime
+    +InvoiceRefNumber : string
+    +PaymentRefNumber : string
+    +Period : string
+    +Remarks : string
+    +RecordedBy : string
+  }
+
+  class MiscellaneousItem {
+    +MiscellaneousItemId : int
+    +Description : string
+    +Amount : decimal
+  }
+
+  class Billable {
+    +BillableId : int
+    +PatientId : int
+    +ServiceId : int
+    +Description : string
+    +Amount : decimal
+    +Date : DateTime
+    +BilledById : int
+    +Status : string
+  }
+
+  class Invoice {
+    +InvoiceId : int
+    +PatientId : int
+    +BillingDate : DateTime
+    +DueDate : DateTime
+    +Subtotal : decimal
+    +Tax : decimal
+    +TotalAmount : decimal
+    +Status : string
+    +CreatedAt : DateTime
+    +UpdatedAt : DateTime
+  }
+
+  class InvoiceLine {
+    +InvoiceLineId : int
+    +InvoiceId : int
+    +BillableItemId : int
+    +Description : string
+    +Quantity : int
+    +UnitPrice : decimal
+    +LineTotal : decimal
+  }
+}
+
+package "SafehavenPMS.Controllers" {
+  class AdmissionController <<Controller>> {
+    +Index()
+    +Details(int id)
+    +Create()
+    +Create(Admission admission)
+    +Edit(int id)
+    +Edit(int id, Admission admission)
+    +Delete(int id)
+    +DeleteConfirmed(int id)
+  }
+  class ApprovalController <<Controller>> {
+    +Index()
+    +AdmitPatient(int patientId, string programType)
+    +DischargeToOutpatient(int patientId, string programType)
+    +DischargeToCommunity(int patientId, string programType)
+  }
+  class AssessmentController <<Controller>> {
+    +Index()
+    +EditInitialAssessmentForm(int? id)
+    +SavePhysicalExam(...)
+    +SaveDiagnosis(...)
+    +SaveProblemList(...)
+    +SaveRecommendation(...)
+    +SubmitAssessment(int patientId)
+    +SaveMentalStatusExamination(...)
+    +SaveHistoryOfPresentIllness(...)
+  }
+  class IntakeController <<Controller>> {
+    +Index()
+    +EditIntakeForm(int id)
+    +SaveDetails(...)
+    +SaveFamilyData(...)
+    +Search(string searchQuery)
+    +Create()
+    +Create(IntakeForm intakeForm)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class MedicationController <<Controller>> {
+    +Index()
+    +AddMedicine()
+    +AddMedicine_Post(...)
+    +AddMedicationOrder(int? medicineId, int? patientId, int? problemId)
+    +AddMedicationOrder_Post(...)
+    +Edit(int id)
+    +Edit_Post(int id)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class BillingController <<Controller>> {
+    +Index()
+    +AddMiscellaneousItem()
+    +AddMiscellaneousItem_Post(...)
+    +GenerateInvoice()
+    +GenerateInvoiceConfirm()
+    +GenerateInvoice_Post(...)
+    +SearchPatients(string q)
+    +Create()
+    +Create(Invoice invoice)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class PatientController <<Controller>> {
+    +Index()
+    +AddNewPatient()
+    +Search(string searchQuery)
+    +SortBy(string sortOrder)
+    +PatientProfile(int id)
+    +Create()
+    +Create(Patient patient)
+    +Edit(int id)
+    +Edit(Patient patient)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class ServicesController <<Controller>> {
+    +Index()
+    +Add(string? serviceName, string? assignedRole)
+    +Edit(int serviceId, string serviceName, string assignedRole)
+    +Archive(int serviceId)
+    +Create()
+    +Create(Service service)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class SchedulingController <<Controller>> {
+    +Index()
+    +Search(string searchQuery)
+    +ScheduleAppointment(int? id)
+    +SelectDoctor(...)
+    +GetDateAndTimeSlots(...)
+    +Create()
+    +Create(NewAppointment appointment)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class AppointmentController <<Controller>> {
+    +Index()
+    +Create()
+    +Create(NewAppointment appointment)
+    +Edit(int id)
+    +Edit(NewAppointment appointment)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class ClinicalStaffController <<Controller>> {
+    +Index()
+    +Edit(int id)
+    +Create()
+    +Create(ClinicalStaff staff)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class UserController <<Controller>> {
+    +Index(string searchQuery, string role, string showInactive, int page, int pageSize)
+    +NewUser()
+    +Deactivate(int id)
+    +Create()
+    +Create(User user)
+    +Edit(int id)
+    +Edit(User user)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class AccountController <<Controller>> {
+    +CreateAccount(int? id)
+    +CreateAccount_Post(...)
+    +Confirmation(int? id)
+  }
+  class LoginController <<Controller>> {
+    +Login(string returnUrl)
+    +Login_Post(...)
+    +Logout()
+  }
+  class ProgressNoteController <<Controller>> {
+    +Index(int? patientId, int? page, int? pageSize, string searchQuery, string status, string sortOrder)
+    +Create(int? patientId, int? interventionId)
+    +Create_Post(...)
+    +ProgressNoteLists(int? patientId, int? selectedId)
+    +Edit(int id)
+    +Edit_Post(int id)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class PsychiatricAssessmentController <<Controller>> {
+    +Index()
+    +Search(string searchQuery)
+    +PsychiatricAssessmentForm(int id)
+    +SavingChiefComplaint(...)
+    +Create()
+    +Create(PsychiatricAssessment assessment)
+    +Edit(int id)
+    +Edit(PsychiatricAssessment assessment)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class PatientProfileController <<Controller>> {
+    +Index(int? id)
+  }
+  class TreatmentPlanController <<Controller>> {
+    +Index()
+    +AddProblem(int patientId, string problemText, int psychiatricAssessmentId)
+    +EditProblem(int patientId, int psyProblemListId, string problemText)
+    +MarkProblemResolved(int patientId, int psyProblemListId)
+  }
+  class BillableController <<Controller>> {
+    +Index()
+    +Create()
+    +Create(Billable billable)
+    +Edit(int id)
+    +Edit(Billable billable)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class DischargedPatientController <<Controller>> {
+    +Index()
+    +Create()
+    +Create(DischargedPatient patient)
+    +Edit(int id)
+    +Edit(DischargedPatient patient)
+    +Delete(int id)
+    +Details(int id)
+  }
+  class PatientRegistrationController <<Controller>> {
+    +Index()
+    +Create()
+    +Create(Patient patient)
+    +Delete(int id)
+    +Details(int id)
+  }
+}
+
+@enduml
+

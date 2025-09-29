@@ -8,32 +8,37 @@
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
-            <i class="bx bxs-group fs-2 me-2" title="Staff"></i>
+            <a href="javascript:history.back()" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
             <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
         </div>
     </div>
     <hr class="mt-0 mb-2" />
 </div>
 
-<div class="add-satff-content">
+<div class="add-staff-content">
     <div class="align-items-center">
-        <div class="left-panel d-flex flex-row align-items-center p-2">
-            <span class="mb-0 fs-4" style="color:#015F6B">Personal Information</span>
+        <div class="left-panel d-flex flex-row align-items-center p-3 pt-1 pb-2  mb-0" style="background-color: #015F6B; color: #fff; border-top-left-radius: 6px; border-top-right-radius: 6px;">
+            <span class="mb-0 fs-5 fw-semibold flex-grow-1">About Staff</span>
+        </div>
+        <div class="left-panel d-flex flex-row align-items-center p-2 pt-1">
+            <span class="m-3 mt-4 mb-0 fs-5" style="color: #015F6B;">Personal Information</span>
         </div>
         <hr class="mt-0 mb-2" />
     </div>
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger m-3 d-flex justify-content-Start align-items-center" style="height:20px">
+        <div class="alert alert-danger m-3 d-flex justify-content-start align-items-center" style="height:20px">
             @TempData["Error"]
         </div>
     }
     <form asp-controller="ClinicalStaff" asp-action="AddNewClinicalStaff" method="post" enctype="multipart/form-data">
-        <div class="staff-form-container p-3">
+        <div class="staff-form-container p-5 pb-0 pt-4">
             <div class="row">
                 <div class="col-md-12">
                     @* Name Fields *@
-                    <div class="row mb-3 justify-content-center">
+                    <div class="row mb-0 justify-content-center">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Firstname" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">First Name</label>
                             <div class="d-flex flex-column uniform-input">
@@ -99,16 +104,9 @@
 
             <div class="row">
                 @* Left Side Inputs *@
-                <div class="col-md-8">
-                    <div class="row mb-3">
-                        <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
-                            <label asp-for="Specialty" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Specialty</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Specialty" type="text" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="Specialty" class="text-danger"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
+                <div class="col-md-4">
+                    <div class="row mb-3">                        
+                        <div class="col-md-12 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Email" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Email</label>
                             <div class="d-flex flex-column uniform-input">
                                 <input asp-for="Email" type="email" class="form-control flex-grow-1 uniform-input" />
@@ -118,20 +116,13 @@
                     </div>
 
                     <div class="row mb-3">
-                        <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
+                        <div class="col-md-12 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="RPC_Licensed" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">PRC Licensed</label>
                             <div class="d-flex flex-column uniform-input">
                                 <input asp-for="RPC_Licensed" type="text" class="form-control flex-grow-1 uniform-input" />
                                 <span asp-validation-for="RPC_Licensed" class="text-danger"></span>
                             </div>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
-                            <label asp-for="HireDate" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Hire Date</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="HireDate" type="date" class="form-control flex-grow-1 uniform-input" />
-                                <span asp-validation-for="HireDate" class="text-danger"></span>
-                            </div>
-                        </div>
+                        </div>                        
                     </div>
                 </div>
 
@@ -140,7 +131,7 @@
                     <div class="rounded-circle border overflow-hidden mb-2" style="width: 100px; height: 100px;">
                         <img id="imagePreview" src="/Images/default.png" alt="Profile" class="w-100 h-100 object-fit-cover">
                     </div>
-                    <button type="button" class="change-picture-btn btn-outline-secondary btn-sm ms-3" onclick="document.getElementById('imageInput').click()">Upload Photo</button>
+                    <button type="button" class="change-picture-btn btn-outline-secondary btn-sm ms-4" onclick="document.getElementById('imageInput').click()">Upload Photo</button>
                     <input type="file" id="imageInput" class="d-none" accept="image/*" onchange="previewImage(this)" asp-for="ImageProfile">
                 </div>
             </div>
@@ -149,12 +140,12 @@
         @* Home address Section *@
         <div class="align-items-center">
             <div class="left-panel d-flex flex-row align-items-center p-2">
-                <span class="mb-0 fs-4" style="color:#015F6B">Home Address</span>
+                <span class="m-3 mt-1 mb-0 fs-5" style="color: #015F6B;">Home Address</span>
             </div>
             <hr class="mt-0 mb-2" />
         </div>
 
-        <div class="staff-form-container p-3">
+        <div class="staff-form-container p-5 pb-0 pt-4">
             <div class="row">
                 <div class="col-md-12">
                     @* Address Fields *@
@@ -210,7 +201,7 @@
         </div>
 
         @* Action Buttons *@
-        <div class="p-3">
+        <div class="p-5 pt-3">
             <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
                 <button type="submit" class="btn-next btn-primary px-4">Save</button>
@@ -220,13 +211,12 @@
 </div>
 
 <style>
-    .add-satff-content {
+    .add-staff-content {
         background: white;
         width: 100%;
         border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
     }
-
     .form-label {
         font-weight: 400;
         margin-bottom: 0;

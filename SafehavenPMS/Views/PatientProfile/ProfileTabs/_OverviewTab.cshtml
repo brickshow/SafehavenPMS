@@ -7,7 +7,7 @@
             <div class="card">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-0">Food Allergies</h6>
+                        <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Food Allergies</h6>
                         <small class="text-muted">List of known food allergies</small>
                     </div>
                     <a class="text-muted small" href="#">Edit</a>
@@ -15,7 +15,7 @@
                 <div class="card-body pt-0">
                     @if (Model?.FoodAllergies != null && Model.FoodAllergies.Any())
                     {
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-wrap gap-2 m-3 mt-0 mb-0">
                             @foreach (var item in Model.FoodAllergies)
                             {
                                 <span class="badge bg-light text-dark border rounded-pill">@item</span>
@@ -34,7 +34,7 @@
             <div class="card">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-0">Drug Allergies</h6>
+                        <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Drug Allergies</h6>
                         <small class="text-muted">Known drug reactions</small>
                     </div>
                     <a class="text-muted small" href="#">Edit</a>
@@ -42,7 +42,7 @@
                 <div class="card-body pt-0">
                     @if (Model?.DrugAllergies != null && Model.DrugAllergies.Any())
                     {
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-wrap gap-2 m-3 mt-0 mb-0">
                             @foreach (var item in Model.DrugAllergies)
                             {
                                 <span class="badge bg-light text-dark border rounded-pill">@item</span>
@@ -61,15 +61,15 @@
             <div class="card">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-0">Active Medications</h6>
+                        <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Active Medications</h6>
                         <small class="text-muted">Current prescriptions</small>
                     </div>
                     <a class="text-muted small" href="#">View all</a>
                 </div>
-                <div class="card-body pt-0">
+                <div class="card-body pt-0 fw-semibold">
                     @if (Model?.ActiveMedications != null && Model.ActiveMedications.Any())
                     {
-                        <div class="text-truncate">@string.Join(", ", Model.ActiveMedications)</div>
+                        <div class="text-truncate m-3 mt-0 mb-0">@string.Join(", ", Model.ActiveMedications)</div>
                     }
                     else
                     {
@@ -83,7 +83,7 @@
             <div class="card">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-0">Today's Notes</h6>
+                        <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Today's Notes</h6>
                         <small class="text-muted">Latest progress notes for today</small>
                     </div>
                     <div class="d-flex gap-2">
@@ -94,7 +94,7 @@
                 <div class="card-body p-0">
                     @if (Model?.TodaysNotes != null && Model.TodaysNotes.Any())
                     {
-                        <ul class="list-group list-group-flush">
+                        <ul class="list-group list-group-flush m-3 mt-0 mb-0">
                             @foreach (var note in Model.TodaysNotes)
                             {
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
@@ -124,8 +124,8 @@
         <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">Treatment Team</h6>
-                    <a class="small text-primary" href="@Url.Action("Assign", "ClinicalStaff", new { patientId = Model?.PatientId })">Manage</a>
+                    <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Treatment Team</h6>
+                    <a class="small" style="color:#767676;" href="@Url.Action("Assign", "ClinicalStaff", new { patientId = Model?.PatientId })">Manage</a>
                 </div>
 
                 <div>

@@ -1,10 +1,10 @@
 @model SafehavenPMS.ViewModel.AssessmentFormViewModel
 
-<div class="card">
-    <div class="card-header bg-white" style="color: #015F6B;">
-        <h5 class="mb-0">Recommendation</h5>
+<div class="card ">
+    <div class="card-header bg-white mt-2" style="color: #015F6B;">
+        <h5 class="mb-0">RECOMMENDATION</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body pt-3 p-5">
         <form asp-action="SaveRecommendation" asp-controller="Assessment" method="post" id="recommendationForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="PatientId" />
@@ -37,10 +37,9 @@
                 <textarea class="form-control" asp-for="Recommendation.Reason" rows="5" placeholder="Enter reason"></textarea>
             </div>
 
-            <div class="d-flex justify-content-end mt-4">
-                <button type="submit" class="btn btn-teal px-4">
-                    <i class="bx bx-save me-2"></i>SAVE
-                </button>
+             <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                <button type="submit" class="btn-next btn-primary px-4">Save</button>
             </div>
         </form>
     </div>
@@ -56,6 +55,6 @@
         color: white;
     }
     .form-label.fw-bold {
-        color: #015F6B;
+        color: black;
     }
 </style>
