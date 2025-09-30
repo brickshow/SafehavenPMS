@@ -59,8 +59,14 @@ namespace SafehavenPMS.Data
 
         // Progress notes entity
         public DbSet<ProgressNote> ProgressNotes { get; set; }
+
+        //Fo billing Entities
+        public DbSet<Payment> Payments { get; set; }
+        public DbSet<PaymentHistory> PaymentHistories { get; set; }
         public DbSet<SafehavenPMS.Models.MiscellaneousItem> MiscellaneousItems { get; set; }
         public DbSet<SafehavenPMS.Models.Billable> Billables { get; set; }
+        public DbSet<SafehavenPMS.Models.Invoice> Invoices { get; set; }
+        public DbSet<SafehavenPMS.Models.InvoiceLine> InvoiceLines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -298,6 +304,30 @@ namespace SafehavenPMS.Data
                 entity.Property(p => p.Objective).HasMaxLength(2000);
                 entity.Property(p => p.Assessment).HasMaxLength(2000);
                 entity.Property(p => p.Plan).HasMaxLength(2000);
+            });
+
+            // PaymentHistory relationships
+            modelBuilder.Entity<PaymentHistory>(entity =>
+            {
+                entity.HasKey(ph => ph.PaymentHistoryId);
+
+                // PaymentHistory -> Payment (optional one-to-one/many)
+                entity.HasOne(ph => ph.Payment)
+                      .WithMany() // Payment does not declare a collection
+                      .HasForeignKey(ph => ph.PaymentId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // PaymentHistory -> Invoice (optional)
+                entity.HasOne(ph => ph.Invoice)
+                      .WithMany() // Invoice does not declare a collection for history
+                      .HasForeignKey(ph => ph.InvoiceId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(ph => ph.InvoiceRefNumber).HasMaxLength(50);
+                entity.Property(ph => ph.PaymentRefNumber).HasMaxLength(50);
+                entity.Property(ph => ph.Period).HasMaxLength(50);
+                entity.Property(ph => ph.Remarks).HasMaxLength(500);
+                entity.Property(ph => ph.RecordedBy).HasMaxLength(200);
             });
         }
     }

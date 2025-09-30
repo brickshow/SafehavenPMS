@@ -1,0 +1,143 @@
+@model IEnumerable<SafehavenPMS.ViewModel.Billing.PaymentHistoryItemViewModel>
+
+@{
+    ViewBag.Title = "Payment History";
+    var items = Model?.ToList() ?? new List<SafehavenPMS.ViewModel.Billing.PaymentHistoryItemViewModel>();
+}
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <input id="ph-search" class="form-control" placeholder="Search patient, invoice or remarks..." />
+    </div>
+    <div class="col-md-6 text-end">
+        <button id="ph-search-btn" class="btn btn-teal">Search</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header table-header text-white">
+        <h5 class="mb-0">@(items.Count > 0 ? $"{items.Count} Payments" : "No payments found")</h5>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive-custom p-3">
+            <table class="table mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Payment ID</th>
+                        <th>Invoice ID</th>
+                        <th>Period</th>
+                        <th>Due Date</th>
+                        <th class="text-end">Total Amount</th>
+                        <th class="text-end">Amount to Apply</th>
+                        <th class="text-end">Amount Due</th>
+                        <th>Remarks</th>
+                        <th>Recorded by</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!items.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">No payment history.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var it in items)
+                        {
+                            // fallback invoice label
+                            var invoiceLabel = !string.IsNullOrEmpty(it.InvoiceNumber) ? it.InvoiceNumber : (it.InvoiceId > 0 ? $"INV-{it.InvoiceId}" : "—");
+                            var due = it.DueDate.HasValue ? it.DueDate.Value.ToString("MMM dd, yyyy") : "—";
+                            var period = !string.IsNullOrEmpty(it.Period) ? it.Period : (it.Month.HasValue && it.Year.HasValue ? new DateTime(it.Year.Value, it.Month.Value, 1).ToString("MMM yyyy") : "—");
+                        <tr>
+                            <td>@it.PaymentId</td>
+                            <td>@invoiceLabel</td>
+                            <td>@period</td>
+                            <td>@due</td>
+                            <td class="text-end">@string.Format("₱{0:N2}", it.TotalAmount)</td>
+                            <td class="text-end">@string.Format("₱{0:N2}", it.AmountToApply)</td>
+                            <td class="text-end">@string.Format("₱{0:N2}", it.AmountDue)</td>
+                            <td>@(string.IsNullOrEmpty(it.Remarks) ? "—" : it.Remarks)</td>
+                            <td>@(string.IsNullOrEmpty(it.RecordedBy) ? "—" : it.RecordedBy)</td>
+                        </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-header {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        font-weight: 600;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .table-responsive-custom {
+        overflow: visible !important;
+    }
+
+    .btn-teal {
+        background: linear-gradient(to right,#069FB2,#058594);
+        color: #fff;
+        border: none;
+    }
+
+    .btn-teal:hover {
+        opacity: .95;
+    }
+
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+
+    .card .card-header.table-header {
+        border-bottom: none;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+        white-space: nowrap;
+        padding-top: .75rem;
+        padding-bottom: .75rem;
+        border-top: none;
+    }
+
+    /* small screens: allow wrapping for long remarks */
+    @@media (max-width: 767px) {
+        .table td, .table th { white-space: normal; }
+    }
+
+    @@media print {
+        .header, .bot-content, .print-button, .top-content, .btn, .dropdown { display: none !important; }
+    }
+</style>
+
+<script>
+    // simple client-side filtering (optional)
+    (function(){
+        const btn = document.getElementById('ph-search-btn');
+        const input = document.getElementById('ph-search');
+
+        if (!btn || !input) return;
+
+        btn.addEventListener('click', function(){
+            const q = input.value.trim().toLowerCase();
+            const rows = document.querySelectorAll('table tbody tr');
+            rows.forEach(r => {
+                if (!q) {
+                    r.style.display = '';
+                    return;
+                }
+                const text = r.innerText.toLowerCase();
+                r.style.display = text.indexOf(q) >= 0 ? '' : 'none';
+            });
+        });
+    })();
+</script>

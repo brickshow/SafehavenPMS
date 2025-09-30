@@ -31,7 +31,12 @@ namespace SafehavenPMS.Controllers
                                             .ToListAsync();
 
             // Fetch all administration logs (for current date or all as needed)
-            var administrationLogs = await _context.AdministrationLogs.ToListAsync();
+            var todayStart = DateTime.Now.Date;
+            var todayEnd = todayStart.AddDays(1);
+            // only take today's logs so checkbox state reflects today
+            var administrationLogs = await _context.AdministrationLogs
+                                        .Where(a => a.AdministrationDate >= todayStart && a.AdministrationDate < todayEnd)
+                                        .ToListAsync();
 
             var model = new MedicationPageViewModel
             {
@@ -50,7 +55,7 @@ namespace SafehavenPMS.Controllers
                 MedicationOrders = medicationOrders.Select(m => new MedicationOrderViewModel
                 {
                     MedicationOrderId = m.MedicationOrderId,
-        
+
 
                     // Patient
                     PatientId = m.PatientId,
@@ -60,7 +65,7 @@ namespace SafehavenPMS.Controllers
 
                     // Medicine
                     MedicineId = m.MedicineId,
-                    
+
                     MedicineName = m.Medicine != null
                                     ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Unit} {m.Medicine.Form}"
                                     : string.Empty,
@@ -86,13 +91,13 @@ namespace SafehavenPMS.Controllers
                     Bedtime = m.Bedtime,
                     Status = m.Status,
                     CreatedBy = m.CreatedBy,
-                    
+
                     // Dates
                     StartDate = m.StartDate,
                     DiscontinueDate = m.DiscontinueDate,
                     NoDiscontinueDate = m.NoDiscontinueDate,
 
-                      // Map taken values if logs exist
+                    // Map taken values if logs exist
                     BreakfastTaken = administrationLogs
                         .FirstOrDefault(a => a.MedicationOrderId == m.MedicationOrderId)?.BreakfastTaken ?? false,
                     LunchTaken = administrationLogs
@@ -130,7 +135,7 @@ namespace SafehavenPMS.Controllers
                             MedicationOrderId = m.MedicationOrderId,
                             PatientId = m.PatientId,
                             MedicineId = m.MedicineId,
-                              MedicineName = m.Medicine != null
+                            MedicineName = m.Medicine != null
                                     ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Unit} {m.Medicine.Form}"
                                     : string.Empty,
                             UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
@@ -155,7 +160,14 @@ namespace SafehavenPMS.Controllers
                 }).ToList()
             };
 
-
+            // Debug: show what will be rendered in each med row
+            foreach (var p in model.AdministrationLogs)
+            {
+                foreach (var m in p.Medications)
+                {
+                    Console.WriteLine($"RENDER -> PatientId={p.PatientId}, OrderId={m.MedicationOrderId}, BF={m.BreakfastTaken}, L={m.LunchTaken}, D={m.DinnerTaken}, BT={m.BedtimeTaken}");
+                }
+            }
 
             return View(model);
         }
@@ -320,7 +332,8 @@ namespace SafehavenPMS.Controllers
 
             // Build SelectList for ViewBag
             ViewBag.PatientList = new SelectList(
-                patients.Select(p => new {
+                patients.Select(p => new
+                {
                     PatientId = p.PatientId,
                     FullName = (p.Firstname ?? "") + " " + (p.Lastname ?? "")
                 }),
@@ -332,7 +345,8 @@ namespace SafehavenPMS.Controllers
             // Build SelectList for medicines in the format: Generic Name (Brand Name) - Form Strength Unit
             ViewBag.MedicineList = new SelectList(
                 medicines.Where(a => a.Status == Enum.MedicineStatus.Active.ToString())
-                .Select(m => new {
+                .Select(m => new
+                {
                     MedicineId = m.MedicineId,
                     DisplayName = $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength.ToString("0.#")} {m.Unit}"
                 }),
@@ -341,27 +355,27 @@ namespace SafehavenPMS.Controllers
                 medicineId
             );
 
-             // Read temporary orders from session
-        var tempList = HttpContext.Session.GetObject<List<MedicationOrderViewModel>>(TempOrdersSessionKey) ?? new List<MedicationOrderViewModel>();
+            // Read temporary orders from session
+            var tempList = HttpContext.Session.GetObject<List<MedicationOrderViewModel>>(TempOrdersSessionKey) ?? new List<MedicationOrderViewModel>();
 
-        // Fill display names using loaded patients/medicines so view shows readable items
-        var patientDict = patients.ToDictionary(p => p.PatientId, p => $"{p.Firstname} {p.Lastname}");
-        var medicineDict = medicines.ToDictionary(m => m.MedicineId, m => $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}");
+            // Fill display names using loaded patients/medicines so view shows readable items
+            var patientDict = patients.ToDictionary(p => p.PatientId, p => $"{p.Firstname} {p.Lastname}");
+            var medicineDict = medicines.ToDictionary(m => m.MedicineId, m => $"{m.GenericName} ({m.BrandName}) - {m.Form} {m.Strength} {m.Unit}");
 
-        foreach (var t in tempList)
-        {
-            if (string.IsNullOrWhiteSpace(t.PatientName) && patientDict.ContainsKey(t.PatientId))
-                t.PatientName = patientDict[t.PatientId];
+            foreach (var t in tempList)
+            {
+                if (string.IsNullOrWhiteSpace(t.PatientName) && patientDict.ContainsKey(t.PatientId))
+                    t.PatientName = patientDict[t.PatientId];
 
-            if (string.IsNullOrWhiteSpace(t.MedicineName) && medicineDict.ContainsKey(t.MedicineId))
-                t.MedicineName = medicineDict[t.MedicineId];
-        }
-        ViewBag.SelectedPatientID = patientId;
-        ViewBag.TempOrders = tempList;
-        ViewBag.ProblemId = problemId; // Pass problemId to ViewBag if needed in the view
+                if (string.IsNullOrWhiteSpace(t.MedicineName) && medicineDict.ContainsKey(t.MedicineId))
+                    t.MedicineName = medicineDict[t.MedicineId];
+            }
+            ViewBag.SelectedPatientID = patientId;
+            ViewBag.TempOrders = tempList;
+            ViewBag.ProblemId = problemId; // Pass problemId to ViewBag if needed in the view
 
-    // Retain problemId in the view model
-    return View(new MedicationOrderViewModel { PatientId = patientId ?? 0, PsyProblemListId = problemId ?? 0 });
+            // Retain problemId in the view model
+            return View(new MedicationOrderViewModel { PatientId = patientId ?? 0, PsyProblemListId = problemId ?? 0 });
         }
 
         [HttpPost]
@@ -457,7 +471,7 @@ namespace SafehavenPMS.Controllers
                 TempData["SuccessMessage"] = "Medication order added to temporary list. Click Submit Order to save to database.";
                 Console.WriteLine($"Patient ID: {model.PatientId}");
                 return RedirectToAction("AddMedicationOrder", new { patientId = model.PatientId, problemId = model.PsyProblemListId });
-                
+
             }
             catch (Exception ex)
             {
@@ -472,7 +486,7 @@ namespace SafehavenPMS.Controllers
         {
             var medOrder = _context.MedicationOrders.FirstOrDefault(m => m.MedicationOrderId == id);
 
-            if(medOrder == null)
+            if (medOrder == null)
             {
                 TempData["Error"] = "Medication Order not found";
                 return RedirectToAction("Index");
@@ -512,7 +526,7 @@ namespace SafehavenPMS.Controllers
             if (order == null)
             {
                 TempData["Error"] = "Medication Order not found";
-                return RedirectToAction ("Index");
+                return RedirectToAction("Index");
             }
 
             // Map entity to ViewModel
@@ -564,7 +578,7 @@ namespace SafehavenPMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditMedicationOrder(int id,MedicationOrderViewModel model)
+        public async Task<IActionResult> EditMedicationOrder(int id, MedicationOrderViewModel model)
         {
             try
             {
@@ -663,7 +677,7 @@ namespace SafehavenPMS.Controllers
                 // Repopulate dropdowns on error
                 ViewBag.PatientList = new SelectList(_context.Patients, "PatientId", "Firstname", model.PatientId);
                 ViewBag.MedicineList = new SelectList(_context.Medicines, "MedicineId", "GenericName", model.MedicineId);
-                     
+
                 return View(model);
             }
             catch (Exception ex)
@@ -681,45 +695,109 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveAdministrationLog(List<AdministrationLog> medications)
+        public async Task<IActionResult> SaveAdministrationLog(AdministrationLogViewModel model)
         {
+            // Debug: raw form data
+            Console.WriteLine("----- Raw Request.Form -----");
+            foreach (var key in Request.Form.Keys)
+            {
+                Console.WriteLine($"{key} = {Request.Form[key]}");
+            }
+            Console.WriteLine("----- End Request.Form -----");
+
             // Remove Patient validation so it won't throw required error
             foreach (var key in ModelState.Keys.Where(k => k.Contains("Patient")).ToList())
                 ModelState.Remove(key);
 
-            if (!ModelState.IsValid)
+            if (model == null || model.Medications == null || !model.Medications.Any())
+                return RedirectToAction(nameof(Index));
+
+            // DEBUG: print incoming model values so you can inspect what was posted
+            Console.WriteLine($"SaveAdministrationLog called. Medications.Count = {model?.Medications?.Count ?? 0}");
+            if (model?.Medications != null)
             {
-                foreach (var entry in ModelState)
-                    foreach (var error in entry.Value.Errors)
-                        Console.WriteLine($"Field: {entry.Key} - Error: {error.ErrorMessage}");
-                return RedirectToAction("Index");
+                foreach (var mi in model.Medications)
+                {
+                    Console.WriteLine($"Med Item -> MedicationOrderId={mi.MedicationOrderId}, PatientId={mi.PatientId}, BreakfastTaken={mi.BreakfastTaken}, LunchTaken={mi.LunchTaken}, DinnerTaken={mi.DinnerTaken}, BedtimeTaken={mi.BedtimeTaken}");
+                }
             }
 
-            if (medications == null || medications.Count == 0)
-                return RedirectToAction("Index");
+            var now = DateTime.Now;
+            var dayStart = now.Date;
+            var dayEnd = dayStart.AddDays(1);
+            var currentUser = User?.Identity?.Name ?? "system";
 
             var logsToAdd = new List<AdministrationLog>();
             var billablesToAdd = new List<Billable>();
-            var now = DateTime.Now;
-            var currentUser = User?.Identity?.Name ?? "system";
+            var ordersToValidate = new HashSet<int>();
 
-            foreach (var med in medications)
+            foreach (var item in model.Medications)
             {
-                // validate medication order exists and load medicine for pricing
+                ordersToValidate.Add(item.MedicationOrderId);
+
                 var order = await _context.MedicationOrders
-                                        .Include(o => o.Medicine)
-                                        .FirstOrDefaultAsync(o => o.MedicationOrderId == med.MedicationOrderId);
+                                          .Include(o => o.Medicine)
+                                          .FirstOrDefaultAsync(o => o.MedicationOrderId == item.MedicationOrderId);
 
                 if (order == null)
                 {
-                    Console.WriteLine($"Invalid MedicationOrderId: {med.MedicationOrderId} - Skipping.");
+                    Console.WriteLine($"MedicationOrder not found for MedicationOrderId={item.MedicationOrderId}");
                     continue;
                 }
 
-                med.PatientId = order.PatientId;
-                med.AdministrationDate = now;
-                logsToAdd.Add(med);
+                // try to find an existing administration log for this medication order today
+                var existingLog = await _context.AdministrationLogs
+                    .FirstOrDefaultAsync(a =>
+                        a.MedicationOrderId == item.MedicationOrderId &&
+                        a.AdministrationDate >= dayStart &&
+                        a.AdministrationDate < dayEnd);
 
+                if (existingLog != null)
+                {
+                    // DEBUG: show existing record values before update
+                    Console.WriteLine($"Existing log found for OrderId={item.MedicationOrderId}. Before update -> Breakfast={existingLog.BreakfastTaken}, Lunch={existingLog.LunchTaken}, Dinner={existingLog.DinnerTaken}, Bedtime={existingLog.BedtimeTaken}");
+                    // update existing record (do not insert new)
+                    existingLog.BreakfastTaken = item.BreakfastTaken;
+                    existingLog.LunchTaken = item.LunchTaken;
+                    existingLog.DinnerTaken = item.DinnerTaken;
+                    existingLog.BedtimeTaken = item.BedtimeTaken;
+                    existingLog.RecordedBy = currentUser;
+                    existingLog.AdministrationDate = now;
+                    _context.AdministrationLogs.Update(existingLog);
+
+                    // remove any medication billables for this order on the same day so we can recreate
+                    var prevBillables = await _context.Billables
+                        .Where(b => b.ReferenceId == item.MedicationOrderId
+                                 && b.Category == "Medication"
+                                 && b.DateAdded >= dayStart
+                                 && b.DateAdded < dayEnd)
+                        .ToListAsync();
+                    if (prevBillables.Any())
+                    {
+                        Console.WriteLine($"Removing {prevBillables.Count} previous billable(s) for OrderId={item.MedicationOrderId}");
+                        _context.Billables.RemoveRange(prevBillables);
+                    }
+                }
+                else
+                {
+                    // DEBUG: creating new log
+                    Console.WriteLine($"No existing log for OrderId={item.MedicationOrderId}. Creating new.");
+                    // create new log
+                    var log = new AdministrationLog
+                    {
+                        MedicationOrderId = item.MedicationOrderId,
+                        PatientId = order.PatientId,
+                        BreakfastTaken = item.BreakfastTaken,
+                        LunchTaken = item.LunchTaken,
+                        DinnerTaken = item.DinnerTaken,
+                        BedtimeTaken = item.BedtimeTaken,
+                        AdministrationDate = now,
+                        RecordedBy = currentUser
+                    };
+                    logsToAdd.Add(log);
+                }
+
+                // prepare billables (we recreated after removing previous ones)
                 var medicine = order.Medicine;
                 decimal unitPrice = medicine?.Price ?? 0m;
                 decimal quantity = order.UnitPerDose > 0 ? order.UnitPerDose : 1m;
@@ -740,15 +818,14 @@ namespace SafehavenPMS.Controllers
                         Amount = quantity * unitPrice,
                         DateAdded = now,
                         CreatedBy = currentUser,
-                        ReferenceId = med.MedicationOrderId,
-                        ReferenceType = null // will set after SaveChanges to use DB-assigned BillableId
+                        ReferenceId = item.MedicationOrderId
                     });
                 }
 
-                if (med.BreakfastTaken) AddBillable("Breakfast");
-                if (med.LunchTaken) AddBillable("Lunch");
-                if (med.DinnerTaken) AddBillable("Dinner");
-                if (med.BedtimeTaken) AddBillable("Bedtime");
+                if (item.BreakfastTaken) AddBillable("Breakfast");
+                if (item.LunchTaken) AddBillable("Lunch");
+                if (item.DinnerTaken) AddBillable("Dinner");
+                if (item.BedtimeTaken) AddBillable("Bedtime");
             }
 
             if (logsToAdd.Any())
@@ -757,23 +834,20 @@ namespace SafehavenPMS.Controllers
             if (billablesToAdd.Any())
                 await _context.Billables.AddRangeAsync(billablesToAdd);
 
-            // First save to get DB-generated BillableId values
+            // Save changes (adds new logs/billables and applies updates/removals)
             await _context.SaveChangesAsync();
 
-            // Now set ReferenceType based on the assigned BillableId to guarantee uniqueness
+            // set ReferenceType after BillableId assigned for newly added billables
             if (billablesToAdd.Any())
             {
                 foreach (var b in billablesToAdd)
-                {
                     b.ReferenceType = $"BILL-{b.BillableId:D5}";
-                }
-
                 _context.Billables.UpdateRange(billablesToAdd);
                 await _context.SaveChangesAsync();
             }
 
             return RedirectToAction(nameof(Index));
-}
+        }
 
 
         //This action will submit all temporary medication orders to the database and redirect to PatientProfile
@@ -799,7 +873,7 @@ namespace SafehavenPMS.Controllers
                     // Validate required foreign keys exist
                     var patientExists = await _context.Patients.AnyAsync(p => p.PatientId == t.PatientId);
                     var medicineExists = await _context.Medicines.AnyAsync(m => m.MedicineId == t.MedicineId);
-                    
+
                     if (!patientExists || !medicineExists)
                     {
                         // skip invalid entry
@@ -839,10 +913,10 @@ namespace SafehavenPMS.Controllers
                 }
 
                 if (toSave.Any())
-                {       
+                {
                     await _context.MedicationOrders.AddRangeAsync(toSave);
                     await _context.SaveChangesAsync();
-    
+
                     HttpContext.Session.Remove(TempOrdersSessionKey);
                     TempData["SuccessMessage"] = "Medication orders submitted and saved.";
                     return RedirectToAction("Index", "PatientProfile", new { id = toSave.First().PatientId });
@@ -865,7 +939,7 @@ namespace SafehavenPMS.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult RemoveTempOrder(int index)
         {
-            var tempList = HttpContext.Session.GetObject<List<MedicationOrderViewModel>>(TempOrdersSessionKey) 
+            var tempList = HttpContext.Session.GetObject<List<MedicationOrderViewModel>>(TempOrdersSessionKey)
                            ?? new List<MedicationOrderViewModel>();
 
             if (index >= 0 && index < tempList.Count)

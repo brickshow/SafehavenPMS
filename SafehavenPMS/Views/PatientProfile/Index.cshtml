@@ -9,7 +9,7 @@
         <div class="d-flex align-items-center">
             <a href="javascript:history.back()" class="me-2 text-decoration-none text-muted"><i class="text-custom bx bx-reply fs-1"></i></a>
 
-            <img src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? Url.Content("~/Images/sample.JPG") : Model.AvatarUrl)"
+            <img src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? Url.Content("~/Images/default.png") : Model.AvatarUrl)"
                  class="rounded-circle me-3"
                  style="width: 60px; height: 60px; object-fit: cover;"/>
 

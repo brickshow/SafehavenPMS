@@ -66,10 +66,17 @@
             @await Html.PartialAsync("BillingTabs/_Billables", Model.Items)
         </div>
 
-        <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+        <div class="tab-pane fade" id="invoice" role="tabpanel" aria-labelledby="invoice-tab">
+             @await Html.PartialAsync("BillingTabs/Invoices", Model.Invoices)
         </div>
 
-        <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+        <div class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
+            @* render payments partial if you have one *@
+            @await Html.PartialAsync("BillingTabs/_Payments", Model.UploadPayments)
+        </div>
+
+        <div class="tab-pane fade" id="payhistory" role="tabpanel" aria-labelledby="payhistory-tab">
+            @await Html.PartialAsync("BillingTabs/_PaymentHistory", Model.PaymentHistories)
         </div>
     </div>
 </div>

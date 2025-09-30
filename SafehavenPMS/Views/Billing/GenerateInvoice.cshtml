@@ -1,6 +1,7 @@
-@* @model SafehavenPMS.Models.GenerateInvoiceViewModel *@
+@model SafehavenPMS.ViewModel.GenerateInvoiceViewModel
 @{
     Layout = "_Layout";
+    ViewData["Title"] = "Generate Monthly Invoice";
     var currentYear = DateTime.UtcNow.Year;
 }
 
@@ -31,17 +32,17 @@
 
                 <div class="col-md-6">
                     <label class="form-label">Month of</label>
-                    <select class="form-select" asp-items="@(new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
+                    <select asp-for="Month" class="form-select" asp-items="@(new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
                         Enumerable.Range(1,12).Select(m => new { Value = m, Text = new DateTime(2000, m, 1).ToString("MMMM") }),
                         "Value","Text"))">
                         <option value="">Select month</option>
                     </select>
-                    <span  class="text-danger"></span>
+                    <span asp-validation-for="Month" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label">Year</label>
-                    <select  class="form-select">
+                    <select asp-for="Year" class="form-select">
                         <option value="">Select year</option>
                         @for (int y = currentYear - 3; y <= currentYear + 1; y++)
                         {
@@ -55,13 +56,20 @@
                             }
                         }
                     </select>
-                    <span  class="text-danger"></span>
+                    <span asp-validation-for="Year" class="text-danger"></span>
                 </div>
 
                 <div class="col-12">
                     <label class="form-label">Due Date</label>
-                    <input  class="form-control" type="date" />
-                    <span  class="text-danger"></span>
+                    <input asp-for="DueDate" class="form-control" type="date" />
+                    <span asp-validation-for="DueDate" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Standard Monthly Fee</label>
+                    <input asp-for="StandardMonthlyFee" class="form-control" type="number" step="0.01" />
+                    <small class="text-muted">Enter standard monthly program fee to include on each invoice.</small>
+                    <span asp-validation-for="StandardMonthlyFee" class="text-danger"></span>
                 </div>
 
                 <div class="col-12 mt-3 d-flex justify-content-end gap-2">
@@ -74,6 +82,5 @@
 </div>
 
 @section Scripts {
-    @* if you have server-side validation with unobtrusive, include validation script bundle in layout.
-       No custom JS is used. *@
+    @* if you have server-side validation with unobtrusive, include validation script bundle in layout. *@
 }

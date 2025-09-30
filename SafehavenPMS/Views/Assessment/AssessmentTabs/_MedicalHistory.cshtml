@@ -1,10 +1,10 @@
 @model SafehavenPMS.ViewModel.AssessmentFormViewModel
 
 <div class="card">
-    <div class="card-header bg-white" style="color: #015F6B;">
+    <div class="card-header bg-white mt-2" style="color: #015F6B;">
         <h5 class="mb-0">PAST MEDICAL HISTORY</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body pt-3 p-5">
         <form asp-action="SaveMedicalHistory" asp-controller="Assessment" method="post" id="medicalHistoryForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="PatientId" />
@@ -12,8 +12,8 @@
             @* Medical Conditions *@
             <div class="row mb-4">
                 <div class="col-12">
-                    <label class="form-label">Medical Conditions</label>
-                    <div class="d-flex gap-4 align-items-center">
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Medical Conditions</label>
+                    <div class="d-flex gap-5 align-items-center">
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.IsHypertensive" />
                             <label class="form-check-label">Hypertensive</label>
@@ -36,11 +36,11 @@
             @* Heredofamilial Diseases *@
             <div class="row mb-4">
                 <div class="col-12">
-                    <label class="form-label fw-medium mb-3">Heredofamilial Diseases</label>
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Heredofamilial Diseases</label>
                     <div class="ms-4">
                         <div class="row mb-3">
                             <label class="col-2">Maternal Side:</label>
-                            <div class="col-10 d-flex gap-4">
+                            <div class="col-10 d-flex gap-5">
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.MaternalHypertension" />
                                     <label class="form-check-label">Hypertension</label>
@@ -57,7 +57,7 @@
                         </div>
                         <div class="row">
                             <label class="col-2">Paternal Side:</label>
-                            <div class="col-10 d-flex gap-4">
+                            <div class="col-10 d-flex gap-5">
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.PaternalHypertension" />
                                     <label class="form-check-label">Hypertension</label>
@@ -79,7 +79,7 @@
             @* Allergies *@
             <div class="row mb-4">
                 <div class="col-12">
-                    <label class="form-label fw-medium mb-3">Allergies</label>
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Allergies</label>
                     <div class="ms-4">
                         @* Food Allergies *@
                         <div id="foodAllergiesList">
@@ -129,7 +129,7 @@
             @* Surgical Operations Table *@
             <div class="row mb-4">
                 <div class="col-12">
-                    <label class="form-label fw-medium mb-3">Surgical Operations</label>
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Surgical Operations</label>
                     <div class="table-responsive">
                         <table class="table table-borderless">
                             <thead>
@@ -178,10 +178,9 @@
             </div>
 
             @* Save Button *@
-            <div class="d-flex justify-content-end">
-                <button type="submit" class="btn btn-teal px-4">
-                    <i class="bx bx-save me-2"></i>SAVE
-                </button>
+             <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                <button type="submit" class="btn-next btn-primary px-4">Save</button>
             </div>
         </form>
     </div>
@@ -218,14 +217,20 @@
         color: white;
     }
 
+    
     .form-check-input:checked {
         background-color: #006d77;
         border-color: #006d77;
     }
+
+    .form-check-input {
+        border-width: 2px;
+    }
+    
 </style>
 
 <script>
-    function addFoodAllergy() {
+    function addFoodAllergy() { 
         const input = document.getElementById('newFoodAllergy');
         if (!input.value.trim()) return;
 

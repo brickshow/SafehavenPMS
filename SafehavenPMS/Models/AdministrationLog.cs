@@ -24,7 +24,7 @@ namespace SafehavenPMS.Models
 
         // Optional notes and audit info
         public string? Notes { get; set; }
-        public int RecordedBy { get; set; }
+        public string? RecordedBy { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

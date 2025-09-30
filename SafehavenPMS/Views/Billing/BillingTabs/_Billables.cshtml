@@ -7,14 +7,14 @@
 <div class="container-fluid p-3">
     <!-- Top controls -->
     <div class="d-flex align-items-center gap-2 mb-3">
-        <input id="txtSearchBillable" class="form-control" style="max-width:260px" placeholder="Search billable ..." />
+        <input id="txtSearchBillable" class="form-control" style="max-width:220px" placeholder="Search billable ..." />
         <button class="btn btn-light border" id="btnToday">TODAY</button>
 
         <div class="ms-auto d-flex align-items-center gap-2">
-            <div class="input-group" style="max-width:420px;">
-                <span class="input-group-text"><i class="bx bx-search"></i></span>
-                <input type="search" class="form-control" id="txtSearchPatient" placeholder="Search patient ..." />
-                <button class="btn btn-primary" id="btnSearchPatient">Search</button>
+            <div class="input-group" style="max-width:360px;">
+                @* <span class="input-group-text"><i class="bx bx-search"></i></span> *@
+                <input type="search" class="form-control" id="txtSearchPatient" placeholder="Search patient ..." style="min-width:200px; max-width:240px;" />
+                @* <button class="btn btn-custom" id="btnSearchPatient" style="min-width:80px;">Search</button> *@
             </div>
 
             <select class="form-select" id="ddlCategory" style="min-width:140px;">

@@ -3,17 +3,19 @@
 <form asp-action="SavingImpression" method="post" asp-controller="PsychiatricAssessment">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="PatientId" />
-    <div class="chief-container">
-        <h5 class="chief-title">Impression</h5>
+    <div class="chief-container bg-white mt-2" style="color: #015F6B;">
+        <h5 class="mb-0"><b>IMPRESSION</b></h5>
 
-        <div class="form-group">
+        <div class="form-group pt-3 p-4">
             <textarea id="Impression" asp-for="Impression" class="form-control chief-textarea"
-                      placeholder="Enter impression..." rows="10"></textarea>
+                placeholder="Enter impression..." rows="10"></textarea>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                    <button type="submit" class="btn-next btn-primary px-4">Save</button>
+                </div>  
         </div>
 
-        <div class="save-wrap">
-            <button type="submit" class="btn btn-next">SAVE</button>
-        </div>
+       
     </div>
 </form>
 

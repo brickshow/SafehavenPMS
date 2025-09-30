@@ -27,24 +27,24 @@
 
     @* Tabs *@
     <ul class="nav nav-tabs mb-4" id="staffTab" role="tablist">
-        <li class="nav-item" role="presentation">
+        @* <li class="nav-item" role="presentation">
             <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview"
                     type="button" role="tab" aria-controls="overview" aria-selected="true">
                 Overview
             </button>
-        </li>
+        </li> *@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal"
                     type="button" role="tab" aria-controls="personal" aria-selected="false">
                 Personal
             </button>
         </li>
-        <li class="nav-item" role="presentation">
+        @* <li class="nav-item" role="presentation">
             <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents"
                     type="button" role="tab" aria-controls="documents" aria-selected="false">
                 Documents
             </button>
-        </li>
+        </li> *@
         <li class="nav-item" role="presentation">
             <button class="nav-link availability-tab" id="availability-tab" data-bs-toggle="tab" data-bs-target="#availability"
                     type="button" role="tab" aria-controls="documents" aria-selected="false">
@@ -56,17 +56,17 @@
 
     @* Tab Content *@
     <div class="tab-content" id="staffTabContent">
-        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+        @* <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
             @await Html.PartialAsync("ClinicalStaffTabs/_OverviewTab", Model)
-        </div>
+        </div> *@
 
         <div class="tab-pane fade" id="personal" role="tabpanel" aria-labelledby="personal-tab">
             @await Html.PartialAsync("ClinicalStaffTabs/_PersonalTab", Model)
         </div>
-
+@* 
         <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
             @await Html.PartialAsync("ClinicalStaffTabs/_DocumentsTab", Model)
-        </div>
+        </div> *@
 
         <div class="tab-pane fade" id="availability" role="tabpanel" aria-labelledby="availability-tab">
             @await Html.PartialAsync("ClinicalStaffTabs/_Availability", Model)

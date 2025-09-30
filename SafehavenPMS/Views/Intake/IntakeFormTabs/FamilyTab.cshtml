@@ -7,12 +7,14 @@
     <input type="hidden" asp-for="PatientId" value="@Model.PatientId" />
 
     <!-- Family Constellation Table -->
-    <div class="card rounded shadow-sm mb-4">
-        <div class="card-header bg-transparent text-custom d-flex flex-row">
-            <h5 class="mb-0">FAMILY CONSTELLATION: </h5>
-            <p class="text-muted small mb-0 fst-italic">(Indicate whether parents are natural or adoptive; include siblings and other significant persons)</p>
+    <div class="card rounded shadow-sm mb-4 p-4">
+        <div class=" bg-transparent text-custom d-flex flex-row">
+            <div class="bg-white mt-2" style="color: #015F6B;">
+                <h5 class="mb-0"><b>FAMILY CONSTELLATION</b></h5>
+            </div>
+            <p class="text-muted small mt-2 mb-0 fst-italic">(Indicate whether parents are natural or adoptive; include siblings and other significant persons)</p>
         </div>
-        <div class="card-body px-4 py-4">
+        <div class="card-body px-4 py-4 pb-2">
             <div class="table-responsive">
                 <table class="table family-table mb-0" style="border-collapse: separate; border-spacing: 0;">
                     <thead>
@@ -75,14 +77,16 @@
                 <textarea  asp-for="OtherFamilyDetails" class="family-details-textarea" rows="4" placeholder="Other family details............">@Model.OtherFamilyDetails</textarea>
             </div>
         </div>
+         <!-- Save Button -->
+        <div class="p-3">
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                <button type="submit" class="btn-next btn-primary px-4">Save</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Save Button -->
-    <div class="d-flex justify-content-end mt-4 mb-4">
-        <button type="submit" class="btn btn-next">
-            Save
-        </button>
-    </div>
+   
 </form>
 
 <style>

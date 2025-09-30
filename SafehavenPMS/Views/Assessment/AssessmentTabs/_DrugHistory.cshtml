@@ -2,16 +2,16 @@
 
 @* Drug History Tab - Records patient's substance use history *@
 <div class="card">
-    <div class="card-header bg-white" style="color: #015F6B;">
+    <div class="card-header bg-white mt-3" style="color: #015F6B;">
         <h5 class="mb-0">HISTORY OF DRUG USE</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body pt-0 p-4 pt-2">
         <form asp-action="SaveDrugHistory" asp-controller="Assessment" method="post" id="drugHistoryForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="PatientId" />
 
             @* Drug History Table *@
-            <div class="table-responsive">
+            <div class="table-responsive mt-0">
                 <table class="table drug-table mb-0">
                     <thead>
                         <tr>
@@ -85,10 +85,9 @@
             </div>
 
             @* Save Button *@
-            <div class="d-flex justify-content-end mt-4">
-                <button type="submit" class="btn btn-teal px-4">
-                    <i class="bx bx-save me-2"></i>SAVE
-                </button>
+             <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                <button type="submit" class="btn-next btn-primary px-4">Save</button>
             </div>
         </form>
     </div>

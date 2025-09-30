@@ -131,7 +131,9 @@ namespace SafehavenPMS.Controllers
             await PopulateClinicalStaffDropdowns();
 
             // Get patients with PendingReview status for selection list
-            var patients = await _context.Patients.FirstOrDefaultAsync(i => i.PatientId == patientId);
+            var patients = await _context.Patients
+                                .Include(a => a.Admissions)
+                                .FirstOrDefaultAsync(i => i.PatientId == patientId);
 
             var vm = new AdmitPatientViewModel();
 
@@ -148,6 +150,7 @@ namespace SafehavenPMS.Controllers
 
                 if (patient != null)
                 {
+                    vm.AdmissionId = patient.Admissions?.FirstOrDefault(a => a.Status == "Active")?.AdmissionId ?? 0;
                     vm.PatientId = patient.PatientId;
                     vm.FullName = $"{patient.Firstname} {patient.MiddleName} {patient.Lastname}".Trim();
                     vm.Sex = patient.Sex;
@@ -218,23 +221,39 @@ namespace SafehavenPMS.Controllers
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                // create admission
-                var admission = new Admission
+                // Try to reuse an existing active admission for this patient to avoid duplicates
+                var admission = await _context.Admissions
+                    .FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
+
+                if (admission == null)
                 {
-                    PatientId = model.PatientId,
-                    PhysicianId = model.PhysicianId,
-                    PsychologistId = model.PsychologistId,
-                    PsychometricianId = model.PsychometricianId,
-                    SocialWorkerId = model.SocialWorkerId,
-                    RecoveryCoachId = model.RecoveryCoachId,
-                    CreatedAt = DateTime.UtcNow,
-                    Status = "Active" // adjust as appropriate
-                };
+                    admission = new Admission
+                    {
+                        PatientId = model.PatientId,
+                        PhysicianId = model.PhysicianId,
+                        PsychologistId = model.PsychologistId,  
+                        PsychometricianId = model.PsychometricianId,
+                        SocialWorkerId = model.SocialWorkerId,
+                        RecoveryCoachId = model.RecoveryCoachId,
+                        CreatedAt = DateTime.Now,
+                        Status = "Active" // adjust as appropriate
+                    };
 
-                _context.Admissions.Add(admission);
-                await _context.SaveChangesAsync(); // need AdmissionId for joins
+                    _context.Admissions.Add(admission);
+                }
+                else
+                {
+                    // update fields on existing admission (no new row will be created)
+                    admission.PhysicianId = model.PhysicianId;
+                    admission.PsychologistId = model.PsychologistId;
+                    admission.PsychometricianId = model.PsychometricianId;
+                    admission.SocialWorkerId = model.SocialWorkerId;
+                    admission.RecoveryCoachId = model.RecoveryCoachId;
+                    admission.CreatedAt = DateTime.Now;
+                    _context.Admissions.Update(admission);
+                }
 
-                // prepare selected staff ids
+                // Prepare selected staff ids (unique)
                 var selectedStaffIds = new int?[]
                 {
                     model.PhysicianId,
@@ -248,73 +267,77 @@ namespace SafehavenPMS.Controllers
                 .Distinct()
                 .ToList();
 
-                Console.WriteLine("SelectedStaffIds: " + (selectedStaffIds.Any() ? string.Join(",", selectedStaffIds) : "(none)"));
-
-                // Query DB for existing ClinicalStaffPatient entries for this patient to avoid duplicate PK inserts
+                // Query DB for existing ClinicalStaffPatient entries for this patient to avoid duplicates
                 var persistedStaffIds = await _context.ClinicalStaffPatients
                     .Where(c => c.PatientId == model.PatientId)
                     .Select(c => c.ClinicalStaffId)
                     .ToListAsync();
 
-                Console.WriteLine("PersistedStaffIds for patient " + model.PatientId + ": " +
-                                  (persistedStaffIds.Any() ? string.Join(",", persistedStaffIds) : "(none)"));
+                var toAddIds = selectedStaffIds.Except(persistedStaffIds).ToList();
 
-                // Only add joins that are selected but not already persisted
-                var toAddIds = selectedStaffIds.Where(id => !persistedStaffIds.Contains(id)).ToList();
-
-                var joins = toAddIds
-                    .Select(id => new ClinicalStaffPatient
-                    {
-                        PatientId = model.PatientId,
-                        ClinicalStaffId = id
-                    })
-                    .ToList();
-
-                Console.WriteLine($"ClinicalStaffPatient to add: {joins.Count}");
-                foreach (var j in joins) Console.WriteLine($"  Add ClinicalStaffId={j.ClinicalStaffId} PatientId={j.PatientId}");
-
-                if (joins.Any())
+                if (toAddIds.Any())
                 {
+                    var joins = toAddIds
+                        .Select(id => new ClinicalStaffPatient
+                        {
+                            PatientId = model.PatientId,
+                            ClinicalStaffId = id
+                        })
+                        .ToList();
+
                     await _context.ClinicalStaffPatients.AddRangeAsync(joins);
                 }
 
-                // // If portal activation requested, create User and email credentials
-                // if (model.ActivatePortal && !string.IsNullOrWhiteSpace(model.FamilyEmail))
-                // {
-                    // per request: username = patient id (for now)
-                    var username = model.PatientId.ToString();
-                    var password = GeneratePassword(10);
+                // Create family portal user only if one doesn't already exist for this patient or email
+                if (!string.IsNullOrWhiteSpace(model.FamilyEmail))
+                {
+                    var existingUser = await _context.Users
+                        .FirstOrDefaultAsync(u => u.PatientId == model.PatientId || u.Email == model.FamilyEmail);
 
-                    var user = new User
+                    if (existingUser == null)
                     {
-                        Username = username,
-                        Email = model.FamilyEmail,
-                        Role = "Family",
-                        IsActive = true,
-                        PatientId = model.PatientId,
-                        CreatedAt = DateTime.UtcNow
-                    };
+                        var username = model.PatientId.ToString();
+                        var password = GeneratePassword(10);
 
-                    // use ASP.NET Core PasswordHasher (same approach as AccountController)
-                    var hasher = new PasswordHasher<User>();
-                    user.PasswordHash = hasher.HashPassword(user, password);
+                        var user = new User
+                        {
+                            Username = username,
+                            Email = model.FamilyEmail,
+                            Role = "Family",
+                            IsActive = true,
+                            PatientId = model.PatientId,
+                            CreatedAt = DateTime.UtcNow
+                        };
 
-                    _context.Users.Add(user);
-                    await _context.SaveChangesAsync();
+                        var hasher = new PasswordHasher<User>();
+                        user.PasswordHash = hasher.HashPassword(user, password);
 
-                    // Send credentials (best-effort; do not fail whole transaction if email fails)
-                    try
-                    {
-                        await _emailService.SendStaffCredentialsAsync(user.Email, user.Username, password, model.FamilyName);
+                        _context.Users.Add(user);
+
+                        // Send credentials (best-effort; do not fail whole transaction if email fails)
+                        try
+                        {
+                            await _emailService.SendStaffCredentialsAsync(user.Email, user.Username, password, model.FamilyName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Email send failed: " + ex);
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine("Email send failed: " + ex);
+                        // Optionally update email if different and existing user is tied to same patient
+                        if (existingUser.PatientId == model.PatientId && existingUser.Email != model.FamilyEmail)
+                        {
+                            existingUser.Email = model.FamilyEmail;
+                            _context.Users.Update(existingUser);
+                        }
                     }
-                // }
+                }
 
                 // update patient status to Admitted
                 patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
+                _context.Patients.Update(patient);
 
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
@@ -640,64 +663,5 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
         }
-        // ...existing code...
-
-        // // POST: Transfer patient to another facility
-        // [HttpPost]
-        // [ValidateAntiForgeryToken]
-        // public async Task<IActionResult> Transfer(AdmitPatientViewModel model)
-        // {
-        //     if (!ModelState.IsValid) return RedirectToAction("Index");
-
-        //     using var tx = await _context.Database.BeginTransactionAsync();
-        //     try
-        //     {
-        //         // load current admission first so we can use its CurrentFacility as FromFacility
-        //         var admission = await _context.Admissions.FirstOrDefaultAsync(a => a.PatientId == model.PatientId);
-
-
-        //         // 1) insert transfer audit
-        //         var transfer = new PatientTransfer
-        //         {
-        //             PatientId = model.PatientId,
-        //             ToFacility = model.ReceivingFacility,
-        //             ProgramType = model.ProgramType,
-        //             Reason = model.Reason,
-        //             CreatedBy = User?.Identity?.Name ?? "System",
-        //             CreatedAt = DateTime.UtcNow
-        //         };
-
-        //         _context.PatientTransfers.Add(transfer);
-        //         await _context.SaveChangesAsync();
-
-        //         // 2) update admission current info (if admission exists)
-        //         if (admission != null)
-        //         {
-        //             admission.ProgramType = model.ProgramType;
-        //             admission.Status = "Transferred";
-        //             _context.Admissions.Update(admission);
-        //             await _context.SaveChangesAsync();
-        //         }
-
-        //         // 3) update patient status to Closed after transfer
-        //         var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
-        //         if (patient != null)
-        //         {
-        //             patient.PatientStatus = PatientStatusEnum.Closed.ToString();
-        //             _context.Patients.Update(patient);
-        //             await _context.SaveChangesAsync();
-        //         }
-
-        //         await tx.CommitAsync();
-        //         TempData["SuccessMessage"] = "Transfer saved.";
-        //     }
-        //     catch(Exception ex)
-        //     {
-        //         Console.WriteLine("Error saving transfer: " + ex);
-        //         await tx.RollbackAsync();
-        //         TempData["Error"] = "Unable to save transfer.";
-        //     }
-        //     return RedirectToAction("Index");
-        // }
     }
 }

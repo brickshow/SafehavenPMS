@@ -8,7 +8,7 @@
 
 @* Content Header *@
 <div class="header">
-    <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-2" style="border-radius-start:5px">
         <div class="d-flex align-items-center">
             <a href="javascript:history.back()" class="me-2" title="Back">
                 <i class="bx bx-reply fs-2 text-custom"></i>
@@ -20,10 +20,10 @@
 </div>
 
 <div class="add-satff-content">
-    <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+    <div class="section-header bg-teal text-white p-3 pt-2 pb-2 mb-3" style="background-color: #015F6B; border-top-left-radius: 5px; border-top-right-radius: 5px;">
         Find Old Patient
     </div>
-    <div class="row mb-3 justify-content-start m-3">
+    <div class="row mb-3 justify-content-start p-5 pt-0 pb-1">
         <div class="col-md-6">
             <div class="mb-2">
                 <label class="form-label"></label>
@@ -35,14 +35,14 @@
         </div>
     </div>
     <div class="align-items-center">
-        <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+        <div class="section-header bg-teal text-white p-3 pt-2 pb-2 mb-3" style="background-color: #015F6B;">
             Personal Information
         </div>
     </div>
     <form asp-controller="Patient" asp-action="AddNewPatient" method="post" enctype="multipart/form-data">
 
         @* Personal Information Section *@
-        <div class="staff-form-container p-3">
+        <div class="staff-form-container p-5 pt-3 pb-3">
             @* TempData Message *@
             @if (TempData["Message"] != null)
             {
@@ -133,7 +133,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3">
+                    <div class="row mb-0">
                         <div class="col-md-6 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Education" class="form-label mb-0 me-2" style="width: 110px;">Educational Attainment</label>
                             <div class="d-flex flex-column uniform-input flex-grow-1">
@@ -165,14 +165,12 @@
             </div>
         </div>
 
-
-
         @* Home Address Section *@
-        <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
+        <div class="section-header bg-teal text-white p-3 pt-2 pb-2 mb-3" style="background-color: #015F6B; font-weight: medium;">
             Home Address
         </div>
 
-        <div class="staff-form-container p-3">
+        <div class="staff-form-container p-5 pt-4 pb-2">
             <div class="row">
                 <div class="col-md-12">
                     @* Address Fields *@
@@ -286,7 +284,7 @@
         </div> *@
 
         @* Action Buttons *@
-        <div class="p-3">
+        <div class="p-5 pt-0">
             <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
                 <button type="submit" class="btn-next btn-primary px-4">Save</button>

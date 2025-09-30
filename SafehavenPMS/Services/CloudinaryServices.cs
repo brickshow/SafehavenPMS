@@ -1,6 +1,9 @@
-﻿
-
-using CloudinaryDotNet;
+﻿using CloudinaryDotNet;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using CloudinaryDotNet.Actions;
+using Microsoft.Extensions.Configuration;
 
 namespace SafehavenPMS.Services
 {
@@ -46,6 +49,29 @@ namespace SafehavenPMS.Services
 
             //Check if the upload was successful and return the secure URL of the uploaded image
             return uploadResult.SecureUrl?.ToString() ?? string.Empty;
+        }
+
+        // NEW: Upload receipt images (keeps original aspect, larger limit, stores under Payments/Receipts)
+        public async Task<string> UploadReceiptAsync(Stream fileStream, string fileName)
+        {
+            if (fileStream == null) throw new ArgumentNullException(nameof(fileStream));
+            if (string.IsNullOrEmpty(fileName)) fileName = $"{Guid.NewGuid():N}";
+
+            // ensure stream is at start
+            try { fileStream.Position = 0; } catch { /* ignore if stream is not seekable */ }
+
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(fileName, fileStream),
+                Folder = "SafehavenPMS/Payments/Receipts",
+                UseFilename = true,
+                UniqueFilename = true,
+                Overwrite = false,
+                Transformation = new Transformation().Width(1200).Crop("limit") // no crop, just limit size
+            };
+
+            var result = await _cloudinary.UploadAsync(uploadParams);
+            return result.SecureUrl?.ToString() ?? string.Empty;
         }
     }
 }

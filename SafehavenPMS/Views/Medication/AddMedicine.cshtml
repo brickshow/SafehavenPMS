@@ -17,8 +17,8 @@
 
 <div class="form-container">
     <form asp-controller="Medication" asp-action="AddMedicine" method="post" class="needs-validation" novalidate>
-        <div class="header d-flex justify-content-start">
-            <h3 class="text-custom m-3">Patient Medication Details</h3>
+         <div class="d-flex justify-content-start border-bottom w-100 p-2" style="background-color: #015F6B; color: #fff; border-top-left-radius:6px; border-top-right-radius:6px;">
+            <h3 class="text-custom m-3" style="color: #fff;">Add Medicine</h3>
         </div>
         <div class="p-5">
             <div class="row mb-4">
@@ -85,7 +85,7 @@
             <!-- Buttons in a horizontal flex container -->
             <div class="d-flex gap-2">
                 <a href="@Url.Action("Index", "Medication")" class="btn btn-outline-secondary flex-fill text-decoration-none">Back</a>
-                <button type="submit" class="btn btn-primary flex-fill">Add</button>
+                <button type="submit" class="btn btn-next flex-fill">Add</button>
             </div>
         </div>
     </form>

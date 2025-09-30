@@ -8,8 +8,21 @@ using System.Linq;
 using Microsoft.AspNetCore.Identity;    
 using SafehavenPMS.Models;
 using SafehavenPMS.Data;
+using CloudinaryDotNet;
+using SafehavenPMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// --- register Cloudinary client & wrapper ---
+var cloudCfg = builder.Configuration.GetSection("Cloudinary");
+if (!string.IsNullOrEmpty(cloudCfg["CloudName"]))
+{
+    var account = new Account(cloudCfg["CloudName"], cloudCfg["ApiKey"], cloudCfg["ApiSecret"]);
+    var cloudinaryClient = new Cloudinary(account) { Api = { Secure = true } };
+    builder.Services.AddSingleton(cloudinaryClient);
+    builder.Services.AddSingleton<CloudinaryServices>();
+}
+// --- end cloudinary registration ---
 
 // Register DbContext (update connection string name as needed)
 builder.Services.AddDbContext<SafehavenPMSContext>(options =>
@@ -42,6 +55,44 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 var app = builder.Build();
+
+// --- Add this seeding block ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<SafehavenPMSContext>();
+        // apply migrations (optional)
+        context.Database.Migrate();
+
+        // only create admin if not exists
+        if (!context.Users.Any(u => u.Username == "admin"))
+        {
+            var admin = new User
+            {
+                Username = "admin",
+                Email = "act.blampago@gmail.com",
+                Role = "Admin",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // use ASP.NET Core password hasher to hash default password
+            var hasher = new PasswordHasher<User>();
+            admin.PasswordHash = hasher.HashPassword(admin, "Admin@1234"); // change default password after first login
+
+            context.Users.Add(admin);
+            context.SaveChanges();
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+// --- end seeding block ---
 
 if (!app.Environment.IsDevelopment())
 {

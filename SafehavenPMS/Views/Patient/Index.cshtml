@@ -6,8 +6,8 @@
 }
 
 <div class="header">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="d-flex align-items-center g-4">
+    <div class="d-flex justify-content-between align-items-center mb-0">
+        <div class="d-flex align-items-center gap-2">
             <div class="d-flex justify-content-center align-items-center">
                 <i class='bx bxs-user fs-2 me-2'></i>
                 <h5 class="text-custom mb-0">Patients</h5>
@@ -23,29 +23,21 @@
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
 
-                    <!-- Sort by -->
-                    <div class="sort-by d-flex align-items-center">
-                        <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm">
-                            <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
-                                <span class="me-2">Sort by</span>
-                                <div class="number-box d-flex align-items-center gap-1">
-                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
-                                        <span class="number">A</span>
-                                        <span class="number">Z</span>
-                                    </div>
-                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
-                                </div>
-                            </button>
-                        </form>
-                    </div>
+                   
                 </div>
             </div>
         </div>
-        <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
-            <i class='bx bx-user-plus me-1'></i>
-            New Patient Intake
-        </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
+                    <i class='bx bx-printer me-1'></i>
+                    Print
+                </a>       
+                <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
+            @* <i class='bx bx-user-plus me-1'></i> *@
+                + Register Patient
+                </a>
+            </div>
+         
     </div>
     <hr class="mt-0 mb-2" />
 </div>
@@ -77,7 +69,7 @@
 
 
 <!-- Table Container -->
-<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+<div class="w-100 h-100 bg-white mt-3 " style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -105,12 +97,12 @@
         </div>
     }
 
-    <div class="table-header d-flex justify-content-center align-items-center text-center">
+    <div class="table-header d-flex justify-content-center align-items-center text-center m-0">
         <h5 class="mb-0">@(ViewBag.TotalPatientCount > 0 ? ViewBag.TotalPatientCount + " Patients" : "No Patients found")</h5>
     </div>
 
     @* Print and show number of row section *@
-    <div class="d-flex justify-content-between align-items-center m-2 mt-4">
+    <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
             <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
@@ -127,12 +119,50 @@
             </form>
         </div>
 
-        <div class="d-flex align-items-center justify-content-center">
-            <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
+        <div class="d-flex align-items-center justify-content-between">
+            <!-- Status filter (left of Sort by) -->
+            <div class="me-3">
+                <form asp-controller="Patient" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                    <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                    <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
+                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
+                        <option value="Waitlisted" selected='@(ViewBag.Status == "Waitlisted" ? "selected" : "")'>Waitlisted</option>
+                        <option value="PendingAssessment" selected='@(ViewBag.Status == "PendingAssessment" ? "selected" : "")'>Pending Assessment</option>
+                        <option value="PendingApproval" selected='@(ViewBag.Status == "PendingApproval" ? "selected" : "")'>Pending Approval</option>
+                        <option value="Admitted" selected='@(ViewBag.Status == "Admitted" ? "selected" : "")'>Admitted</option>
+                        <option value="Discharged" selected='@(ViewBag.Status == "Discharged" ? "selected" : "")'>Discharged</option>
+                        <option value="Closed" selected='@(ViewBag.Status == "Closed" ? "selected" : "")'>Closed</option>
+                        <option value="Relapsed" selected='@(ViewBag.Status == "Relapsed" ? "selected" : "")'>Relapsed</option>
+                    </select>
+                </form>
+            </div>
+
+            <!-- Sort by -->
+            <div class="sort-by d-flex align-items-center">
+                <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                    @* preserve existing query params so logic is unchanged *@
+                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                    <input type="hidden" name="status" value="@ViewBag.Status" />
+                    <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+
+                    <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
+                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
+                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
+                        <option value="DateAdded" selected='@(ViewBag.SortBy == "DateAdded" ? "selected" : "")'>Date Added</option>
+                    </select>
+
+                    
+                </form>
+            </div>
+
+            
         </div>
     </div>
 
-    <div class="table-responsive-custom">
+    <div class="table-responsive-custom m-4 mr-4 mt-2 border">
         <table class="table mb-0">
             <thead class="table-light">
                 <tr>
@@ -215,7 +245,7 @@
                                         </div>
                                         break;
                                     case var status when status == PatientStatusEnum.Admitted.ToString():
-                                        <div style="background-color: #008000; color: white; border-radius: 6px; padding: 4px 12px; display: inline-block;">
+                                        <div style="background-color: rgba(0, 128, 0, 0.49); color: black; border-radius: 6px; padding: 4px 12px; display: inline-block;">
                                             Admitted
                                         </div>
                                         break;
@@ -251,8 +281,8 @@
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                href="#">
-                                                <span class="badge-dot bg-success"></span>
-                                                Edit Admission
+                                                <span class="badge-dot bg-info"></span>
+                                                View Profile
                                             </a>
                                         </li>
                                     </ul>
@@ -305,6 +335,9 @@
 @await Html.PartialAsync("_AddAppointmentModal")
 
 <style>
+    /* remove header margin to collapse extra spacing */
+    .header { margin: 0 !important; padding: 0; }
+
     .custom-btn {
         background-color: white;
         width: 250px;
@@ -338,7 +371,7 @@
     }
 
     .table-responsive-custom {
-        overflow: visible !important;
+    overflow: visible !important;
     }
 
     .dropdown-menu {
@@ -470,10 +503,23 @@
         // Add click handler
     document.querySelectorAll('.custom-btn').forEach(btn => {
       btn.addEventListener('click', function() {
-        // remove active from all
         document.querySelectorAll('.custom-btn').forEach(b => b.classList.remove('active'));
-        // add active to clicked
         this.classList.add('active');
       });
+    });
+</script>
+
+<script>
+    // UI: ensure the status select retains the selected value after navigation/refresh
+    document.addEventListener('DOMContentLoaded', function () {
+        var statusSelect = document.querySelector('select[name="status"]');
+        if (!statusSelect) return;
+        // Inject server value (falls back to empty string)
+        var serverStatus = '@(ViewBag.Status ?? "")';
+        try {
+            statusSelect.value = serverStatus;
+        } catch (e) {
+            console.warn('Could not set status select value', e);
+        }
     });
 </script>
