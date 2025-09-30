@@ -4,227 +4,114 @@
     var activeProblem = Model.Problems.FirstOrDefault(); // Default to first
 }
 
-    <div class="row" style="min-height:600px;">
+<div class="treatmentplan-partial bg-light container-fluid p-3">
+    <div class="row gx-3" style="min-height:600px;">
         <!-- Problem List Sidebar -->
-        <div class="col-md-4 border-end px-4 py-3 bg-white">
-            <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
-                <h5 class="fw-bold mb-0">Problem List</h5>
-                <button type="button" class="btn btn-link text-teal fw-semibold small p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#AddProblemModal">+ Add</button>
+        <div class="col-lg-4 col-md-12 mb-3 mb-lg-0">
+            <div class="card list-panel h-100 shadow-sm" style="border:1px solid #e6e9ea;">
+                <div class="card-body p-3 d-flex flex-column" style="gap:12px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Problem List</h5>
+                        <button type="button" class="btn btn-link text-teal fw-semibold small p-0 text-decoration-none" data-bs-toggle="modal" data-bs-target="#AddProblemModal">+ Add</button>
+                    </div>
+                    <div class="list-scroll" style="overflow:auto; flex:1;">
+                        <ul class="nav flex-column" id="problemTab" role="tablist">
+                            @for (int i = 0; i < Model.Problems.Count; i++)
+                            {
+                                var problem = Model.Problems[i];
+                                <li class="nav-item" role="presentation">
+                                    <div class="d-flex align-items-center justify-content-between px-2 py-2 problem-list-row" style="border:1px solid #e5e5e5;">
+                                        <button
+                                            class="w-100 border-0 text-start p-0 m-0"
+                                            id="problem@(i+1)-tab"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#problem@(i+1)"
+                                            data-bs-id="@problem.PsyProblemListId"
+                                            type="button"
+                                            role="tab"
+                                            aria-controls="problem@(i+1)"
+                                            aria-selected="false"
+                                            style="outline:none; text-decoration:none; color:inherit;">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div class="me-2">
+                                                    <div class="fw-bold">@problem.Problems</div>
+                                                    <div class="small text-muted">@problem.Status</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <div class="dropdown ms-2" style="position:relative;">
+                                            <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="d-flex align-items-center px-2">
+                                                <i class="bx bx-dots-vertical fs-5 text-muted"></i>
+                                            </a>
+                                            <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 180px;">
+                                                <li class="px-2 text-muted fw-semibold small">Options</li>
+                                                <li>
+                                                    <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                    data-bs-toggle="modal" data-bs-target="#EditProblemModal-@problem.PsyProblemListId">
+                                                        Edit Problem
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                    data-bs-toggle="modal" data-bs-target="#MarkProblemResolvedModal-@problem.PsyProblemListId">
+                                                        Mark as Resolved
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                    data-bs-toggle="modal" data-bs-target="#MarkProblemInactiveModal-@problem.PsyProblemListId">
+                                                        Mark as Inactive
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                    data-bs-toggle="modal" data-bs-target="#MarkProblemActiveModal-@problem.PsyProblemListId">
+                                                        Mark as Active
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
             </div>
-
-            <!-- Nav tabs -->
-            <ul class="nav flex-column" id="problemTab" role="tablist">
-                @for (int i = 0; i < Model.Problems.Count; i++)
-                {
-                    var problem = Model.Problems[i];
-                    var isActive = i == 0 ? "active" : "";
-                    <li class="nav-item position-relative" role="presentation" style="margin-bottom:10px; overflow:visible;">
-                        <div class="d-flex align-items-center justify-content-between rounded-3 @(isActive == "active" ? "bg-lightblue" : "bg-light") px-3 py-3 nav-links cursor-pointer"
-                             style="border: 1px solid #e5e5e5;"
-                             data-tab="#problem@(i+1)">
-                            <button
-                                class="w-100 bg-transparent border-0 text-start p-0 m-0"
-                                id="problem@(i+1)-tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#problem@(i+1)"
-                                data-bs-id="@problem.PsyProblemListId"
-                                type="button"
-                                role="tab"
-                                aria-controls="problem@(i+1)"
-                                aria-selected="@(isActive == "active" ? "true" : "false")"
-                                style="outline:none;">
-                                <div class="d-flex align-items-center gap-5">
-                                    <span class="fw-medium" style="font-size:1.1em;">@problem.Problems</span>
-                                    <span class="badge bg-active ms-2">@problem.Status</span>
-                                </div>
-                                
-                            </button>
-                            <div class="dropdown ms-2" style="position:absolute; right:10px; top:10px;">
-                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="d-flex align-items-center px-2">
-                                    <i class="bx bx-dots-vertical fs-5 text-muted"></i>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3"
-                                    style="min-width: 220px; z-index:1060; position:absolute;">
-                                    <li class="px-2 fw-semibold small">Options</li>
-                                    <li>
-                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#EditProblemModal-@problem.PsyProblemListId"
-                                        style="color:Black;">
-                                            Edit Problem
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#MarkProblemResolvedModal-@problem.PsyProblemListId"
-                                        style="color:Black;">
-                                            Mark as Resolved
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#MarkProblemInactiveModal-@problem.PsyProblemListId"
-                                        style="color:Black;">
-                                            Mark as Inactive
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                        data-bs-toggle="modal" data-bs-target="#MarkProblemActiveModal-@problem.PsyProblemListId"
-                                        style="color:Black;">
-                                            Mark as Active
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </li>
-                }
-            </ul>
         </div>
 
         <!-- Tab content -->
-        <div class="col-md-8 bg-white">
-            <div class="tab-content" id="problemTabContent">
-                @for (int i = 0; i < Model.Problems.Count; i++)
-                {
-                    var problem = Model.Problems[i];
-                    <div class="tab-pane fade @(i == 0 ? "show active" : "")"
-                        id="problem@(i+1)"
-                        role="tabpanel"
-                        aria-labelledby="problem@(i+1)-tab">
-                        <div class="mt-3 mx-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <h5 class="fw-medium mb-0">@problem.Problems</h5>
-                                <span class="badge bg-active ms-2">@problem.Status</span>
+        <div class="col-lg-8 col-md-12">
+            <div class="d-flex flex-column h-100" style="gap:12px;">
+                <div class="tab-content" id="problemTabContent">
+                    @for (int i = 0; i < Model.Problems.Count; i++)
+                    {
+                        var problem = Model.Problems[i];
+                        var paneActive = i == 0 ? "show active" : "";
+                    <div class="tab-pane fade @paneActive" id="problem@(i+1)" role="tabpanel" aria-labelledby="problem@(i+1)-tab">
+                        <div class="d-flex flex-column bg-white flex-md-row justify-content-between align-items-start p-3 intervention-details" style="border:1px solid #e6e9ea;">
+                            <div class="flex-grow-1 me-3">
+                                <h5 class="mb-1 intervention-title">@problem.Problems</h5>
+                                <div class="text-muted small short-desc">@problem.Status</div>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center small text-muted mb-3">
-                                <div>
-                                    Noted by: <span class="fw-semibold">sjdsajhdjah</span>
-                                </div>
-                                <div>
-                                    Date Diagnosed: <span class="fw-semibold">@problem.DateAdded?.ToString("MMM dd, yyyy")</span>
-                                </div>
+                            <div class="text-end small text-muted intervention-meta" style="min-width:220px;">
+                                <div><strong>Noted by:</strong> sjdsajhdjah</div>
+                                <div><strong>Date Diagnosed:</strong> @problem.DateAdded?.ToString("MMM dd, yyyy")</div>
                             </div>
-                            <hr />
                         </div>
 
-                        @* <!-- Goal Section -->
-                        <div class="mt-3 bg-light p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="d-flex align-items-center gap-3">
-                                    <h4 class="fw-bold mb-0">Goal</h4>
-                                    <a href="#" class="text-teal fw-semibold small text-decoration-none"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#addGoalModal"
-                                    onclick="document.getElementById('PsyProblemListId').value='@problem.PsyProblemListId'">
-                                        + Add
-                                    </a>
-                                </div>
-                                <div>
-                                    <select class="form-select form-select-sm w-auto ms-auto" style="font-size:0.95em;" aria-label="Goal Status">
-                                        <option value="inprogress">Goal Status</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="discontinued">Discontinued</option>
-                                    </select>
-                                </div>
-                            </div>
-                            @if (problem.Goals == null || !problem.Goals.Any())
-                            {
-                                <div class="text-center text-muted py-5 bg-white">
-                                    This patient has no active goals yet.<br />
-                                    <a href="#" class="text-teal fw-semibold small text-decoration-none" data-bs-toggle="modal" data-bs-target="#addGoalModal" onclick="document.getElementById('PsyProblemListId').value='@problem.PsyProblemListId'">+ Add Now</a>
-                                </div>
-                            }
-                            else
-                            {
-                                @foreach (var goal in problem.Goals)
-                                {
-                                    // Set status text and background class
-                                    var statusText = goal.Status;
-                                    var statusClass = "bg-inprogress";
-                                    if (!string.IsNullOrEmpty(goal.Status))
-                                    {
-                                        switch (goal.Status.Trim().ToLower())
-                                        {
-                                            case "completed":
-                                                statusText = "Completed";
-                                                statusClass = "bg-completed";
-                                                break;
-                                            case "discontinue":
-                                            case "discontinued":
-                                                statusText = "Discontinue";
-                                                statusClass = "bg-discontinued";
-                                                break;
-                                            default:
-                                                statusText = "In Progress";
-                                                statusClass = "bg-inprogress";
-                                                break;
-                                        }
-                                    }
-
-                                    <div class="p-3 rounded-3 mb-2 bg-white shadow-sm">
-                                        <div class="d-flex justify-content-between">
-                                            <div class="d-flex align-items-center">
-                                                <span class="fw-bold">@goal.Description</span>
-                                                <span class="badge @statusClass ms-2">@statusText</span>
-                                                <i class="bi bi-three-dots-vertical ms-auto"></i>
-                                            </div>
-                                            <div class="dropdown" data-bs-display="static">
-                                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="bx bx-dots-vertical fs-5 text-muted"></i>
-                                                </a>
-                                                <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
-                                                    <li class="px-2 text-muted fw-semibold small">Options</li>
-                                                    <li>
-                                                        <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#EditGoalModal-@goal.GoalId">
-                                                            <span class="badge-dot bg-info"></span>
-                                                            Edit Goal
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#MarkAsCompletedModal-@goal.GoalId">
-                                                            <span class="badge-dot bg-success"></span>
-                                                            Mark as Completed
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                         <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#DiscontinueGoalModal-@goal.GoalId">
-                                                            <span class="badge-dot bg-danger"></span>
-                                                            Discontinue
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                        <div class="small text-muted mt-1">
-                                                Noted by: <span class="fw-semibold">@goal.NotedBy</span>
-                                                <span class="ms-3">Target Date: @goal.TargetDate?.ToShortDateString()</span>
-                                        </div>
-                                    </div>
-                                }
-                            }
-                        </div> *@
-
-                       <!-- Interventions Section -->
-                        <div class="mt-4 bg-light p-4">
+                        <div class="mt-4 bg-white p-4">
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <h4 class="fw-semibold mb-0">Interventions</h4>
                                 <div>
-                                    <button type="button" class="btn btn-custom text-white fw-semibold" 
-                                        style="background:#0097A7; border-radius:10px; min-width:160px;" 
-                                        data-bs-toggle="modal" 
+                                    <button type="button" class="btn btn-custom text-white fw-semibold"
+                                        style="background:#0097A7; border-radius:10px; min-width:160px;"
+                                        data-bs-toggle="modal"
                                         data-bs-target="#addInterventionModal">
                                         Add Intervention
                                     </button>
-                                    
-                                    <a class="btn btn-custom text-white fw-semibold ms-2" 
-                                        style="background:#0097A7; border-radius:10px; min-width:160px;" 
+                                    <a class="btn btn-custom text-white fw-semibold ms-2"
+                                        style="background:#0097A7; border-radius:10px; min-width:160px;"
                                         href="@Url.Action("AddMedicationOrder", "Medication", new { patientId = ViewBag.PatientId, problemId = problem.PsyProblemListId })">
                                         Add Medication
                                     </a>
@@ -283,38 +170,38 @@
                                                         }
                                                     </td>
                                                     <td>
-                                                      <span class="fw-normal">
-                                                        @if (isMedication)
-                                                        {
-                                                            if (intervention?.Status == "NotStarted")
+                                                        <span class="fw-normal">
+                                                            @if (isMedication)
                                                             {
-                                                                @:Not Started
-                                                            }
-                                                            else if (intervention?.Status == "Active")
-                                                            {
-                                                                @:Active
-                                                            }
-                                                            else
-                                                            {
-                                                                @(intervention?.Status ?? "")
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            if (intervention?.Status == "NotStarted")
-                                                            {
-                                                                @:Not Started
-                                                            }
-                                                            else if (intervention?.Status == "Active")
-                                                            {
-                                                                @:Active
+                                                                if (intervention?.Status == "NotStarted")
+                                                                {
+                                                                    @:Not Started
+                                                                }
+                                                                else if (intervention?.Status == "Active")
+                                                                {
+                                                                    @:Active
+                                                                }
+                                                                else
+                                                                {
+                                                                    @(intervention?.Status ?? "")
+                                                                }
                                                             }
                                                             else
                                                             {
-                                                                @(intervention?.Status ?? "")
+                                                                if (intervention?.Status == "NotStarted")
+                                                                {
+                                                                    @:Not Started
+                                                                }
+                                                                else if (intervention?.Status == "Active")
+                                                                {
+                                                                    @:Active
+                                                                }
+                                                                else
+                                                                {
+                                                                    @(intervention?.Status ?? "")
+                                                                }
                                                             }
-                                                        }
-</span>
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <img src="~/Images/default.png" alt="Clinician" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" />
@@ -326,23 +213,20 @@
                                                             </a>
                                                             <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3">
                                                                 <li class="px-2 text-muted fw-semibold small">Options</li>
-
+                                                                @* ...existing dropdown logic... *@
                                                                 @if (isMedication)
                                                                 {
-
                                                                     @if(intervention.Status == "Active")
                                                                     {
                                                                         <li>
-                                                                            <li>
-                                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                                                    href="#"
-                                                                                    data-bs-toggle="modal"
-                                                                                    data-bs-target="#confirmDiscontinueMedicationModal-@intervention.MedicationOrderId">
-                                                                                        Discontinue Medication
-                                                                                </a>
-                                                                            </li>
+                                                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                                                href="#"
+                                                                                data-bs-toggle="modal"
+                                                                                data-bs-target="#confirmDiscontinueMedicationModal-@intervention.MedicationOrderId">
+                                                                                    Discontinue Medication
+                                                                            </a>
                                                                         </li>
-                                                                         <li>
+                                                                        <li>
                                                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                                             href="#"
                                                                             data-bs-toggle="modal"
@@ -424,12 +308,12 @@
                             </div>
                         </div>
                     </div>
-                }
+                    }
+                </div>
             </div>
         </div>
     </div>
-
-
+</div>
 
 <!-- Add Problem Modal -->
 <div class="modal fade" id="AddProblemModal" tabindex="-1" aria-labelledby="addProblemModalLabel" aria-hidden="true">
@@ -1014,26 +898,22 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var triggerTabList = [].slice.call(document.querySelectorAll('#problemTab button'));
-
-            // Hide all tab panes except the first one on page load
             var tabPanes = document.querySelectorAll('#problemTabContent .tab-pane');
-            tabPanes.forEach(function(pane, idx) {
-                if (idx === 0) {
-                    pane.classList.add('show', 'active');
-                } else {
-                    pane.classList.remove('show', 'active');
-                }
-            });
 
             // Function to update problem item highlighting
             function updateProblemHighlight(selectedButton) {
                 document.querySelectorAll('.nav-item .d-flex').forEach(function(item) {
                     item.classList.remove('bg-lightblue');
-                    item.classList.add('bg-light');
+                    item.style.background = "#fff";
                 });
                 if (selectedButton) {
-                    selectedButton.closest('.nav-item').querySelector('.d-flex').classList.remove('bg-light');
-                    selectedButton.closest('.nav-item').querySelector('.d-flex').classList.add('bg-lightblue');
+                    var dFlex = selectedButton.closest('.nav-item').querySelector('.d-flex');
+                    dFlex.classList.add('bg-lightblue');
+                    dFlex.style.background = "#D6F2F7"; // Force full lightblue background
+                    // Also set all children to transparent so the parent color shows through
+                    dFlex.querySelectorAll('*').forEach(function(child) {ss
+                        child.style.background = "transparent";
+                    });
                 }
             }
 
@@ -1074,56 +954,115 @@
                     showTabPane(btn.getAttribute('data-bs-target'));
                 });
             });
+
+            // On load, set all to white except the active one
+            document.querySelectorAll('.nav-item .d-flex').forEach(function(item) {
+                item.classList.remove('bg-lightblue');
+                item.style.background = "#fff";
+            });
+            var activeBtn = document.querySelector('#problemTab button.active') || document.querySelector('#problemTab button');
+            if (activeBtn) {
+                var dFlex = activeBtn.closest('.nav-item').querySelector('.d-flex');
+                dFlex.classList.add('bg-lightblue');
+                dFlex.style.background = "#D6F2F7";
+                dFlex.querySelectorAll('*').forEach(function(child) {
+                    child.style.background = "transparent";
+                });
+            }
         });
 
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[data-bs-target="#addInterventionModal"]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var activeTabBtn = document.querySelector('#problemTab button.active');
-            if (!activeTabBtn) activeTabBtn = document.querySelector('#problemTab button');
-            var problemId = activeTabBtn.getAttribute('data-bs-id');
-            document.querySelector('#addInterventionModal input[name="problemId"]').value = problemId;
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-bs-target="#addInterventionModal"]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var activeTabBtn = document.querySelector('#problemTab button.active');
+                if (!activeTabBtn) activeTabBtn = document.querySelector('#problemTab button');
+                var problemId = activeTabBtn.getAttribute('data-bs-id');
+                document.querySelector('#addInterventionModal input[name="problemId"]').value = problemId;
+            });
         });
     });
-});
 
-document.addEventListener('DOMContentLoaded', function() {
-    var tabButtons = document.querySelectorAll('#problemTab button');
-    var tabPanes = document.querySelectorAll('#problemTabContent .tab-pane');
+    document.addEventListener('DOMContentLoaded', function() {
+        var tabButtons = document.querySelectorAll('#problemTab button');
+        var tabPanes = document.querySelectorAll('#problemTabContent .tab-pane');
 
-    // Restore active tab from localStorage
-    var savedTabId = localStorage.getItem('activeProblemTabId');
-    var activeBtn = savedTabId ? document.getElementById(savedTabId) : tabButtons[0];
-    var activeTarget = activeBtn.getAttribute('data-bs-target');
+        // Restore active tab from localStorage
+        var savedTabId = localStorage.getItem('activeProblemTabId');
+        var activeBtn = savedTabId ? document.getElementById(savedTabId) : tabButtons[0];
+        var activeTarget = activeBtn.getAttribute('data-bs-target');
 
-    tabButtons.forEach(function(btn) {
-        btn.classList.remove('active');
-        btn.setAttribute('aria-selected', 'false');
-    });
-    activeBtn.classList.add('active');
-    activeBtn.setAttribute('aria-selected', 'true');
+        tabButtons.forEach(function(btn) {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+        });
+        activeBtn.classList.add('active');
+        activeBtn.setAttribute('aria-selected', 'true');
 
-    tabPanes.forEach(function(pane) {
-        if ('#' + pane.id === activeTarget) {
-            pane.classList.add('show', 'active');
-        } else {
-            pane.classList.remove('show', 'active');
-        }
-    });
+        tabPanes.forEach(function(pane) {
+            if ('#' + pane.id === activeTarget) {
+                pane.classList.add('show', 'active');
+            } else {
+                pane.classList.remove('show', 'active');
+            }
+        });
 
-    // Highlight sidebar
-    document.querySelectorAll('.nav-item .d-flex').forEach(function(item) {
-        item.classList.remove('bg-lightblue');
-        item.classList.add('bg-light');
-    });
-    activeBtn.closest('.nav-item').querySelector('.d-flex').classList.remove('bg-light');
-    activeBtn.closest('.nav-item').querySelector('.d-flex').classList.add('bg-lightblue');
+        // Highlight sidebar: all white except active
+        document.querySelectorAll('.nav-item .d-flex').forEach(function(item) {
+            item.classList.remove('bg-lightblue');
+            item.style.background = "#fff";
+        });
+        var dFlex = activeBtn.closest('.nav-item').querySelector('.d-flex');
+        dFlex.classList.add('bg-lightblue');
+        dFlex.style.background = "#D6F2F7";
+        dFlex.querySelectorAll('*').forEach(function(child) {
+            child.style.background = "transparent";
+        });
 
-    // Save tab on click
-    tabButtons.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            localStorage.setItem('activeProblemTabId', this.id);
+        // Save tab on click
+        tabButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                localStorage.setItem('activeProblemTabId', this.id);
+            });
         });
     });
-});
     </script>
+
+<style>
+    /* Remove light blue highlight from problem list rows */
+    .problem-list-row,
+    .problem-list-row.active,
+    .problem-list-row.bg-lightblue {
+        background: #fff !important;
+        transition: background 0.2s;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Remove highlight logic for problem list rows
+        document.querySelectorAll('.problem-list-row').forEach(function(row) {
+            row.classList.remove('active', 'bg-lightblue');
+            row.style.background = "#fff";
+        });
+
+        // Remove highlight on click
+        document.querySelectorAll('#problemTab button').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.problem-list-row').forEach(function(row) {
+                    row.classList.remove('active', 'bg-lightblue');
+                    row.style.background = "#fff";
+                });
+            });
+        });
+
+        // Remove highlight on row click
+        document.querySelectorAll('#problemTab .problem-list-row').forEach(function(row) {
+            row.addEventListener('click', function(e) {
+                if (e.target.closest('.dropdown')) return;
+                document.querySelectorAll('.problem-list-row').forEach(function(r) {
+                    r.classList.remove('active', 'bg-lightblue');
+                    r.style.background = "#fff";
+                });
+            });
+        });
+    });
+</script>

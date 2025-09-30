@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SafehavenPMS.Data;
 using SafehavenPMS.Models;
+using SafehavenPMS.Services;
 using SafehavenPMS.ViewModel;
 
 namespace SafehavenPMS.Controllers
@@ -21,11 +22,13 @@ namespace SafehavenPMS.Controllers
         private readonly SafehavenPMSContext _context;
         private readonly ILogger<LoginController> _logger;
         private readonly PasswordHasher<User> _hasher = new PasswordHasher<User>();
+        private readonly IEmailService _emailService;
 
-        public LoginController(SafehavenPMSContext context, ILogger<LoginController> logger)
+        public LoginController(SafehavenPMSContext context, ILogger<LoginController> logger, IEmailService emailService)
         {
             _context = context;
             _logger = logger;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -96,6 +99,51 @@ namespace SafehavenPMS.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             _logger.LogInformation("User logged out");
             return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View("ForgotPassword");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            var recEmail = await _context.Users
+                .Where(u => u.Email == model.Email)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync();
+            
+            if (recEmail == null)
+            {
+                ModelState.AddModelError(string.Empty, "No account found with that email.");
+                TempData["Error"] = "No account found with that email.";
+                return View(model);
+            }
+
+            if (ModelState.IsValid)
+            {
+                // Generate a random 6-digit code
+                var otp = new Random().Next(100000, 999999).ToString();
+
+                // Store OTP and email as needed (TempData, Session, DB, etc.)
+                TempData["EmailForOtp"] = model.Email;
+                TempData["OtpCode"] = otp;
+
+                // Send OTP to email
+                await _emailService.SendOtpAsync(model.Email, otp);
+
+                // Redirect directly to EnterOtp page (no protocol/port logic)
+                return RedirectToAction("EnterOtp", "Login");
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult EnterOtp()
+        {
+            return View();
         }
     }
 }

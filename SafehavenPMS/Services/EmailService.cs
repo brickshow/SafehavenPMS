@@ -10,6 +10,7 @@ namespace SafehavenPMS.Services
     public interface IEmailService
     {
         Task SendStaffCredentialsAsync(string toEmail, string username, string password, string? staffName = null);
+        Task SendOtpAsync(string toEmail, string otpCode);
     }
 
     public class EmailService : IEmailService
@@ -71,6 +72,48 @@ namespace SafehavenPMS.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send credentials email to {Email}", toEmail);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Sends a 6-digit OTP code to the specified email address.
+        /// </summary>
+        public async Task SendOtpAsync(string toEmail, string otpCode)
+        {
+            if (string.IsNullOrWhiteSpace(toEmail)) throw new ArgumentException("toEmail required", nameof(toEmail));
+            if (string.IsNullOrWhiteSpace(otpCode)) throw new ArgumentException("otpCode required", nameof(otpCode));
+
+            var fromAddress = new MailAddress(_options.FromAddress, _options.FromDisplayName);
+            var toAddress = new MailAddress(toEmail);
+
+            using var message = new MailMessage(fromAddress, toAddress)
+            {
+                Subject = "Your Safehaven Password Reset Code",
+                IsBodyHtml = true,
+                Body = $@"<p>Hello,</p>
+                          <p>Your password reset code is:</p>
+                          <h2 style='letter-spacing: 4px;'>{WebUtility.HtmlEncode(otpCode)}</h2>
+                          <p>This code will expire soon. If you did not request a password reset, please ignore this email.</p>
+                          <p>Regards,<br/>Safehaven Recovery Village</p>"
+            };
+
+            using var client = new SmtpClient(_options.Host, _options.Port)
+            {
+                EnableSsl = _options.UseSsl,
+                Credentials = new NetworkCredential(_options.UserName, _options.Password),
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                Timeout = _options.TimeoutMs
+            };
+
+            try
+            {
+                await client.SendMailAsync(message).ConfigureAwait(false);
+                _logger.LogInformation("Sent OTP email to {Email}", toEmail);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send OTP email to {Email}", toEmail);
                 throw;
             }
         }
