@@ -1,8 +1,186 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Dashboard";
 }
+<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
 
-<div class="text-center">
-    <h1 class="display-4">Web Site</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="dashboard-wrapper container-fluid">
+    
+    <div class="stats-grid row gx-3 gy-3">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Total Patients</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Doctor</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Nurse</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Coach</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Appointment</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Invoice</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Other</div>
+                <div class="stat-value" data-value="5">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-row row mt-4 gx-4">
+        <div class="col-12 col-lg-6">
+            <div class="card dashboard-panel">
+                <div class="panel-header">
+                    <h5>Patients Statuses</h5>
+                </div>
+                <div class="panel-body">
+                    <canvas id="patientsPieChart"></canvas>
+                    <ul class="legend-list">
+                        <li><span class="legend-swatch swatch-admitted"></span>Admitted</li>
+                        <li><span class="legend-swatch swatch-pending"></span>Pending Approval</li>
+                        <li><span class="legend-swatch swatch-assessment"></span>On Assessment</li>
+                        <li><span class="legend-swatch swatch-referral"></span>New Referral</li>
+                        <li><span class="legend-swatch swatch-discharge"></span>Discharge</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card dashboard-panel empty-panel">
+                <div class="panel-header">
+                    <h5>Analytics</h5>
+                </div>
+                <div class="panel-body d-flex align-items-center justify-content-center">
+                    <div class="placeholder-text">Add charts or widgets here</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+:root{
+  --teal:#0b6b6b;
+  --teal-dark:#075157;
+  --card-bg:#f5fbfb;
+  --panel-bg:#ffffff;
+  --accent:#0aa39a;
+}
+.dashboard-wrapper{ padding:22px 28px; }
+.dashboard-header{ margin-bottom:18px; }
+.dashboard-title{ font-size:40px; font-weight:500; text-align:center; width:100%; color:#222; }
+.user-actions{ gap:12px; }
+.notification-badge{ background:#e94b4b; color:#fff; padding:4px 8px; border-radius:12px; font-weight:600; }
+.user-name{ color:#222; font-weight:600; }
+
+.stats-grid .stat-card{
+  background:var(--teal);
+  color:#fff;
+  padding:18px 20px;
+  border-radius:8px;
+  box-shadow:0 6px 18px rgba(2,6,23,0.06);
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-height:80px;
+}
+.stat-card .stat-label{ font-size:14px; opacity:0.95; }
+.stat-card .stat-value{ font-size:28px; font-weight:700; }
+
+.dashboard-panel{ border-radius:8px; padding:0; overflow:hidden; box-shadow:0 6px 16px rgba(0,0,0,0.06); }
+.dashboard-panel .panel-header{ padding:18px 20px; border-bottom:1px solid #eee; background:linear-gradient(180deg,#fff,#fafafa); }
+.dashboard-panel .panel-header h5{ margin:0; color:var(--teal-dark); font-weight:600; }
+.dashboard-panel .panel-body{ padding:22px; background:var(--panel-bg); display:flex; gap:20px; align-items:center; }
+
+.legend-list{ list-style:none; padding:0; margin:12px 0 0 0; display:flex; flex-direction:column; gap:8px; color:#444; font-weight:500; }
+.legend-swatch{ display:inline-block; width:14px; height:14px; margin-right:10px; border-radius:3px; vertical-align:middle; }
+.swatch-admitted{ background:#ff9f40; }
+.swatch-pending{ background:#ffd86b; }
+.swatch-assessment{ background:#ff6b86; }
+.swatch-referral{ background:#1dd1a1; }
+.swatch-discharge{ background:#2e86de; }
+
+.empty-panel .panel-body{ min-height:260px; }
+.placeholder-text{ color:#9aa3a3; font-weight:600; }
+
+@@media (max-width:768px){
+  .dashboard-title{ font-size:28px; text-align:left; }
+  .dashboard-header{ align-items:flex-start; gap:10px; }
+  .stats-grid .stat-card{ min-height:72px; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Simple counter animation
+    document.querySelectorAll('.stat-value').forEach(function (el) {
+        const target = parseInt(el.getAttribute('data-value') || '0', 10);
+        let current = 0;
+        const step = Math.max(1, Math.floor(target / 20));
+        const interval = setInterval(function () {
+            current += step;
+            if (current >= target) {
+                current = target;
+                clearInterval(interval);
+            }
+            el.textContent = current;
+        }, 20);
+    });
+
+    // Patients pie chart
+    const ctx = document.getElementById('patientsPieChart').getContext('2d');
+    const patientsChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Admitted', 'Pending Approval', 'On Assessment', 'New Referral', 'Discharge'],
+            datasets: [{
+                data: [25, 20, 15, 25, 15],
+                backgroundColor: ['#ff9f40', '#ffd86b', '#ff6b86', '#1dd1a1', '#2e86de'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // set canvas height for nicer layout
+    const canvas = document.getElementById('patientsPieChart');
+    canvas.parentElement.style.minHeight = '220px';
+});
+</script>

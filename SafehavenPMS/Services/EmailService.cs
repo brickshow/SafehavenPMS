@@ -10,7 +10,7 @@ namespace SafehavenPMS.Services
     public interface IEmailService
     {
         Task SendStaffCredentialsAsync(string toEmail, string username, string password, string? staffName = null);
-        Task SendOtpAsync(string toEmail, string otpCode);
+        Task SendOtpAsync(string username,string toEmail, string otpCode);
     }
 
     public class EmailService : IEmailService
@@ -79,7 +79,7 @@ namespace SafehavenPMS.Services
         /// <summary>
         /// Sends a 6-digit OTP code to the specified email address.
         /// </summary>
-        public async Task SendOtpAsync(string toEmail, string otpCode)
+        public async Task SendOtpAsync(string username, string toEmail, string otpCode)
         {
             if (string.IsNullOrWhiteSpace(toEmail)) throw new ArgumentException("toEmail required", nameof(toEmail));
             if (string.IsNullOrWhiteSpace(otpCode)) throw new ArgumentException("otpCode required", nameof(otpCode));
@@ -91,7 +91,7 @@ namespace SafehavenPMS.Services
             {
                 Subject = "Your Safehaven Password Reset Code",
                 IsBodyHtml = true,
-                Body = $@"<p>Hello,</p>
+                Body = $@"<p>Hello {WebUtility.HtmlEncode(username)},</p>
                           <p>Your password reset code is:</p>
                           <h2 style='letter-spacing: 4px;'>{WebUtility.HtmlEncode(otpCode)}</h2>
                           <p>This code will expire soon. If you did not request a password reset, please ignore this email.</p>
