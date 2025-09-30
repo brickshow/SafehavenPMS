@@ -96,12 +96,12 @@
     }
 
     .btn-primary {
-        background: linear-gradient(to right, #00b4db, #0083b0);
+        background: linear-gradient(to right, #069FB2, #058594);
         border: none;
     }
 
         .btn-primary:hover {
-            opacity: 0.9;
+            background: linear-gradient(to right, #007B8A, #015F6B);
         }
 
     a {
@@ -133,6 +133,29 @@
         margin-top: 8px;
         font-size: 1rem;
     }
+
+    /*button design global*/
+   .btn-custom {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        display: inline-flex;   /* This ensures flexbox layout */
+        align-items: center;    /* Aligns content vertically in the center */
+        justify-content: center; /* Ensures text is centered horizontally */
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-align: center;    /* Ensures text is centered horizontally */
+}
+
+
+        .btn-custom:hover {
+            background: linear-gradient(to right, #047483, #058A9B);
+            color: white;
+            box-shadow: 0 2px 5px rgba(5, 133, 148, 0.2);
+            transform: translateY(-1px);
+        }
 
 </style>
 
@@ -187,7 +210,7 @@
                     <a asp-action="ForgotPassword" asp-controller="Login" class="ms-auto">Forgot Password</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100">Login</button>
+                <button type="submit" class="btn-custom w-100">Login</button>
             </form>
         </div>
     </div>
