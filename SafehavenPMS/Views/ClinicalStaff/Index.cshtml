@@ -132,7 +132,6 @@
                 <tr>
                     <th>No.</th>
                     <th>Name</th>
-                    <th>Specialty</th>
                     <th>Position</th>
                     <th>Phone Number</th>
                     <th>Sex</th>
@@ -158,9 +157,8 @@
                             <td>@rowNum</td>
                             <td class="d-flex justify-content-start align-items-center g-4">
                                 @* <img src="@(string.IsNullOrEmpty(staff.ProfilePictureURL) ? "/Images/default.png" : staff.ProfilePictureURL)" style="width:30px; margin:10px; border:1px solid black; border-radius:50%;" /> *@
-                                <strong>@staff.Firstname @staff.Lastname</strong>
+                                @staff.Firstname @staff.Lastname
                             </td>
-                            <td>@staff.Specialty</td>
                             <td>@staff.Position</td>
                             <td>@staff.PhoneNumber</td>
                             <td>@staff.Sex</td>
@@ -186,9 +184,7 @@
                                 </div>
                             </td>
                         </tr>
-                        
                             rowNum++;
-                        
                     }
                 }
             </tbody>

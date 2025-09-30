@@ -61,7 +61,6 @@ namespace SafehavenPMS.Controllers
                 query = query.Where(s =>
                     s.Firstname.ToLower().Contains(searchQuery) ||
                     s.Lastname.ToLower().Contains(searchQuery) ||
-                    s.Specialty.ToLower().Contains(searchQuery) ||
                     s.Position.ToLower().Contains(searchQuery));
             }
 
@@ -234,13 +233,6 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
 
-            // Check if Hire Date is in the future
-            if (model.HireDate > DateTime.Now)
-            {
-                TempData["Error"] = "Hire Date must not be in the future.";
-                return View(model);
-            }
-
             // Locally upload the photo before saving
             string tempUrl = string.Empty;
             string filename = null;
@@ -283,12 +275,10 @@ namespace SafehavenPMS.Controllers
                 Lastname = model.Lastname,
                 Sex = model.Sex,
                 PhoneNumber = model.PhoneNumber,
-                Specialty = model.Specialty,
                 Position = model.Position,
                 ProfilePictureURL = tempUrl,
                 PRC_Licensed = model.RPC_Licensed,
                 Email = model.Email,
-                HireDate = model.HireDate,
                 CreatedAt = DateTime.Now,
                 IsActive = true,
                 Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}"
@@ -332,11 +322,9 @@ namespace SafehavenPMS.Controllers
                 Lastname = staff.Lastname,
                 Sex = staff.Sex,
                 PhoneNumber = staff.PhoneNumber,
-                Specialty = staff.Specialty,
                 Position = staff.Position,
                 RPC_Licensed = staff.PRC_Licensed,
                 Email = staff.Email,
-                HireDate = staff.HireDate,
                 // ImageProfile is IFormFile and not set here (handled on POST)
                 Filename = staff.ProfilePictureURL, // Map existing image URL if needed
             };
@@ -384,11 +372,9 @@ namespace SafehavenPMS.Controllers
             existingStaff.Lastname = staff.Lastname;
             existingStaff.Sex = staff.Sex;
             existingStaff.PhoneNumber = staff.PhoneNumber;
-            existingStaff.Specialty = staff.Specialty;
             existingStaff.Position = staff.Position;
             existingStaff.PRC_Licensed = staff.RPC_Licensed; // Fixed typo
             existingStaff.Email = staff.Email;
-            existingStaff.HireDate = staff.HireDate;
 
             //// Handle address update
             //if (existingStaff.Address != null)

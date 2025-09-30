@@ -1,59 +1,111 @@
 ﻿@{
     ViewData["Title"] = "Dashboard";
 }
+
 <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Font Awesome CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
 <div class="dashboard-wrapper container-fluid">
     
     <div class="stats-grid row gx-3 gy-3">
+        <!-- stat cards changed to anchor tags (clickable) - adjust controllers/actions if needed -->
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Total Patients</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Doctor</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Nurse</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Coach</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
+            <a class="stat-card text-decoration-none" href="@Url.Action("Index","Patient")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">Total Patients</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-users stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
         </div>
 
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Appointment</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
+            <a class="stat-card text-decoration-none" href="@Url.Action("Create","PatientRegistration")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">New Patient</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-user-plus stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
         </div>
+
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Invoice</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
+            <a class="stat-card text-decoration-none" href="@Url.Action("Index","ClinicalStaff")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">Doctor</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-user-doctor stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
         </div>
+
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Total Users</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
+            <a class="stat-card text-decoration-none" href="@Url.Action("Index","ClinicalStaff")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">Nurse</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-user-nurse stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
         </div>
+
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-label">Other</div>
-                <div class="stat-value" data-value="5">0</div>
-            </div>
+            <a class="stat-card text-decoration-none" href="@Url.Action("Index","Services")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">Coach</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-chalkboard-user stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a class="stat-card text-decoration-none" href="@Url.Action("Index","Appointment")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">Appointment</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-calendar-check stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a class="stat-card text-decoration-none" href="@Url.Action("Index","Billing")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">Invoice</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-file-invoice stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3">
+            <a class="stat-card text-decoration-none" href="@Url.Action("Index","User")">
+                <div class="stat-inner">
+                    <div>
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value" data-value="5">0</div>
+                    </div>
+                    <i class="fa-solid fa-users stat-icon" aria-hidden="true"></i>
+                </div>
+            </a>
         </div>
     </div>
 
@@ -65,25 +117,13 @@
                 </div>
                 <div class="panel-body">
                     <canvas id="patientsPieChart"></canvas>
-                    <ul class="legend-list">
-                        <li><span class="legend-swatch swatch-admitted"></span>Admitted</li>
-                        <li><span class="legend-swatch swatch-pending"></span>Pending Approval</li>
-                        <li><span class="legend-swatch swatch-assessment"></span>On Assessment</li>
-                        <li><span class="legend-swatch swatch-referral"></span>New Referral</li>
-                        <li><span class="legend-swatch swatch-discharge"></span>Discharge</li>
-                    </ul>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-lg-6">
-            <div class="card dashboard-panel empty-panel">
-                <div class="panel-header">
-                    <h5>Analytics</h5>
-                </div>
-                <div class="panel-body d-flex align-items-center justify-content-center">
-                    <div class="placeholder-text">Add charts or widgets here</div>
-                </div>
+            <div class="panel-body d-flex align-items-center justify-content-center">
+                @await Html.PartialAsync("_CalendarPartial")
             </div>
         </div>
     </div>
@@ -99,7 +139,7 @@
 }
 .dashboard-wrapper{ padding:22px 28px; }
 .dashboard-header{ margin-bottom:18px; }
-.dashboard-title{ font-size:40px; font-weight:500; text-align:center; width:100%; color:#222; }
+.dashboard-title{ font-size:48px; font-weight:500; text-align:center; width:100%; color:#222; }
 .user-actions{ gap:12px; }
 .notification-badge{ background:#e94b4b; color:#fff; padding:4px 8px; border-radius:12px; font-weight:600; }
 .user-name{ color:#222; font-weight:600; }
@@ -115,15 +155,41 @@
   gap:6px;
   min-height:80px;
 }
-.stat-card .stat-label{ font-size:14px; opacity:0.95; }
-.stat-card .stat-value{ font-size:28px; font-weight:700; }
+.stat-card .stat-label{ font-size:16px; opacity:0.95; }
+.stat-card .stat-value{ font: size 25px;px; font-weight:700; }
+.stat-card .stat-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  gap:12px;
+}
+.stat-card .stat-icon{
+  font-size:42px;
+  color:#fff;
+  opacity:0.95;
+  line-height:1;
+  width:auto;
+  height:auto;
+}
+
+/* scale only the inner content so the card visually grows without altering layout flow */
+.stats-grid .stat-card .stat-inner{
+  transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+  transform-origin: center;
+  will-change: transform;
+}
+.stats-grid .stat-card:hover{
+  transform: translateY(-1px) scale(1.03);
+  z-index: 2;
+}s
 
 .dashboard-panel{ border-radius:8px; padding:0; overflow:hidden; box-shadow:0 6px 16px rgba(0,0,0,0.06); }
 .dashboard-panel .panel-header{ padding:18px 20px; border-bottom:1px solid #eee; background:linear-gradient(180deg,#fff,#fafafa); }
-.dashboard-panel .panel-header h5{ margin:0; color:var(--teal-dark); font-weight:600; }
+.dashboard-panel .panel-header h5{ font-size:20px; margin:0; color:var(--teal-dark); font-weight:600; }
 .dashboard-panel .panel-body{ padding:22px; background:var(--panel-bg); display:flex; gap:20px; align-items:center; }
 
-.legend-list{ list-style:none; padding:0; margin:12px 0 0 0; display:flex; flex-direction:column; gap:8px; color:#444; font-weight:500; }
+.legend-list{ list-style:none; padding:0; margin:12px 0 0 0; display:flex; flex-direction:column; gap:8px; color:#444; font-weight:500; font-size:15px; }
 .legend-swatch{ display:inline-block; width:14px; height:14px; margin-right:10px; border-radius:3px; vertical-align:middle; }
 .swatch-admitted{ background:#ff9f40; }
 .swatch-pending{ background:#ffd86b; }
@@ -132,14 +198,21 @@
 .swatch-discharge{ background:#2e86de; }
 
 .empty-panel .panel-body{ min-height:260px; }
-.placeholder-text{ color:#9aa3a3; font-weight:600; }
+.placeholder-text{ color:#9aa3a3; font-weight:600; font-size:18px; }
 
 @@media (max-width:768px){
-  .dashboard-title{ font-size:28px; text-align:left; }
-  .dashboard-header{ align-items:flex-start; gap:10px; }
-  .stats-grid .stat-card{ min-height:72px; }
+  .dashboard-title{ font-size:34px; }
+  .stat-card .stat-value{ font-size:30px; }
+  .stat-card .stat-icon{ font-size:36px; }
+  .dashboard-panel .panel-header h5{ font-size:18px; }
 }
-</style>
+
+@@media (max-width:576px){
+  .dashboard-title{ font-size:28px; }
+  .stat-card .stat-value{ font-size:24px; }
+  .stat-card .stat-icon{ font-size:34px; }
+}
+</style>    
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -158,23 +231,43 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 20);
     });
 
-    // Patients pie chart
+    // Chart.js Pie Chart integration (from official docs)
     const ctx = document.getElementById('patientsPieChart').getContext('2d');
-    const patientsChart = new Chart(ctx, {
+    new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: ['Admitted', 'Pending Approval', 'On Assessment', 'New Referral', 'Discharge'],
+            labels: [
+                'Admitted',
+                'Pending Approval',
+                'On Assessment',
+                'New Referral',
+                'Discharge'
+            ],
             datasets: [{
+                label: 'Patient Statuses',
                 data: [25, 20, 15, 25, 15],
-                backgroundColor: ['#ff9f40', '#ffd86b', '#ff6b86', '#1dd1a1', '#2e86de'],
-                borderWidth: 0
+                backgroundColor: [
+                    '#ff9f40',
+                    '#ffd86b',
+                    '#ff6b86',
+                    '#1dd1a1',
+                    '#2e86de'
+                ],
+                hoverOffset: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: {
+                    display: true,
+                    position: 'top', // <-- Show legend at the top of the pie chart
+                    labels: {
+                        boxWidth: 18,
+                        padding: 18
+                    }
+                }
             }
         }
     });

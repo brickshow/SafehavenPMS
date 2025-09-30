@@ -1,4 +1,8 @@
-﻿<div id="appointmentCalendar"></div>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+
+<div id="appointmentCalendar"></div>
 
 <style>
     #appointmentCalendar {
@@ -63,7 +67,7 @@
             initialView: 'dayGridMonth',
             height: 'auto', // Let the calendar adjust its height automatically
 
-            // Load events from your controller (must return JSON)  
+            // Load events from your controller (must return JSON)
             events: '/Appointments/GetAppointments',
 
             // Setup header toolbar buttons

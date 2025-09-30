@@ -24,18 +24,12 @@ namespace SafehavenPMS.ViewModel
         [Required(ErrorMessage = "Position is required")]
         public string Position { get; set; }
 
-        [Required(ErrorMessage = "Specialty is required")]
-        public string Specialty { get; set; }
-
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid Email Address")]
         public string Email { get; set; }
 
         [Required(ErrorMessage = "RPC License status is required")]
         public string RPC_Licensed { get; set; }
-
-        [Required(ErrorMessage = "Hire Date is required")]
-        public DateTime HireDate { get; set; }
         public IFormFile? ImageProfile { get; set; } // explicitly nullable
         public string? Filename { get; set; } // stores current ProfilePictureURL
         public string? House_Unit { get; set; }
