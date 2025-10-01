@@ -143,18 +143,64 @@ namespace SafehavenPMS.Controllers
             return View();
         }
 
-        [HttpGet]
-        public  IActionResult AddNewPatient()
+        [HttpGet("Patient/AddNewPatient")]
+        public async Task<IActionResult> AddNewPatient(string? searchPatientId)
         {
-            return View();
+            var model = new AddNewPatientViewModel();
+
+            if (!string.IsNullOrEmpty(searchPatientId))
+            {
+                // Validate Patient ID format (e.g., PAT-0000001)
+                if (!System.Text.RegularExpressions.Regex.IsMatch(searchPatientId, @"^PAT-\d{7}$"))
+                {
+                    ViewBag.SearchPatientError = "Invalid Patient ID format.";
+                    ViewBag.SearchedPatientId = searchPatientId;
+                    return View(model);
+                }
+
+                // Only search for discharged patients
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientRefId == searchPatientId 
+                        && p.PatientStatus == Enum.PatientStatusEnum.Discharged.ToString());
+
+                if (patient != null)
+                {
+                    // Populate model with patient data
+                    model.Firstname = patient.Firstname;
+                    model.MiddleName = patient.MiddleName;
+                    model.Lastname = patient.Lastname;
+                    model.DateOfBirth = patient.DateOfBirth;
+                    model.ContactNumber = patient.PhoneNumber;
+                    model.Sex = patient.Sex;
+                    model.Occupation = patient.Occupation;
+                    model.Education = patient.Education;
+                    model.Religion = patient.Religion;
+                    model.MaritalStatus = patient.MaritalStatus;
+                    // Parse address if needed
+
+                    ViewBag.SearchedPatientId = searchPatientId;
+                    ViewBag.LockIdentityFields = true;
+                    ViewBag.SearchPatientError = "This patient is currently discharged. You may reactivate the record or create a new one.";
+                    ViewBag.ShowPatientDischargedModal = true;
+                }
+                else
+                {
+                    ViewBag.SearchPatientError = "Discharged patient not found.";
+                    ViewBag.SearchedPatientId = searchPatientId;
+                    ViewBag.ShowPatientNotFoundModal = true;
+                }
+            }
+
+            return View(model);
         }
 
         // Post action for adding a new patient
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddNewPatient(AddNewPatientViewModel model)
+        public async Task<IActionResult> AddNewPatient(AddNewPatientViewModel model, string? DuplicateAction)
         {
             ModelState.Remove("PhotoUrl");
+            ModelState.Remove("DuplicateAction"); // Ensure not required
 
             if (!ModelState.IsValid)
             {
@@ -177,7 +223,6 @@ namespace SafehavenPMS.Controllers
             }
 
             string? tempUrl = null;
-
             if (model.Filename != null && model.Filename.Length > 0)
             {
                 try
@@ -189,7 +234,6 @@ namespace SafehavenPMS.Controllers
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error uploading to Cloudinary: {ex.Message}");
                     TempData["Error"] = $"Failed to upload profile image: {ex.Message}";
                     return View(model);
                 }
@@ -197,14 +241,83 @@ namespace SafehavenPMS.Controllers
 
             try
             {
+                // Generate unique PatientRefId in the format PAT-0000001
+                int lastId = 0;
+                var lastPatient = await _context.Patients
+                    .OrderByDescending(p => p.PatientId)
+                    .FirstOrDefaultAsync();
+                if (lastPatient != null && !string.IsNullOrEmpty(lastPatient.PatientRefId))
+                {
+                    var parts = lastPatient.PatientRefId.Split('-');
+                    if (parts.Length == 2 && int.TryParse(parts[1], out int parsedId))
+                    {
+                        lastId = parsedId;
+                    }
+                }
+                string newPatientRefId = $"PAT-{(lastId + 1).ToString("D7")}";
+
+                // Check for existing patient
+                var existingPatient = await _context.Patients.FirstOrDefaultAsync(p =>
+                    p.Firstname.ToLower() == model.Firstname.ToLower() &&
+                    p.Lastname.ToLower() == model.Lastname.ToLower() &&
+                    p.MiddleName.ToLower() == (model.MiddleName ?? "").ToLower() &&
+                    p.DateOfBirth.Date == model.DateOfBirth.Date
+                );
+
+                if (existingPatient != null && string.IsNullOrEmpty(DuplicateAction))
+                {
+                    var status = existingPatient.PatientStatus;
+
+                    if (!string.Equals(status, Enum.PatientStatusEnum.Discharged.ToString(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Active (not discharged)
+                        ViewBag.DuplicatePatient = true;
+                        ViewBag.DuplicatePatientInfo = $"{existingPatient.Firstname} {existingPatient.MiddleName} {existingPatient.Lastname} ({existingPatient.DateOfBirth:yyyy-MM-dd})";
+                        ViewBag.DuplicatePatientStatus = "Active";
+                        ViewBag.DuplicatePatientWarning = "This patient already exists and is currently active in the system. Creating a new record will duplicate patient data and may impact care quality. Do you still want to create a new record?";
+                        ViewBag.DuplicatePatientActions = new[] { "Cancel Registration", "Create New Record" };
+                        return View(model);
+                    }
+                    else
+                    {
+                        // Discharged
+                        ViewBag.DuplicatePatient = true;
+                        ViewBag.DuplicatePatientInfo = $"{existingPatient.Firstname} {existingPatient.MiddleName} {existingPatient.Lastname} ({existingPatient.DateOfBirth:yyyy-MM-dd})";
+                        ViewBag.DuplicatePatientStatus = "Discharged";
+                        ViewBag.DuplicatePatientWarning = "This patient already exists but is currently discharged. You can reactivate the existing record to preserve medical history. Creating a new record will duplicate patient data.";
+                        ViewBag.DuplicatePatientActions = new[] { "Reactivate", "Create New Record" };
+                        return View(model);
+                    }
+                }
+
+                // Handle duplicate actions
+                if (existingPatient != null && DuplicateAction == "Reactivate")
+                {
+                    existingPatient.PatientStatus = Enum.PatientStatusEnum.NewIntake.ToString();
+                    _context.Patients.Update(existingPatient);
+                    await _context.SaveChangesAsync();
+                    TempData["Message"] = "Patient record reactivated successfully.";
+                    return RedirectToAction("index");
+                }
+                if (existingPatient != null && (DuplicateAction == "Create New Record" || DuplicateAction == "Create"))
+                {
+                    // Continue to create a new patient record below
+                }
+                if (existingPatient != null && DuplicateAction == "Cancel Registration")
+                {
+                    TempData["Message"] = "Registration cancelled. No changes were made.";
+                    return View(model);
+                }
+
                 // Create and save patient only
                 var patient = new Patient
                 {
+                    PatientRefId = newPatientRefId,
                     Firstname = model.Firstname,
                     MiddleName = model.MiddleName ?? string.Empty,
                     Lastname = model.Lastname,
                     DateOfBirth = model.DateOfBirth,
-                    PhoneNumber = model.ContactNumber ?? string.Empty, // Ensure phone number is not null
+                    PhoneNumber = model.ContactNumber ?? string.Empty,
                     Sex = model.Sex,
                     Occupation = model.Occupation ?? string.Empty,
                     PatientStatus = Enum.PatientStatusEnum.NewIntake.ToString(),
@@ -232,23 +345,12 @@ namespace SafehavenPMS.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                return RedirectToAction("Index", "Intake"); // Redirect to Patient Index instead of Intake
+                TempData["Message"] = "New patient record created.";
+                return RedirectToAction("Index", "Intake");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving patient: {ex.Message}");
                 TempData["Error"] = "There was an error saving the patient.";
-
-                var physicians = await _context.ClinicalStaffs
-                    .Where(p => p.Position == "Physician")
-                    .Select(p => new SelectListItem
-                    {
-                        Value = p.ClinicalStaffID.ToString(),
-                        Text = $"{p.Firstname} {p.Lastname}"
-                    })
-                    .ToListAsync();
-
-                ViewBag.Physicians = new SelectList(physicians, "Value", "Text", model.ClinicalStaff);
                 return View(model);
             }
         }
