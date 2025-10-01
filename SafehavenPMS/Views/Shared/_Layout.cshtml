@@ -204,7 +204,7 @@
             </li>
 
              <!-- Assessment -->
-            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Assessment" ? "active" : "")">
+            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Scheduling" ? "active" : "")">
                 <a href="#" class="nav-parent">
                     <i class='bx bxs-user-detail'></i>
                     <span class="link_name">Scheduling</span>
@@ -212,12 +212,12 @@
                 </a>
                 <ul class="submenu">
                     <li>
-                        <a asp-controller="Assessment" asp-action="Index">
+                        <a asp-controller="Appointment" asp-action="Index">
                             <span>Doctor's Calendar</span>
                         </a>
                     </li>
-                    <li>
-                        <a asp-controller="PsychiatricAssessment" asp-action="Index">
+                    <li>    
+                        <a asp-controller="Scheduling" asp-action="Index">
                             <span>General Scheduling</span>
                         </a>
                     </li>

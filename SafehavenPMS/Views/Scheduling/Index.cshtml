@@ -240,7 +240,8 @@
                                         @if (sched.Status == "Pending")
                                         {
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" 
+                                                href="@Url.Action("Index", "PatientProfile", new { id = sched.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
                                                     View Profile
                                                 </a>
@@ -256,7 +257,7 @@
                                         else if (sched.Status == SchedulingStatus.Scheduled.ToString())
                                         {
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="@Url.Action("Index", "PatientProfile", new { id = sched.PatientId })">
                                                     <span class="badge-dot bg-info"></span>
                                                     View Profile
                                                 </a>
@@ -282,7 +283,7 @@
                                         else
                                         {
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="@Url.Action("Index", "PatientProfile", new { id = sched.PatientId })">
                                                     <span class="badge-dot bg-primary"></span>
                                                     View Profile
                                                 </a>
