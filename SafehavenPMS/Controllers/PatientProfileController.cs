@@ -309,6 +309,7 @@ namespace SafehavenPMS.Controllers
             var viewModel = new PatientProfilePageViewModel
             {
                 PatientId = patient.PatientId,
+                PatientRefId = patient.PatientRefId,
                 PatientName = $"{patient.Firstname} {patient.Lastname}",
                 OverViewTab = new PatientOverViewTabViewModel
                 {
@@ -319,6 +320,7 @@ namespace SafehavenPMS.Controllers
                 },
                 PersonalInfoTab = new PatientPersonalInfoTabViewModel()
                 {
+                    PatientRefId = patient.PatientRefId ?? "-",
                     PatientId = patient.PatientId,
                     FirstName = patient.Firstname,
                     LastName = patient.Lastname,

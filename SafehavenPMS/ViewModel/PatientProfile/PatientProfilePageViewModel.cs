@@ -9,6 +9,7 @@ namespace SafehavenPMS.ViewModel
     {
         // Basic patient header info
         public int PatientId { get; set; }
+        public string? PatientRefId { get; set; }
         public string PatientName { get; set; } = "-";
         public string? AvatarUrl { get; set; } // URL or path to the patient's avatar image
         public string? PatientNumber { get; set; }
