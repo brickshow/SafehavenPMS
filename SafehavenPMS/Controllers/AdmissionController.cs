@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -11,9 +11,11 @@ using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SafehavenPMS.Controllers
 {
+    [Authorize]
     public class AdmissionController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -559,6 +561,7 @@ namespace SafehavenPMS.Controllers
             Console.WriteLine($"Loaded admission: AdmissionId={admission.AdmissionId}, PatientId={admission.PatientId}, ExistingJoins={admission.ClinicalStaffPatients?.Count ?? 0}");
 
             using var tx = await _context.Database.BeginTransactionAsync();
+
             try
             {
                 // Update admission staff selections
@@ -665,3 +668,4 @@ namespace SafehavenPMS.Controllers
         }
     }
 }
+

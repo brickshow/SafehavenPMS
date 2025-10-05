@@ -7,10 +7,13 @@ using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using SafehavenPMS.ViewModel.Assessment;
 using SafehavenPMS.ViewModel.Assessment.SafehavenPMS.ViewModel.Assessment;
+using Microsoft.AspNetCore.Authorization;
+
 
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class AssessmentController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -86,34 +89,30 @@ namespace SafehavenPMS.Controllers
 
             // Map to view model - first get the data, then project in memory
             var patientsData = await query.ToListAsync();
-            var pendingAssessment = patientList
+            var pendingAssessment = await query
             .Where(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
                         p.PatientStatus == PatientStatusEnum.OnAssessment.ToString() ||
-                        p.PatientStatus == PatientStatusEnum.PendingApproval.ToString()||
+                        p.PatientStatus == PatientStatusEnum.PendingApproval.ToString() ||
                         p.PatientStatus == PatientStatusEnum.Admitted.ToString())
-            .Select(p =>
+            .Select(p => new PendingAssessmentViewModel
             {
-                var appointment = p.NewAppointments.FirstOrDefault();
-                var physician = p.ClinicalStaffPatients.FirstOrDefault(csp => csp.ClinicalStaff.Position == "Physician")?.ClinicalStaff;
-                
-                // Get the latest assessment with CompletedAt
-                var latestAssessment = p.InitialAssessmentForms?
-                    .OrderByDescending(f => f.CompletedAt)
-                    .FirstOrDefault(f => f.CompletedAt.HasValue);
-
-                return new PendingAssessmentViewModel
-                {
-                    PatientId = p.PatientId,
-                    PhysicianId = appointment?.ClinicalStaffID ?? 0,
-                    PhysicianName = physician != null ? $"{physician.Firstname} {physician.Lastname}" : "-",
-                    Type = appointment?.Type ?? "-",
-                    PatientName = $"{p.Firstname} {p.Lastname}",
-                    Date = appointment?.ScheduleDate,
-                    Time = appointment?.ScheduleTime,
-                    CompletedDate = latestAssessment?.CompletedAt,
-                    Status = p.PatientStatus ?? "-"
-                };
-            }).ToList();
+                PatientId = p.PatientId,
+                PhysicianId = p.NewAppointments.OrderByDescending(a => a.ScheduleDate).FirstOrDefault().ClinicalStaffID ?? 0,
+                PhysicianName = p.ClinicalStaffPatients
+                                   .Where(csp => csp.ClinicalStaff.Position == "Physician")
+                                   .Select(csp => csp.ClinicalStaff.Firstname + " " + csp.ClinicalStaff.Lastname)
+                                   .FirstOrDefault() ?? "-",
+                Type = p.NewAppointments.OrderByDescending(a => a.ScheduleDate).Select(a => a.Type).FirstOrDefault() ?? "-",
+                PatientName = p.Firstname + " " + p.Lastname,
+                Date = p.NewAppointments.OrderByDescending(a => a.ScheduleDate).Select(a => a.ScheduleDate).FirstOrDefault(),
+                Time = p.NewAppointments.OrderByDescending(a => a.ScheduleDate).Select(a => a.ScheduleTime).FirstOrDefault(),
+                // DB-side subquery for latest CompletedAt (returns null if none)
+                CompletedDate = _context.InitialAssessmentForms
+                                       .Where(iaf => iaf.PatientId == p.PatientId)
+                                       .Max(iaf => (DateTime?)iaf.CompletedAt),
+                Status = p.PatientStatus ?? "-"
+            })
+            .ToListAsync();
 
             return View(pendingAssessment);
         }
@@ -172,7 +171,6 @@ namespace SafehavenPMS.Controllers
                 Sex = patient.Sex ?? "-",
                 Occupation = patient.Occupation ?? "-",
                 Address = patient.Address ?? "-",
-
                 // Populate History Present data
                 HistoryPresent = await _context.InitialAssessmentForms
                         .Where(iaf => iaf.PatientId == id)
@@ -1184,8 +1182,53 @@ namespace SafehavenPMS.Controllers
                 // Update patient status to PendingApproval
                 patient.PatientStatus = PatientStatusEnum.PendingApproval.ToString();
                 assessmentForm.CompletedAt = DateTime.Now;
+
+                // --- New: mark related appointment(s) as Completed and free availability slot(s) ---
+                var appts = await _context.NewAppointments
+                    .Where(a => a.PatientId == patientId && a.Status != "Completed")
+                    .ToListAsync();
+
+                foreach (var appt in appts)
+                {
+                    appt.Status = "Completed";
+
+                    // If appointment has a staff and a schedule date/time, try to mark availability slot available
+                    if (appt.ClinicalStaffID.HasValue && appt.ScheduleDate.HasValue && !string.IsNullOrWhiteSpace(appt.ScheduleTime))
+                    {
+                        if (TimeSpan.TryParse(appt.ScheduleTime, out var slotTime))
+                        {
+                            var avail = await _context.Availabilities
+                                .FirstOrDefaultAsync(av =>
+                                    av.ClinicalStaffID == appt.ClinicalStaffID.Value
+                                    && av.SlotDate.HasValue
+                                    && av.SlotDate.Value.Date == appt.ScheduleDate.Value.Date
+                                    && av.StartTime == slotTime);
+
+                            if (avail != null)
+                            {
+                                // set status to available (use enum string to stay consistent)
+                                avail.Status = SafehavenPMS.Enum.AvailabilityStatus.Available.ToString();
+                            }
+                        }
+                        else
+                        {
+                            // If scheduleTime can't be parsed, try to match by date only (optional)
+                            var availByDate = await _context.Availabilities
+                                .FirstOrDefaultAsync(av =>
+                                    av.ClinicalStaffID == appt.ClinicalStaffID.Value
+                                    && av.SlotDate.HasValue
+                                    && av.SlotDate.Value.Date == appt.ScheduleDate.Value.Date);
+                            if (availByDate != null)
+                            {
+                                availByDate.Status = SafehavenPMS.Enum.AvailabilityStatus.Available.ToString();
+                            }
+                        }
+                    }
+                }
+                // --- end appointment/availability updates ---
+
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Assessment submitted for approval and admission record created/updated.";
+                TempData["SuccessMessage"] = "Assessment submitted for approval and appointment/availability updated.";
 
                 return RedirectToAction("Index");
             }

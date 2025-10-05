@@ -1,7 +1,10 @@
 using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class DischargedViewModel
     {
         public int? DischargeId { get; set; }

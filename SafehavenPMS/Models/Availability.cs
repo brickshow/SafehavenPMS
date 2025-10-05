@@ -1,11 +1,14 @@
-﻿using SafehavenPMS.Enum;
+using SafehavenPMS.Enum;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Numerics;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
     // Main Availability Entry
+[Authorize]
     public class Availability
     {
         public int AvailabilityId { get; set; }

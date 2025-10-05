@@ -1,8 +1,11 @@
 using SafehavenPMS.ViewModel.Assessment;
 using SafehavenPMS.ViewModel.Assessment.SafehavenPMS.ViewModel.Assessment;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AssessmentFormViewModel
     {
         // Patient Information

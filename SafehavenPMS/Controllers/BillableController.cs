@@ -9,9 +9,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class BillableController : Controller
     {
         private readonly SafehavenPMSContext _context;

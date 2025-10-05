@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,9 +9,12 @@ using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using System.Runtime.ConstrainedExecution;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class MedicationController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -384,7 +387,7 @@ namespace SafehavenPMS.Controllers
         {
             try
             {
-                // 🔹 Custom Validation: DiscontinueDate must be greater than StartDate
+                // ?? Custom Validation: DiscontinueDate must be greater than StartDate
                 if (!model.NoDiscontinueDate && model.DiscontinueDate.HasValue)
                 {
                     if (model.DiscontinueDate.Value.Date <= model.StartDate.Date)
@@ -393,7 +396,7 @@ namespace SafehavenPMS.Controllers
                     }
                 }
 
-                // 1️⃣ If model is invalid → go back to Index instead of staying here
+                // 1?? If model is invalid ? go back to Index instead of staying here
                 if (!ModelState.IsValid)
                 {
                     ViewBag.PatientList = new SelectList(
@@ -426,7 +429,7 @@ namespace SafehavenPMS.Controllers
                     return View(model);
                 }
 
-                // 🔹 Determine Status using simple if/else
+                // ?? Determine Status using simple if/else
                 string status;
                 if (model.StartDate.Date == DateTime.Today)
                 {
@@ -441,7 +444,7 @@ namespace SafehavenPMS.Controllers
                     status = MedicationOrderStatus.Active.ToString();
                 }
 
-                // 2️⃣ Map to entity
+                // 2?? Map to entity
                 var medicationOrder = new MedicationOrder
                 {
                     PatientId = model.PatientId,
@@ -582,7 +585,7 @@ namespace SafehavenPMS.Controllers
         {
             try
             {
-                // 🔹 Custom Validation: DiscontinueDate must be later than StartDate
+                // ?? Custom Validation: DiscontinueDate must be later than StartDate
                 if (!model.NoDiscontinueDate && model.DiscontinueDate.HasValue)
                 {
                     if (model.DiscontinueDate.Value.Date <= model.StartDate.Date)
@@ -594,7 +597,7 @@ namespace SafehavenPMS.Controllers
                     }
                 }
 
-                // 🔹 Check for general model validation errors
+                // ?? Check for general model validation errors
                 if (!ModelState.IsValid)
                 {     // Log ModelState errors to console
                     foreach (var entry in ModelState)
@@ -635,7 +638,7 @@ namespace SafehavenPMS.Controllers
                     return View(model);
                 }
 
-                // 🔹 Fetch the existing medication order
+                // ?? Fetch the existing medication order
                 var order = await _context.MedicationOrders.FindAsync(id);
                 if (order == null)
                 {
@@ -643,7 +646,7 @@ namespace SafehavenPMS.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // 🔹 Update entity fields from the ViewModel
+                // ?? Update entity fields from the ViewModel
                 order.PatientId = model.PatientId;
                 order.MedicineId = model.MedicineId;
                 order.UnitPerDose = model.UnitPerDose;
@@ -658,11 +661,11 @@ namespace SafehavenPMS.Controllers
                 order.DiscontinueDate = model.NoDiscontinueDate ? null : model.DiscontinueDate;
                 order.NoDiscontinueDate = model.NoDiscontinueDate;
 
-                // 🔹 Update audit fields
+                // ?? Update audit fields
                 order.UpdatedAt = DateTime.Now;
                 order.UpdatedBy = User.Identity?.Name ?? "System";
 
-                // 🔹 Save changes to the database
+                // ?? Save changes to the database
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = "Medication order updated successfully!";
@@ -670,7 +673,7 @@ namespace SafehavenPMS.Controllers
             }
             catch (DbUpdateException dbEx)
             {
-                // 🔹 Handle database-specific errors
+                // ?? Handle database-specific errors
                 Console.WriteLine($"Database error: {dbEx.Message}");
                 TempData["ErrorMessage"] = "An error occurred while updating the medication order. Please try again.";
 
@@ -682,7 +685,7 @@ namespace SafehavenPMS.Controllers
             }
             catch (Exception ex)
             {
-                // 🔹 Handle general errors
+                // ?? Handle general errors
                 Console.WriteLine($"Unexpected error: {ex.Message}");
                 TempData["ErrorMessage"] = "An unexpected error occurred. Please contact support.";
 
@@ -957,3 +960,4 @@ namespace SafehavenPMS.Controllers
         }
     }
 }
+

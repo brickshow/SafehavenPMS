@@ -15,6 +15,7 @@ using SafehavenPMS.ViewModel.Approval;
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class ApprovalController : Controller
     {
         //Inject services here as needed

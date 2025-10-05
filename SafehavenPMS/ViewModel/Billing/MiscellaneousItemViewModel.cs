@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel.Billing
 {
+[Authorize]
     public class MiscellaneousItemViewModel
     {
         [Required]
@@ -28,3 +31,4 @@ namespace SafehavenPMS.ViewModel.Billing
         }
     }
 }
+

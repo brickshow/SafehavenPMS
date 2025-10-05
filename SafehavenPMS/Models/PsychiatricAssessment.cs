@@ -1,8 +1,11 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class PsychiatricAssessment
     {
         public int PsychiatricAssessmentId { get; set; } // Primary Key

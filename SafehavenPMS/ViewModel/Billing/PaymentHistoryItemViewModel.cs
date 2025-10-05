@@ -1,7 +1,10 @@
 using System;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel.Billing
 {
+[Authorize]
     public class PaymentHistoryItemViewModel
     {
         public int PaymentHistoryId { get; set; }

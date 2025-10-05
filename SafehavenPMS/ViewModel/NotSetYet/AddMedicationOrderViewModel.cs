@@ -1,8 +1,11 @@
-﻿using SafehavenPMS.Models;
+using SafehavenPMS.Models;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AddMedicationOrderViewModel
     {
         // Dropdown sources
@@ -39,3 +42,4 @@ namespace SafehavenPMS.ViewModel
         public DateTime? EndDate { get; set; }
     }
 }
+

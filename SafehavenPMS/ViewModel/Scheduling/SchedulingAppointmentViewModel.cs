@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class ScheduleAppointmentViewModel
     {
         public int ScheduleId { get; set; }
@@ -17,3 +20,4 @@ namespace SafehavenPMS.ViewModel
         public string? Status { get; set; }
     }
 }
+

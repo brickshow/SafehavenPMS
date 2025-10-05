@@ -1,5 +1,7 @@
-﻿namespace SafehavenPMS.ViewModel
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class DayAvailabilityViewModel
     {
         public DayOfWeek Day { get; set; }
@@ -8,3 +10,4 @@
         public List<AvailabilityViewModel> Slots { get; set; } = new();
     }
 }
+

@@ -1,5 +1,7 @@
-﻿namespace SafehavenPMS.ViewModel
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AppointmentPendingApprovalViewModel
     {
         public int AppointmentId { get; set; }
@@ -14,3 +16,4 @@
         //public DateTime AppointmentDate { get; set; } //TODO
     }
 }
+

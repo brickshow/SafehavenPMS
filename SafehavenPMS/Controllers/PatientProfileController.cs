@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -7,9 +7,12 @@ using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using SafehavenPMS.ViewModel.PatientProfile;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class PatientProfileController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -409,5 +412,6 @@ namespace SafehavenPMS.Controllers
         
     }
 }
+
 
 

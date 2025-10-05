@@ -8,9 +8,12 @@ using SafehavenPMS.ViewModel;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class TreatmentPlanController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -303,3 +306,4 @@ namespace SafehavenPMS.Controllers
         }
     }
 }
+

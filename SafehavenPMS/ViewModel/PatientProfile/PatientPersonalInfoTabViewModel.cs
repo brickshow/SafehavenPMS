@@ -1,7 +1,10 @@
 using System;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel.PatientProfile
 {
+[Authorize]
     public class PatientPersonalInfoTabViewModel
     {
         // Add properties relevant to personal info 
@@ -31,3 +34,4 @@ namespace SafehavenPMS.ViewModel.PatientProfile
         public string Comments { get; set; } = "-";
     }
 }
+

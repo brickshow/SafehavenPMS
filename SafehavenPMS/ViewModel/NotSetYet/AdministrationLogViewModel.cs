@@ -1,5 +1,7 @@
-﻿namespace SafehavenPMS.ViewModel
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AdministrationLogViewModel
     {
         public int AdministrationLogId { get; set; }
@@ -21,3 +23,4 @@
         public List<MedicationOrderViewModel>? Medications { get; set; }
     }
 }
+

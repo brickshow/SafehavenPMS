@@ -1,6 +1,8 @@
-﻿namespace SafehavenPMS.Models
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.Models
 {
     //Joined Entity Between Patient and Clinical Staff
+[Authorize]
     public class ClinicalStaffPatient
     {
         //Many to many relation
@@ -13,3 +15,4 @@
         public ClinicalStaff ClinicalStaff { get; set; }
     }
 }
+

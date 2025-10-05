@@ -10,6 +10,7 @@ using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using SafehavenPMS.Services;
 
+
 public class AccountController : Controller
 {
     private readonly SafehavenPMSContext _context;
@@ -170,7 +171,7 @@ public class AccountController : Controller
 
         return RedirectToAction("Index", "ClinicalStaff");
     }
-        
+
     private static string GenerateSecurePassword(int length = 8)
     {
         const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -181,6 +182,8 @@ public class AccountController : Controller
 
         var bytes = new byte[length];
         using var rng = RandomNumberGenerator.Create();
+
+
         rng.GetBytes(bytes);
 
         var chars = new char[length];
@@ -198,4 +201,5 @@ public class AccountController : Controller
         return new string(chars);
     }
 }
+
 

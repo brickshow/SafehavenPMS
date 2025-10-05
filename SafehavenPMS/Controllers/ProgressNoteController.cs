@@ -8,9 +8,12 @@ using SafehavenPMS.Data;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class ProgressNoteController : Controller
     {
         private readonly SafehavenPMSContext _context;

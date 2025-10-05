@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.ViewModel.Assessment
 {
+[Authorize]
     public class HistoryPresentViewModel
     {
         public int? HistoryPresentId { get; set; }
@@ -14,3 +16,4 @@ namespace SafehavenPMS.ViewModel.Assessment
         public string? AmountConsumedFirstUse { get; set; }
     }
 }
+

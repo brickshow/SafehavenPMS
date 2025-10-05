@@ -1,5 +1,7 @@
-﻿namespace SafehavenPMS.ViewModel
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class IntakeViewModel
     {
         public int IntakeId { get; set; }

@@ -5,9 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SafehavenPMS.Data;
 using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class ServicesController : Controller
     {
         private readonly SafehavenPMSContext _context;

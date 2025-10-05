@@ -1,11 +1,14 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.AspNetCore.Authorization;
+
 
 #nullable disable
 
 namespace SafehavenPMS.Migrations
 {
     /// <inheritdoc />
+[Authorize]
     public partial class InitalCreate : Migration
     {
         /// <inheritdoc />
@@ -1509,3 +1512,4 @@ namespace SafehavenPMS.Migrations
         }
     }
 }
+

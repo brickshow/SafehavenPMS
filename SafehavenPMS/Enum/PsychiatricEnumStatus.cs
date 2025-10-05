@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 namespace safehavenpms.Enum
 {
     public enum PsychiatricEnumStatus

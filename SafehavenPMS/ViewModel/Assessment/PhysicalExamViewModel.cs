@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.ViewModel.Assessment
 {
+[Authorize]
     public class PhysicalExamViewModel
     {
         // Vital Signs
@@ -51,3 +53,4 @@ namespace SafehavenPMS.ViewModel.Assessment
         public string? ExtremitiesFindings { get; set; }
     }
 }
+

@@ -1,6 +1,8 @@
-﻿namespace SafehavenPMS.Services
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.Services
 {
     //This class is for temporary storage of uploaded photos for clinical staff
+[Authorize]
     public class UploadPhotoServices
     {
         string tempPath = string.Empty;
@@ -62,3 +64,4 @@
         }
     }
 }
+

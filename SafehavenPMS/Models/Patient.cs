@@ -1,7 +1,10 @@
-﻿using SafehavenPMS.Enum;
+using SafehavenPMS.Enum;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class Patient
     {
         //Personal Information
@@ -36,3 +39,4 @@ namespace SafehavenPMS.Models
         
     }
 }
+

@@ -117,7 +117,7 @@
             <thead class="table-light">
                 <tr>
                     <th>No.</th>
-                    <th>User</th>
+                    <th>Name</th>
                     <th>Username</th>
                     <th>Role</th>
                     <th>Email</th>
@@ -179,16 +179,18 @@
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
                                         <li>
                                             <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" asp-controller="User" asp-action="Details">
-                                                View
+                                                <span class="badge-dot bg-info"></span>
+                                                View Profile
                                             </a>
                                         </li>
                                         <li>
-                                            <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger"
+                                            <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                data-bs-toggle="modal"
                                                data-bs-target="#confirmDeactivateModal"
                                                data-user-id="@u.UserId"
                                                data-user-name="@full">
-                                                <i class="bx bx-trash"></i> Deactivate
+                                                <span class="badge-dot bg-danger"></span>
+                                                Deactivate
                                             </a>
                                         </li>
                                     </ul>
@@ -244,7 +246,7 @@
         <div class="modal-content">
             <form id="deactivateForm" asp-controller="User" asp-action="Deactivate" method="post">
                 @Html.AntiForgeryToken()
-                <div class="modal-header">
+                <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title" id="confirmDeactivateLabel">Confirm Deactivation</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

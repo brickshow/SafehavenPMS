@@ -1,7 +1,10 @@
-﻿using SafehavenPMS.Models;
+using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AppointmentPageViewModel
     {
         public List<NewAppointment> Appointments { get; set; }          // for parent
@@ -9,3 +12,4 @@ namespace SafehavenPMS.ViewModel
         public List<AddNewPatientViewModel> WaitlistedPatients { get; set; }
     }
 }
+

@@ -1,13 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using SafehavenPMS.Data;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class UserController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -109,3 +112,4 @@ namespace SafehavenPMS.Controllers
         }
     }
 }
+

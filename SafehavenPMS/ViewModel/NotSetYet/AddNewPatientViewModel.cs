@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AddNewPatientViewModel
     {
         //Optional identity for existing patients
@@ -53,3 +56,4 @@ namespace SafehavenPMS.ViewModel
         public string Province { get; set; }
     }
 }
+

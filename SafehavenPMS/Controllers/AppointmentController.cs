@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SafehavenPMS.Data;
@@ -10,10 +10,13 @@ using System.Text.Json;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
     [Route("Appointment")]
+[Authorize]
     public class AppointmentController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -240,5 +243,82 @@ namespace SafehavenPMS.Controllers
         //         return Json(new { success = false, message = "An error occurred while retrieving availability" });
         //     }
         // }
+
+        [HttpGet("GetAppointments")]
+        public async Task<IActionResult> GetAppointments()
+        {
+            // get current logged in user id from claims
+            var userIdClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                // not authenticated - return empty list
+                return Json(new List<object>());
+            }
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Json(new List<object>());
+            }
+
+            var appUser = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (appUser == null)
+            {
+                return Json(new List<object>());
+            }
+
+            // base query with includes
+            var query = _context.NewAppointments
+                .Include(a => a.Patient)
+                .Include(a => a.ClinicalStaff)
+                .AsQueryable();
+
+            // if the logged-in user is linked to a ClinicalStaff record, show only appointments assigned to that staff
+            if (appUser.ClinicalStaffID.HasValue)
+            {
+                var staffId = appUser.ClinicalStaffID.Value;
+                query = query.Where(a => a.ClinicalStaffID == staffId);
+            }
+
+            var appts = await query.ToListAsync();
+
+            var events = appts.Select(a =>
+            {
+                var patientName = a.Patient != null ? $"{a.Patient.Firstname} {a.Patient.Lastname}" : string.Empty;
+                var doctorName = a.ClinicalStaff != null ? $"{a.ClinicalStaff.Firstname} {a.ClinicalStaff.Lastname}" : string.Empty;
+                var time = a.ScheduleTime ?? string.Empty;
+
+                string start = null;
+                if (a.ScheduleDate != null)
+                {
+                    var datePart = a.ScheduleDate.Value.ToString("yyyy-MM-dd");
+                    start = string.IsNullOrWhiteSpace(time) ? datePart : $"{datePart}T{time}{(time.Contains(":") && time.Count(c => c == ':') == 1 ? ":00" : "")}";
+                }
+
+                return new
+                {
+                    id = a.ScheduleId,
+                    title = (a.Type ?? "Appointment") + (string.IsNullOrWhiteSpace(patientName) ? "" : $" - {patientName}"),
+                    start,
+                    allDay = string.IsNullOrWhiteSpace(time),
+                    extendedProps = new
+                    {
+                        doctorId = a.ClinicalStaffID,
+                        patientId = a.PatientId,
+                        patientName,
+                        doctorName,
+                        time,
+                        visitType = a.Type,
+                        status = a.Status,
+                        description = a.Notes
+                    }
+                };
+            }).ToList();
+
+            return Json(events);
+        }
     }
 }
+

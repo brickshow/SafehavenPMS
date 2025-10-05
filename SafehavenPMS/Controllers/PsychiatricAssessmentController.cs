@@ -8,9 +8,12 @@ using SafehavenPMS.Models;
 using System.Linq;
 using System;
 using safehavenpms.Enum;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace safehavenpms.Controllers
 {
+[Authorize]
     public partial class PsychiatricAssessmentController : Controller
     {
         private readonly SafehavenPMSContext _context;

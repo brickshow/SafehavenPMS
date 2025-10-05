@@ -1,7 +1,10 @@
-﻿using SafehavenPMS.Models;
+using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class ClinicalStaffProfileViewModel
     {
         public List<ClinicalStaff> Staffs { get; set; }
@@ -11,3 +14,4 @@ namespace SafehavenPMS.ViewModel
         public List<DayAvailabilityViewModel> Days { get; set; }
     }
 }
+

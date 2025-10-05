@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class MedicineViewModel
     {
         public int MedicineId { get; set; }
@@ -25,3 +28,4 @@ namespace SafehavenPMS.ViewModel
         public DateTime DateAdded { get; set; } = DateTime.Now;
     }
 }
+

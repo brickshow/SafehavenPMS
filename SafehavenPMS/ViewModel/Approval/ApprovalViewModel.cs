@@ -1,8 +1,11 @@
 using SafehavenPMS.Enum;
 using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel.Approval
 {
+[Authorize]
     public class ApprovalViewModel
     {
         public int PatientId { get; set; }

@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class NewAppointment
     {
         [Key]
@@ -20,3 +23,4 @@ namespace SafehavenPMS.Models
         public virtual ClinicalStaff? ClinicalStaff { get; set; }
     }
 }
+

@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using SafehavenPMS.Models;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class NewAppointmentViewModel
     {
         public int AppointmentID { get; set; }
@@ -31,3 +34,4 @@ namespace SafehavenPMS.ViewModel
         public List<Availability>? Availabilities { get; set; }
     }
 }
+

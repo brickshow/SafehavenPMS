@@ -17,7 +17,7 @@ body {
 }
 
 .sidebar {
-    position: fixed;
+    position: fixed !important; /* force fixed */
     top: 0;
     left: 0;
     width: 300px; /* changed from 240px */
@@ -90,18 +90,18 @@ body {
     }
 
     .nav-links li {
-        padding: 15px 20px;
-        transition: all 0.3s ease;
-        width: 90%;
-        position: relative;
+        width:100%;
+        padding:12px 16px;
+        position:relative;
     }
 
         .nav-links li a {
+            width:100%;
+            display:flex;
+            align-items:center;
+            gap:12px;
             color: white;
             text-decoration: none;
-            display: flex;
-            align-items: center;
-            white-space: nowrap;
         }
 
             .nav-links li a i {
@@ -120,8 +120,8 @@ body {
 
         .nav-links > li.navigation.active,
         .nav-links > li.navigation:hover {
+            width:100%;
             background-color: rgba(255, 255, 255, 0.1);
-            width: 90%;
             border-start-end-radius: 10px;
             border-end-end-radius: 10px;
             border-left: 4px solid #fff;
@@ -131,6 +131,34 @@ body {
             .nav-links > li.navigation:hover a i {
                 opacity: 1;
             }
+
+/* Active / selected navigation highlight */
+.nav-links li.navigation.active,
+.sd-nav-links li.navigation.active {
+    background-color: rgba(0, 163, 180, 0.12); /* subtle teal background */
+    border-left: 4px solid #00A3B4;             /* accent */
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transform: translateX(0);
+}
+
+.nav-links li.navigation.active a,
+.sd-nav-links li.navigation.active a {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.nav-links li.navigation.active a i,
+.sd-nav-links li.navigation.active a i {
+    opacity: 1;
+    color: #ffffff;
+}
+
+/* optional: style the anchor itself when matched */
+.nav-links a.active-link,
+.sd-nav-links a.active-link {
+    color: #fff;
+    font-weight:600;
+}
 
 /* Bottom section */
 .sidebar-footer {
@@ -900,81 +928,376 @@ body {
     pointer-events: auto;
 }
 
-/* --- Sidebar submenu styles --- */
-.submenu {
+/* Hoverable submenu tooltip when sidebar is collapsed */
+.sidebar.close .submenu {
+    display: none !important;
+    position: fixed; /* fixed instead of absolute so it can escape sidebar boundaries */
+    background-color: #024e58;
+    color: #ffffff;
+    left: 68px;
+    border-radius: 6px;
+    margin:5px 0 0 0;
+    top: auto;
     list-style: none;
-    margin: 8px 0 0 48px;
-    padding: 0;
+    min-width: 200px;
+    z-index: 99999;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+    justify-content: center;
+    align-items: center;
+}
+
+/* When sidebar is collapsed, show submenu on hover */
+.sidebar.close .navigation:hover > .submenu {
+    display: block !important;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Basic link styling for submenu */
+.sidebar.close .submenu li a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    width: 100% !important;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.sidebar.close .submenu li a:hover {
+    background: #e2e8f0;
+    border-radius: 8px;
+}
+
+/* Keep text hidden only when collapsed */
+.sidebar.close .link_name,
+.sidebar.close .sd-link-name {
     display: none;
 }
 
-.submenu li {
-    padding: 6px 0;
+/* Default caret visible */
+.sidebar .caret {
+    display: inline-flex;
+    margin-left: auto;
+    font-size: 16px;
+    transition: transform .25s ease;
+    opacity: .75;
 }
 
-.submenu a {
-    color: #ffffff;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0.9;
-}
-
-.submenu a:hover {
+/* Rotate when the parent li is "open" (clicked) */
+.sidebar .navigation.open > a .caret {
+    transform: rotate(180deg);
     opacity: 1;
 }
 
-/* Show submenu only when active (no hover reveal) */
-.sidebar:not(.close) .nav-links li.navigation.active .submenu {
-    display: block;
+/* Hide caret ONLY when sidebar is collapsed */
+.sidebar.close .caret {
+    display: none;
 }
 
-/* Collapsed sidebar: positioning retained, but no hover reveal */
-.sidebar.close .nav-links li.navigation {
+/* Sidebar default transition */
+.sidebar {
+    overflow: visible; /* ensure we can position from it */
     position: relative;
 }
 
-.sidebar.close .nav-links li.navigation .submenu {
-    position: absolute;
-    top: 50%;
-    left: 78px;
-    transform: translateY(-50%);
-    background: #003036;
-    padding: 8px 12px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    min-width: 180px;
-    display: none;
-    z-index: 1100;
-    margin: 0;
+/* ------------ NAV ITEM HORIZONTAL ALIGN + SUBMENU ALIGNMENT ------------- */
+
+/* Make each li and anchor full width; align icon, text, caret on one line */
+.nav-links li {
+    width:100%;
+    padding:12px 16px;
+    position:relative;
 }
-/* Reveal submenu on hover when sidebar is collapsed */
-.sidebar.close .nav-links li.navigation:hover .submenu {
-    display: block;
+.nav-links li a {
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:12px;
 }
-/* Optional: if you also want click-to-open while collapsed, JS toggles .active */
-.sidebar.close .nav-links li.navigation.active .submenu {
-    display: block;
+.nav-links li a .link_name,
+.nav-links li a .sd-link-name {
+    flex:1;                 /* text takes remaining space */
+    display:flex;            /* keeps multiline vertically centered if single line */
+    align-items:center;      /* vertical center */
+    text-align:left;         /* horizontal start */
+    justify-content:flex-start;
+    margin-left:6px;         /* small gap after icon */
 }
 
-/* Parent link row spacing and caret */
-.nav-links li.navigation > a.nav-parent {
+/* When sidebar is OPEN: keep link row centered vertically, text aligned to start */
+.sidebar:not(.close) .nav-links li a {
+    align-items: center; /* ensure icon + text are vertically centered inside the row */
+    justify-content: center;
+}
+
+.sidebar:not(.close) .nav-links li a .link_name,
+.sidebar:not(.close) .nav-links li a .sd-link-name {
+    display: flex;
+    align-items: center;      /* vertical center of the label */
+    justify-content: flex-start; /* keep horizontal start */
+    text-align: left;
+    margin-left: 6px;         /* small gap from icon */
+}
+
+
+
+/* Active / hover highlight spans full width now */
+.nav-links > li.navigation.active,
+.nav-links > li.navigation:hover {
+    width:95%;
+}
+
+/* Keep caret pushed to far right (when visible) */
+.nav-links li a .caret {
+    margin-left:auto;
+}
+
+/* OPEN (expanded) sidebar submenu (inside flow) */
+.sidebar:not(.close) .navigation .submenu {
+    display:none;
+    margin-top:8px;
+    background:#024e58;
+    border-radius:6px;
+    padding:6px 0;
+    list-style:none;
+}
+.sidebar:not(.close) .navigation.open > .submenu {
+    display:block;
+}
+.sidebar:not(.close) .navigation .submenu li a {
+    text-align:left;        /* readability */
+    padding:6px 18px;
+    font-size:14px;
+}
+
+
+/* Allow submenu to overflow */
+.sidebar.close,
+.sidebar.close .nav-links {
+    overflow:visible;
+}
+.sidebar.close .navigation {
+    position:relative;
+}
+
+/* Position submenu horizontally aligned (centered vertically to item) */
+.sidebar.close .navigation > .submenu {
+    display:block !important;          /* we control visibility with opacity */
+    position:absolute;
+    top:40%;
+    left:78px;                 
+    margin-left:10px;
+    transform:translateY(-50%) scale(.95);
+    background:#024e58;
+    padding:8px 0;
+    min-width:220px;
+    border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,.18);
+    opacity:0;
+    pointer-events:none;
+    z-index:2000;
+    transition:opacity .18s ease, transform .18s ease;
+}
+.sidebar.close .navigation:hover > .submenu {
+    opacity:1;
+    transform:translateY(-50%) scale(1);
+    pointer-events:auto;
+}
+
+.sidebar.close .navigation > .submenu li a {
+    padding:8px 10px;
+    font-size:14px;
+    display:block;
+}
+
+/* Optional subtle hover */
+.sidebar.close .navigation > .submenu li a:hover {
+    background:rgba(255,255,255,.08);
+    border-radius: 4px;
+}
+
+/* Hide text & caret in collapsed state (already had) */
+.sidebar.close .link_name,
+.sidebar.close .sd-link-name,
+.sidebar.close .caret {
+    display:none;
+}
+
+/* Ensure sidebar stays fixed & can overflow (remove duplicate relative rule) */
+.sidebar {
+    overflow:visible;
+}
+
+/* --- Compact submenu height overrides --- */
+.sidebar:not(.close) .navigation .submenu {
+    padding:4px 0;              /* was 6px 0 or 8px 0 */
+}
+.sidebar:not(.close) .navigation .submenu li a {
+    padding:4px 14px;           /* reduce vertical padding */
+    font-size:13px;
+    line-height:1.15;
+}
+
+.sidebar.close .navigation > .submenu {
+    padding:4px 0;              /* was 8px 0 */
+    min-width:200px;            /* slightly narrower if desired */
+}
+.sidebar.close .navigation > .submenu li a {
+    padding:4px 12px;           /* was 8px 10px */
+    font-size:13px;
+    line-height:1.15;
+}
+
+/* Optional: tighter gap above submenu in expanded state */
+.sidebar:not(.close) .navigation .submenu { margin-top:4px; }
+/* --- Compact main nav item size (icons + row height) --- */
+.nav-links li {
+    padding:4px 10px;
+}
+
+.nav-links li a {
+    display:flex;
+    align-items:center;
+    gap:10px;          /* var(--nav-item-gap) */
+    padding:6px 10px;  /* var(--nav-item-vpad) var(--nav-item-hpad) */
+    min-height:40px;   /* var(--nav-item-height) */
+    line-height:1.1;
+}
+
+.nav-links li a i {
+    min-width:34px;
+    font-size:18px;    /* var(--nav-icon-size) */
+}
+
+/* Centered text (already) but reduce side margin from earlier rule */
+.nav-links li a .link_name,
+.nav-links li a .sd-link-name {
+    margin-left:4px;
+    font-size:14px;
+}
+
+/* Active / hover keep full width highlight */
+.nav-links > li.navigation.active,
+.nav-links > li.navigation:hover {
+    border-left-width:3px;     /* slim border */
+}
+
+/* Submenu inside expanded sidebar: tighter still */
+.sidebar:not(.close) .navigation .submenu li a {
+    padding:4px 12px;
+    font-size:13px;
+}
+
+/* Collapsed tooltip submenu: match compact spacing */
+.sidebar.close .navigation > .submenu li a {
+    padding:4px 12px;
+    font-size:13px;
+}
+
+/* Tooltip submenu better alignment with parent icon */
+.sidebar.close .navigation > .submenu {
+    top:39%;
+    left:78px !important;
+    margin-left:12px;
+    transform:translateY(-50%) scale(.95);
+    padding:4px 0;
+    min-width:190px;
+}
+
+/* Optional: slightly smaller radius to match compact size */
+.sidebar.close .navigation > .submenu,
+.sidebar:not(.close) .navigation .submenu {
+    border-radius:6px;
+}
+
+/* Collapsed tooltip submenu: center text vertically + horizontally */
+.sidebar.close .navigation > .submenu li a {
+    display: flex;
+    align-items: center;      /* vertical center */
+    justify-content: center;  /* horizontal center */
+    text-align: center;
+    padding: 6px 14px;
+    font-size: 13px;
+    min-height: 36px;         /* controls item height */
+    white-space: nowrap;
+}
+
+/* Keep expanded (in-flow) submenu left-aligned for readability */
+.sidebar:not(.close) .navigation .submenu li a {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: flex-start;
+    padding: 4px 12px;
+    font-size: 13px;
 }
 
-.nav-links li.navigation > a.nav-parent .caret {
-    margin-left: 8px;
-    font-size: 18px;
-    opacity: 0.7;
-    transition: transform 0.25s ease;
+/* COLLAPSED SUBMENU — closer to sidebar (override duplicates/conflicts) */
+.sidebar.close .submenu {
+    /* ensure it aligns with collapsed sidebar edge */
+    left: 78px !important;      /* collapsed sidebar width */
+    margin-left: 4px !important;/* smaller gap */
+    min-width: 180px;          /* keep reasonably sized */
 }
 
-.nav-links li.navigation.active > a.nav-parent .caret {
-    transform: rotate(180deg);
-    opacity: 1;
+/* Tooltip submenu positioned per-navigation (closer gap) */
+.sidebar.close .navigation > .submenu {
+    left: 70px !important;     /* flush to collapsed sidebar edge */
+    margin-left: 4px !important;
+    transform: translateY(-50%) scale(.98);
+    padding: 4px 0;
+    min-width: 180px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    transition: opacity .12s ease, transform .12s ease;
+}
+
+/* Center submenu items when sidebar is OPEN */
+.sidebar:not(.close) .navigation .submenu {
+    /* keep compact vertical spacing but allow centering */
+    padding: 6px 0;
+    text-align: center;
+}
+
+.sidebar:not(.close) .navigation .submenu li a {
+    display: flex;
+    align-items: center;     /* vertical center */
+    justify-content: center; /* horizontal center */
+    text-align: center;
+    padding: 8px 12px;       /* adjust item height */
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* FORCE overrides — put at file end */
+.nav-links > li.navigation.active,
+.sd-nav-links > li.navigation.active {
+    background: #007c86 !important;
+    color: #fff !important;
+    border-left: 4px solid #00A3B4 !important;
+    border-radius: 6px !important;
+}
+
+.nav-links > li.navigation.active a,
+.sd-nav-links > li.navigation.active a {
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+.nav-links > li.navigation.active a i,
+.sd-nav-links > li.navigation.active a i {
+    color: #fff !important;
+    opacity: 1 !important;
+}
+
+/* ensure click-active class shows immediately if client-side script adds .active */
+li.navigation.active { outline: none; }
+
+/* submenu centering override if needed */
+.sidebar:not(.close) .navigation .submenu li a,
+.sidebar.close .navigation > .submenu li a {
+    justify-content: center !important;
+    text-align: center !important;
 }
 

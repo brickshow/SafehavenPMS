@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class ProgressNote
     {
         public int ProgressNoteId { get; set; }

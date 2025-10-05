@@ -1,5 +1,7 @@
-﻿namespace SafehavenPMS.ViewModel
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class ClinicalStaffAvailability
     {
         public int Id { get; set; }
@@ -12,3 +14,4 @@
         public DateTime? EndDate { get; set; }
     }
 }
+

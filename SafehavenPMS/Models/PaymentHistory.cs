@@ -1,11 +1,14 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
     // Optional EF model — remove or adapt if you do not persist PaymentHistory separately.
     [Table("PaymentHistory")]
+[Authorize]
     public class PaymentHistory
     {
         [Key]

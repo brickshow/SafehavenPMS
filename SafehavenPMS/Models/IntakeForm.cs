@@ -1,8 +1,11 @@
-﻿using SafehavenPMS.ViewModel;
+using SafehavenPMS.ViewModel;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
      public class IntakeForm
     {
         // Primary key
@@ -50,3 +53,4 @@ namespace SafehavenPMS.Models
         public IntakeForm? PatientIntake { get; set; }
     }
 }
+

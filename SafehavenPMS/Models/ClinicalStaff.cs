@@ -1,7 +1,10 @@
-﻿using SafehavenPMS.Controllers;
+using SafehavenPMS.Controllers;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class ClinicalStaff
     {
         //Personal Information
@@ -25,3 +28,4 @@ namespace SafehavenPMS.Models
         public ICollection<NewAppointment> Schedulings { get; set; } // Navigation property for Schedulings
     }
 }
+

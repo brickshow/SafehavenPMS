@@ -1,9 +1,12 @@
-﻿using SafehavenPMS.Enum;
+using SafehavenPMS.Enum;
 using SafehavenPMS.Models;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AvailabilityViewModel
     {
         public int Id { get; set; }
@@ -23,3 +26,4 @@ namespace SafehavenPMS.ViewModel
         public AvailabilityStatus Status { get; set; } = AvailabilityStatus.Available;
     }
 }
+

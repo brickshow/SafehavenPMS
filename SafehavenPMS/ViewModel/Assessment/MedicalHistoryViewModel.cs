@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.ViewModel.Assessment
 {
+[Authorize]
     public class MedicalHistoryViewModel
     {
         public bool IsHypertensive { get; set; }

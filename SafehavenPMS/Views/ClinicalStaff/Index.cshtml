@@ -196,14 +196,25 @@
                                         <i class="bx bx-dots-vertical fs-5"></i>
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="@Url.Action("Profile", "ClinicalStaff", new { id = staff.ClinicalStaffID })">View</a></li>
-                                        <li><a class="dropdown-item" href="@Url.Action("Edit", "ClinicalStaff", new { id = staff.ClinicalStaffID })">Edit</a></li>
+                                        <li>
+                                        <a class="dropdown-item" href="@Url.Action("Profile", "ClinicalStaff", new { id = staff.ClinicalStaffID })">
+                                            <span class="badge-dot bg-info"></span>
+                                            View
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="@Url.Action("Edit", "ClinicalStaff", new { id = staff.ClinicalStaffID })">
+                                                 <span class="badge-dot bg-primary"></span>
+                                                Edit
+                                            </a>
+                                        </li>
                                         <li>
                                             <a href="#"
-                                               class="dropdown-item text-danger"
+                                               class="dropdown-item "
                                                data-bs-toggle="modal"
                                                data-bs-target="#deleteConfirmModal"
                                                data-id="@staff.ClinicalStaffID">
+                                                 <span class="badge-dot bg-danger"></span>
                                                 Delete
                                             </a>
                                         </li>

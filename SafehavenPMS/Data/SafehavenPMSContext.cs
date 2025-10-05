@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Data
 {
+[Authorize]
     public class SafehavenPMSContext : DbContext
     {
         public SafehavenPMSContext(DbContextOptions<SafehavenPMSContext> options)
@@ -70,7 +73,7 @@ namespace SafehavenPMS.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Many-to-many: Patient ↔ ClinicalStaff
+            // Many-to-many: Patient ? ClinicalStaff
             modelBuilder.Entity<ClinicalStaffPatient>()
                 .HasKey(cp => new { cp.PatientId, cp.ClinicalStaffId });
 
@@ -86,7 +89,7 @@ namespace SafehavenPMS.Data
                 .HasForeignKey(cp => cp.ClinicalStaffId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ClinicalStaff → Availability (Cascade is fine here)
+            // ClinicalStaff ? Availability (Cascade is fine here)
             modelBuilder.Entity<ClinicalStaff>()
                 .HasMany(c => c.Availabilities)
                 .WithOne(a => a.ClinicalStaff)
@@ -94,29 +97,29 @@ namespace SafehavenPMS.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
 
-            // Patient → MedicationOrders
+            // Patient ? MedicationOrders
             modelBuilder.Entity<MedicationOrder>()
                 .HasOne(p => p.Patient)
                 .WithMany(m => m.MedicationOrders)
                 .HasForeignKey(k => k.PatientId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Medicine → MedicationOrders
+            // Medicine ? MedicationOrders
             modelBuilder.Entity<MedicationOrder>()
                 .HasOne(mo => mo.Medicine)
                 .WithMany(m => m.MedicationOrders)
                 .HasForeignKey(mo => mo.MedicineId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // MedicationAdministration → Patient
+            // MedicationAdministration ? Patient
             modelBuilder.Entity<AdministrationLog>()
                 .HasOne(ma => ma.Patient)
                 .WithMany(p => p.AdministrationLogs) // Add a collection in Patient if not yet
                 .HasForeignKey(ma => ma.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // MedicationAdministration → Medicine
-            // AdministrationLog → Medicine
+            // MedicationAdministration ? Medicine
+            // AdministrationLog ? Medicine
             modelBuilder.Entity<AdministrationLog>()
                 .HasOne(ma => ma.Medication)
                 .WithMany(m => m.AdministrationLogs)
@@ -220,21 +223,21 @@ namespace SafehavenPMS.Data
                 .HasForeignKey<MentalStatusExamination>(m => m.InitialAssessmentFormId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // PsychiatricAssessment → Patient
+            // PsychiatricAssessment ? Patient
             modelBuilder.Entity<PsychiatricAssessment>()
                 .HasOne(pa => pa.Patient)
                 .WithMany(p => p.PsychiatricAssessments) // Add a collection in Patient if not yet
                 .HasForeignKey(pa => pa.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ProblemList → Goals (One-to-Many)
+            // ProblemList ? Goals (One-to-Many)
             modelBuilder.Entity<Goal>()
                 .HasOne(g => g.ProblemList)
                 .WithMany(pl => pl.Goals)
                 .HasForeignKey(g => g.PsyProblemListId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // DischargedPatient → Patient (FK relationship)
+            // DischargedPatient ? Patient (FK relationship)
             modelBuilder.Entity<DischargedPatient>()
                 .HasOne(d => d.Patient)
                 .WithMany()
@@ -243,7 +246,7 @@ namespace SafehavenPMS.Data
 
             
 
-            // Update IntakeForm → Patient relationship
+            // Update IntakeForm ? Patient relationship
             modelBuilder.Entity<IntakeForm>()
                 .HasOne(i => i.Patient)
                 .WithOne(p => p.IntakeForm)
@@ -251,28 +254,28 @@ namespace SafehavenPMS.Data
                 .IsRequired(false)  // Make the relationship optional
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Intervention → Patient (many-to-one)
+            // Intervention ? Patient (many-to-one)
             modelBuilder.Entity<Intervention>()
                 .HasOne(i => i.Patient)
                 .WithMany(p => p.Interventions)
                 .HasForeignKey(i => i.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Intervention → PsyProblemList (many-to-one)
+            // Intervention ? PsyProblemList (many-to-one)
             modelBuilder.Entity<Intervention>()
                 .HasOne(i => i.Problem)
                 .WithMany(pl => pl.Interventions)
                 .HasForeignKey(i => i.PsyProblemListId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Intervention → ServiceType (many-to-one)
+            // Intervention ? ServiceType (many-to-one)
             modelBuilder.Entity<Intervention>()
                 .HasOne(i => i.ServiceType)
                 .WithMany()
                 .HasForeignKey(i => i.ServiceTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Intervention → Service (many-to-one)
+            // Intervention ? Service (many-to-one)
             modelBuilder.Entity<Intervention>()
                 .HasOne(i => i.ServiceModality)
                 .WithMany()
@@ -332,3 +335,4 @@ namespace SafehavenPMS.Data
         }
     }
 }
+

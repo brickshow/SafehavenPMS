@@ -1,5 +1,7 @@
-﻿namespace SafehavenPMS.ViewModel
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class GetTimeSlotViewModel
     {
         public int AvailabilityId { get; set; }
@@ -8,3 +10,4 @@
         public TimeSpan EndTime { get; set; }
     }
 }
+

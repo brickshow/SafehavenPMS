@@ -1,7 +1,10 @@
-﻿using SafehavenPMS.Models;
+using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class MedicationPageViewModel
     {
         public List<MedicineViewModel> Medicines { get; set; }
@@ -9,3 +12,4 @@ namespace SafehavenPMS.ViewModel
         public List<AdministrationLogViewModel> AdministrationLogs { get; set; } = new List<AdministrationLogViewModel>();
     }
 }
+

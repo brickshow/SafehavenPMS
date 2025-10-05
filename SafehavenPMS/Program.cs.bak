@@ -10,8 +10,6 @@ using SafehavenPMS.Models;
 using SafehavenPMS.Data;
 using CloudinaryDotNet;
 using SafehavenPMS.Services;
-using Microsoft.AspNetCore.Authorization;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,5 +113,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Login}/{action=Login}/{id?}");
 app.Run();
-
 

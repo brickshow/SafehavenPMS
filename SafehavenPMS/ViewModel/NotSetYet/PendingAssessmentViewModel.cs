@@ -1,7 +1,10 @@
 using System;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class PendingAssessmentViewModel
     {
         public int AssessmentId { get; set; }

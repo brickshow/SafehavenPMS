@@ -1,12 +1,15 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Services
 {
+[Authorize]
     public class CloudinaryServices
     {
         //Configuration for Cloudinary
@@ -75,3 +78,4 @@ namespace SafehavenPMS.Services
         }
     }
 }
+

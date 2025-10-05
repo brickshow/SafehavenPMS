@@ -1,4 +1,4 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -14,9 +14,13 @@ using SafehavenPMS.Services;
 using SafehavenPMS.ViewModel;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+ // <--- added
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class PatientController : Controller
     {
         //Inject the SafehavenPMSContext to access the database
@@ -50,11 +54,54 @@ namespace SafehavenPMS.Controllers
                     .ThenInclude(csp => csp.ClinicalStaff)
                 .AsQueryable();
 
-            // Counts for each status
-            ViewBag.TotalPatientCount = await _context.Patients.CountAsync();
-            ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
-            ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
-            ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
+            // Restrict results to patients assigned to the logged-in clinical staff (unless Admin)
+            var userIdClaim = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
+            {
+               var appUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
+                if (appUser != null && !string.Equals(appUser.Role ?? string.Empty, "Admin", StringComparison.OrdinalIgnoreCase))
+               {
+                    // If User has a ClinicalStaffID, filter by that
+                    if (appUser.ClinicalStaffID.HasValue)
+                    {
+                        var staffId = appUser.ClinicalStaffID.Value;
+                        query = query.Where(p => p.ClinicalStaffPatients.Any(csp => csp.ClinicalStaffId == staffId));
+                    }
+                    else
+                    {
+                        // Fallback: try to resolve ClinicalStaff by user email and filter by that staff
+                        if (!string.IsNullOrWhiteSpace(appUser.Email))
+                        {
+                            var cs = await _context.ClinicalStaffs
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(c => c.Email.ToLower() == appUser.Email.Trim().ToLower());
+                            if (cs != null)
+                            {
+                                query = query.Where(p => p.ClinicalStaffPatients.Any(csp => csp.ClinicalStaffId == cs.ClinicalStaffID));
+                            }
+                            else
+                            {
+                                // not linked to a clinical staff � do not expose patients
+                                query = query.Where(p => false);
+                            }
+                        }
+                        else
+                        {
+                            query = query.Where(p => false);
+                        }
+                    }
+                }
+            }
+
+            // Counts for each status (use the filtered query so counts reflect what the user can see)
+            ViewBag.TotalPatientCount = await query.CountAsync();
+            ViewBag.WaitlistedCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
+            ViewBag.PendingAssessmentCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
+            ViewBag.PendingApprovalCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
+            ViewBag.TotalPatientCount = await query.CountAsync();
+            ViewBag.WaitlistedCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
+            ViewBag.PendingAssessmentCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
+            ViewBag.PendingApprovalCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
             //ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
             //ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
             //ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
@@ -66,7 +113,7 @@ namespace SafehavenPMS.Controllers
             ViewBag.Status = status;
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
 
-            // 🔎 Apply search filter
+            // ?? Apply search filter
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 searchQuery = searchQuery.ToLower();
@@ -76,13 +123,13 @@ namespace SafehavenPMS.Controllers
                     p.PatientId.ToString().Contains(searchQuery));
             }
 
-            // ✅ Apply status filter (default = All)
+            // ? Apply status filter (default = All)
             if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
                 query = query.Where(p => p.PatientStatus.ToString() == status);
             }
 
-            // 🔃 Apply sorting
+            // ?? Apply sorting
             if (sortOrder == null)
             {
                 query = query.OrderByDescending(p => p.CreatedAt);
@@ -94,7 +141,7 @@ namespace SafehavenPMS.Controllers
                     : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
             }
 
-            // 📄 Pagination
+            // ?? Pagination
             int totalItems = await query.CountAsync();
             int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
             ViewBag.TotalPages = totalPages;
@@ -412,3 +459,4 @@ namespace SafehavenPMS.Controllers
         }
     }
 }
+

@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
      // Overview tab VM - updated to match the _OverviewTab.cshtml expectations
+[Authorize]
     public class PatientOverViewTabViewModel
     {
         public int PatientId { get; set; }

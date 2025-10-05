@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel.PatientProfile
 {
+[Authorize]
     public class PatientTreatmentPlanTabViewModel
     {
         public List<ProblemViewModel> Problems { get; set; } = new List<ProblemViewModel>();

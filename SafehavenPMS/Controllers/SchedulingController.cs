@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SafehavenPMS.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -14,6 +14,7 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class SchedulingController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -33,6 +34,8 @@ namespace SafehavenPMS.Controllers
             var query = _context.NewAppointments
                 .Include(a => a.Patient)
                 .Include(a => a.ClinicalStaff)
+                // only show schedules whose status is NOT "Completed"
+                .Where(a => a.Status != Enum.AppointmentEnum.Completed.ToString())
                 .AsQueryable();
 
             // Get waitlisted count (appointments with Waitlisted status)
@@ -696,3 +699,4 @@ namespace SafehavenPMS.Controllers
         }
     }
 }
+

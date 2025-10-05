@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.ViewModel;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class DischargedPatientController : Controller
     {
         private readonly SafehavenPMSContext _context;

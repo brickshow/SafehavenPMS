@@ -15,6 +15,7 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public class IntakeController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -41,9 +42,6 @@ namespace SafehavenPMS.Controllers
             ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
             ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
             ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
-            //ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
-            //ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
-            //ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -109,7 +107,7 @@ namespace SafehavenPMS.Controllers
                                         ReferredByPhoneNumber = p.IntakeForm?.PhoneNumber ?? string.Empty,
                                         IntakeOfficer = "-", // Populate if you have this info
                                         IntakeDate = p.IntakeForm?.CreatedAt != null ? ((DateTime)p.IntakeForm.CreatedAt).ToString("yyyy-MM-dd") : "-",
-                                        CompletedDate = "-", // Populate if you have this info
+                                        CompletedDate = p.CreatedAt != null ? ((DateTime)p.CreatedAt).ToString("MMM dd, yyyy") : "-",
                                         // SAFE: don't call ToString() on a null IntakeForm or null IntakeStatus
                                         IntakeStatus = p.PatientStatus ?? "-",
                                     }).ToList() ?? new List<SafehavenPMS.ViewModel.IntakeViewModel>();

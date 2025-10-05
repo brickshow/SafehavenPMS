@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.ViewModel.Assessment
 {
+[Authorize]
     public class MentalStatusExaminationViewModel
     {
         // General Appearance

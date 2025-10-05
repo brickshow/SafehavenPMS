@@ -1,7 +1,10 @@
 using System;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class MiscellaneousItem
     {
         public int Id { get; set; }

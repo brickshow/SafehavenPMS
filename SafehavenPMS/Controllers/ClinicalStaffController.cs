@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SafehavenPMS.Data;
@@ -415,6 +416,7 @@ namespace SafehavenPMS.Controllers
                     try
                     {
                         using var fileStream = new FileStream(localPath, FileMode.Open, FileAccess.Read);
+
                         string photoUrl = await _cloudinaryServices.UploadImageAsync(fileStream, Path.GetFileName(localPath));
                         existingStaff.ProfilePictureURL = photoUrl;
                     }
@@ -511,7 +513,7 @@ namespace SafehavenPMS.Controllers
                 if (existingSlot != null)
                 {
                 // Update existing slot instead of creating duplicate.
-                // Do not overwrite Scheduled slots — keep them scheduled.
+                // Do not overwrite Scheduled slots � keep them scheduled.
                 if (!string.Equals(existingSlot.Status, AvailabilityStatus.Scheduled.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
                     existingSlot.Status = AvailabilityStatus.Available.ToString();
@@ -617,3 +619,4 @@ namespace SafehavenPMS.Controllers
         }
     }
 }
+

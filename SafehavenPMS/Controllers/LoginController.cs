@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +16,7 @@ using SafehavenPMS.ViewModel;
 namespace SafehavenPMS.Controllers
 {
     [AllowAnonymous]
+[Authorize]
     public class LoginController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -71,21 +71,19 @@ namespace SafehavenPMS.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Name, user.Username ?? user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role ?? "User")
+                new Claim(ClaimTypes.Name, user.Username ?? user.Email ?? "user")
             };
+
+            // ensure role claim is added
+            if (!string.IsNullOrWhiteSpace(user.Role))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, user.Role.Trim()));
+            }
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            var authProps = new AuthenticationProperties
-            {
-                IsPersistent = model.RememberMe,
-                ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(14) : DateTimeOffset.UtcNow.AddHours(8)
-            };
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProps);
             _logger.LogInformation("User signed in: userId={UserId}", user.UserId);
 
             // Always redirect to the homepage after login
@@ -265,6 +263,13 @@ namespace SafehavenPMS.Controllers
             TempData["ResetError"] = "An error occurred while resetting the password. Please try again.";
             return View(model);
             }
+        }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            // simple view that informs user they lack permission
+            return View("AccessDenied");
         }
     }
 }

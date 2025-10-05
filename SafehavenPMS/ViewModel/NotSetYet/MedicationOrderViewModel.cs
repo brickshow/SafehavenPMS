@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class MedicationOrderViewModel
     {
         public int MedicationOrderId { get; set; }
@@ -81,3 +84,4 @@ namespace SafehavenPMS.ViewModel
         public DateTime? AdministrationDate { get; set; }       // NEW
     }
 }
+

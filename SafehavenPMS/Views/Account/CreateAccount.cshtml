@@ -43,14 +43,20 @@
                         <div class="col-md-8 mb-3 pe-3">
                             <label asp-for="Role" class="form-label mb-2">Role <span class="text-danger">*</span></label>
                             <div class="d-flex flex-column uniform-input">
-                                <select asp-for="Role" class="form-select form-control">
+                                <select asp-for="Role" class="form-select form-control" required>
                                     <option value="" disabled selected>Select role</option>
-                                    <option value="Medical Doctor">Physician</option>
-                                    <option value="Therapist">Psychiatrist</option>
-                                    <option value="Social Worker">Recovery Coach</option>
-                                    <option value="Social Worker">Nurse</option>
-                                    <option value="Social Worker">Finance Officer</option>
-                                    <option value="Social Worker">Cashier</option>
+                                    <option value="Physician">Physician</option>
+                                    <option value="Psychiatrist">Psychiatrist</option>
+                                    <option value="RecoveryCoach">Recovery Coach</option>
+                                    <option value="Nurse">Nurse</option>
+                                    <option value="FinanceOfficer">Finance Officer</option>
+                                    <option value="Cashier">Cashier</option>
+                                    <option value="Admin">Admin</option>
+                                    <option value="Staff">Staff</option>
+                                    <option value="Pharmacist">Pharmacist</option>
+                                    <option value="SocialWorker">Social Worker</option>
+                                    <option value="OccupationalTherapist">Occupational Therapist</option>
+                                    <option value="Psychologist">Psychologist</option>
                                 </select>
                                 <span asp-validation-for="Role" class="text-danger small mt-1"></span>
                             </div>

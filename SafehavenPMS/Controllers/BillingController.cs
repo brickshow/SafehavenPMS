@@ -16,6 +16,7 @@ using SafehavenPMS.Services;
 
 namespace SafehavenPMS.Controllers
 {
+[Authorize]
     public partial class BillingController : Controller
     {
         private readonly SafehavenPMSContext _context;

@@ -2,9 +2,12 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using SafehavenPMS.Models;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel.Billing
 {
+[Authorize]
     public class UploadPaymentViewModel
     {
         [Required]

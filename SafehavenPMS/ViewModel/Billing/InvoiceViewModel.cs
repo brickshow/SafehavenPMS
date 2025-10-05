@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel.Billing
 {
+[Authorize]
     public class InvoiceListItemViewModel
     {
         public int InvoiceId { get; set; }

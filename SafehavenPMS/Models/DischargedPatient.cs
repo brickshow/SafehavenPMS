@@ -1,9 +1,12 @@
 // ...new file...
 using System;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class DischargedPatient
     {
         //Primary Key

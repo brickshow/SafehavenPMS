@@ -1,10 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.AspNetCore.Authorization;
+
 
 #nullable disable
 
 namespace SafehavenPMS.Migrations
 {
     /// <inheritdoc />
+[Authorize]
     public partial class updateServiceTypeIdsdfsdasdlkjsdasdasd : Migration
     {
         /// <inheritdoc />
@@ -36,3 +39,4 @@ namespace SafehavenPMS.Migrations
         }
     }
 }
+

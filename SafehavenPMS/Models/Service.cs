@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class Service
     {
         public int ServiceId { get; set; }

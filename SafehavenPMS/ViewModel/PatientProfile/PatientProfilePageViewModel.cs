@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using SafehavenPMS.Models; // For Intervention
 using SafehavenPMS.ViewModel.PatientProfile;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class PatientProfilePageViewModel
     {
         // Basic patient header info

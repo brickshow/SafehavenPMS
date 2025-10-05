@@ -1,8 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class MedicationOrder
     {
         [Key]
@@ -68,3 +71,4 @@ namespace SafehavenPMS.Models
         public ICollection<AdministrationLog> AdministrationLogs { get; set; }//Navigation property for Medication
     }
 }
+

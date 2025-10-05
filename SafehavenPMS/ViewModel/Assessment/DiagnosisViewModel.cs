@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.ViewModel.Assessment
 {
    namespace SafehavenPMS.ViewModel.Assessment
 {
+[Authorize]
     public class DiagnosisViewModel
     {
         public DiagnosisViewModel()

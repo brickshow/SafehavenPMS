@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class AppointmentViewModel
     {
         [Required]
@@ -28,3 +31,4 @@ namespace SafehavenPMS.ViewModel
         public DateTime SelectedDate { get; set; }
     }
 }
+

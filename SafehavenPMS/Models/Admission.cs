@@ -1,8 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class Admission
     {
         [Key]
@@ -90,3 +93,4 @@ namespace SafehavenPMS.Models
         public string? ProgramType { get; set; }
     }
 }
+

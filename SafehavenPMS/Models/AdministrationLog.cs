@@ -1,7 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.Models
 {
+[Authorize]
     public class AdministrationLog
     {
         [Key]
@@ -28,3 +31,4 @@ namespace SafehavenPMS.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }
+

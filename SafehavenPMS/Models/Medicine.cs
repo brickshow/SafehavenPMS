@@ -1,5 +1,7 @@
-﻿namespace SafehavenPMS.Models
+using Microsoft.AspNetCore.Authorization;
+namespace SafehavenPMS.Models
 {
+[Authorize]
     public class Medicine
     {
         public int MedicineId { get; set; }
@@ -16,3 +18,4 @@
         public ICollection<AdministrationLog>? AdministrationLogs { get; set; }//Navigation property for Medication
     }
 }
+

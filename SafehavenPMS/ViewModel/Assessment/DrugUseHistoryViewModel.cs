@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.ViewModel.Assessment
 {
     // Drug History section of the assessment form
+[Authorize]
     public class DrugUseHistoryViewModel
     {
         // Each drug use entry represents a row in the drug history table
@@ -30,3 +32,4 @@ namespace SafehavenPMS.ViewModel.Assessment
         public string? UpdatedBy { get; set; }
     }
 }
+

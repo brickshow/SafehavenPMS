@@ -1,7 +1,10 @@
 using SafehavenPMS.ViewModel;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace SafehavenPMS.ViewModel
 {
+[Authorize]
     public class PsychiatricAssessmentViewModel
     {
         public int PsychiatricAssessmentId { get; set; } // Primary Key
@@ -44,3 +47,4 @@ namespace SafehavenPMS.ViewModel
         public List<string> Diagnosis { get; set; } = new List<string>();
     }
 }
+
