@@ -87,16 +87,16 @@
     <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="Admission" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                 <input type="hidden" name="status" value="@ViewBag.Status" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                 <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
-                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
-                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
-                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
-                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
-                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                    <option value="10" selected="@(ViewBag.PageSize == 10 ? "selected" : null)">10</option>
+                    <option value="20" selected="@(ViewBag.PageSize == 20 ? "selected" : null)">20</option>
+                    <option value="50" selected="@(ViewBag.PageSize == 50 ? "selected" : null)">50</option>
+                    <option value="100" selected="@(ViewBag.PageSize == 100 ? "selected" : null)">100</option>
+                    <option value="0" selected="@(ViewBag.PageSize == 0 ? "selected" : null)">All</option>
                 </select>
             </form>
         </div>
@@ -104,37 +104,33 @@
         <div class="d-flex align-items-center justify-content-between">
             <!-- Status filter (left of Sort by) -->
             <div class="me-3">
-                <form asp-controller="Patient" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+                <form asp-controller="Admission" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                     <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
-                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
-                        <option value="Admitted" selected='@(ViewBag.Status == "Admitted" ? "selected" : "")'>Admitted</option>
-                        <option value="Pending" selected='@(ViewBag.Status == "Pending" ? "selected" : "")'>Pending</option>
-                        <option value="Closed" selected='@(ViewBag.Status == "Closed" ? "selected" : "")'>Closed</option>
-
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : null)">All Statuses</option>
+                        <option value="Admitted" selected="@(ViewBag.Status == "Admitted" ? "selected" : null)">Admitted</option>
+                        <option value="PendingAdmission" selected="@(ViewBag.Status == "PendingAdmission" ? "selected" : null)">Pending</option>
+                        <option value="Closed" selected="@(ViewBag.Status == "Closed" ? "selected" : null)">Closed</option>
                     </select>
                 </form>
+
             </div>
 
             <!-- Sort by -->
             <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
-                    @* preserve existing query params so logic is unchanged *@
+                <form asp-controller="Admission" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="status" value="@ViewBag.Status" />
-                    <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-
+                    <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                     <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
-                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
-                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
-                        <option value="AdmissionDate" selected='@(ViewBag.SortBy == "AdmissionDate" ? "selected" : "")'>Admission Date</option>
-                        <option value="Recommendation" selected='@(ViewBag.SortBy == "Recommendation" ? "selected" : "")'>Recommendation</option>
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.SortBy as string) ? "selected" : null)">Sort by</option>
+                        <option value="Name" selected="@(ViewBag.SortBy == "Name" ? "selected" : null)">Name</option>
+                        <option value="AdmissionDate" selected="@(ViewBag.SortBy == "AdmissionDate" ? "selected" : null)">Admission Date</option>
+                        <option value="Recommendation" selected="@(ViewBag.SortBy == "Recommendation" ? "selected" : null)">Recommendation</option>
                     </select>
-
-                    
                 </form>
             </div>
 
@@ -174,7 +170,28 @@
                         <tr>
                             <td>@rowNum</td>
                             <td>@admission.FullName</td>
-                            <td>-</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    @if (admission.ClinicalTeam != null && admission.ClinicalTeam.Any())
+                                    {
+                                        foreach (var member in admission.ClinicalTeam)
+                                        {
+                                            <div class="d-flex align-items-center gap-1">
+                                                <img src="@(string.IsNullOrEmpty(member.ProfilePictureURL) ? Url.Content("~/images/default.png") : member.ProfilePictureURL)"
+                                                     alt="@member.FullName"
+                                                     title="@($"{member.FullName} - ({member.Position})")"
+                                                     data-tooltip="@member.FullName"
+                                                     class="staff-avatar" 
+                                                     style="width: 30px; height: 30px; object-fit: cover;" />
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Unassigned</span>
+                                    }
+                                </div>
+                            </td>
                             <td>@(admission.ApprovalDate.ToString("MMM dd, yyyy"))</td>
                             <td>@admission.CreatedAt.ToString("MMM dd, yyyy")</td>
                             <td>

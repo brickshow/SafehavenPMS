@@ -14,11 +14,12 @@
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
                     @* Search bar *@
-                    <form asp-controller="Patient" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                    <form asp-controller="DischargedPatient" asp-action="Index" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
                         <div class="search-input-wrapper d-flex flex-row gap-2">
                             <i class='bx bx-search search-icon'></i>
-                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+                            <input name="searchQuery" value="@(ViewBag.SearchQuery ?? "")" class="form-control search-input" placeholder="Search patients..." />
                         </div>
+                        <input type="hidden" name="status" value="Discharged" />
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
 
@@ -71,7 +72,7 @@
     <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="DischargedPatient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                 <input type="hidden" name="status" value="@ViewBag.Status" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
@@ -86,28 +87,10 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-between">
-            @* <!-- Status filter (left of Sort by) -->
-            <div class="me-3">
-                <form asp-controller="Patient" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
-                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
-                    <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-                    <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
-                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
-                        <option value="Waitlisted" selected='@(ViewBag.Status == "Waitlisted" ? "selected" : "")'>Waitlisted</option>
-                        <option value="PendingAssessment" selected='@(ViewBag.Status == "PendingAssessment" ? "selected" : "")'>Pending Assessment</option>
-                        <option value="PendingApproval" selected='@(ViewBag.Status == "PendingApproval" ? "selected" : "")'>Pending Approval</option>
-                        <option value="Admitted" selected='@(ViewBag.Status == "Admitted" ? "selected" : "")'>Admitted</option>
-                        <option value="Discharged" selected='@(ViewBag.Status == "Discharged" ? "selected" : "")'>Discharged</option>
-                        <option value="Closed" selected='@(ViewBag.Status == "Closed" ? "selected" : "")'>Closed</option>
-                        <option value="Relapsed" selected='@(ViewBag.Status == "Relapsed" ? "selected" : "")'>Relapsed</option>
-                    </select>
-                </form>
-            </div> *@
-
-            <!-- Sort by -->
+        <!-- Sort by -->
+        <!-- Sort by -->
             <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                <form asp-controller="DischargedPatient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
                     @* preserve existing query params so logic is unchanged *@
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
@@ -117,17 +100,11 @@
                     <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
                         <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
                         <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
-                        <option value="DischargedDate" selected='@(ViewBag.SortBy == "DischargedDate" ? "selected" : "")'>Discharged Date</option>
-                        <option value="AdmissionDate" selected='@(ViewBag.SortBy == "AdmissionDate" ? "selected" : "")'>Admission Date</option>
-
+                        <option value="DateAdded" selected='@(ViewBag.SortBy == "DateAdded" ? "selected" : "")'>Date Added</option>
                     </select>
-
-                    
                 </form>
             </div>
-
-            
-        </div>
+    </div>
     
 
         @* <div class="d-flex align-items-center justify-content-center">
@@ -186,11 +163,18 @@
                                             </li> *@
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("AdmitPatient", "Admission", new { id = discharged.PatientId })">
-                                                    <span class="badge-dot bg-success"></span>
-                                                    Re-Admit Patient
+                                                   href="@Url.Action("Index", "PatientProfile", new { id = discharged.PatientId })">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    View Profile
                                                 </a>
                                             </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="#" onclick="openReopenModal(@discharged.PatientId); return false;">
+                                                    <span class="badge-dot bg-success"></span>
+                                                    Reopen Patient
+                                                </a>
+                                             </li>
                                     </ul>
                                 </div>
                             </td>
@@ -210,7 +194,7 @@
             <nav aria-label="Clinical staff list pagination">
                 <ul class="pagination mb-0">
                     <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Previous">
+                        <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = "Discharged" })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
@@ -223,12 +207,12 @@
                         @for (int i = startPage; i <= endPage; i++)
                         {
                             <li class="page-item @(currentPage == i ? "active" : "")">
-                                <a class="page-link" href="@Url.Action("Index", "Patient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
+                                <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = "Discharged" })">@i</a>
                             </li>
                         }
                     }
                     <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Next">
+                        <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = "Discharged" })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>
@@ -262,6 +246,40 @@
     </div>
 </div>
 
+@* Reopen modal: ensure it posts to this controller *@
+<div class="modal fade" id="reopenModal" tabindex="-1" aria-labelledby="reopenModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+          <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594)">
+                <h5 class="modal-title" id="reopenModalLabel">Reopen Patient to Intake</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="ReopenPatient" asp-controller="DischargedPatient" method="post" class="m-0">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <p>Are you sure you want to reopen this patient? The patient will reappear in intake lists.</p>
+                    <input type="hidden" name="patientId" id="reopenPatientId" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-custom btn-next">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openReopenModal(patientId) {
+        var input = document.getElementById('reopenPatientId');
+        if (input) input.value = patientId;
+        var el = document.getElementById('reopenModal');
+        if (el) {
+            var m = bootstrap.Modal.getOrCreateInstance(el);
+            m.show();
+        }
+    }
+</script>
 
 <style>
     .custom-btn {

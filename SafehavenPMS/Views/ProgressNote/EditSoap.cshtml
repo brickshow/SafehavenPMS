@@ -1,0 +1,141 @@
+@model SafehavenPMS.ViewModel.ProgressNoteEditViewModel
+
+@{
+    ViewBag.Title = "Edit Progress Note";
+}
+
+<div class="header mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="javascript:history.back()" class="me-2" title="Back">
+                <i class="bx bx-reply fs-3 text-custom"></i>
+            </a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+<!-- Green section header (matches AddNewPatient.cshtml style) -->
+
+
+<div class="bg-white mb-4  pb-4 rounded shadow-sm w-75 mx-auto">  
+<div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B; border-top-left-radius: 0.25rem; border-top-right-radius: 0.25rem;">
+    Progress Note Details
+</div>
+    <form asp-action="EditSoap" asp-controller="ProgressNote" method="post" class="w-75 mx-auto">
+        @Html.AntiForgeryToken()
+
+        @* validation summary *@
+        @Html.ValidationSummary(true, "", new { @class = "text-danger mb-2" })
+
+        @* ensure binder receives IDs and SoapRaw *@
+        <input asp-for="ProgressNoteId" type="hidden" />
+        <input asp-for="PatientId" type="hidden" />
+        <input asp-for="InterventionId" type="hidden" />
+        <textarea asp-for="SoapRaw" class="d-none" aria-hidden="true"></textarea>
+        @* <!-- keep patient/intervention display (not part of this VM) but make readonly *@
+    
+
+        <!-- bind VM fields -->
+        <input asp-for="InterventionId" type="hidden" />
+        <input asp-for="PatientId" type="hidden" />
+        @* <input asp-for="ClinicalStaffID" type="hidden" value="@(User?.Identity?.Name ?? "")" /> *@
+
+        <div class="soap-grid">
+            <div class="soap-row d-flex align-items-start mb-3">
+                <div class="soap-index text-center pe-3">
+                    <div class="soap-letter">S</div>
+                    <div class="soap-label small text-muted">Subjective</div>
+                </div>
+                <div class="flex-grow-1">
+                    <textarea asp-for="Subjective" class="form-control soap-textarea"></textarea>
+                    <span asp-validation-for="Subjective" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="soap-row d-flex align-items-start mb-3">
+                <div class="soap-index text-center pe-3">
+                    <div class="soap-letter">O</div>
+                    <div class="soap-label small text-muted">Objective</div>
+                </div>
+                <div class="flex-grow-1">
+                    <textarea asp-for="Objective" class="form-control soap-textarea"></textarea>
+                    <span asp-validation-for="Objective" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="soap-row d-flex align-items-start mb-3">
+                <div class="soap-index text-center pe-3">
+                    <div class="soap-letter">A</div>
+                    <div class="soap-label small text-muted">Assessment</div>
+                </div>
+                <div class="flex-grow-1">
+                    <textarea asp-for="Assessment" class="form-control soap-textarea"></textarea>
+                    <span asp-validation-for="Assessment" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="soap-row d-flex align-items-start mb-3">
+                <div class="soap-index text-center pe-3">
+                    <div class="soap-letter">P</div>
+                    <div class="soap-label small text-muted">Plan</div>
+                </div>
+                <div class="flex-grow-1">
+                    <textarea asp-for="Plan" class="form-control soap-textarea"></textarea>
+                    <span asp-validation-for="Plan" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center mt-3">
+            <div class="ms-auto d-flex" style="gap:10px;">
+                <a class="btn btn-cancel" href="javascript:history.back()">Cancel</a>
+                <button type="submit" class="btn btn-next">Save</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+
+    /* SOAP index sizing */
+    .soap-index { width: 140px; min-width:140px; text-align:center; }
+    .soap-letter {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 6px;
+        color: #111;
+    }
+    .soap-label { font-size: 0.9rem; display:block; color:#666; }
+
+    /* textarea sizing: taller and comfortable */
+    .soap-textarea {
+        min-height: 100px;    /* increased height */
+        max-height: 360px;
+        padding: 12px;
+        font-size: 0.95rem;
+        resize: vertical;
+    }
+
+    /* input style */
+    .form-control {
+        border:1px solid #dcdcdc;
+        border-radius:4px;
+        background:#fff;
+    }
+    input.form-control { height:44px; padding:8px 12px; }
+
+    /* spacing for each SOAP row */
+    .soap-row { gap: 20px; align-items:flex-start; }
+
+    /* responsive adjustments */
+    @@media (max-width: 991px) {
+        .soap-index { text-align:left; padding-right:12px; }
+    }
+    @@media (max-width: 767px) {
+        .soap-index { width: 72px; min-width:72px; text-align:left; }
+        .progressnote-form .col-2 { max-width: 120px; flex: 0 0 120px; }
+    }
+</style>

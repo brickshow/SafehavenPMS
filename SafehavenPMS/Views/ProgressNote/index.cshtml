@@ -25,30 +25,28 @@
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
                     @* Search bar *@
-                    <form asp-controller="Patient" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                    <form asp-controller="ProgressNote" asp-action="Index" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
                         <div class="search-input-wrapper d-flex flex-row gap-2">
                             <i class='bx bx-search search-icon'></i>
                             <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
                         </div>
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
-
+@* 
                     <!-- Sort by -->
                     <div class="sort-by d-flex align-items-center">
-                        <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm">
+                        <form asp-controller="ProgressNote" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                            <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                            <input type="hidden" name="status" value="@ViewBag.Status" />
                             <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
-                                <span class="me-2">Sort by</span>
-                                <div class="number-box d-flex align-items-center gap-1">
-                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
-                                        <span class="number">A</span>
-                                        <span class="number">Z</span>
-                                    </div>
-                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
-                                </div>
-                            </button>
+                            <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
+                                <option value="" selected="@(string.IsNullOrEmpty(ViewBag.SortBy as string) ? "selected" : null)">Sort by</option>
+                                <option value="Title" selected="@(ViewBag.SortBy == "Title" ? "selected" : null)">Title</option>
+                                <option value="DateAdded" selected="@(ViewBag.SortBy == "DateAdded" ? "selected" : null)">Date Added</option>
+                            </select>
                         </form>
-                    </div>
+                    </div> *@
                 </div>
             </div>
         </div>
@@ -62,7 +60,7 @@
 
 
 <!-- Table Container -->
-<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+<div class="w-100 h-100 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -95,29 +93,59 @@
     </div>
 
     @* Print and show number of row section *@
-    <div class="d-flex justify-content-between align-items-center m-2 mt-4">
+    <div class="d-flex justify-content-between align-items-center m-4 mt-4">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="ProgressNote" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                <input type="hidden" name="status" value="@ViewBag.Status" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                 <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
-                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
-                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
-                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
-                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
-                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                    <option value="10" selected="@(ViewBag.PageSize == 10 ? "selected" : null)">10</option>
+                    <option value="20" selected="@(ViewBag.PageSize == 20 ? "selected" : null)">20</option>
+                    <option value="50" selected="@(ViewBag.PageSize == 50 ? "selected" : null)">50</option>
+                    <option value="100" selected="@(ViewBag.PageSize == 100 ? "selected" : null)">100</option>
+                    <option value="0" selected="@(ViewBag.PageSize == 0 ? "selected" : null)">All</option>
                 </select>
             </form>
         </div>
 
-        <div class="d-flex align-items-center justify-content-center">
-            <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="me-3">
+                <form asp-controller="ProgressNote" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                    <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                    <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : null)">All Statuses</option>
+                        <option value="Active" selected="@(ViewBag.Status == "Active" ? "selected" : null)">Active</option>
+                        <option value="Not Started" selected="@(ViewBag.Status == "Not Started" ? "selected" : null)">Not Started</option>
+                        <option value="Completed" selected="@(ViewBag.Status == "Completed" ? "selected" : null)">Completed</option>
+                        <option value="Discontinued" selected="@(ViewBag.Status == "Discontinued" ? "selected" : null)">Discontinued</option>
+                    </select>
+                </form>
+            </div>
+
+            <div class="sort-by d-flex align-items-center">
+                <form asp-controller="ProgressNote" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                    <input type="hidden" name="status" value="@ViewBag.Status" />
+                    <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+                    <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.SortBy as string) ? "selected" : null)">Sort by</option>
+                        <option value="Title" selected="@(ViewBag.SortBy == "Title" ? "selected" : null)">Title</option>
+                        <option value="DateAdded" selected="@(ViewBag.SortBy == "DateAdded" ? "selected" : null)">Date Added</option>
+                    </select>
+                </form>
+            </div>
+
+            @* <div class="d-flex align-items-center justify-content-center">
+                <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
+            </div> *@
         </div>
     </div>
 
-    <div class="table-responsive-custom">
+    <div class="table-responsive-custom m-4 mr-4 mt-2 border">
         <table class="table mb-0">
             <thead class="table-light">
                 <tr>
@@ -181,11 +209,19 @@
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
-                                         <li>
-                                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                               href="@Url.Action("ProgressNoteLists", "ProgressNote", new { patientId = intervention.PatientId })">
-                                                <span class="badge-dot bg-success"></span>
-                                                View Progress Notes
+                                        @* Action for View Profile *@
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action("Create", "ProgressNote", new { patientId = intervention.PatientId, interventionId = intervention.InterventionId })">
+                                                    <span class="badge-dot bg-primary"></span>
+                                                    Add Progress Note
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action("ProgressNoteLists", "ProgressNote", new { patientId = intervention.PatientId, selectedId = intervention.InterventionId })">
+                                                    <span class="badge-dot bg-success"></span>
+                                                    View Progress Notes
                                             </a>
                                         </li>
                                     </ul>
@@ -408,5 +444,13 @@
         // add active to clicked
         this.classList.add('active');
       });
+    });
+
+    // ensure status select retains the server value
+    document.addEventListener('DOMContentLoaded', function () {
+        var statusSelect = document.querySelector('select[name="status"]');
+        if (!statusSelect) return;
+        var serverStatus = '@(ViewBag.Status ?? "")';
+        try { statusSelect.value = serverStatus; } catch (e) { /* ignore */ }
     });
 </script>

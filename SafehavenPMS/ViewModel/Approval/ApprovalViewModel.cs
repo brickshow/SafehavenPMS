@@ -16,6 +16,8 @@ namespace SafehavenPMS.ViewModel.Approval
         public bool? IsDrugDependent { get; set; }
         public string? Diagnosis { get; set; }
         public string? Recommendation { get; set; }
+        public string ExpectedDuration { get; set; }
+
         public string? Status { get; set; }
 
         //Audit Fields

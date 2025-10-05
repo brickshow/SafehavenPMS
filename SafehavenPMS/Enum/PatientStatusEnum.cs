@@ -11,6 +11,7 @@ namespace SafehavenPMS.Enum
         PendingApproval,
         PendingAdmission,
         Admitted,
+        InTreatment,
         Closed,
         Relapsed,
         Discharged

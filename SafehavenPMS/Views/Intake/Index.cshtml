@@ -13,14 +13,14 @@
             </div>
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
-                    @* Search bar *@
-                    <form asp-controller="Patient" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
-                        <div class="search-input-wrapper d-flex flex-row gap-2">
-                            <i class='bx bx-search search-icon'></i>
-                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
-                        </div>
-                        <button type="submit" class="btn-custom" style="height:30px">Search</button>
-                    </form>
+                    @* Search bar: target Intake.Search *@
+<form asp-controller="Intake" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+    <div class="search-input-wrapper d-flex flex-row gap-2">
+        <i class='bx bx-search search-icon'></i>
+        <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+    </div>
+    <button type="submit" class="btn-custom" style="height:30px">Search</button>
+</form>
 
                    
                 </div>
@@ -71,53 +71,52 @@
     <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
-                <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                <input type="hidden" name="status" value="@ViewBag.Status" />
-                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-                <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
-                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
-                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
-                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
-                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
-                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
-                </select>
-            </form>
+            @* PageSize select: render selected using attribute expression *@
+<form asp-controller="Intake" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+    <input type="hidden" name="status" value="@ViewBag.Status" />
+    <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+    <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
+        <option value="10" selected="@(ViewBag.PageSize == 10 ? "selected" : null)">10</option>
+        <option value="20" selected="@(ViewBag.PageSize == 20 ? "selected" : null)">20</option>
+        <option value="50" selected="@(ViewBag.PageSize == 50 ? "selected" : null)">50</option>
+        <option value="100" selected="@(ViewBag.PageSize == 100 ? "selected" : null)">100</option>
+        <option value="0" selected="@(ViewBag.PageSize == 0 ? "selected" : null)">All</option>
+    </select>
+</form>
         </div>
 
         <div class="d-flex align-items-center justify-content-between">
             <!-- Status filter (left of Sort by) -->
             <div class="me-3">
-                <form asp-controller="Patient" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
-                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
-                    <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-                    <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
-                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
-                        <option value="Waitlisted" selected='@(ViewBag.Status == "Pending" ? "selected" : "")'>Pending</option>
-                        <option value="PendingAssessment" selected='@(ViewBag.Status == "InProgress" ? "selected" : "")'>In Progress</option>
-                        <option value="PendingAssessment" selected='@(ViewBag.Status == "Completed" ? "selected" : "")'>Completed</option>
-                    </select>
-                </form>
+                @* Status filter: use enum names as values and proper selected rendering *@
+                    <form asp-controller="Intake" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+                        <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                        <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                        <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                        <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
+                            <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : null)">All Statuses</option>
+                            <option value="NewIntake" selected="@(ViewBag.Status == "NewIntake" ? "selected" : null)">Pending</option>
+                            <option value="InProgress" selected="@(ViewBag.Status == "InProgress" ? "selected" : null)">In Progress</option>
+                            <option value="Completed" selected="@(ViewBag.Status == "Completed" ? "selected" : null)">Completed</option>
+                        </select>
+                    </form>
             </div>
 
             <!-- Sort by -->
             <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
-                    @* preserve existing query params so logic is unchanged *@
-                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
-                    <input type="hidden" name="status" value="@ViewBag.Status" />
-                    <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-
-                    <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
-                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
-                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
-                        <option value="DateofIntake" selected='@(ViewBag.SortBy == "DateofIntake" ? "selected" : "")'>Date of Intake</option>
-                    </select>
-
-                    
-                </form>
+                @* Sort form target changed to Intake *@
+                    <form asp-controller="Intake" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                        <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                        <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                        <input type="hidden" name="status" value="@ViewBag.Status" />
+                        <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+                        <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
+                            <option value="" selected="@(ViewBag.SortBy == "" ? "selected" : null)">Sort by</option>
+                            <option value="Name" selected="@(ViewBag.SortBy == "Name" ? "selected" : null)">Name</option>
+                            <option value="DateofIntake" selected="@(ViewBag.SortBy == "DateofIntake" ? "selected" : null)">Date of Intake</option>
+                        </select>
+                    </form>
             </div>
 
             
@@ -155,7 +154,7 @@
                             <td>@(string.IsNullOrWhiteSpace(intake.FullName) ? "-" : intake.FullName)</td>
                             <td>@(string.IsNullOrWhiteSpace(intake.ReferredBy) ? "-" : intake.ReferredBy)</td>
                             <td>@(string.IsNullOrWhiteSpace(intake.ReferredByPhoneNumber) ? "-" : intake.ReferredByPhoneNumber)</td>
-                            <td>@(string.IsNullOrWhiteSpace(intake.IntakeOfficer) ? "-" : intake.IntakeOfficer)</td>
+                            <td>@(string.IsNullOrWhiteSpace(intake.CreatedBy) ? "-" : intake.CreatedBy)</td>
                             <td>
                                 @if(intake.IntakeDate == DateTime.MinValue.ToString("yyyy-MM-dd") || string.IsNullOrWhiteSpace(intake.IntakeDate))
                                 {
@@ -273,7 +272,7 @@
             <nav aria-label="Clinical staff list pagination">
                 <ul class="pagination mb-0">
                     <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Previous">
+                        <a class="page-link" href="@Url.Action("Index", "Intake", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
@@ -286,12 +285,12 @@
                         @for (int i = startPage; i <= endPage; i++)
                         {
                             <li class="page-item @(currentPage == i ? "active" : "")">
-                                <a class="page-link" href="@Url.Action("Index", "Patient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
+                                <a class="page-link" href="@Url.Action("Index", "Intake", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
                             </li>
                         }
                     }
                     <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Next">
+                        <a class="page-link" href="@Url.Action("Index", "Intake", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>

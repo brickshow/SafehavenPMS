@@ -29,99 +29,144 @@ namespace SafehavenPMS.Controllers
         }
 
         // Action to list admissions or initial assessments with search, sort, paging
-        public async Task<IActionResult> Index(string searchQuery, string status, string sortOrder, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(string searchQuery, string status, string sortOrder, string sortBy, int page = 1, int pageSize = 10)
         {
             try
             {
-            Console.WriteLine($"Index called: searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', page={page}, pageSize={pageSize}");
+                Console.WriteLine($"Index called: searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', sortBy='{sortBy}', page={page}, pageSize={pageSize}");
 
-            // Log patient status counts
-            var statusCounts = await _context.Patients
-                .GroupBy(p => p.PatientStatus)
-                .Select(g => new { Status = g.Key, Count = g.Count() })
-                .ToListAsync();
-            Console.WriteLine("PatientStatusCounts:");
-            foreach (var sc in statusCounts) Console.WriteLine($"  Status='{sc.Status}' Count={sc.Count}");
+                // Log patient status counts
+                var statusCounts = await _context.Patients
+                    .GroupBy(p => p.PatientStatus)
+                    .Select(g => new { Status = g.Key, Count = g.Count() })
+                    .ToListAsync();
+                Console.WriteLine("PatientStatusCounts:");
+                foreach (var sc in statusCounts) Console.WriteLine($"  Status='{sc.Status}' Count={sc.Count}");
 
-            // Base query with related data loaded
-            var query = _context.Admissions
-                .Include(iaf => iaf.Patient)
-                .AsQueryable();
+                // Base query with related data loaded
+                var query = _context.Admissions
+                    .Include(iaf => iaf.Patient)
+                    .AsQueryable();
 
-            // Show patients with PendingApproval OR Admitted status
-            var admittedStatus = PatientStatusEnum.Admitted.ToString();
-            var PendingAdmission = PatientStatusEnum.PendingAdmission.ToString();
-            Console.WriteLine("Filtering for PatientStatus = "  + " OR " + admittedStatus);
+                var admittedStatus = PatientStatusEnum.Admitted.ToString();
+                var pendingStatus = PatientStatusEnum.PendingAdmission.ToString();
 
-            // Filter by patient status (PendingApproval OR Admitted)
-            query = query.Where(iaf => iaf.Patient != null &&
-                ( iaf.Patient.PatientStatus == PendingAdmission ||
-                  iaf.Patient.PatientStatus == admittedStatus));
-
-            // Apply search
-            if (!string.IsNullOrWhiteSpace(searchQuery))
-            {
-                var q = searchQuery.Trim();
-                Console.WriteLine($"Applying search filter: '{q}'");    
-                query = query.Where(iaf =>
-                iaf.Patient.Firstname.Contains(q) ||
-                iaf.Patient.Lastname.Contains(q) ||
-                iaf.Patient.PatientId.ToString().Contains(q));
-            }
-
-            // Apply sorting
-            if (sortOrder == "ascending")
-            {
-                query = query.OrderBy(iaf => iaf.CreatedAt);
-                Console.WriteLine("Sorting ascending by completed/created");
-            }
-            else
-            {
-                query = query.OrderByDescending(iaf => iaf.ApprovalDate);
-                Console.WriteLine("Sorting descending by completed/created");
-            }
-
-            // Paging
-            int totalCount = await query.CountAsync();
-            Console.WriteLine($"Query COUNT result: {totalCount}");
-            int totalPages = pageSize > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 1;
-            var currentPage = Math.Max(1, Math.Min(page, totalPages));
-
-            var patient = await query
-                .Skip((currentPage - 1) * pageSize)
-                .Take(pageSize > 0 ? pageSize : totalCount)
-                .ToListAsync();
-
-            // Map to view model using the already-included navigation properties
-            var model = patient.Select(p =>
-            {
-                var name = $"{p.Patient.Firstname} {p.Patient.Lastname}";
-
-                return new AdmitPatientViewModel
+                // If a specific status filter was provided, apply it. Otherwise show PendingAdmission OR Admitted (legacy behavior).
+                if (!string.IsNullOrWhiteSpace(status))
                 {
-                    PatientId = p.PatientId,
-                    FullName = name,
-                    CreatedAt = p.CreatedAt,
-                    ApprovalDate = p.ApprovalDate,
-                    Status = p.Patient.PatientStatus,
-                };
+                    Console.WriteLine($"Applying status filter: '{status}'");
+                    query = query.Where(iaf => iaf.Patient != null && iaf.Patient.PatientStatus == status);
+                }
+                else
+                {
+                    Console.WriteLine($"No explicit status provided - defaulting to PendingAdmission OR Admitted");
+                    query = query.Where(iaf => iaf.Patient != null &&
+                        (iaf.Patient.PatientStatus == pendingStatus || iaf.Patient.PatientStatus == admittedStatus));
+                }
+
+                // Apply search (case-insensitive)
+                if (!string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    var q = searchQuery.Trim().ToLower();
+                    Console.WriteLine($"Applying search filter: '{q}'");
+                    query = query.Where(iaf =>
+                        ((iaf.Patient.Firstname ?? "").ToLower().Contains(q)) ||
+                        ((iaf.Patient.Lastname ?? "").ToLower().Contains(q)) ||
+                        iaf.Patient.PatientId.ToString().Contains(q));
+                }
+
+                // Determine sort field and order
+                var so = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder.ToLower();
+                var sb = string.IsNullOrEmpty(sortBy) ? "ApprovalDate" : sortBy;
+
+                Console.WriteLine($"Sorting by '{sb}' order '{so}'");
+
+                if (string.Equals(sb, "Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = so == "ascending"
+                        ? query.OrderBy(iaf => iaf.Patient.Firstname).ThenBy(iaf => iaf.Patient.Lastname)
+                        : query.OrderByDescending(iaf => iaf.Patient.Firstname).ThenByDescending(iaf => iaf.Patient.Lastname);
+                }
+                else if (string.Equals(sb, "AdmissionDate", StringComparison.OrdinalIgnoreCase) || string.Equals(sb, "CreatedAt", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = so == "ascending"
+                        ? query.OrderBy(iaf => iaf.CreatedAt)
+                        : query.OrderByDescending(iaf => iaf.CreatedAt);
+                }
+                else // default/ApprovalDate
+                {
+                    query = so == "ascending"
+                        ? query.OrderBy(iaf => iaf.ApprovalDate)
+                        : query.OrderByDescending(iaf => iaf.ApprovalDate);
+                }
+
+                // Paging
+                int totalCount = await query.CountAsync();
+                Console.WriteLine($"Query COUNT result: {totalCount}");
+                int totalPages = pageSize > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 1;
+                var currentPage = Math.Max(1, Math.Min(page, totalPages));
+
+                var admissionsList = await query
+                    .Include(a => a.Patient)
+                        .ThenInclude(pt => pt.ClinicalStaffPatients)
+                            .ThenInclude(csp => csp.ClinicalStaff)
+                    .Skip((currentPage - 1) * (pageSize > 0 ? pageSize : totalCount))
+                    .Take(pageSize > 0 ? pageSize : totalCount)
+                    .ToListAsync();
+
+                // Map to view model using the already-included navigation properties
+                var model = admissionsList.Select(p =>
+                {
+                    var name = p.Patient != null ? $"{p.Patient.Firstname} {p.Patient.Lastname}" : "-";
+
+                    // build clinical team from patient's ClinicalStaffPatients
+                    var clinicalTeam = (p.Patient?.ClinicalStaffPatients ?? Enumerable.Empty<ClinicalStaffPatient>())
+                        .Where(c => c.ClinicalStaff != null)
+                        .Select(c => new ClinicalTeamMember
+                        {
+                            Id = c.ClinicalStaff.ClinicalStaffID,
+                            FullName = $"{c.ClinicalStaff.Firstname} {c.ClinicalStaff.Lastname}".Trim(),
+                            Position = c.ClinicalStaff.Position ?? "",
+                            ProfilePictureURL = c.ClinicalStaff.ProfilePictureURL ?? ""  // safe fallback
+                        })
+                        .ToList();
+
+                    return new AdmitPatientViewModel
+                    {
+                        PatientId = p.PatientId,
+                        FullName = name,
+                        CreatedAt = p.CreatedAt,
+                        ApprovalDate = p.ApprovalDate,
+                        Status = p.Patient?.PatientStatus,
+                        ClinicalTeam = clinicalTeam
+                    };
                 }).ToList();
 
                 Console.WriteLine($"Model items: {model.Count}");
-                ViewBag.TotalPatientCount = model.Count;
-                ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
+
+                // Provide view state so filter UI stays in sync
+                ViewBag.TotalPatientCount = totalCount;
+                ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == pendingStatus)?.Count ?? 0;
                 ViewBag.TotalAdmittedCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
 
                 ViewBag.ServiceTypes = new SelectList(await _context.ServiceTypes.ToListAsync(), "ServiceTypeId", "ServiceName");
                 ViewBag.Services = new SelectList(await _context.Services.ToListAsync(), "ServiceId", "ServiceName");
 
+                ViewBag.SearchQuery = searchQuery;
+                ViewBag.Status = status;
+                ViewBag.SortBy = sb;
+                ViewBag.SortOrder = so;
+                ViewBag.PageSize = pageSize;
+                ViewBag.CurrentPage = currentPage;
+                ViewBag.TotalPages = totalPages;
+
                 return View(model);
             }
             catch (Exception ex)
             {
-            Console.WriteLine("AdmissionController.Index ERROR: " + ex);
-            Console.WriteLine($"  searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', page={page}, pageSize={pageSize}");
-            return View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
+                Console.WriteLine("AdmissionController.Index ERROR: " + ex);
+                Console.WriteLine($"  searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', sortBy='{sortBy}', page={page}, pageSize={pageSize}");
+                return View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
             }
         }
 
@@ -208,9 +253,17 @@ namespace SafehavenPMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdmitPatient(AdmitPatientViewModel model)
         {
+            // Require family/responsible person on admission
+            if (string.IsNullOrWhiteSpace(model.FamilyName))
+            {
+                ModelState.AddModelError("FamilyName", "Family / Responsible person is required.");
+            }
+
             if (!ModelState.IsValid)
             {
                 await PopulateClinicalStaffDropdowns();
+                // flag for the view to show modal (view also checks ModelState)
+                ViewBag.ShowFamilyModal = true;
                 return View(model);
             }
 
@@ -290,15 +343,18 @@ namespace SafehavenPMS.Controllers
                     await _context.ClinicalStaffPatients.AddRangeAsync(joins);
                 }
 
+                //Select Patieny RefId
+                
+
                 // Create family portal user only if one doesn't already exist for this patient or email
                 if (!string.IsNullOrWhiteSpace(model.FamilyEmail))
                 {
                     var existingUser = await _context.Users
-                        .FirstOrDefaultAsync(u => u.PatientId == model.PatientId || u.Email == model.FamilyEmail);
+                        .FirstOrDefaultAsync(u => u.PatientId == model.PatientId);
 
                     if (existingUser == null)
                     {
-                        var username = model.PatientId.ToString();
+                        var username = patient.PatientRefId.ToString();
                         var password = GeneratePassword(10);
 
                         var user = new User
@@ -378,29 +434,6 @@ namespace SafehavenPMS.Controllers
             var hashed = derive.GetBytes(32);
             return Convert.ToBase64String(hashed);
         }
-
-        // helper to produce next CaseId in the format CASE-000001
-        private async Task<string> GenerateNextCaseIdAsync()
-        {
-            // find the maximum numeric suffix used so far
-            var lastCase = await _context.Admissions
-                .Where(a => !string.IsNullOrEmpty(a.CaseId) && a.CaseId.StartsWith("CASE-"))
-                .Select(a => a.CaseId)
-                .OrderByDescending(c => c)
-                .FirstOrDefaultAsync();
-
-            int next = 1;
-            if (!string.IsNullOrWhiteSpace(lastCase) && lastCase.Length >= 6)
-            {
-                var suffix = lastCase.Substring(5);
-                if (int.TryParse(suffix, out var parsed))
-                {
-                    next = parsed + 1;
-                }
-            }
-            return $"CASE-{next:000000}";
-        }
-
         // Helper to populate clinical staff dropdowns used across views
         private async Task PopulateClinicalStaffDropdowns()
         {

@@ -27,128 +27,183 @@ namespace SafehavenPMS.Controllers
         }
 
         // Action to list admissions or initial assessments with search, sort, paging
-        public async Task<IActionResult> Index(string searchQuery, string status, string sortOrder, int page = 1, int pageSize = 10)
-        {
-            try
-            {
-                Console.WriteLine($"Index called: searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', page={page}, pageSize={pageSize}");
-
-                // Log patient status counts
-                var statusCounts = await _context.Patients
-                    .GroupBy(p => p.PatientStatus)
-                    .Select(g => new { Status = g.Key, Count = g.Count() })
-                    .ToListAsync();
-                Console.WriteLine("PatientStatusCounts:");
-                foreach (var sc in statusCounts) Console.WriteLine($"  Status='{sc.Status}' Count={sc.Count}");
-
-                // Base query with related data loaded
-                var query = _context.InitialAssessmentForms
-                    .Include(iaf => iaf.Patient)
-                    .Include(iaf => iaf.Diagnosis).ThenInclude(d => d.SubstanceUseEntries)
-                    .Include(iaf => iaf.Recommendation)
-                    .AsQueryable();
-
-                // Show patients with PendingApproval OR Admitted status
+        public async Task<IActionResult> Index(string searchQuery, string status, string sortOrder, string sortBy, int page = 1, int pageSize = 10)
+         {
+             try
+             {
+                 Console.WriteLine($"Index called: searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', sortBy='{sortBy}', page={page}, pageSize={pageSize}");
+ 
+                 // Log patient status counts
+                 var statusCounts = await _context.Patients
+                     .GroupBy(p => p.PatientStatus)
+                     .Select(g => new { Status = g.Key, Count = g.Count() })
+                     .ToListAsync();
+                 Console.WriteLine("PatientStatusCounts:");
+                 foreach (var sc in statusCounts) Console.WriteLine($"  Status='{sc.Status}' Count={sc.Count}");
+ 
+                 // Base query with related data loaded
+                 var query = _context.InitialAssessmentForms
+                     .Include(iaf => iaf.Patient)
+                     .Include(iaf => iaf.Diagnosis).ThenInclude(d => d.SubstanceUseEntries)
+                     .Include(iaf => iaf.Recommendation)
+                     .AsQueryable();
+ 
+                // Prepare status values
                 var pendingApprovalStatus = PatientStatusEnum.PendingApproval.ToString();
-                var admittedStatus = PatientStatusEnum.PendingAdmission.ToString();
-                var transferStatus = PatientStatusEnum.Discharged.ToString();
-                Console.WriteLine("Filtering for PatientStatus = " + pendingApprovalStatus + " OR " + admittedStatus);
+                var pendingAdmissionStatus = PatientStatusEnum.PendingAdmission.ToString();
+                var dischargedStatus = PatientStatusEnum.Discharged.ToString();
 
-                // Filter by patient status (PendingApproval OR Admitted)
-                query = query.Where(iaf => iaf.Patient != null &&
-                    (iaf.Patient.PatientStatus == pendingApprovalStatus || iaf.Patient.PatientStatus == admittedStatus
-                     || iaf.Patient.PatientStatus == transferStatus));
-
-                // Apply search
-                if (!string.IsNullOrWhiteSpace(searchQuery))
+                // Normalize incoming status filter and apply
+                var normalizedStatus = status?.Trim();
+                if (string.IsNullOrEmpty(normalizedStatus) || normalizedStatus.Equals("All", StringComparison.OrdinalIgnoreCase))
                 {
-                    var q = searchQuery.Trim();
-                    Console.WriteLine($"Applying search filter: '{q}'");
-                    query = query.Where(iaf =>
-                    iaf.Patient.Firstname.Contains(q) ||
-                    iaf.Patient.Lastname.Contains(q) ||
-                    iaf.Patient.PatientId.ToString().Contains(q));
-                }
-
-                // Apply sorting
-                if (sortOrder == "ascending")
-                {
-                    query = query.OrderBy(iaf => iaf.CompletedAt ?? iaf.CreatedAt);
-                    Console.WriteLine("Sorting ascending by completed/created");
+                    // Default behaviour: show items that need approval (PendingApproval) and those already approved for admission (PendingAdmission)
+                    Console.WriteLine("No explicit status requested - defaulting to PendingApproval OR PendingAdmission");
+                    query = query.Where(iaf => iaf.Patient != null &&
+                        (iaf.Patient.PatientStatus == pendingApprovalStatus || iaf.Patient.PatientStatus == pendingAdmissionStatus));
                 }
                 else
                 {
-                    query = query.OrderByDescending(iaf => iaf.CompletedAt ?? iaf.CreatedAt);
-                    Console.WriteLine("Sorting descending by completed/created");
+                    Console.WriteLine($"Applying status filter: '{normalizedStatus}'");
+                    var nsLower = normalizedStatus.ToLower();
+                    if (nsLower == "completed")
+                    {
+                        // Completed = any status except NewIntake, InProgress, Discharged
+                        var newIntake = PatientStatusEnum.NewIntake.ToString().ToLower();
+                        var inProgress = PatientStatusEnum.InProgress.ToString().ToLower();
+                        var discharged = PatientStatusEnum.Discharged.ToString().ToLower();
+
+                        query = query.Where(iaf => iaf.Patient != null &&
+                            iaf.Patient.PatientStatus != null &&
+                            iaf.Patient.PatientStatus.ToLower() != newIntake &&
+                            iaf.Patient.PatientStatus.ToLower() != inProgress &&
+                            iaf.Patient.PatientStatus.ToLower() != discharged);
+                    }
+                    else
+                    {
+                        // Direct match (case-insensitive) to the PatientStatus string
+                        query = query.Where(iaf => iaf.Patient != null &&
+                            iaf.Patient.PatientStatus != null &&
+                            iaf.Patient.PatientStatus.ToLower() == nsLower);
+                    }
+                }
+ 
+                 // Apply search
+                 if (!string.IsNullOrWhiteSpace(searchQuery))
+                 {
+                     var q = searchQuery.Trim();
+                     Console.WriteLine($"Applying search filter: '{q}'");
+                     query = query.Where(iaf =>
+                     iaf.Patient.Firstname.Contains(q) ||
+                     iaf.Patient.Lastname.Contains(q) ||
+                     iaf.Patient.PatientId.ToString().Contains(q));
+                 }
+ 
+                // Apply sorting - support sortBy (Name | DateAdded) and sortOrder (ascending | descending)
+                var so = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder.ToLower();
+                var sb = string.IsNullOrEmpty(sortBy) ? "DateAdded" : sortBy;
+                Console.WriteLine($"Sorting by '{sb}' order '{so}'");
+
+                if (string.Equals(sb, "Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = so == "ascending"
+                        ? query.OrderBy(iaf => iaf.Patient.Firstname).ThenBy(iaf => iaf.Patient.Lastname)
+                        : query.OrderByDescending(iaf => iaf.Patient.Firstname).ThenByDescending(iaf => iaf.Patient.Lastname);
+                }
+                else
+                {
+                    // DateAdded or default -> use CompletedAt fallback to CreatedAt
+                    query = so == "ascending"
+                        ? query.OrderBy(iaf => iaf.CompletedAt ?? iaf.CreatedAt)
+                        : query.OrderByDescending(iaf => iaf.CompletedAt ?? iaf.CreatedAt);
                 }
 
-                // Paging
-                int totalCount = await query.CountAsync();
-                Console.WriteLine($"Query COUNT result: {totalCount}");
-                int totalPages = pageSize > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 1;
-                var currentPage = Math.Max(1, Math.Min(page, totalPages));
-
-                var iafList = await query
-                    .Skip((currentPage - 1) * pageSize)
-                    .Take(pageSize > 0 ? pageSize : totalCount)
-                    .ToListAsync();
-
-                Console.WriteLine($"Fetched iafList.Count = {iafList.Count}");
-                var iafIds = iafList.Select(i => i.InitialAssessmentFormId).ToList();
-                Console.WriteLine($"IAF ids: {string.Join(", ", iafIds)}");
-
-                // Map to view model using the already-included navigation properties
-                var model = iafList.Select(iaf =>
-                {
-                    var patient = iaf.Patient;
-
-                    var diag = iaf.Diagnosis;
-                    var substances = diag?.SubstanceUseEntries?
-                    .Where(s => !string.IsNullOrWhiteSpace(s.SubstanceName))
-                    .Select(s => s.SubstanceName.Trim())
-                    .Distinct()
-                    .ToList();
-
-                    var diagnosisText = (substances != null && substances.Any())
-                    ? string.Join(", ", substances)
-                    : "-";
-
-                    var rec = iaf.Recommendation;
-                    string recommendationText = "-";
-                    if (rec != null)
-                    {
-                        var pt = rec.ProgramType?.Trim();
-                        if (!string.IsNullOrWhiteSpace(pt))
-                            recommendationText = pt;
-                    }
-
-                    Console.WriteLine($"IAF {iaf.InitialAssessmentFormId} -> DiagnosisId={(diag != null ? diag.DiagnosisId.ToString() : "null")}, SubstanceCount={(substances?.Count ?? 0)}, RecommendationId={(rec != null ? rec.RecommendationId.ToString() : "null")}");
-
-                    return new ApprovalViewModel
-                    {
-                        PatientId = patient?.PatientId ?? 0,
-                        PatientName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "-",
-                        CompletedAt = iaf.CompletedAt ?? iaf.UpdatedAt ?? iaf.CreatedAt,
-                        Status = patient?.PatientStatus ?? "-",
-                        Diagnosis = diagnosisText,
-                        Recommendation = recommendationText
-                    };
-                }).ToList();
-
-                Console.WriteLine($"Model items: {model.Count}");
-                ViewBag.TotalPatientCount = model.Count;
-                ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == pendingApprovalStatus)?.Count ?? 0;
-                ViewBag.TotalAdmittedCount = statusCounts.FirstOrDefault(sc => sc.Status == admittedStatus)?.Count ?? 0;
-
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("AdmissionController.Index ERROR: " + ex);
-                Console.WriteLine($"  searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', page={page}, pageSize={pageSize}");
-                return View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
-            }
-        }
+                // Persist current filter/sort state for the view
+                ViewBag.SearchQuery = searchQuery;
+                ViewBag.Status = string.IsNullOrEmpty(status) ? "All" : status;
+                ViewBag.SortOrder = so == "descending" ? "descending" : "ascending";
+                ViewBag.SortBy = sb;
+ 
+                 // Paging
+                 int totalCount = await query.CountAsync();
+                 Console.WriteLine($"Query COUNT result: {totalCount}");
+                 int totalPages = pageSize > 0 ? (int)Math.Ceiling(totalCount / (double)pageSize) : 1;
+                 var currentPage = Math.Max(1, Math.Min(page, totalPages));
+ 
+                 var iafList = await query
+                     .Skip((currentPage - 1) * pageSize)
+                     .Take(pageSize > 0 ? pageSize : totalCount)
+                     .ToListAsync();
+ 
+                 Console.WriteLine($"Fetched iafList.Count = {iafList.Count}");
+                 var iafIds = iafList.Select(i => i.InitialAssessmentFormId).ToList();
+                 Console.WriteLine($"IAF ids: {string.Join(", ", iafIds)}");
+ 
+                 // Map to view model using the already-included navigation properties
+                 var model = iafList.Select(iaf =>
+                 {
+                     var patient = iaf.Patient;
+ 
+                     var diag = iaf.Diagnosis;
+                     var substances = diag?.SubstanceUseEntries?
+                     .Where(s => !string.IsNullOrWhiteSpace(s.SubstanceName))
+                     .Select(s => s.SubstanceName.Trim())
+                     .Distinct()
+                     .ToList();
+ 
+                     var diagnosisText = (substances != null && substances.Any())
+                     ? string.Join(", ", substances)
+                     : "-";
+ 
+                     var rec = iaf.Recommendation;
+                     string recommendationText = "-";
+                     if (rec != null)
+                     {
+                         var pt = rec.ProgramType?.Trim();
+                         if (!string.IsNullOrWhiteSpace(pt))
+                             recommendationText = pt;
+                     }
+ 
+                     Console.WriteLine($"IAF {iaf.InitialAssessmentFormId} -> DiagnosisId={(diag != null ? diag.DiagnosisId.ToString() : "null")}, SubstanceCount={(substances?.Count ?? 0)}, RecommendationId={(rec != null ? rec.RecommendationId.ToString() : "null")}");
+                     var expectedDurationText = rec?.ExpectedDuration?.Trim();
+                     if (string.IsNullOrWhiteSpace(expectedDurationText))
+                         expectedDurationText = "-";
+ 
+                     // IsDrugDependent = true when Diagnosis is present (not "-")
+                     var isDrugDependent = !string.IsNullOrWhiteSpace(diagnosisText) && diagnosisText != "-";
+  
+                     return new ApprovalViewModel
+                     {
+                         PatientId = patient?.PatientId ?? 0,
+                         PatientName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : "-",
+                         CompletedAt = iaf.CompletedAt ?? iaf.UpdatedAt ?? iaf.CreatedAt,
+                         Status = patient?.PatientStatus ?? "-",
+                         Diagnosis = diagnosisText,
+                         Recommendation = recommendationText,
+                         ExpectedDuration = expectedDurationText,
+                         IsDrugDependent = isDrugDependent
+                     };
+                 }).ToList();
+ 
+                 Console.WriteLine($"Model items: {model.Count}");
+                ViewBag.TotalPatientCount = totalCount;
+                 ViewBag.TotalPendingApprovalCount = statusCounts.FirstOrDefault(sc => sc.Status == pendingApprovalStatus)?.Count ?? 0;
+                 ViewBag.TotalAdmittedCount = statusCounts.FirstOrDefault(sc => sc.Status == pendingAdmissionStatus)?.Count ?? 0;
+ 
+                // pagination metadata for view
+                ViewBag.TotalPages = totalPages;
+                ViewBag.CurrentPage = currentPage;
+                ViewBag.PageSize = pageSize;
+ 
+                 return View(model);
+             }
+             catch (Exception ex)
+             {
+                 Console.WriteLine("AdmissionController.Index ERROR: " + ex);
+                 Console.WriteLine($"  searchQuery='{searchQuery}', status='{status}', sortOrder='{sortOrder}', page={page}, pageSize={pageSize}");
+                 return View("Error", new ErrorViewModel { RequestId = HttpContext.TraceIdentifier });
+             }
+         }
 
         //// helper to produce next CaseId in the format CASE-000001
         //private async Task<string> GenerateNextCaseIdAsync()

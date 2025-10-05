@@ -150,10 +150,10 @@
                     <span asp-validation-for="FamilyEmail" class="text-danger small"></span>
                 </div>
 
-                <div class="col-12 d-flex align-items-center">
+                @* <div class="col-12 d-flex align-items-center">
                     <input type="checkbox" id="ActivatePortal" asp-for="ActivatePortal" class="form-check-input me-2" />
                     <label for="ActivatePortal" class="form-check-label">Create portal access for this family member</label>
-                </div>
+                </div> *@
             </div>
         </div>
 
@@ -166,6 +166,44 @@
     </form>
    
 </div>
+
+<!-- Family required error modal -->
+<div class="modal fade" id="familyRequiredModal" tabindex="-1" aria-labelledby="familyRequiredModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="familyRequiredModalLabel">Missing required information</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Please provide the family / responsible person details before admitting the patient.</p>
+                <ul class="mb-0 text-danger small">
+                    @foreach (var err in ViewData.ModelState["FamilyName"]?.Errors ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.ModelBinding.ModelError>())
+                    {
+                        <li>@err.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-custom" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Auto-open modal when server-side validation added FamilyName error *@
+@if ((ViewData.ModelState["FamilyName"]?.Errors?.Count ?? 0) > 0 || (ViewBag.ShowFamilyModal as bool? ?? false))
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var el = document.getElementById('familyRequiredModal');
+            if (el) {
+                var m = bootstrap.Modal.getOrCreateInstance(el);
+                m.show();
+            }
+        });
+    </script>
+}
 
 <script>
     document.getElementById("searchQuery").addEventListener("input", async function () {
