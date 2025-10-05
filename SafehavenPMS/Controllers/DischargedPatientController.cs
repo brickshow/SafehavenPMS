@@ -3,11 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.ViewModel;
 using Microsoft.AspNetCore.Authorization;
+using SafehavenPMS.Enum;
 
 
 namespace SafehavenPMS.Controllers
 {
-[Authorize]
+    [Authorize]
     public class DischargedPatientController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -16,7 +17,7 @@ namespace SafehavenPMS.Controllers
         {
             _context = context;
         }
-        
+
         public async Task<IActionResult> Index(
                    int? page = 1,
                    int? pageSize = 10,
@@ -91,18 +92,36 @@ namespace SafehavenPMS.Controllers
 
             return View(viewModel);
         }
-    
+
         [HttpGet]
         public IActionResult Search(string searchQuery)
         {
+            // Redirect to this controller's Index so filtering/searching happens on discharged list
             return RedirectToAction("Index", new
             {
                 searchQuery,
                 page = 1,
-                pageSize = ViewBag.PageSize ?? 10,
-                status = ViewBag.Status,
-                sortOrder = ViewBag.SortOrder
+                pageSize = 10,
+                status = PatientStatusEnum.Discharged.ToString(),
+                sortOrder = "descending"
             });
+        }
+        
+        // POST: Patient/ReopenPatient
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReopenPatient(int patientId)
+        {
+            var patient = await _context.Patients.FindAsync(patientId);
+            if (patient == null) return NotFound();
+
+            // Set status to NewIntake when reopening a discharged patient
+            patient.PatientStatus = PatientStatusEnum.NewIntake.ToString();
+            _context.Patients.Update(patient);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Patient reopened to New Intake.";
+            return RedirectToAction("Index", "DischargedPatient");
         }
     }
 }

@@ -7,14 +7,13 @@ using Microsoft.EntityFrameworkCore;
 using SafehavenPMS.Data;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.AspNetCore.Authorization;
 
 
 namespace SafehavenPMS.Controllers
 {
-[Authorize]
-    public class ProgressNoteController : Controller
+    [Authorize]
+    public partial class ProgressNoteController : Controller
     {
         private readonly SafehavenPMSContext _context;
 
@@ -30,7 +29,8 @@ namespace SafehavenPMS.Controllers
             int? pageSize = 10,
             string searchQuery = null,
             string status = null,
-            string sortOrder = null)
+            string sortOrder = null,
+            string sortBy = null)
         {
             // Base query with related data
             var query = _context.Interventions
@@ -39,6 +39,41 @@ namespace SafehavenPMS.Controllers
                 .Include(i => i.ServiceType)
                 .Include(i => i.ServiceModality)
                 .AsQueryable();
+
+            // --- NEW: restrict to patients assigned to the current user ---
+            // Restrict results to interventions whose patient is assigned to the logged-in clinical staff (unless Admin).
+            // Follows the same logic used in PatientController.Index to resolve the current user's ClinicalStaff association.
+            var userIdClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
+            {
+                var appUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
+                if (appUser != null && !string.Equals(appUser.Role ?? string.Empty, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (appUser.ClinicalStaffID.HasValue)
+                    {
+                        var staffId = appUser.ClinicalStaffID.Value;
+                        query = query.Where(i => i.Patient != null && i.Patient.ClinicalStaffPatients.Any(csp => csp.ClinicalStaffId == staffId));
+                    }
+                    else if (!string.IsNullOrWhiteSpace(appUser.Email))
+                    {
+                        var cs = await _context.ClinicalStaffs.AsNoTracking().FirstOrDefaultAsync(c => c.Email.ToLower() == appUser.Email.Trim().ToLower());
+                        if (cs != null)
+                        {
+                            query = query.Where(i => i.Patient != null && i.Patient.ClinicalStaffPatients.Any(csp => csp.ClinicalStaffId == cs.ClinicalStaffID));
+                        }
+                        else
+                        {
+                            // Not linked to a clinical staff -> no results
+                            query = query.Where(i => false);
+                        }
+                    }
+                    else
+                    {
+                        query = query.Where(i => false);
+                    }
+                }
+            }
+            // --- end new code ---
 
             // If patientId specified, restrict interventions to that patient
             if (patientId.HasValue)
@@ -60,7 +95,8 @@ namespace SafehavenPMS.Controllers
             ViewBag.SearchQuery = searchQuery;
             ViewBag.Status = status;
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
-
+            ViewBag.SortBy = sortBy ?? "";
+ 
             // Search filter (search patient name, description, noted by, or id)
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
@@ -79,30 +115,63 @@ namespace SafehavenPMS.Controllers
                 query = query.Where(i => i.Status == status);
             }
 
-            // Sorting (default by DateAdded desc)
-            if (sortOrder == null)
+            // Sorting: support sortBy (Title or DateAdded) + sortOrder (ascending/descending)
+            if (!string.IsNullOrWhiteSpace(sortBy) && sortBy.Equals("Title", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.OrderByDescending(i => i.DateAdded);
+                query = sortOrder == "ascending"
+                    ? query.OrderBy(i => i.ServiceModality.ServiceName)
+                    : query.OrderByDescending(i => i.ServiceModality.ServiceName);
             }
-            else
+            else // default DateAdded
             {
                 query = sortOrder == "ascending"
                     ? query.OrderBy(i => i.DateAdded)
                     : query.OrderByDescending(i => i.DateAdded);
             }
-
+ 
             // Pagination
             int totalItems = await query.CountAsync();
             int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
             ViewBag.TotalPages = totalPages;
-
-            int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
-            ViewBag.CurrentPage = currentPage;
+            ViewBag.Page = page ?? 1;
+ 
+             int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
+             ViewBag.CurrentPage = currentPage;
 
             var interventions = await query
                 .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
+
+            // Group interventions by patient for the Index view
+            var groupedByPatient = interventions
+                .GroupBy(i => new
+                {
+                    PatientId = i.Patient?.PatientId ?? 0,
+                    PatientName = i.Patient != null
+                        ? (string.IsNullOrWhiteSpace(i.Patient.Firstname) && string.IsNullOrWhiteSpace(i.Patient.Lastname)
+                            ? (i.Patient.PatientId.ToString() ?? "Patient")
+                            : (i.Patient.Firstname + " " + i.Patient.Lastname).Trim())
+                        : "No Patient"
+                })
+                .Select(g => new
+                {
+                    PatientId = g.Key.PatientId,    
+                    PatientName = g.Key.PatientName,
+                    Interventions = g.Select(x => new
+                    {
+                        x.InterventionId,
+                        Title = x.ServiceModality?.ServiceName ?? "Intervention",
+                        Description = x.Description ?? "",
+                        Status = x.Status ?? "Active",
+                        Clinician = x.NotedBy ?? "",
+                        DateAdded = x.DateAdded
+                    }).OrderByDescending(ii => ii.DateAdded).ToList()
+                })
+                .OrderBy(p => p.PatientName)
+                .ToList();
+
+            ViewBag.GroupedInterventions = groupedByPatient;
 
             // ensure view header uses same name the view expects
             ViewBag.TotalPatientCount = ViewBag.TotalCount;
@@ -126,53 +195,100 @@ namespace SafehavenPMS.Controllers
             }
 
             return View(interventions);
-        }
+         }
 
         public async Task<IActionResult> ProgressNoteLists(int? patientId = null, int? selectedId = null)
         {
-            // Base query with related data
-            var query = _context.Interventions
-                .Include(i => i.Patient)
-                .Include(i => i.Problem)
-                .Include(i => i.ServiceType)
-                .Include(i => i.ServiceModality)
-                .AsQueryable();
-
-            if (patientId.HasValue)
+            try
             {
-                query = query.Where(i => i.PatientId == patientId.Value);
-                ViewBag.PatientId = patientId.Value;
+                // Load all interventions (no patient filter)
+                var interventions = await _context.Interventions
+                    .Include(i => i.Patient)
+                    .Include(i => i.ServiceModality)
+                    .OrderByDescending(i => i.DateAdded)
+                    .ToListAsync();
 
-                var patient = await _context.Patients.FindAsync(patientId.Value);
-                ViewBag.PatientName = patient != null ? $"{patient.Firstname} {patient.Lastname}" : null;
+                // Get progress notes for the loaded interventions (match by InterventionId)
+                var interventionIds = interventions.Select(i => i.InterventionId).ToList();
+                var progressNotes = interventionIds.Any()
+                    ? await _context.ProgressNotes
+                        .Where(pn => pn.InterventionId.HasValue && interventionIds.Contains(pn.InterventionId.Value))
+                        .ToListAsync()
+                    : new List<ProgressNote>();
+
+                // Group and map notes
+                var notesByIntervention = progressNotes
+                    .GroupBy(n => n.InterventionId)
+                    .ToDictionary(
+                        g => g.Key ?? 0,
+                        g => g.OrderByDescending(n => n.CreatedAt)
+                              .Select(n => new ProgressNoteSummaryViewModel
+                              {
+                                  ProgressNoteId = n.ProgressNoteId,
+                                  CreatedAt = n.CreatedAt,
+                                  Clinician = n.Clinician ?? "-",
+                                  SoapRaw = n.SoapRaw ?? "",
+                                  Subjective = n.Subjective ?? "",
+                                  Objective = n.Objective ?? "",
+                                  Assessment = n.Assessment ?? "",
+                                  Plan = n.Plan ?? ""
+                              })
+                              .ToList()
+                    );
+
+                // Map interventions -> summary VM (attach mapped notes)
+                var interventionSummaries = interventions
+                    .Select(i =>
+                    {
+                        var noteList = notesByIntervention.ContainsKey(i.InterventionId)
+                            ? notesByIntervention[i.InterventionId]
+                            : new List<ProgressNoteSummaryViewModel>();
+
+                        return new InterventionSummaryViewModel
+                        {
+                            InterventionId = i.InterventionId,
+                            Title = i.ServiceModality?.ServiceName ?? "Intervention",
+                            Description = i.Description ?? "",
+                            Frequency = i.DurationFrequency,
+                            Status = i.Status ?? "Active",
+                            Clinician = i.NotedBy ?? "",
+                            LastNoteDate = noteList.Any() ? noteList.First().CreatedAt : i.DateAdded,
+                            LastNoteDisplay = noteList.Any() ? noteList.First().CreatedAt.ToString("MMM dd, yyyy") : (i.DateAdded?.ToString("MMM dd, yyyy") ?? ""),
+                            ProgressNotes = noteList
+                        };
+                    })
+                    .ToList();
+
+                // choose selected intervention
+                var selected = selectedId.HasValue
+                    ? interventionSummaries.FirstOrDefault(v => v.InterventionId == selectedId.Value)
+                    : interventionSummaries.FirstOrDefault(v => v.ProgressNotes != null && v.ProgressNotes.Any()) ?? interventionSummaries.FirstOrDefault();
+
+                var model = new SafehavenPMS.ViewModel.PatientProgressNotesTabViewModel
+                {
+                    PatientId = null,
+                    Interventions = interventionSummaries,
+                    SelectedInterventionId = selected?.InterventionId,
+                    InterventionFilter = "All"
+                };
+
+                ViewBag.SelectedIntervention = interventions.FirstOrDefault(i => i.InterventionId == selected?.InterventionId);
+                ViewBag.SelectedInterventionId = selected?.InterventionId;
+
+                // Set model.PatientId from the actual selected Intervention entity (so Create links work)
+                if (ViewBag.SelectedIntervention != null)
+                {
+                    model.PatientId = ((SafehavenPMS.Models.Intervention)ViewBag.SelectedIntervention).PatientId;
+                }
+
+                return View("ProgressNoteLIsts", model);
             }
-
-            var interventions = await query
-                .OrderByDescending(i => i.DateAdded)
-                .ToListAsync();
-
-            // choose selected intervention (if provided) or default to first
-            SafehavenPMS.Models.Intervention selected = null;
-            if (selectedId.HasValue)
+            catch (Exception ex)
             {
-                selected = interventions.FirstOrDefault(i => i.InterventionId == selectedId.Value)
-                           ?? await _context.Interventions
-                                .Include(i => i.Patient)
-                                .Include(i => i.Problem)
-                                .Include(i => i.ServiceType)
-                                .Include(i => i.ServiceModality)
-                                .FirstOrDefaultAsync(i => i.InterventionId == selectedId.Value);
+                Console.WriteLine($"[{DateTime.UtcNow:O}] ERROR in ProgressNoteLists: {ex.GetType().FullName}: {ex.Message}");
+                Console.WriteLine(ex.ToString());
+                throw;
             }
-
-            if (selected == null && interventions.Any())
-            {
-                selected = interventions.First();
-            }
-
-            ViewBag.SelectedIntervention = selected;
-            ViewBag.SelectedInterventionId = selected?.InterventionId;
-
-            return View(interventions);
         }
 
         [HttpGet]
@@ -231,7 +347,110 @@ namespace SafehavenPMS.Controllers
 
             TempData["SuccessMessage"] = "Progress note saved.";
 
-            return RedirectToAction("Index", "PatientProfile", new { id = model.PatientId });
+            return RedirectToAction("ProgressNoteLists", "ProgressNote", new { id = model.PatientId });
+        }
+
+        // GET: ProgressNote/EditSoap/5
+        public async Task<IActionResult> EditSoap(int id)
+        {
+            var note = await _context.ProgressNotes.FindAsync(id);
+            if (note == null) return NotFound();
+
+            var vm = new ProgressNoteEditViewModel
+            {
+                ProgressNoteId = note.ProgressNoteId,
+                PatientId = note.PatientId ?? 0,
+                InterventionId = note.InterventionId,
+                SoapRaw = note.SoapRaw,
+                Subjective = note.Subjective,
+                Objective = note.Objective,
+                Assessment = note.Assessment,
+                Plan = note.Plan,
+                CreatedAt = note.CreatedAt
+            };
+
+            // If SoapRaw is present, attempt to parse into S/O/A/P for the split editors
+            if (!string.IsNullOrWhiteSpace(note.SoapRaw))
+            {
+                var parts = note.SoapRaw.Split('|');
+                foreach (var part in parts)
+                {
+                    var colonIndex = part.IndexOf(':');
+                    if (colonIndex <= 0) continue;
+                    var label = part.Substring(0, colonIndex).Trim();
+                    var content = part.Substring(colonIndex + 1).Trim();
+                    switch (label.ToUpperInvariant())
+                    {
+                        case "S":
+                        case "SUBJECTIVE":
+                            vm.Subjective = content;
+                            break;
+                        case "O":
+                        case "OBJECTIVE":
+                            vm.Objective = content;
+                            break;
+                        case "A":
+                        case "ASSESSMENT":
+                            vm.Assessment = content;
+                            break;
+                        case "P":
+                        case "PLAN":
+                            vm.Plan = content;
+                            break;
+                    }
+                }
+            }
+
+            return View(vm);
+        }
+
+        // POST: ProgressNote/EditSoap
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditSoap(ProgressNoteEditViewModel vm)
+        {
+            if (!ModelState.IsValid) return View(vm);
+ 
+            var note = await _context.ProgressNotes.FindAsync(vm.ProgressNoteId);
+            if (note == null) return NotFound();
+ 
+            // If user provided a SoapRaw, prefer that. Otherwise compose from fields.
+            if (!string.IsNullOrWhiteSpace(vm.SoapRaw))
+            {
+                note.SoapRaw = vm.SoapRaw.Trim();
+            }
+            else
+            {
+                // Build SoapRaw only from non-empty parts
+                var parts = new System.Collections.Generic.List<string>();
+                if (!string.IsNullOrWhiteSpace(vm.Subjective)) parts.Add("S:" + vm.Subjective.Trim());
+                if (!string.IsNullOrWhiteSpace(vm.Objective)) parts.Add("O:" + vm.Objective.Trim());
+                if (!string.IsNullOrWhiteSpace(vm.Assessment)) parts.Add("A:" + vm.Assessment.Trim());
+                if (!string.IsNullOrWhiteSpace(vm.Plan)) parts.Add("P:" + vm.Plan.Trim());
+
+                note.SoapRaw = parts.Count > 0 ? string.Join("|", parts) : null;
+            }
+ 
+            // Keep separate stored fields in sync (optional but helpful)
+            note.Subjective = string.IsNullOrWhiteSpace(vm.Subjective) ? null : vm.Subjective.Trim();
+            note.Objective = string.IsNullOrWhiteSpace(vm.Objective) ? null : vm.Objective.Trim();
+            note.Assessment = string.IsNullOrWhiteSpace(vm.Assessment) ? null : vm.Assessment.Trim();
+            note.Plan = string.IsNullOrWhiteSpace(vm.Plan) ? null : vm.Plan.Trim();
+ 
+            // Debug: show resulting SoapRaw before save
+            Console.WriteLine($"[EditSoap POST] Saving note {note.ProgressNoteId}: SoapRawLength={(note.SoapRaw?.Length ?? 0)} SoapRawPreview={(note.SoapRaw != null && note.SoapRaw.Length > 200 ? note.SoapRaw.Substring(0,200) + "..." : note.SoapRaw ?? "<null>")}");
+ 
+            _context.Update(note);
+            await _context.SaveChangesAsync();
+
+            // Re-read saved entity to verify persistence and log final values
+            var saved = await _context.ProgressNotes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ProgressNoteId == note.ProgressNoteId);
+            Console.WriteLine($"[EditSoap POST] DB verify: ProgressNoteId={(saved?.ProgressNoteId.ToString() ?? "<null>")}, PatientId={(saved?.PatientId?.ToString() ?? "<null>")}, InterventionId={(saved?.InterventionId?.ToString() ?? "<null>")}, SoapRawLength={(saved?.SoapRaw?.Length ?? 0)}, SoapRawPreview={(saved?.SoapRaw ?? "<null>")}");
+ 
+            // Redirect to the list view and show the updated data; select the intervention so the UI shows the updated Soap snippet
+            return RedirectToAction(nameof(ProgressNoteLists), new { patientId = saved?.PatientId, selectedId = saved?.InterventionId });
         }
     }
 }

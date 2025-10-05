@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace SafehavenPMS.Models
 {
-[Authorize]
-    public class    Intervention
+    [Authorize]
+    public class Intervention
     {
         [Key]
         public int InterventionId { get; set; }
@@ -49,5 +49,8 @@ namespace SafehavenPMS.Models
 
         [ForeignKey("ServiceId")]
         public Service ServiceModality { get; set; }
+        
+        // Add this navigation property for related progress notes
+         public ICollection<ProgressNote> ProgressNotes { get; set; }
     }
 }

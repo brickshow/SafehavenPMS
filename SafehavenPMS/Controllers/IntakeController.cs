@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SafehavenPMS.ViewModel;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 
 
 namespace SafehavenPMS.Controllers
@@ -29,14 +30,44 @@ namespace SafehavenPMS.Controllers
                    int? pageSize = 10,
                    string searchQuery = null,
                    string status = null,
-                   string sortOrder = null)
-        {
+                   string sortOrder = null,
+                   string sortBy = null)
+         {
+            // Default to show all (except discharged) when no explicit status provided
+            if (string.IsNullOrEmpty(status))
+            {
+                status = "All"; // previously defaulted to NewIntake — change to All so we don't suppress non-discharged patients
+            }
+
             var query = _context.Patients
                 .Include(i => i.IntakeForm)
                 .Include(c => c.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
                 .AsQueryable();
 
+            // --- Role-based restriction: Admin sees all, non-Admin only assigned patients ---
+            var userIdClaim = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
+            {
+                var appUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
+                if (appUser != null && !string.Equals(appUser.Role ?? string.Empty, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (appUser.ClinicalStaffID.HasValue)
+                    {
+                        var csId = appUser.ClinicalStaffID.Value;
+                        query = query.Where(p => p.ClinicalStaffPatients.Any(csp => csp.ClinicalStaffId == csId));
+                    }
+                    else
+                    {
+                        // not linked to a clinical staff — don't expose patients
+                        query = query.Where(p => false);
+                    }
+                }
+            }
+
+            // Exclude discharged patients from the intake list
+            query = query.Where(p => p.PatientStatus != PatientStatusEnum.Discharged.ToString());
+            
             // Counts for each status
             ViewBag.TotalPatientCount = await _context.Patients.CountAsync();
             ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
@@ -49,6 +80,7 @@ namespace SafehavenPMS.Controllers
             ViewBag.SearchQuery = searchQuery;
             ViewBag.Status = status;
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
+            ViewBag.SortBy = string.IsNullOrEmpty(sortBy) ? "" : sortBy;
 
             // 🔎 Apply search filter
             if (!string.IsNullOrEmpty(searchQuery))
@@ -60,22 +92,59 @@ namespace SafehavenPMS.Controllers
                     p.PatientId.ToString().Contains(searchQuery));
             }
 
-            // Apply status filter (default = All)
-            if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
+            // Apply status filter (only when a specific status other than "All" is requested)
+            // Normalize incoming status (trim + case-insensitive) to avoid mismatches
+            var normalizedStatus = status?.Trim();
+            if (!string.IsNullOrEmpty(normalizedStatus) && !normalizedStatus.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(p => p.PatientStatus.ToString() == status);
-            }
+                var nsLower = normalizedStatus.ToLower();
 
-            //Apply sorting
-            if (sortOrder == null)
+                // Special case: "Completed" = any status except NewIntake, InProgress, Discharged
+                if (nsLower == "completed")
+                {
+                    var newIntake = PatientStatusEnum.NewIntake.ToString().ToLower();
+                    var inProgress = PatientStatusEnum.InProgress.ToString().ToLower();
+                    var discharged = PatientStatusEnum.Discharged.ToString().ToLower();
+
+                    query = query.Where(p =>
+                        p.PatientStatus != null &&
+                        p.PatientStatus.ToLower() != newIntake &&
+                        p.PatientStatus.ToLower() != inProgress &&
+                        p.PatientStatus.ToLower() != discharged);
+                }
+                else
+                {
+                    // Compare case-insensitively and guard against null PatientStatus
+                    query = query.Where(p => p.PatientStatus != null && p.PatientStatus.ToLower() == nsLower);
+                }
+            }
+            // NOTE: If "Completed" is a derived state (e.g. based on IntakeForm fields) you must replace the predicate
+            // with the appropriate check, e.g.:
+            // if (nsLower == "completed") query = query.Where(p => p.IntakeForm != null && p.IntakeForm.SomeCompletedFlag == true);
+
+            // Apply sorting based on sortBy + sortOrder
+            // sortBy: "Name" | "DateofIntake" | empty = default (CreatedAt desc)
+            if (string.IsNullOrEmpty(sortBy))
             {
                 query = query.OrderByDescending(p => p.CreatedAt);
             }
-            else
+            else if (string.Equals(sortBy, "Name", StringComparison.OrdinalIgnoreCase))
             {
-                query = sortOrder == "ascending"
+                query = string.Equals(sortOrder, "ascending", StringComparison.OrdinalIgnoreCase)
                     ? query.OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
                     : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
+            }
+            else if (string.Equals(sortBy, "DateofIntake", StringComparison.OrdinalIgnoreCase))
+            {
+                // Use IntakeForm.CreatedAt when available, fallback to Patient.CreatedAt
+                query = string.Equals(sortOrder, "ascending", StringComparison.OrdinalIgnoreCase)
+                    ? query.OrderBy(p => p.IntakeForm != null ? p.IntakeForm.CreatedAt : p.CreatedAt)
+                    : query.OrderByDescending(p => p.IntakeForm != null ? p.IntakeForm.CreatedAt : p.CreatedAt);
+            }
+            else
+            {
+                // fallback default
+                query = query.OrderByDescending(p => p.CreatedAt);
             }
 
             // Pagination
@@ -90,22 +159,16 @@ namespace SafehavenPMS.Controllers
                 .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
-
+    
             // Project to IntakeViewModel
              var intakeViewModels = patientList
-                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewIntake.ToString() ||
-                                                p.PatientStatus == PatientStatusEnum.Waitlisted.ToString() ||
-                                                p.PatientStatus == PatientStatusEnum.InProgress.ToString() ||
-                                                p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
-                                                p.PatientStatus == PatientStatusEnum.PendingApproval.ToString() || 
-                                                p.PatientStatus == PatientStatusEnum.Admitted.ToString())
                                     .Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
                                     {
                                         PatientId = p.PatientId,
                                         FullName = $"{p.Firstname} {p.Lastname}",
                                         ReferredBy = p.IntakeForm?.AccompaniedBy ?? string.Empty,
                                         ReferredByPhoneNumber = p.IntakeForm?.PhoneNumber ?? string.Empty,
-                                        IntakeOfficer = "-", // Populate if you have this info
+                                        CreatedBy = p.IntakeForm.CreatedBy ?? "System", // Populate if you have this info
                                         IntakeDate = p.IntakeForm?.CreatedAt != null ? ((DateTime)p.IntakeForm.CreatedAt).ToString("yyyy-MM-dd") : "-",
                                         CompletedDate = p.CreatedAt != null ? ((DateTime)p.CreatedAt).ToString("MMM dd, yyyy") : "-",
                                         // SAFE: don't call ToString() on a null IntakeForm or null IntakeStatus
@@ -226,14 +289,34 @@ namespace SafehavenPMS.Controllers
                 intakeForm.IntakeForm.Affiliation = model.Affiliation ?? intakeForm.IntakeForm.Affiliation;
                 //Butanganan pas uban fields
 
+                // Set Intake Officer to the currently authenticated user (if the entity has the property)
+                var officerName = User?.Identity?.Name ?? "";
+                if (!string.IsNullOrEmpty(officerName))
+                {
+                    var intakeEntity = intakeForm.IntakeForm;
+                    var prop = intakeEntity?.GetType().GetProperty("IntakeOfficer");
+                    if (prop != null && prop.CanWrite)
+                    {
+                        prop.SetValue(intakeEntity, officerName);
+                    }
+
+                    // Use CreatedBy attribute on Patient and IntakeForm if available
+                    intakeForm.IntakeForm.CreatedBy = officerName;
+                    var createdByProp = intakeEntity?.GetType().GetProperty("CreatedBy");
+                    if (createdByProp != null && createdByProp.CanWrite)
+                    {
+                        createdByProp.SetValue(intakeEntity, officerName);
+                    }
+                }
+
                 // mark as in-progress when details saved
                 _context.IntakeForms.Update(intakeForm.IntakeForm);
-
+                
                 // If patient is NewReferral, mark InProgress
                 await UpdatePatientStatus(intakeForm.PatientId);
-
+                
                 await _context.SaveChangesAsync();
-
+                
                 TempData["SuccessMessage"] = "Intake details saved.";
             }
             catch (Exception ex)
@@ -290,13 +373,34 @@ namespace SafehavenPMS.Controllers
 
                 // Update other family details and intake form status
                 intakeForm.IntakeForm.OtherFamilyDetails = model.OtherFamilyDetails;
+
+                // Set Intake Officer to current user (if the entity supports it)
+                var officerName2 = User?.Identity?.Name ?? "";
+                if (!string.IsNullOrEmpty(officerName2))
+                {
+                    var intakeEntity2 = intakeForm.IntakeForm;
+                    var prop2 = intakeEntity2?.GetType().GetProperty("IntakeOfficer");
+                    if (prop2 != null && prop2.CanWrite)
+                    {
+                        prop2.SetValue(intakeEntity2, officerName2);
+                    }
+
+                    // Use CreatedBy attribute
+                    intakeForm.IntakeForm.CreatedBy = officerName2;
+                    var createdByProp2 = intakeEntity2?.GetType().GetProperty("CreatedBy");
+                    if (createdByProp2 != null && createdByProp2.CanWrite)
+                    {
+                        createdByProp2.SetValue(intakeEntity2, officerName2);
+                    }
+                }
+
                 _context.IntakeForms.Update(intakeForm.IntakeForm);
 
                 //Call helper to update patient status
                 await UpdatePatientStatus(intakeForm.PatientId);
 
                 await _context.SaveChangesAsync();
-
+                
                 TempData["SuccessMessage"] = $"Family information saved successfully. Added {intakeForm.IntakeForm.FamilyMembers.Count} family members.";
             }
             catch (Exception ex)
@@ -331,6 +435,27 @@ namespace SafehavenPMS.Controllers
             {
                 // Update presenting problems
                 intakeForm.IntakeForm.ProblemPresentation = model.ProblemPresentation;
+
+                // Set Intake Officer to current user (if possible)
+                var officerName3 = User?.Identity?.Name ?? "";
+                if (!string.IsNullOrEmpty(officerName3))
+                {
+                    var intakeEntity3 = intakeForm.IntakeForm;
+                    var prop3 = intakeEntity3?.GetType().GetProperty("IntakeOfficer");
+                    if (prop3 != null && prop3.CanWrite)
+                    {
+                        prop3.SetValue(intakeEntity3, officerName3);
+                    }
+
+                    // Use CreatedBy attribute
+                    intakeForm.IntakeForm.CreatedBy = officerName3;
+                    var createdByProp3 = intakeEntity3?.GetType().GetProperty("CreatedBy");
+                    if (createdByProp3 != null && createdByProp3.CanWrite)
+                    {
+                        createdByProp3.SetValue(intakeEntity3, officerName3);
+                    }
+                }
+                
                 _context.IntakeForms.Update(intakeForm.IntakeForm);
 
                 // Update status
@@ -371,6 +496,27 @@ namespace SafehavenPMS.Controllers
             {
                 // Update counselor impressions
                 intakeForm.IntakeForm.CouncilorImpression = model.CouncilorImpression;
+
+                // Set Intake Officer to current user (if possible)
+                var officerName4 = User?.Identity?.Name ?? "";
+                if (!string.IsNullOrEmpty(officerName4))
+                {
+                    var intakeEntity4 = intakeForm.IntakeForm;
+                    var prop4 = intakeEntity4?.GetType().GetProperty("IntakeOfficer");
+                    if (prop4 != null && prop4.CanWrite)
+                    {
+                        prop4.SetValue(intakeEntity4, officerName4);
+                    }
+
+                    // Use CreatedBy attribute
+                    intakeForm.IntakeForm.CreatedBy = officerName4;
+                    var createdByProp4 = intakeEntity4?.GetType().GetProperty("CreatedBy");
+                    if (createdByProp4 != null && createdByProp4.CanWrite)
+                    {
+                        createdByProp4.SetValue(intakeEntity4, officerName4);
+                    }
+                }
+                
                 _context.IntakeForms.Update(intakeForm.IntakeForm);
 
                 // Update status
@@ -422,6 +568,13 @@ namespace SafehavenPMS.Controllers
                 return NotFound();
             }
 
+            // set CreatedBy on patient when submitting
+            var submitter = User?.Identity?.Name ?? "";
+            if (!string.IsNullOrEmpty(submitter))
+            {
+                patient.IntakeForm.CreatedBy = submitter;
+            }
+
             // Update the status to submitted
             _context.Patients.Update(patient);
 
@@ -448,6 +601,21 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("EditIntakeForm", new { id = patient.PatientId });
             }
             return RedirectToAction("Index");
+        }
+
+        // Keep existing view form working: redirect SortBy -> Index with params
+        [HttpGet]
+        public IActionResult SortBy(string sortBy, string sortOrder, string searchQuery, int? pageSize, string status)
+        {
+            return RedirectToAction("Index", new
+            {
+                page = 1,
+                pageSize = pageSize ?? 10,
+                searchQuery,
+                status,
+                sortOrder,
+                sortBy
+            });
         }
     }
 }

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace SafehavenPMS.ViewModel
 {
-[Authorize]
+    [Authorize]
     public class AdmitPatientViewModel
     {
         // ----------------------
@@ -91,6 +91,16 @@ namespace SafehavenPMS.ViewModel
 
         public string? ProgramType { get; set; }
         public string? Reason { get; set; }
+
+        public List<ClinicalTeamMember> ClinicalTeam { get; set; } = new List<ClinicalTeamMember>();
+    }
+    
+    public class ClinicalTeamMember
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; }
+        public string Position { get; set; }
+        public string ProfilePictureURL { get; set; }
     }
 }
 

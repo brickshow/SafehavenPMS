@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Authorization;
 namespace SafehavenPMS.Models
 {
@@ -29,6 +30,8 @@ namespace SafehavenPMS.Models
 
         // Navigation properties
         public Patient? Patient { get; set; }
-        public Intervention? Intervention { get; set; }
+        
+        [ForeignKey(nameof(InterventionId))]
+        public Intervention Intervention { get; set; }
     }
 }

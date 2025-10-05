@@ -26,10 +26,20 @@
     <div class="row mb-3 justify-content-start p-5 pt-0 pb-1">
         <div class="col-md-6">
             <div class="mb-2">
-                <label class="form-label" for="searchPatientId">Patient ID</label>
-                <div class="input-group">
-                    <input type="text" id="searchPatientId" name="searchPatientId" class="form-control" placeholder="Enter Patient ID" value="@ViewBag.SearchedPatientId" />
-                    <button type="button" class="btn btn-next" onclick="searchOldPatient()">Search</button>
+                <div class="d-flex align-items-center">
+                    <label class="col-md-1 form-label me-2 mb-0" for="searchPatientId" style="min-width: 90px;">Patient ID</label>
+                    <div class="input-group flex-grow-1">
+                        <input type="text" id="searchPatientId" name="searchPatientId" class="form-control d-flex flex-column uniform-input flex-grow-1" placeholder="Enter Patient ID" value="@ViewBag.SearchedPatientId" />
+                        <button type="button" class="btn btn-next" onclick="searchOldPatient()">Search</button>
+                        <style>
+                            .btn-next {
+                                color: #fff !important;
+                            }
+                            .btn-next:hover, .btn-next:focus {
+                                color: #fff !important;
+                            }
+                        </style>
+                    </div>
                 </div>
                 <span id="searchPatientError" class="text-danger">@ViewBag.SearchPatientError</span>
             </div>
@@ -408,7 +418,7 @@
             });
         </script>
     }
-}
+
 @* Scripts *@
 @section Scripts {
     <script>

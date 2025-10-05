@@ -16,11 +16,11 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
- // <--- added
+using System.Linq;
 
 namespace SafehavenPMS.Controllers
 {
-[Authorize]
+    [Authorize]
     public class PatientController : Controller
     {
         //Inject the SafehavenPMSContext to access the database
@@ -81,7 +81,7 @@ namespace SafehavenPMS.Controllers
                             }
                             else
                             {
-                                // not linked to a clinical staff — do not expose patients
+                                // not linked to a clinical staff ï¿½ do not expose patients
                                 query = query.Where(p => false);
                             }
                         }
@@ -94,17 +94,9 @@ namespace SafehavenPMS.Controllers
             }
 
             // Counts for each status (use the filtered query so counts reflect what the user can see)
-            ViewBag.TotalPatientCount = await query.CountAsync();
-            ViewBag.WaitlistedCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
-            ViewBag.PendingAssessmentCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
-            ViewBag.PendingApprovalCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
-            ViewBag.TotalPatientCount = await query.CountAsync();
-            ViewBag.WaitlistedCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
-            ViewBag.PendingAssessmentCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
-            ViewBag.PendingApprovalCount = await query.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
-            //ViewBag.ActiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Active");
-            //ViewBag.InactiveCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Inactive");
-            //ViewBag.AdmittedCount = await _context.Patients.CountAsync(p => p.PatientStatus == "Admitted");
+            ViewBag.TotalPatientCount = await query.CountAsync(p => p.PatientStatus == PatientStatusEnum.InTreatment.ToString() 
+                                                                || p.PatientStatus == PatientStatusEnum.Admitted.ToString());
+
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -123,10 +115,21 @@ namespace SafehavenPMS.Controllers
                     p.PatientId.ToString().Contains(searchQuery));
             }
 
-            // ? Apply status filter (default = All)
+            // ? Apply status filter
+            // If a status parameter is provided (or "All"), use it. Otherwise default to showing
+            // patients who are Admitted or InTreatment (if that enum exists).
             if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(p => p.PatientStatus.ToString() == status);
+                query = query.Where(p => p.PatientStatus == status);
+            }
+            else
+            {
+                var admittedStatus = PatientStatusEnum.Admitted.ToString();
+                // use InTreatment enum name if present; otherwise fall back to literal string
+                string inTreatmentStatus = PatientStatusEnum.InTreatment.ToString();
+
+                query = query.Where(p => p.PatientStatus == admittedStatus || p.PatientStatus == inTreatmentStatus);
+                // Leave ViewBag.Status as-is (null/empty) so the UI still shows "All Statuses"
             }
 
             // ?? Apply sorting
@@ -454,9 +457,13 @@ namespace SafehavenPMS.Controllers
                 .Include(p => p.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
                 .OrderByDescending(p => p.CreatedAt)
+                .Where(p => p.PatientStatus == PatientStatusEnum.InTreatment.ToString() 
+                         || p.PatientStatus == PatientStatusEnum.Admitted.ToString())
                 .ToListAsync();
             return View(patients);
         }
+
+        
     }
 }
 

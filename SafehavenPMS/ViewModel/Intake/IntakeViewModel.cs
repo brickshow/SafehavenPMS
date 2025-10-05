@@ -26,6 +26,12 @@ namespace SafehavenPMS.ViewModel
         public string? CouncilorImpression { get; set; }
         public string? OtherFamilyDetails { get; set; } = string.Empty;
 
+        //Audit
+        public string? CreatedBy { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
         // Family section
         public List<FamilyMemberVm> FamilyMembers { get; set; } = new();
         public FamilyMemberVm NewFamilyMember { get; set; } = new(); 

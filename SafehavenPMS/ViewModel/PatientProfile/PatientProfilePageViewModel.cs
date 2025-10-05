@@ -82,6 +82,8 @@ namespace SafehavenPMS.ViewModel
         public string Status { get; set; } = "Active"; // Active | Completed | Inactive
         public string Clinician { get; set; } = "-";
 
+        public string Frequency { get; set; } = "-"; // e.g. "Weekly", "Monthly", etc.  
+
         // Last note date / display string used in the list tile
         public DateTime? LastNoteDate { get; set; }
         public string LastNoteDisplay { get; set; } // Add this property
