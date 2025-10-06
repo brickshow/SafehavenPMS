@@ -24,23 +24,51 @@ namespace SafehavenPMS.Controllers
         {
             _context = context;
         }
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string medSearch = null, string medStatus = null, string medSortBy = null, string medSortOrder = null,
+            string orderSearch = null, string orderStatus = null, string orderSortBy = null, string orderSortOrder = null,
+            string logSearch = null, string logStatus = null, string logSortBy = null, string logSortOrder = null)
         {
+            // --- Medicines ---
             var medicines = await _context.Medicines.ToListAsync();
+            if (!string.IsNullOrEmpty(medSearch))
+                medicines = medicines.Where(m => (m.GenericName ?? "").ToLower().Contains(medSearch.ToLower()) ||
+                                                 (m.BrandName ?? "").ToLower().Contains(medSearch.ToLower())).ToList();
+            if (!string.IsNullOrEmpty(medStatus))
+                medicines = medicines.Where(m => m.Status == medStatus).ToList();
+            if (!string.IsNullOrEmpty(medSortBy))
+            {
+                if (medSortBy == "Name")
+                    medicines = medSortOrder == "ascending" ? medicines.OrderBy(m => m.GenericName).ToList() : medicines.OrderByDescending(m => m.GenericName).ToList();
+                else if (medSortBy == "DateAdded")
+                    medicines = medSortOrder == "ascending" ? medicines.OrderBy(m => m.DateAdded).ToList() : medicines.OrderByDescending(m => m.DateAdded).ToList();
+            }
 
+            // --- Medication Orders ---
             var medicationOrders = await _context.MedicationOrders
-                                            .Include(m => m.Patient)
-                                            .Include(m => m.Medicine)
-                                            .ToListAsync();
+                .Include(m => m.Patient)
+                .Include(m => m.Medicine)
+                .ToListAsync();
+            if (!string.IsNullOrEmpty(orderSearch))
+                medicationOrders = medicationOrders.Where(o => (o.Patient?.Firstname + " " + o.Patient?.Lastname).ToLower().Contains(orderSearch.ToLower())).ToList();
+            if (!string.IsNullOrEmpty(orderStatus))
+                medicationOrders = medicationOrders.Where(o => o.Status == orderStatus).ToList();
+            if (!string.IsNullOrEmpty(orderSortBy))
+            {
+                if (orderSortBy == "Name")
+                    medicationOrders = orderSortOrder == "ascending" ? medicationOrders.OrderBy(o => o.Patient.Firstname).ToList() : medicationOrders.OrderByDescending(o => o.Patient.Firstname).ToList();
+                // Add more sort options as needed
+            }
 
-            // Fetch all administration logs (for current date or all as needed)
+            // --- Administration Logs ---
             var todayStart = DateTime.Now.Date;
             var todayEnd = todayStart.AddDays(1);
-            // only take today's logs so checkbox state reflects today
             var administrationLogs = await _context.AdministrationLogs
-                                        .Where(a => a.AdministrationDate >= todayStart && a.AdministrationDate < todayEnd)
-                                        .ToListAsync();
+                .Where(a => a.AdministrationDate >= todayStart && a.AdministrationDate < todayEnd)
+                .ToListAsync();
+            // Filtering/searching for logs can be added similarly
 
+            // Map to view models as before...
             var model = new MedicationPageViewModel
             {
                 Medicines = medicines.Select(m => new MedicineViewModel
@@ -52,41 +80,20 @@ namespace SafehavenPMS.Controllers
                     Strength = m.Strength,
                     Unit = m.Unit,
                     Price = m.Price,
-                    Status = m.Status
+                    Status = m.Status,
+                    DateAdded = m.DateAdded
                 }).ToList(),
-
                 MedicationOrders = medicationOrders.Select(m => new MedicationOrderViewModel
                 {
                     MedicationOrderId = m.MedicationOrderId,
-
-
-                    // Patient
                     PatientId = m.PatientId,
-                    PatientName = m.Patient != null
-                                 ? m.Patient.Firstname + " " + m.Patient.Lastname
-                                 : string.Empty,
-
-                    // Medicine
+                    PatientName = m.Patient != null ? m.Patient.Firstname + " " + m.Patient.Lastname : string.Empty,
                     MedicineId = m.MedicineId,
-
-                    MedicineName = m.Medicine != null
-                                    ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Unit} {m.Medicine.Form}"
-                                    : string.Empty,
-                    // Dosage
+                    MedicineName = m.Medicine != null ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength} {m.Medicine.Unit} {m.Medicine.Form}" : string.Empty,
                     UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
                     Note = m.Note,
                     ScheduledType = m.ScheduledType,
-
-                    // Schedule
-                    // Build schedule string (BF, L, D, BT)
-                    ScheduleTimes = string.Join(", ", new[]
-                                            {
-                                                m.Breakfast ? "BF" : null,
-                                                m.Lunch ? "L" : null,
-                                                m.Dinner ? "D" : null,
-                                                m.Bedtime ? "BT" : null
-                                            }.Where(x => x != null)),
-
+                    ScheduleTimes = string.Join(", ", new[] { m.Breakfast ? "BF" : null, m.Lunch ? "L" : null, m.Dinner ? "D" : null, m.Bedtime ? "BT" : null }.Where(x => x != null)),
                     DaysInterval = m.DaysInterval,
                     Breakfast = m.Breakfast,
                     Lunch = m.Lunch,
@@ -94,53 +101,24 @@ namespace SafehavenPMS.Controllers
                     Bedtime = m.Bedtime,
                     Status = m.Status,
                     CreatedBy = m.CreatedBy,
-
-                    // Dates
                     StartDate = m.StartDate,
                     DiscontinueDate = m.DiscontinueDate,
-                    NoDiscontinueDate = m.NoDiscontinueDate,
-
-                    // Map taken values if logs exist
-                    BreakfastTaken = administrationLogs
-                        .FirstOrDefault(a => a.MedicationOrderId == m.MedicationOrderId)?.BreakfastTaken ?? false,
-                    LunchTaken = administrationLogs
-                        .FirstOrDefault(a => a.MedicationOrderId == m.MedicationOrderId)?.LunchTaken ?? false,
-                    DinnerTaken = administrationLogs
-                        .FirstOrDefault(a => a.MedicationOrderId == m.MedicationOrderId)?.DinnerTaken ?? false,
-                    BedtimeTaken = administrationLogs
-                        .FirstOrDefault(a => a.MedicationOrderId == m.MedicationOrderId)?.BedtimeTaken ?? false,
+                    NoDiscontinueDate = m.NoDiscontinueDate
                 }).ToList(),
-
                 AdministrationLogs = medicationOrders
-                .GroupBy(a => a.PatientId)
-                .Select(g => new AdministrationLogViewModel
-                {
-                    PatientId = g.Key,
-                    PatientName = g.First().Patient != null
-                                    ? $"{g.First().Patient.Firstname} {g.First().Patient.Lastname}"
-                                    : string.Empty,
-                    TotalMeds = g.Count(),
-                    ScheduleTimes = string.Join(", ", new[]
+                    .GroupBy(a => a.PatientId)
+                    .Select(g => new AdministrationLogViewModel
                     {
-                        g.Any(x => x.Breakfast) ? "BF" : null,
-                        g.Any(x => x.Lunch) ? "L" : null,
-                        g.Any(x => x.Dinner) ? "D" : null,
-                        g.Any(x => x.Bedtime) ? "BT" : null
-                    }.Where(x => x != null)),
-
-                    // Map the medications for this patient
-                    Medications = g.Select(m =>
-                    {
-                        var log = administrationLogs.FirstOrDefault(a => a.MedicationOrderId == m.MedicationOrderId);
-
-                        return new MedicationOrderViewModel
+                        PatientId = g.Key,
+                        PatientName = g.First().Patient != null ? $"{g.First().Patient.Firstname} {g.First().Patient.Lastname}" : string.Empty,
+                        TotalMeds = g.Count(),
+                        ScheduleTimes = string.Join(", ", new[] { g.Any(x => x.Breakfast) ? "BF" : null, g.Any(x => x.Lunch) ? "L" : null, g.Any(x => x.Dinner) ? "D" : null, g.Any(x => x.Bedtime) ? "BT" : null }.Where(x => x != null)),
+                        Medications = g.Select(m => new MedicationOrderViewModel
                         {
                             MedicationOrderId = m.MedicationOrderId,
                             PatientId = m.PatientId,
                             MedicineId = m.MedicineId,
-                            MedicineName = m.Medicine != null
-                                    ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength.ToString("0.#")} {m.Medicine.Unit} {m.Medicine.Form}"
-                                    : string.Empty,
+                            MedicineName = m.Medicine != null ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength} {m.Medicine.Unit} {m.Medicine.Form}" : string.Empty,
                             UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
                             Note = m.Note,
                             ScheduledType = m.ScheduledType,
@@ -151,26 +129,24 @@ namespace SafehavenPMS.Controllers
                             StartDate = m.StartDate,
                             DiscontinueDate = m.DiscontinueDate,
                             NoDiscontinueDate = m.NoDiscontinueDate,
-                            Status = m.Status,
-
-                            // Map taken values
-                            BreakfastTaken = log?.BreakfastTaken ?? false,
-                            LunchTaken = log?.LunchTaken ?? false,
-                            DinnerTaken = log?.DinnerTaken ?? false,
-                            BedtimeTaken = log?.BedtimeTaken ?? false
-                        };
+                            Status = m.Status
+                        }).ToList()
                     }).ToList()
-                }).ToList()
             };
 
-            // Debug: show what will be rendered in each med row
-            foreach (var p in model.AdministrationLogs)
-            {
-                foreach (var m in p.Medications)
-                {
-                    Console.WriteLine($"RENDER -> PatientId={p.PatientId}, OrderId={m.MedicationOrderId}, BF={m.BreakfastTaken}, L={m.LunchTaken}, D={m.DinnerTaken}, BT={m.BedtimeTaken}");
-                }
-            }
+            // Pass filter/sort/search state to view
+            ViewBag.MedSearch = medSearch;
+            ViewBag.MedStatus = medStatus;
+            ViewBag.MedSortBy = medSortBy;
+            ViewBag.MedSortOrder = medSortOrder;
+            ViewBag.OrderSearch = orderSearch;
+            ViewBag.OrderStatus = orderStatus;
+            ViewBag.OrderSortBy = orderSortBy;
+            ViewBag.OrderSortOrder = orderSortOrder;
+            ViewBag.LogSearch = logSearch;
+            ViewBag.LogStatus = logStatus;
+            ViewBag.LogSortBy = logSortBy;
+            ViewBag.LogSortOrder = logSortOrder;
 
             return View(model);
         }
@@ -330,7 +306,8 @@ namespace SafehavenPMS.Controllers
         {
             var medicines = await _context.Medicines.ToListAsync();
             var patients = await _context.Patients
-                                 .Where(s => s.PatientStatus == Enum.PatientStatusEnum.Admitted.ToString())
+                                 .Where(s => s.PatientStatus == Enum.PatientStatusEnum.Admitted.ToString() ||
+                                             s.PatientStatus == Enum.PatientStatusEnum.InTreatment.ToString())
                                  .ToListAsync();
 
             // Build SelectList for ViewBag
@@ -373,6 +350,17 @@ namespace SafehavenPMS.Controllers
                 if (string.IsNullOrWhiteSpace(t.MedicineName) && medicineDict.ContainsKey(t.MedicineId))
                     t.MedicineName = medicineDict[t.MedicineId];
             }
+
+            var patientExists = patients.FirstOrDefault(p => p.PatientId == patientId);
+            if (patientId.HasValue && patientExists == null)
+            {
+                ViewBag.PatientName = "Unknown Patient";
+            }
+            else
+            {
+                ViewBag.PatientName = patientExists.Firstname  + " " + patientExists.Lastname;
+            }
+
             ViewBag.SelectedPatientID = patientId;
             ViewBag.TempOrders = tempList;
             ViewBag.ProblemId = problemId; // Pass problemId to ViewBag if needed in the view
@@ -957,6 +945,48 @@ namespace SafehavenPMS.Controllers
             }
 
             return RedirectToAction(nameof(AddMedicationOrder));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Filter(string searchQuery = null, string status = null)
+        {
+            // Get all medicines
+            var medicines = await _context.Medicines.ToListAsync();
+
+            // Filter by search
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                var lowered = searchQuery.ToLower();
+                medicines = medicines.Where(m =>
+                    (!string.IsNullOrEmpty(m.GenericName) && m.GenericName.ToLower().Contains(lowered)) ||
+                    (!string.IsNullOrEmpty(m.BrandName) && m.BrandName.ToLower().Contains(lowered))
+                ).ToList();
+            }
+
+            // Filter by status
+            if (!string.IsNullOrEmpty(status))
+            {
+                medicines = medicines.Where(m => m.Status == status).ToList();
+            }
+
+            // Map to view model if needed
+            var model = medicines.Select(m => new MedicineViewModel
+            {
+                MedicineId = m.MedicineId,
+                GenericName = m.GenericName,
+                BrandName = m.BrandName,
+                Form = m.Form,
+                Strength = m.Strength,
+                Unit = m.Unit,
+                Price = m.Price,
+                Status = m.Status,
+                DateAdded = m.DateAdded
+            }).ToList();
+
+            ViewBag.SearchQuery = searchQuery;
+            ViewBag.Status = status;
+
+            return View("Index", model);
         }
     }
 }

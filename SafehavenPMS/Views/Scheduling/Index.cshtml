@@ -14,7 +14,7 @@
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
                     @* Search bar *@
-                    <form asp-controller="Patient" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                    <form asp-controller="Scheduling" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
                         <div class="search-input-wrapper d-flex flex-row gap-2">
                             <i class='bx bx-search search-icon'></i>
                             <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
@@ -26,11 +26,11 @@
                 </div>
             </div>
         </div>
-        @* <a href="@Url.Action("AddNewPatient", "Patient")" class="btn-custom text-decoration-none btn-primary">
+        <a href="@Url.Action("GeneralScheduling", "Scheduling")" class="btn-custom text-decoration-none btn-primary">
             <i class='bx bx-user-plus me-1'></i>
-            New Patient Intake
-        </a> *@
-    </div>
+            New Appointment
+        </a>
+    </div>  
     <hr class="mt-0 mb-2" />
 </div>
 
@@ -100,7 +100,7 @@
     <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="Scheduling" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                 <input type="hidden" name="status" value="@ViewBag.Status" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
@@ -121,7 +121,7 @@
         <div class="d-flex align-items-center justify-content-between">
             <!-- Status filter (left of Sort by) -->
            <div class="me-3">
-                <form asp-controller="Patient" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+                <form asp-controller="Scheduling" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
@@ -129,17 +129,13 @@
                         <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
                         <option value="Pending" selected='@(ViewBag.Status == "Pending" ? "selected" : "")'>Pending</option>
                         <option value="Scheduled" selected='@(ViewBag.Status == "Scheduled" ? "selected" : "")'>Scheduled</option>
-                        <option value="Complete" selected='@(ViewBag.Status == "Completed" ? "selected" : "")'>Completed</option>
-                        <option value="Canceled" selected='@(ViewBag.Status == "Canceled" ? "selected" : "")'>Canceled</option>
-                        <option value="Rescheduled" selected='@(ViewBag.Status == "Rescheduled" ? "selected" : "")'>Rescheduled</option>
-
                     </select>
                 </form>
             </div>
 
             <!-- Sort by -->
             <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                <form asp-controller="Scheduling" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
                     @* preserve existing query params so logic is unchanged *@
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
@@ -247,11 +243,30 @@
                                                 </a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("ScheduleAppointment", "Scheduling", new { id = sched.PatientId })">
-                                                    <span class="badge-dot bg-success"></span>
-                                                    Schedule
-                                                </a>
+                                                @if (sched.Type == "Initial Assessment")
+                                                {
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                       href="@Url.Action("ScheduleAppointment", "Scheduling", new { id = sched.PatientId })">
+                                                        <span class="badge-dot bg-success"></span>
+                                                        Schedule
+                                                    </a>
+                                                }
+                                                else if (sched.Type == "Psychiatric Assessment")
+                                                {
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                       href="@Url.Action("PsySchedule", "Scheduling", new { id = sched.PatientId })">
+                                                        <span class="badge-dot bg-success"></span>
+                                                        Schedule
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                       href="@Url.Action("ScheduleAppointment", "Scheduling", new { id = sched.PatientId })">
+                                                        <span class="badge-dot bg-success"></span>
+                                                        Schedule
+                                                    </a>
+                                                }
                                             </li>
                                         }
                                         else if (sched.Status == SchedulingStatus.Scheduled.ToString())

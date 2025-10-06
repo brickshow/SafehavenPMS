@@ -1,15 +1,15 @@
 using CloudinaryDotNet;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using CloudinaryDotNet.Actions;
+using System.Threading.Tasks;
+using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
+using System; // add if not already present
 
 
 namespace SafehavenPMS.Services
 {
-[Authorize]
+    [Authorize]
     public class CloudinaryServices
     {
         //Configuration for Cloudinary
@@ -75,6 +75,91 @@ namespace SafehavenPMS.Services
 
             var result = await _cloudinary.UploadAsync(uploadParams);
             return result.SecureUrl?.ToString() ?? string.Empty;
+        }
+
+        // NEW generic upload (any file type)
+        public async Task<string> UploadFileAsync(Stream stream, string fileName, string folder = "SafehavenPMS/PatientDocuments")
+        {
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (string.IsNullOrWhiteSpace(fileName)) fileName = Guid.NewGuid().ToString("N");
+
+            try { if (stream.CanSeek) stream.Position = 0; } catch { }
+
+            var lower = fileName.ToLowerInvariant();
+            bool isImage = lower.EndsWith(".png") || lower.EndsWith(".jpg") || lower.EndsWith(".jpeg") ||
+                           lower.EndsWith(".gif") || lower.EndsWith(".webp") || lower.EndsWith(".bmp");
+
+            if (isImage)
+            {
+                var imgParams = new ImageUploadParams
+                {
+                    File = new FileDescription(fileName, stream),
+                    Folder = folder,
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = false
+                };
+                var result = await _cloudinary.UploadAsync(imgParams);
+                return result?.SecureUrl?.ToString() ?? "";
+            }
+            else
+            {
+                var rawParams = new RawUploadParams
+                {
+                    File = new FileDescription(fileName, stream),
+                    Folder = folder,
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = false
+                };
+                var result = await _cloudinary.UploadAsync(rawParams);
+                return result?.SecureUrl?.ToString() ?? "";
+            }
+        }
+
+        // NEW: patient document upload (separate folder per patient like other methods)
+        public async Task<string> UploadPatientDocumentAsync(Stream stream, string fileName, int patientId, string? subFolder = null)
+        {
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+            if (string.IsNullOrWhiteSpace(fileName)) fileName = Guid.NewGuid().ToString("N");
+
+            try { if (stream.CanSeek) stream.Position = 0; } catch { }
+
+            // Base folder structure: SafehavenPMS/PatientDocuments/{patientId}/{optional subfolder}
+            var folder = $"SafehavenPMS/PatientDocuments/{patientId}";
+            if (!string.IsNullOrWhiteSpace(subFolder))
+                folder += "/" + subFolder.Trim().Replace("\\", "/");
+
+            var lower = fileName.ToLowerInvariant();
+            bool isImage = lower.EndsWith(".png") || lower.EndsWith(".jpg") || lower.EndsWith(".jpeg")
+                        || lower.EndsWith(".gif") || lower.EndsWith(".webp") || lower.EndsWith(".bmp");
+
+            if (isImage)
+            {
+                var imgParams = new ImageUploadParams
+                {
+                    File = new FileDescription(fileName, stream),
+                    Folder = folder,
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = false
+                };
+                var imgResult = await _cloudinary.UploadAsync(imgParams);
+                return imgResult?.SecureUrl?.ToString() ?? "";
+            }
+            else
+            {
+                var rawParams = new RawUploadParams
+                {
+                    File = new FileDescription(fileName, stream),
+                    Folder = folder,
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = false
+                };
+                var rawResult = await _cloudinary.UploadAsync(rawParams);
+                return rawResult?.SecureUrl?.ToString() ?? "";
+            }
         }
     }
 }

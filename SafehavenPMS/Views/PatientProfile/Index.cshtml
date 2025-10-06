@@ -58,12 +58,16 @@
     <div class="tab-pane fade" id="tab-personal" role="tabpanel" aria-labelledby="personal-tab">
         @await Html.PartialAsync("ProfileTabs/_PatientProfileTab", Model.PersonalInfoTab)
     </div>
+    <div class="tab-pane fade" id="tab-clinical-doc" role="tabpanel" aria-labelledby="clinical-doc-tab">
+        @await Html.PartialAsync("ProfileTabs/_ClinicalMedicationTab", Model.ClinicalFormTab)
+    </div>
+    <div class="tab-pane fade" id="tab-medical-history" role="tabpanel" aria-labelledby="medical-history-tab">
+        @await Html.PartialAsync("ProfileTabs/_MedicalHistory", Model.MedicalHistoryTab)
+    </div>
     <div class="tab-pane fade" id="tab-treatment" role="tabpanel" aria-labelledby="treatment-tab">
-        @* Add treatment partial here *@
         @await Html.PartialAsync("ProfileTabs/_TreatmentPlanTab", Model.TreatmentPlanTab)
     </div>
     <div class="tab-pane fade" id="tab-progress-note" role="tabpanel" aria-labelledby="progress-note-tab">
-        @* Add case documentation partial here *@
         @await Html.PartialAsync("ProfileTabs/_ProgressNotes", Model.ProgressNotesTab)
     </div>
     <div class="tab-pane fade" id="tab-prescription" role="tabpanel" aria-labelledby="prescription-tab">

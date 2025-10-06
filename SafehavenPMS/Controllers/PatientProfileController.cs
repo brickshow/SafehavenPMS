@@ -8,7 +8,9 @@ using SafehavenPMS.ViewModel;
 using SafehavenPMS.ViewModel.PatientProfile;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
-
+using SafehavenPMS.Services;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
 
 namespace SafehavenPMS.Controllers
 {
@@ -16,11 +18,13 @@ namespace SafehavenPMS.Controllers
     public class PatientProfileController : Controller
     {
         private readonly SafehavenPMSContext _context;
+        private readonly CloudinaryServices _cloudSvc;
 
         //Constructor
-        public PatientProfileController(SafehavenPMSContext context)
+        public PatientProfileController(SafehavenPMSContext context, CloudinaryServices cloudSvc)
         {
             _context = context;
+            _cloudSvc = cloudSvc;
         }
 
         public async Task<IActionResult> Index(int? id)
@@ -309,10 +313,72 @@ namespace SafehavenPMS.Controllers
             
             var interventions = new List<Intervention>();
 
+            // Load (or attempt) related forms
+            var intakeForm = patient.IntakeForm; // already included
+            var initialAssessment = await _context.InitialAssessmentForms
+                .FirstOrDefaultAsync(f => f.PatientId == patient.PatientId); // adjust DbSet name if different
+            var psychAssessment = await _context.PsychiatricAssessments
+                .FirstOrDefaultAsync(a => a.PatientId == patient.PatientId);
+
+            string StatusFromDates(DateTime? completedAt) => completedAt.HasValue ? "Completed" : "In Progress";
+
+            // BUILD FORMS (skip Not Started except Intake)
+            var forms = new List<ClinicalFormCardViewModel>();
+
+            // Intake (always show – even if not started)
+            forms.Add(new ClinicalFormCardViewModel
+            {
+                FormType = "Intake Form",
+                FormId = intakeForm?.IntakeFormsId,
+                Status = intakeForm == null ? "Not Started" : StatusFromDates(intakeForm.CompletedAt),
+                CreatedAt = intakeForm?.CreatedAt,
+                Clinician = intakeForm?.CreatedBy ?? "-",
+                ActionUrl = intakeForm == null
+                    ? Url.Action("CreateIntakeForm", "Intake", new { patientId = patient.PatientId })
+                    : Url.Action("EditIntakeForm", "Intake", new { id = intakeForm.IntakeFormsId })
+            });
+
+            // Initial Assessment (only if exists)
+            if (initialAssessment != null)
+            {
+                forms.Add(new ClinicalFormCardViewModel
+                {
+                    FormType = "Initial Assessment",
+                    FormId = initialAssessment.InitialAssessmentFormId,
+                    Status = StatusFromDates(initialAssessment.CompletedAt),
+                    CreatedAt = initialAssessment.CreatedAt,
+                    Clinician = initialAssessment.CreatedBy ?? "-",
+                    ActionUrl = Url.Action("EditInitialAssessmentForm", "Assessment",
+                        new { id = initialAssessment.InitialAssessmentFormId })
+                });
+            }
+
+            // Psychiatric Assessment (only if exists)
+            if (psychAssessment != null)
+            {
+                forms.Add(new ClinicalFormCardViewModel
+                {
+                    FormType = "Psychiatric Assessment",
+                    FormId = psychAssessment.PsychiatricAssessmentId,
+                    Status = psychAssessment.CreatedAt.HasValue ? "Completed" : "In Progress",
+                    CreatedAt = psychAssessment.CreatedAt,
+                    Clinician = psychAssessment.CreatedBy ?? "-",
+                    ActionUrl = Url.Action("PsychiatricAssessmentForm", "PsychiatricAssessment",
+                        new { id = psychAssessment.PsychiatricAssessmentId })
+                });
+            }
+
+            var clinicalFormsVm = new PatientClinicalFormTabViewModel
+            {
+                PatientId = patient.PatientId,
+                Forms = forms
+            };
+
             var viewModel = new PatientProfilePageViewModel
             {
                 PatientId = patient.PatientId,
                 PatientRefId = patient.PatientRefId,
+                AvatarUrl = patient.PhotoUrl,
                 PatientName = $"{patient.Firstname} {patient.Lastname}",
                 OverViewTab = new PatientOverViewTabViewModel
                 {
@@ -330,6 +396,7 @@ namespace SafehavenPMS.Controllers
                     MiddleName = patient.MiddleName,
                     DateOfBirth = patient.DateOfBirth,
                     Age = CalculateAge(patient.DateOfBirth),
+                    PhotoUrl = patient.PhotoUrl,
                     MaritalStatus = patient.MaritalStatus,
                     Occupation = patient.Occupation,
                     Religion = patient.Religion,
@@ -346,7 +413,7 @@ namespace SafehavenPMS.Controllers
                         }).ToList() ?? new List<FamilyConstellationViewModel>()
                 },
                 MedicalHistoryTab = new PatientMedicalHistoryTabViewModel(),
-                ClinicalFormTab = new PatientClinicalFormTabViewModel(),
+                ClinicalFormTab = clinicalFormsVm,
                 TreatmentPlanTab = new PatientTreatmentPlanTabViewModel
                 {
                     Problems = treatmentPlanViewModel.Problems
@@ -364,8 +431,19 @@ namespace SafehavenPMS.Controllers
                 },
                 ActivityLogTab = new PatientActivityLogTabViewModel(),
                 Interventions = interventions,
+            };
 
-                
+            // after loading patient:
+            var docs = await _context.PatientDocuments
+                .Where(d => d.PatientId == patient.PatientId)
+                .OrderByDescending(d => d.UploadedAt)
+                .ToListAsync();
+
+            viewModel.MedicalHistoryTab = new PatientMedicalHistoryTabViewModel
+            {
+                PatientId = patient.PatientId,
+                Documents = docs,
+                CanUpload = true
             };
 
             foreach (var intervention in interventions)
@@ -408,8 +486,67 @@ namespace SafehavenPMS.Controllers
             if (birthDate.Date > today.AddYears(-age)) age--;
             return age.ToString();
         }
-        
-        
+
+        // AJAX: refresh partial
+        [HttpGet]
+        public async Task<IActionResult> MedicalHistoryPartial(int patientId)
+        {
+            var docs = await _context.PatientDocuments
+                .Where(d => d.PatientId == patientId)
+                .OrderByDescending(d => d.UploadedAt)
+                .ToListAsync();
+
+            var vm = new PatientMedicalHistoryTabViewModel
+            {
+                PatientId = patientId,
+                Documents = docs
+            };
+            return PartialView("ProfileTabs/_MedicalHistory", vm);
+        }
+
+        [HttpPost]
+        [RequestSizeLimit(50_000_000)] // 50 MB
+        public async Task<IActionResult> UploadMedicalHistoryDocument(int patientId, IFormFile file, string? subFolder = null)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Empty file.");
+
+            if (file.Length > 50_000_000)
+                return BadRequest("File too large.");
+
+            var patientExists = await _context.Patients.AnyAsync(p => p.PatientId == patientId);
+            if (!patientExists) return NotFound("Patient not found.");
+
+            // Sanitize filename
+            var originalName = Path.GetFileName(file.FileName);
+            var safeName = string.Join("_", originalName.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
+            if (string.IsNullOrWhiteSpace(safeName)) safeName = Guid.NewGuid().ToString("N");
+
+            await using var stream = file.OpenReadStream();
+            var url = await _cloudSvc.UploadPatientDocumentAsync(stream, safeName, patientId, subFolder);
+            if (string.IsNullOrWhiteSpace(url)) return StatusCode(500, "Upload failed.");
+
+            var doc = new PatientDocument
+            {
+                PatientId = patientId,
+                FileName = safeName,
+                Url = url,
+                ContentType = file.ContentType,
+                UploadedBy = User?.Identity?.Name ?? "System"
+            };
+            _context.PatientDocuments.Add(doc);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                doc.PatientDocumentId,
+                doc.FileName,
+                doc.Url,
+                doc.ContentType,
+                OriginalFileName = originalName,
+                UploadedAt = doc.UploadedAt.ToString("u")
+            });
+        }
     }
 }
 

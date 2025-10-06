@@ -85,7 +85,7 @@
     <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="PsychiatricAssessment" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                 <input type="hidden" name="status" value="@ViewBag.Status" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
@@ -101,24 +101,24 @@
 
         <div class="d-flex align-items-center justify-content-between">
             <!-- Status filter (left of Sort by) -->
-           <div class="me-3">
-                <form asp-controller="Patient" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+             <!-- Status filter (left of Sort by) -->
+            <div class="me-3">
+                <form asp-controller="PsychiatricAssessment" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                     <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
-                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
-                        <option value="Waitlisted" selected='@(ViewBag.Status == "Pending" ? "selected" : "")'>Pending</option>
-                        <option value="PendingAssessment" selected='@(ViewBag.Status == "InProgress" ? "selected" : "")'>In Progress</option>
-                        <option value="PendingAssessment" selected='@(ViewBag.Status == "Completed" ? "selected" : "")'>Completed</option>
-                       
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status as string) || ViewBag.Status == "")">All Statuses</option>
+                        <option value="Pending" selected="@(ViewBag.Status == "Pending" ? "selected" : null)">Pending</option>
+                        <option value="InProgress" selected="@(ViewBag.Status == "InProgress" ? "selected" : null)">In Progress</option>
+                        <option value="Completed" selected="@(ViewBag.Status == "Completed" ? "selected" : null)">Completed</option>
                     </select>
                 </form>
             </div>
 
             <!-- Sort by -->
             <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                <form asp-controller="PsychiatricAssessment" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
                     @* preserve existing query params so logic is unchanged *@
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />

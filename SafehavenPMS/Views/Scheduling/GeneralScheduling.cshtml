@@ -1,4 +1,4 @@
-﻿@model SafehavenPMS.ViewModel.ScheduleAppointmentViewModel
+@model SafehavenPMS.ViewModel.ScheduleAppointmentViewModel
 
 @{
     ViewBag.Title = "New Appointment";
@@ -25,7 +25,7 @@
         <div class="col-md-6 border-end">
 
             <!-- Step 1: Select doctor -->
-            <form asp-controller="Scheduling" asp-action="SelectDoctor" method="post">
+            <form asp-controller="Scheduling" asp-action="GeneralSelectDoctor" method="post">
                 <div class="mb-3">
                     <label class="form-label">Assign Doctor</label>
                     <select asp-for="ClinicalStaffID" asp-items="@ViewBag.StaffList" class="form-select"
@@ -42,7 +42,7 @@
             <!-- Step 2: Date picker -->
             @if (Model.ClinicalStaffID > 0)
             {
-                <form asp-controller="Scheduling" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
+                <form asp-controller="Scheduling" asp-action="GeneralGetDateAndTimeSlots" method="post" id="dateForm">
                     <input type="hidden" asp-for="ClinicalStaffID" />
                     <input type="hidden" name="SelectedDate" id="selectedDate" />
                     <input type="hidden" name="PatientId" value="@Model.PatientId" />
@@ -57,12 +57,11 @@
 
         <!-- ================= RIGHT: Appointment Details ================= -->
         <div class="col-md-6">
-            <form asp-controller="Scheduling" asp-action="ScheduleAppointment" method="post">
+            <form asp-controller="Scheduling" asp-action="GeneralScheduling" method="post">
                 @Html.AntiForgeryToken()
 
                 <!-- Hidden Fields -->
                 <input type="hidden" asp-for="ClinicalStaffID" />
-                <input type="hidden" asp-for="PatientId" />
                 <input type="hidden" asp-for="PatientName" />
 
                 <!-- Hidden Date -->
@@ -88,15 +87,11 @@
 
                 <!-- Patient Info -->
                 <div class="mb-3">
-                    <label class="form-label">Patient</label>
-                    <div class="form-control-plaintext bg-light rounded p-2">
-                        @Model.PatientName
-                    </div>
-                    <input type="hidden" asp-for="PatientId" />
-                    <input type="hidden" asp-for="PatientName" />
+                    <label class="form-label">Select Patient</label>
+                    <select asp-for="PatientId" asp-items="@ViewBag.PatientList" class="form-select" required>
+                        <option value="">--Select Patient--</option>
+                    </select>
                 </div>
-
-
                 <!-- Visit Type -->
                 <div class="mb-3">
                     <label asp-for="VisitType" class="form-label">Visit Type</label>

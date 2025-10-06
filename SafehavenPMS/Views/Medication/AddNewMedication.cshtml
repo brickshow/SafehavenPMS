@@ -2,9 +2,9 @@
 
 @{
     ViewBag.Title = "Add Medication";
-     var tempOrders = ViewBag.TempOrders as List<SafehavenPMS.ViewModel.MedicationOrderViewModel>
-                                         ?? new List<SafehavenPMS.ViewModel.MedicationOrderViewModel>();
-}                    
+    var tempOrders = ViewBag.TempOrders as List<SafehavenPMS.ViewModel.MedicationOrderViewModel>
+                                        ?? new List<SafehavenPMS.ViewModel.MedicationOrderViewModel>();
+}
 
 @* Content Header *@
 <div class="header-content">
@@ -24,8 +24,8 @@
             <div class="card shadow-sm mb-4">
                 <form asp-action="AddMedicationOrder" asp-controller="Medication" method="post">
                     @* carry problem id from Treatment Plan into the posted model *@
-                    <input asp-for="PsyProblemListId" type="hidden" value="@ViewBag.ProblemId"/>
-                    <input asp-for="PatientId" type="hidden" value="@ViewBag.SelectedPatientID"/>
+                    <input asp-for="PsyProblemListId" type="hidden" value="@ViewBag.ProblemId" />
+                    <input asp-for="PatientId" type="hidden" value="@ViewBag.SelectedPatientID" />
                     @Html.AntiForgeryToken()
                     <div class="section-header bg-teal text-white p-2 mb-3" style="background-color: #015F6B;">
                         Patient Medication Details
@@ -231,13 +231,13 @@
         border-radius: 5px;
     }
 
-    .btn-teal:hover {
-        background-color: #148c8c;
-    }
+        .btn-teal:hover {
+            background-color: #148c8c;
+        }
 </style>
 
 <script>
-    const scheduledType = document.getElementById('scheduledType');
+    const scheduledType = document.getElementById('scheduledType'); 
     const daysInterval = document.getElementById('daysInterval');
     const noDiscontinue = document.getElementById('noDiscontinue');
     const discontinueDate = document.getElementById('DiscontinueDate');

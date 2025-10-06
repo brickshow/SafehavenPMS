@@ -26,24 +26,24 @@
 
     @* Print and show number of row section *@
     <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
-        <div class="d-flex align-items-center gap-2">
-            <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
-                <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                <input type="hidden" name="status" value="@ViewBag.Status" />
-                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-                <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
-                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
-                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
-                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
-                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
-                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
-                </select>
-            </form>
-            <div class="d-flex align-items-center gap-2">
-            <input type="date" class="form-control form-control-sm"/>
-        </div>
-        </div>
+                @* <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">Show</span>
+                    <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+                        <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                        <input type="hidden" name="status" value="@ViewBag.Status" />
+                        <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                        <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
+                            <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                            <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                            <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                            <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+                            <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                        </select>
+                    </form>
+                    <div class="d-flex align-items-center gap-2">
+                    <input type="date" class="form-control form-control-sm"/>
+                </div>
+                </div> *@
 
        
         <div class="d-flex align-items-center justify-content-between">
@@ -85,8 +85,8 @@
         </div>                                                                                                                                                                      
     </div>
 
-    <div class="table-responsive-custom m-4 mt-2 mb-5 border">
-        <table class="table mb-0">
+    <div class="table-responsive-custom m-4 mt-2 border">
+        <table class="table mb-3">
             <thead class="table-header-custom table-light">
                 <tr>
                     <th>Photo</th>

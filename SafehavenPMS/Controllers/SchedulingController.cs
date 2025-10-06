@@ -14,7 +14,7 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace SafehavenPMS.Controllers
 {
-[Authorize]
+    [Authorize]
     public class SchedulingController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -125,40 +125,56 @@ namespace SafehavenPMS.Controllers
 
         public async Task<IActionResult> ScheduleAppointment(int? id)
         {
-            var vm = new ScheduleAppointmentViewModel();
-            var patient = await _context.Patients
-                   .FirstOrDefaultAsync(p => p.PatientId == id.Value);
-
-            // Get patient details if ID is provided
-            if (id.HasValue && id > 0)
+            if (id == null)
             {
-
-
-                if (patient != null)
-                {
-                    vm.PatientId = patient.PatientId;
-                    vm.PatientName = $"{patient.Firstname} {patient.Lastname}";
-                }
+                TempData["Error"] = "No patient selected.";
+                return RedirectToAction("Index");
             }
 
-            ViewBag.StaffList = await _context.ClinicalStaffs
-                .Where(s => s.Position == "Physician")
-                .Select(s => new SelectListItem
-                {
-                    Value = s.ClinicalStaffID.ToString(),
-                    Text = s.Firstname + " " + s.Lastname
-                })
-                .ToListAsync();
+            var vm = new ScheduleAppointmentViewModel();
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id.Value);
 
-            // Only get patient if not already provided
-            if (!id.HasValue)
+            // Pre-populate from latest NewAppointment if exists
+            var latestAppt = await _context.NewAppointments
+                .Where(a => a.PatientId == id && a.Status != "Completed")
+                .OrderByDescending(a => a.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (patient != null)
             {
-                ViewBag.PatientList = await _context.Patients
-                    .Select(p => new SelectListItem
+                vm.PatientId = patient.PatientId;
+                vm.PatientName = $"{patient.Firstname} {patient.Lastname}";
+            }
+
+            if (latestAppt != null)
+            {
+                vm.ClinicalStaffID = latestAppt.ClinicalStaffID ?? 0;
+                vm.SelectedDate = latestAppt.ScheduleDate ?? DateTime.Today;
+                vm.TimeSlot = latestAppt.ScheduleTime;
+                vm.VisitType = latestAppt.Type;
+                vm.Description = latestAppt.Notes;
+            }
+
+            // Only show psychiatrists if type is PsychiatricAssesment
+            if (string.Equals(vm.VisitType, "PsychiatricAssesment", StringComparison.OrdinalIgnoreCase))
+            {
+                ViewBag.StaffList = await _context.ClinicalStaffs
+                    .Where(s => s.Position == "Psychiatrist")
+                    .Select(s => new SelectListItem
                     {
-                        Value = p.PatientId.ToString(),
-                        Text = p.Firstname + " " + p.Lastname,
-                        Selected = id.HasValue && p.PatientId == id.Value
+                        Value = s.ClinicalStaffID.ToString(),
+                        Text = s.Firstname + " " + s.Lastname
+                    })
+                    .ToListAsync();
+            }
+            else
+            {
+                ViewBag.StaffList = await _context.ClinicalStaffs
+                    .Where(s => s.Position == "Physician")
+                    .Select(s => new SelectListItem
+                    {
+                        Value = s.ClinicalStaffID.ToString(),
+                        Text = s.Firstname + " " + s.Lastname
                     })
                     .ToListAsync();
             }
@@ -166,8 +182,7 @@ namespace SafehavenPMS.Controllers
             ViewBag.PatientId = id;
             ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
             ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
-            ViewBag.SelectedDate = null;
-            ViewBag.VisitType = patient?.NewAppointments?.FirstOrDefault()?.Type;
+            ViewBag.SelectedDate = vm.SelectedDate;
 
             return View(vm);
         }
@@ -408,6 +423,11 @@ namespace SafehavenPMS.Controllers
                         Selected = s.StartTime.ToString() == model.TimeSlot
                     }).ToList();
                 }
+                else
+                {
+                    ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+                    ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
+                }
 
                 ViewBag.SelectedDate = model.SelectedDate;
                 TempData["ErrorMessage"] = "Please fill in all required fields.";
@@ -641,7 +661,7 @@ namespace SafehavenPMS.Controllers
             }
         }
 
-         [HttpPost]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelAppointment(int scheduleId)
         {
@@ -695,6 +715,785 @@ namespace SafehavenPMS.Controllers
                 TempData["Error"] = "Failed to cancel appointment.";
             }
 
+            return RedirectToAction("Index");
+        }
+
+        // GET: Scheduling/PsySchedule/5
+        [HttpGet]
+        public async Task<IActionResult> PsySchedule(int? id = null)
+        {
+            if (id == null)
+                return View();
+
+            var vm = new ScheduleAppointmentViewModel();
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id.Value);
+
+            // Pre-populate from latest Psychiatric Assessment appointment if exists
+            var latestPsyAppt = await _context.NewAppointments
+                .Where(a => a.PatientId == id && a.Type == "Psychiatric Assessment")
+                .OrderByDescending(a => a.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (patient != null)
+            {
+                vm.PatientId = patient.PatientId;
+                vm.PatientName = $"{patient.Firstname} {patient.Lastname}";
+            }
+
+            if (latestPsyAppt != null)
+            {
+                vm.ClinicalStaffID = latestPsyAppt.ClinicalStaffID ?? 0;
+                vm.SelectedDate = latestPsyAppt.ScheduleDate ?? DateTime.Today;
+                vm.TimeSlot = latestPsyAppt.ScheduleTime;
+                vm.VisitType = latestPsyAppt.Type;
+                vm.Description = latestPsyAppt.Notes;
+            }
+            else
+            {
+                vm.VisitType = "Psychiatric Assessment";
+                vm.SelectedDate = DateTime.Today;
+            }
+
+            // Only show psychiatrists in the staff list
+            ViewBag.StaffList = await _context.ClinicalStaffs
+                .Where(s => s.Position == "Psychiatrist")
+                .Select(s => new SelectListItem
+                {
+                    Value = s.ClinicalStaffID.ToString(),
+                    Text = s.Firstname + " " + s.Lastname
+                })
+                .ToListAsync();
+
+            ViewBag.PatientId = id;
+            ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+            ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
+            ViewBag.SelectedDate = vm.SelectedDate;
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PsySchedule(ScheduleAppointmentViewModel model)
+        {
+            // Validate required fields
+            if (model.ClinicalStaffID <= 0)
+            {
+                ModelState.AddModelError("ClinicalStaffID", "Please select a psychiatrist");
+            }
+            if (string.IsNullOrEmpty(model.TimeSlot))
+            {
+                ModelState.AddModelError("TimeSlot", "Please select a time slot");
+            }
+            if (model.SelectedDate == default(DateTime))
+            {
+                ModelState.AddModelError("SelectedDate", "Please select a date");
+            }
+            if (string.IsNullOrEmpty(model.VisitType))
+            {
+                ModelState.AddModelError("VisitType", "Please select a visit type");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Only show psychiatrists in the staff list
+                ViewBag.StaffList = await _context.ClinicalStaffs
+                    .Where(s => s.Position == "Psychiatrist")
+                    .Select(s => new SelectListItem
+                    {
+                        Value = s.ClinicalStaffID.ToString(),
+                        Text = s.Firstname + " " + s.Lastname
+                    })
+                    .ToListAsync();
+
+                // Get available time slots for the selected date
+                if (model.SelectedDate != default(DateTime) && model.ClinicalStaffID > 0)
+                {
+                    var date = model.SelectedDate.Date;
+                    var dow = date.DayOfWeek;
+
+                    var slots = await _context.Availabilities
+                        .Where(a => a.ClinicalStaffID == model.ClinicalStaffID
+                                  && (a.SlotDate == date || (a.SlotDate == null && a.Day == dow))
+                                  && a.Status == AvailabilityStatus.Available.ToString())
+                        .OrderBy(a => a.StartTime)
+                        .ToListAsync();
+
+                    ViewBag.AvailableTimes = slots;
+                    ViewBag.TimeSlotList = slots.Select(s => new SelectListItem
+                    {
+                        Value = s.StartTime.ToString(),
+                        Text = $"{s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm}",
+                        Selected = s.StartTime.ToString() == model.TimeSlot
+                    }).ToList();
+                }
+                else
+                {
+                    ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+                    ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
+                }
+
+                ViewBag.SelectedDate = model.SelectedDate;
+                TempData["ErrorMessage"] = "Please fill in all required fields.";
+                return View(model);
+            }
+
+            // Find the exact availability slot that was booked
+            var availability = await _context.Availabilities
+                .FirstOrDefaultAsync(a => a.ClinicalStaffID == model.ClinicalStaffID
+                            && a.StartTime == TimeSpan.Parse(model.TimeSlot)
+                            && (a.SlotDate == model.SelectedDate || (a.SlotDate == null && a.Day == model.SelectedDate.DayOfWeek)));
+
+            if (availability != null)
+            {
+                // Mark the availability slot as scheduled
+                availability.Status = AvailabilityStatus.Scheduled.ToString();
+                _context.Availabilities.Update(availability);
+            }
+
+            // Set required fields
+            model.Status = SchedulingStatus.Scheduled.ToString();
+
+            // Get ClinicalStaffName
+            var doctor = await _context.ClinicalStaffs
+                .FirstOrDefaultAsync(s => s.ClinicalStaffID == model.ClinicalStaffID);
+            if (doctor != null)
+            {
+                model.ClinicalStaffName = $"{doctor.Firstname} {doctor.Lastname}";
+            }
+
+            // Find existing psychiatric assessment appointment for this patient
+            var existingAppointment = await _context.NewAppointments
+                .FirstOrDefaultAsync(a => a.PatientId == model.PatientId && a.Type == "Psychiatric Assessment");
+
+            if (existingAppointment != null)
+            {
+                // Update existing appointment
+                existingAppointment.ClinicalStaffID = model.ClinicalStaffID;
+                existingAppointment.ScheduleTime = model.TimeSlot;
+                existingAppointment.ScheduleDate = model.SelectedDate;
+                existingAppointment.Type = model.VisitType;
+                existingAppointment.Status = SchedulingStatus.Scheduled.ToString();
+                existingAppointment.Notes = model.Description;
+            }
+            else
+            {
+                // If no existing appointment, create new one
+                existingAppointment = new NewAppointment
+                {
+                    ClinicalStaffID = model.ClinicalStaffID,
+                    PatientId = model.PatientId,
+                    ScheduleTime = model.TimeSlot,
+                    ScheduleDate = model.SelectedDate,
+                    Type = model.VisitType,
+                    Status = SchedulingStatus.Scheduled.ToString(),
+                    Notes = model.Description
+                };
+                _context.NewAppointments.Add(existingAppointment);
+            }
+
+            // Assign psychiatrist to patient if not already assigned
+            var doctorAssignment = await _context.ClinicalStaffPatients
+                .FirstOrDefaultAsync(csp => csp.PatientId == model.PatientId);
+
+            if (doctorAssignment != null)
+            {
+                if (doctorAssignment.ClinicalStaffId != model.ClinicalStaffID)
+                {
+                    // Remove old assignment (since PK cannot be changed)
+                    _context.ClinicalStaffPatients.Remove(doctorAssignment);
+                    await _context.SaveChangesAsync();
+
+                    // Add new assignment
+                    var newAssignment = new ClinicalStaffPatient
+                    {
+                        ClinicalStaffId = model.ClinicalStaffID ?? 0,
+                        PatientId = model.PatientId
+                    };
+                    _context.ClinicalStaffPatients.Add(newAssignment);
+                }
+            }
+            else
+            {
+                var newAssignment = new ClinicalStaffPatient
+                {
+                    ClinicalStaffId = model.ClinicalStaffID ?? 0,
+                    PatientId = model.PatientId
+                };
+                _context.ClinicalStaffPatients.Add(newAssignment);
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex);
+                ModelState.AddModelError("", "Failed to save appointment: " + ex.Message);
+                TempData["ErrorMessage"] = "Failed to save appointment.";
+                return View(model);
+            }
+
+            TempData["SuccessMessage"] = "Psychiatric appointment scheduled successfully.";
+            return RedirectToAction("Index");
+        }
+
+         [HttpPost]
+        public async Task<IActionResult> SelectPsyDoctor(ScheduleAppointmentViewModel model)
+        {
+            // If no doctor selected, just reload the form
+            if (model.ClinicalStaffID <= 0)
+            {
+                ViewBag.StaffList = await _context.ClinicalStaffs
+                    .Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = s.ClinicalStaffID.ToString(),
+                        Text = $"{s.Firstname} {s.Lastname}"
+                    }).ToListAsync();
+
+                // Preserve patient selection
+                ViewBag.PatientList = await _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.Firstname + " " + p.Lastname,
+                        Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                    })
+                    .ToListAsync();
+
+                return View("ScheduleAppointment", model);
+            }
+
+            // Put the selected doctor back into the model
+            model.ClinicalStaffID = model.ClinicalStaffID;
+
+            // Make sure PatientFullname is set again
+            if (model.PatientId > 0)
+            {
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == model.PatientId)
+                    .Select(p => new { p.Firstname, p.Lastname })
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                    model.PatientName = $"{patient.Firstname} {patient.Lastname}";
+            }
+
+
+            // Fill doctor list again
+            ViewBag.StaffList = await _context.ClinicalStaffs
+                .Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = s.ClinicalStaffID.ToString(),
+                    Text = $"{s.Firstname} {s.Lastname}"
+                }).ToListAsync();
+
+            // Preserve patient selection
+            ViewBag.PatientList = await _context.Patients
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname,
+                    Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                })
+                .ToListAsync();
+
+            return View("PsySchedule", model);
+        }
+        
+        // POST: user picked a date (after picking a doctor)
+        [HttpPost]
+        public async Task<IActionResult> PsyGetDateAndTimeSlots(ScheduleAppointmentViewModel model)
+        {
+            // Re-fill staff dropdown
+            ViewBag.StaffList = await _context.ClinicalStaffs
+                .Select(s => new SelectListItem
+                {
+                    Value = s.ClinicalStaffID.ToString(),
+                    Text = (s.Firstname + " " + s.Lastname)
+                })
+                .ToListAsync();
+
+            if (model.ClinicalStaffID == null || model.ClinicalStaffID <= 0 || model.SelectedDate == null)
+            {
+                ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+                ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
+                ViewBag.SelectedDate = model.SelectedDate;
+
+                // Preserve patient list even when no date is selected
+                ViewBag.PatientList = await _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.Firstname + " " + p.Lastname,
+                        Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                    })
+                    .ToListAsync();
+
+                return View("ScheduleAppointment", model);
+            }
+
+            var date = model.SelectedDate.Date;
+            var dow = date.DayOfWeek;
+
+            // 1. Get recurring or date-specific availability
+            var slots = await _context.Availabilities
+                .Where(a => a.ClinicalStaffID == model.ClinicalStaffID
+                            && (
+                                a.SlotDate == date
+                                || (a.SlotDate == null && a.Day == dow)
+                            )
+                            && a.Status == Enum.AvailabilityStatus.Available.ToString())
+                .OrderBy(a => a.StartTime)
+                .ToListAsync();
+
+            // 2. Get all occupied appointments (Pending, Confirmed, Booked)
+            var takenAppointments = await _context.NewAppointments
+                .Where(appt => appt.ClinicalStaffID == model.ClinicalStaffID
+                            && appt.ScheduleDate == date
+                            && (appt.Status == Enum.AppointmentEnum.Pending.ToString()
+                                || appt.Status == Enum.AppointmentEnum.Confirmed.ToString()
+                                || appt.Status == Enum.AppointmentEnum.Booked.ToString()))
+                .ToListAsync();
+
+            // 3. Filter out slots that overlap
+            var freeSlots = slots
+                .Where(slot =>
+                    !takenAppointments.Any(appt =>
+                        TimeSpan.Parse(appt.ScheduleTime) >= slot.StartTime &&
+                        TimeSpan.Parse(appt.ScheduleTime) < slot.EndTime   // falls inside this availability
+                    )
+                )
+                .ToList();
+
+            foreach (var s in freeSlots)
+            {
+                Console.WriteLine(freeSlots);
+            }
+
+            //  Preserve patient fullname
+            if (model.PatientId > 0)
+            {
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == model.PatientId)
+                    .Select(p => new { p.Firstname, p.Lastname })
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                    model.PatientName = $"{patient.Firstname} {patient.Lastname}";
+            }
+
+            // Patient dropdown - preserve selection
+            ViewBag.PatientList = await _context.Patients
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname,
+                    Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                })
+                .ToListAsync();
+
+            ViewBag.AvailableTimes = freeSlots;
+            ViewBag.SelectedDate = date.ToString("yyyy-MM-dd");
+
+            // Generate timeslot dropdown
+            ViewBag.TimeSlotList = freeSlots.Select(s => new SelectListItem
+            {
+                Value = s.StartTime.ToString(),
+                Text = $"{s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm}"
+            }).ToList();
+
+            return View("PsySchedule", model);
+        }
+
+       [HttpGet]
+        public async Task<IActionResult> GeneralScheduling()
+        {
+            var vm = new ScheduleAppointmentViewModel();
+
+            // Show all doctors by default
+            ViewBag.StaffList = await _context.ClinicalStaffs
+                .Select(s => new SelectListItem
+                {
+                    Value = s.ClinicalStaffID.ToString(),
+                    Text = s.Firstname + " " + s.Lastname
+                })
+                .ToListAsync();
+
+            // Get patients with status Intreatment or Admitted
+            ViewBag.PatientList = await _context.Patients
+                .Where(p => p.PatientStatus == PatientStatusEnum.InTreatment.ToString()
+                        || p.PatientStatus == PatientStatusEnum.Admitted.ToString())
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname
+                })
+                .ToListAsync();
+
+            ViewBag.PatientId = null;
+            ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+            ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
+            ViewBag.SelectedDate = null;
+
+            return View("GeneralScheduling", vm);
+        }
+
+        // POST: Select doctor for general scheduling
+        [HttpPost]
+        public async Task<IActionResult> GeneralSelectDoctor(ScheduleAppointmentViewModel model)
+        {
+            if (model.ClinicalStaffID <= 0)
+            {
+                ViewBag.StaffList = await _context.ClinicalStaffs
+                    .Select(s => new SelectListItem
+                    {
+                        Value = s.ClinicalStaffID.ToString(),
+                        Text = $"{s.Firstname} {s.Lastname}"
+                    }).ToListAsync();
+
+                // Preserve patient selection
+                ViewBag.PatientList = await _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.Firstname + " " + p.Lastname,
+                        Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                    })
+                    .ToListAsync();
+
+                return View("GeneralScheduling", model);
+            }
+
+            // Put the selected doctor back into the model
+            model.ClinicalStaffID = model.ClinicalStaffID;
+
+            // Make sure PatientFullname is set again
+            if (model.PatientId > 0)
+            {
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == model.PatientId)
+                    .Select(p => new { p.Firstname, p.Lastname })
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                    model.PatientName = $"{patient.Firstname} {patient.Lastname}";
+            }
+
+            // Fill doctor list again
+            ViewBag.StaffList = await _context.ClinicalStaffs
+                .Select(s => new SelectListItem
+                {
+                    Value = s.ClinicalStaffID.ToString(),
+                    Text = $"{s.Firstname} {s.Lastname}"
+                }).ToListAsync();
+
+            // Preserve patient selection
+            ViewBag.PatientList = await _context.Patients
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname,
+                    Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                })
+                .ToListAsync();
+
+            return View("GeneralScheduling", model);
+        }
+
+        // POST: Get date and time slots for general scheduling
+        [HttpPost]
+        public async Task<IActionResult> GeneralGetDateAndTimeSlots(ScheduleAppointmentViewModel model)
+        {
+            ViewBag.StaffList = await _context.ClinicalStaffs
+                .Select(s => new SelectListItem
+                {
+                    Value = s.ClinicalStaffID.ToString(),
+                    Text = (s.Firstname + " " + s.Lastname)
+                })
+                .ToListAsync();
+
+            if (model.ClinicalStaffID == null || model.ClinicalStaffID <= 0 || model.SelectedDate == null)
+            {
+                ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+                ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
+                ViewBag.SelectedDate = model.SelectedDate;
+
+                ViewBag.PatientList = await _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.Firstname + " " + p.Lastname,
+                        Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                    })
+                    .ToListAsync();
+
+                return View("GeneralScheduling", model);
+            }
+
+            var date = model.SelectedDate.Date;
+            var dow = date.DayOfWeek;
+
+            var slots = await _context.Availabilities
+                .Where(a => a.ClinicalStaffID == model.ClinicalStaffID
+                            && (
+                                a.SlotDate == date
+                                || (a.SlotDate == null && a.Day == dow)
+                            )
+                            && a.Status == Enum.AvailabilityStatus.Available.ToString())
+                .OrderBy(a => a.StartTime)
+                .ToListAsync();
+
+            var takenAppointments = await _context.NewAppointments
+                .Where(appt => appt.ClinicalStaffID == model.ClinicalStaffID
+                            && appt.ScheduleDate == date
+                            && (appt.Status == Enum.AppointmentEnum.Pending.ToString()
+                                || appt.Status == Enum.AppointmentEnum.Confirmed.ToString()
+                                || appt.Status == Enum.AppointmentEnum.Booked.ToString()))
+                .ToListAsync();
+
+            var freeSlots = slots
+                .Where(slot =>
+                    !takenAppointments.Any(appt =>
+                        TimeSpan.Parse(appt.ScheduleTime) >= slot.StartTime &&
+                        TimeSpan.Parse(appt.ScheduleTime) < slot.EndTime
+                    )
+                )
+                .ToList();
+
+            if (model.PatientId > 0)
+            {
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == model.PatientId)
+                    .Select(p => new { p.Firstname, p.Lastname })
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                    model.PatientName = $"{patient.Firstname} {patient.Lastname}";
+            }
+
+            ViewBag.PatientList = await _context.Patients
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Firstname + " " + p.Lastname,
+                    Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                })
+                .ToListAsync();
+
+            ViewBag.AvailableTimes = freeSlots;
+            ViewBag.SelectedDate = date.ToString("yyyy-MM-dd");
+
+            ViewBag.TimeSlotList = freeSlots.Select(s => new SelectListItem
+            {
+                Value = s.StartTime.ToString(),
+                Text = $"{s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm}"
+            }).ToList();
+
+            return View("GeneralScheduling", model);
+        }
+
+        // POST: General scheduling
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GeneralScheduling(ScheduleAppointmentViewModel model)
+        {
+            // Always populate PatientName if PatientId is present
+            if (model.PatientId > 0 && string.IsNullOrWhiteSpace(model.PatientName))
+            {
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == model.PatientId)
+                    .Select(p => new { p.Firstname, p.Lastname })
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                    model.PatientName = $"{patient.Firstname} {patient.Lastname}";
+            }
+
+            // Validate required fields
+            if (model.ClinicalStaffID <= 0)
+            {
+                ModelState.AddModelError("ClinicalStaffID", "Please select a doctor");
+            }
+            if (string.IsNullOrEmpty(model.TimeSlot))
+            {
+                ModelState.AddModelError("TimeSlot", "Please select a time slot");
+            }
+            if (model.SelectedDate == default(DateTime))
+            {
+                ModelState.AddModelError("SelectedDate", "Please select a date");
+            }
+            if (model.PatientId <= 0)
+            {
+                ModelState.AddModelError("PatientId", "Please select a patient");
+            }
+            if (string.IsNullOrEmpty(model.VisitType))
+            {
+                ModelState.AddModelError("VisitType", "Please select a visit type");
+            }
+            if (string.IsNullOrWhiteSpace(model.PatientName))
+            {
+                ModelState.AddModelError("PatientName", "Patient name could not be determined.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Repopulate dropdowns
+                ViewBag.StaffList = await _context.ClinicalStaffs
+                    .Select(s => new SelectListItem
+                    {
+                        Value = s.ClinicalStaffID.ToString(),
+                        Text = s.Firstname + " " + s.Lastname
+                    })
+                    .ToListAsync();
+
+                ViewBag.PatientList = await _context.Patients
+                    .Where(p => p.PatientStatus == PatientStatusEnum.InTreatment.ToString()
+                             || p.PatientStatus == PatientStatusEnum.Admitted.ToString())
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.Firstname + " " + p.Lastname,
+                        Selected = model.PatientId > 0 && p.PatientId == model.PatientId
+                    })
+                    .ToListAsync();
+
+                // Get available time slots for the selected date
+                if (model.SelectedDate != default(DateTime) && model.ClinicalStaffID > 0)
+                {
+                    var date = model.SelectedDate.Date;
+                    var dow = date.DayOfWeek;
+
+                    var slots = await _context.Availabilities
+                        .Where(a => a.ClinicalStaffID == model.ClinicalStaffID
+                                  && (a.SlotDate == date || (a.SlotDate == null && a.Day == dow))
+                                  && a.Status == AvailabilityStatus.Available.ToString())
+                        .OrderBy(a => a.StartTime)
+                        .ToListAsync();
+
+                    ViewBag.AvailableTimes = slots;
+                    ViewBag.TimeSlotList = slots.Select(s => new SelectListItem
+                    {
+                        Value = s.StartTime.ToString(),
+                        Text = $"{s.StartTime:hh\\:mm} - {s.EndTime:hh\\:mm}",
+                        Selected = s.StartTime.ToString() == model.TimeSlot
+                    }).ToList();
+                }
+                else
+                {
+                    ViewBag.AvailableTimes = Enumerable.Empty<Availability>().ToList();
+                    ViewBag.TimeSlotList = Enumerable.Empty<SelectListItem>().ToList();
+                }
+
+                foreach (var entry in ModelState)
+                {
+                    var key = entry.Key;
+                    var errors = entry.Value.Errors;
+                    foreach (var error in errors)
+                    {
+                        Console.WriteLine($"Field: {key} - Error: {error.ErrorMessage}");
+                    }
+                }
+
+
+                ViewBag.SelectedDate = model.SelectedDate;
+                TempData["ErrorMessage"] = "Please fill in all required fields.";
+                TempData["SuccessMessage"] = "Please fill in all required fields.";
+                return View("GeneralScheduling", model);
+
+
+            }
+
+            // Find the exact availability slot that was booked
+            var availability = await _context.Availabilities
+                .FirstOrDefaultAsync(a => a.ClinicalStaffID == model.ClinicalStaffID
+                            && a.StartTime == TimeSpan.Parse(model.TimeSlot)
+                            && (a.SlotDate == model.SelectedDate || (a.SlotDate == null && a.Day == model.SelectedDate.DayOfWeek)));
+
+            if (availability != null)
+            {
+                // Mark the availability slot as scheduled
+                availability.Status = AvailabilityStatus.Scheduled.ToString();
+                _context.Availabilities.Update(availability);
+            }
+
+            // Set required fields
+            model.Status = SchedulingStatus.Scheduled.ToString();
+
+            // Get ClinicalStaffName
+            var doctor = await _context.ClinicalStaffs
+                .FirstOrDefaultAsync(s => s.ClinicalStaffID == model.ClinicalStaffID);
+            if (doctor != null)
+            {
+                model.ClinicalStaffName = $"{doctor.Firstname} {doctor.Lastname}";
+            }
+
+            // Find existing appointment for this patient and type
+            var existingAppointment = await _context.NewAppointments
+                .FirstOrDefaultAsync(a => a.PatientId == model.PatientId && a.Type == model.VisitType);
+
+            if (existingAppointment != null)
+            {
+                // Update existing appointment
+                existingAppointment.ClinicalStaffID = model.ClinicalStaffID;
+                existingAppointment.ScheduleTime = model.TimeSlot;
+                existingAppointment.ScheduleDate = model.SelectedDate;
+                existingAppointment.Type = model.VisitType;
+                existingAppointment.Status = SchedulingStatus.Scheduled.ToString();
+                existingAppointment.Notes = model.Description;
+            }
+            else
+            {
+                // If no existing appointment, create new one
+                existingAppointment = new NewAppointment
+                {
+                    ClinicalStaffID = model.ClinicalStaffID,
+                    PatientId = model.PatientId,
+                    ScheduleTime = model.TimeSlot,
+                    ScheduleDate = model.SelectedDate,
+                    Type = model.VisitType,
+                    Status = SchedulingStatus.Scheduled.ToString(),
+                    Notes = model.Description
+                };
+                _context.NewAppointments.Add(existingAppointment);
+            }
+
+            // Assign doctor to patient if not already assigned
+            var doctorAssignment = await _context.ClinicalStaffPatients
+                .FirstOrDefaultAsync(csp => csp.PatientId == model.PatientId);
+
+            if (doctorAssignment != null)
+            {
+                if (doctorAssignment.ClinicalStaffId != model.ClinicalStaffID)
+                {
+                    doctorAssignment.ClinicalStaffId = model.ClinicalStaffID ?? 0;
+                    _context.ClinicalStaffPatients.Update(doctorAssignment);
+                }
+            }
+            else
+            {
+                var newAssignment = new ClinicalStaffPatient
+                {
+                    ClinicalStaffId = model.ClinicalStaffID ?? 0,
+                    PatientId = model.PatientId
+                };
+                _context.ClinicalStaffPatients.Add(newAssignment);
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex);
+                ModelState.AddModelError("", "Failed to save appointment: " + ex.Message);
+                TempData["ErrorMessage"] = "Failed to save appointment.";
+                return View("GeneralScheduling", model);
+            }
+
+            TempData["SuccessMessage"] = "Appointment scheduled successfully.";
             return RedirectToAction("Index");
         }
     }

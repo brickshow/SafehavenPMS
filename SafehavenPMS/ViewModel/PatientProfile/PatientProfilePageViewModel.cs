@@ -46,9 +46,10 @@ namespace SafehavenPMS.ViewModel
     }
     public class PatientMedicalHistoryTabViewModel
     {
-        // Add properties relevant to medical history
+        public int PatientId { get; set; }
+        public List<PatientDocument> Documents { get; set; } = new();
+        public bool CanUpload { get; set; } = true; // toggle if needed later
     }
-    public class PatientClinicalFormTabViewModel { }
 
     // replaced empty ProgressNotes VM with a bindable model + helper VM types
     public class PatientProgressNotesTabViewModel

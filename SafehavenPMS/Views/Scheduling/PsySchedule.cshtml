@@ -1,4 +1,4 @@
-﻿@model SafehavenPMS.ViewModel.ScheduleAppointmentViewModel
+@model SafehavenPMS.ViewModel.ScheduleAppointmentViewModel
 
 @{
     ViewBag.Title = "New Appointment";
@@ -25,12 +25,12 @@
         <div class="col-md-6 border-end">
 
             <!-- Step 1: Select doctor -->
-            <form asp-controller="Scheduling" asp-action="SelectDoctor" method="post">
+            <form asp-controller="Scheduling" asp-action="SelectPsyDoctor" method="post">
                 <div class="mb-3">
-                    <label class="form-label">Assign Doctor</label>
+                    <label class="form-label">Assign Psychiatrist</label>
                     <select asp-for="ClinicalStaffID" asp-items="@ViewBag.StaffList" class="form-select"
                         onchange="this.form.submit()">
-                        <option value="">--Select Doctor--</option>
+                        <option value="">--Select Psychiatrist--</option>
                     </select>
                 </div>
 
@@ -42,7 +42,7 @@
             <!-- Step 2: Date picker -->
             @if (Model.ClinicalStaffID > 0)
             {
-                <form asp-controller="Scheduling" asp-action="GetDateAndTimeSlots" method="post" id="dateForm">
+                <form asp-controller="Scheduling" asp-action="PsyGetDateAndTimeSlots" method="post" id="dateForm">
                     <input type="hidden" asp-for="ClinicalStaffID" />
                     <input type="hidden" name="SelectedDate" id="selectedDate" />
                     <input type="hidden" name="PatientId" value="@Model.PatientId" />
@@ -57,7 +57,7 @@
 
         <!-- ================= RIGHT: Appointment Details ================= -->
         <div class="col-md-6">
-            <form asp-controller="Scheduling" asp-action="ScheduleAppointment" method="post">
+            <form asp-controller="Scheduling" asp-action="PsySchedule" method="post">
                 @Html.AntiForgeryToken()
 
                 <!-- Hidden Fields -->
@@ -102,7 +102,7 @@
                     <label asp-for="VisitType" class="form-label">Visit Type</label>
                     <select asp-for="VisitType" class="form-select">
                         <option value="Initial Assessment">Initial Assessment</option>
-                        <option value="Psychiatric Assessment">Psychiatric Assessment</option>
+                        <option value="Psychiatric Assessment" selected>Psychiatric Assessment</option>
                         <option value="Emergency Visit">Emergency Visit</option>
                         <option value="Follow-Up Treatment">Follow-Up Treatment</option>
                         <option value="Others">Others</option>
@@ -118,7 +118,7 @@
 
                 <!-- Footer -->
                 <div class="modal-footer bg-white border-top">
-                    <a href="@Url.Action("Index", "Scheduling")"
+                    <a href="@Url.Action("Index", "Appointment")"
                         class="btn-cancel btn-secondary m-2 text-decoration-none">Cancel</a>
                     <button type="submit" class="btn-custom btn-next m-2">Save</button>
                 </div>

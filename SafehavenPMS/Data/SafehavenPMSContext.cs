@@ -70,6 +70,7 @@ namespace SafehavenPMS.Data
         public DbSet<SafehavenPMS.Models.Billable> Billables { get; set; }
         public DbSet<SafehavenPMS.Models.Invoice> Invoices { get; set; }
         public DbSet<SafehavenPMS.Models.InvoiceLine> InvoiceLines { get; set; }
+        public DbSet<PatientDocument> PatientDocuments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

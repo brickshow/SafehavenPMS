@@ -27,92 +27,89 @@ namespace safehavenpms.Controllers
                                                 int? pageSize = 10,
                                                 string searchQuery = null,
                                                 string status = null,
-                                                string sortOrder = null)
+                                                string sortOrder = null,
+                                                string sortBy = null)
         {
             var query = _context.Patients
-                        .Include(pt => pt.PsychiatricAssessments)
-                        .AsQueryable();
+                .Include(pt => pt.PsychiatricAssessments)
+                .AsQueryable();
 
-            // Pass current filters/sorting to view
-            ViewBag.CurrentPage = page ?? 1;
-            ViewBag.PageSize = pageSize ?? 10;
-            ViewBag.SearchQuery = searchQuery;
-            ViewBag.Status = status;
-            ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
-
-            //Apply search filter
+            // Search filter
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 searchQuery = searchQuery.ToLower();
                 query = query.Where(p =>
-                    // ensure patient is not null before accessing its names, and guard each name with ?? ""
-                    (p != null &&
-                        (
-                            (p.Firstname ?? "").ToLower().Contains(searchQuery) ||
-                            (p.Lastname ?? "").ToLower().Contains(searchQuery)
-                        )
-                    )
-                    // allow matching by PatientId as well
-                    || p.PatientId.ToString().Contains(searchQuery)
+                    (p.Firstname ?? "").ToLower().Contains(searchQuery) ||
+                    (p.Lastname ?? "").ToLower().Contains(searchQuery) ||
+                    p.PatientId.ToString().Contains(searchQuery)
                 );
+            }   
+
+           // Status filter using PatientStatusEnum
+           if (!string.IsNullOrEmpty(status))
+            {
+                if (status == "Pending")
+                {
+                    // Patients with NO assessments are considered Pending
+                    query = query.Where(p => !p.PsychiatricAssessments.Any());
+                }
+                else
+                {
+                    // Patients with ANY assessment matching the selected status
+                    query = query.Where(p => p.PsychiatricAssessments.Any(a => a.Status == status));
+                }
             }
 
-            // Apply status filter (default = All)
-            if (!string.IsNullOrEmpty(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
-            {
-                query = query.Where(p => p.PatientStatus.ToString() == status);
-            }
-
-            //Apply sorting
-            if (sortOrder == null)
-            {
-                query = query.OrderByDescending(p => p.CreatedAt);
-            }
-            else
+            // Sorting
+            if (string.IsNullOrEmpty(sortBy) || sortBy == "Name")
             {
                 query = sortOrder == "ascending"
                     ? query.OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
                     : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
             }
+            else if (sortBy == "ScheduledDate")
+            {
+                query = sortOrder == "ascending"
+                    ? query.OrderBy(p => p.CreatedAt)
+                    : query.OrderByDescending(p => p.CreatedAt);
+            }
 
             // Pagination
             int totalItems = await query.CountAsync();
             int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
-            ViewBag.TotalPages = totalPages;
-
             int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
-            ViewBag.CurrentPage = currentPage;
 
             var patientList = await query
                 .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
 
-
-            // Project to PsychiatricAssessmentViewModel
+            // Project to ViewModel
             var psychiatricViewModels = patientList
-                .Where(p => p.PatientStatus == PatientStatusEnum.Admitted.ToString())
                 .Select(p => {
-                    var assessment = p.PsychiatricAssessments.FirstOrDefault();
+                    var assessment = p.PsychiatricAssessments.OrderByDescending(a => a.CreatedAt).FirstOrDefault();
                     return new PsychiatricAssessmentViewModel
                     {
                         PatientId = p.PatientId,
                         FullName = $"{p.Firstname} {p.Lastname}",
                         Type = assessment?.Type ?? "-",
-                        Date = p.CreatedAt,
-                        CompletedDate = assessment?.CompletedDate,  
+                        Date = assessment?.Date ?? p.CreatedAt,
+                        CompletedDate = assessment?.CompletedDate,
                         Status = assessment?.Status ?? "Pending"
                     };
-                }).ToList() ?? new List<PsychiatricAssessmentViewModel>();
+                }).ToList();
 
-            //Return Total number of new pending
-            var Pending = await _context.PsychiatricAssessments
-                                    .Where(p => p.Status != PsychiatricEnumStatus.InProgress.ToString() &&
-                                                p.Status != PsychiatricEnumStatus.Completed.ToString())
-                                    .ToListAsync();
+            // Pass filter/sort/search state to view
+            ViewBag.CurrentPage = currentPage;
+            ViewBag.PageSize = pageSize ?? 10;
+            ViewBag.SearchQuery = searchQuery;
+            ViewBag.Status = status;
+            ViewBag.SortOrder = sortOrder ?? "descending";
+            ViewBag.SortBy = sortBy;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalPatientCount = totalItems;
 
-            ViewBag.Pending = Pending.Count();
-            return View(psychiatricViewModels); 
+            return View(psychiatricViewModels);
         }
 
         [HttpGet]
@@ -522,13 +519,13 @@ namespace safehavenpms.Controllers
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
         }
 
-        [HttpPost]
+      [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitAssessment(int patientId)
         {
             // Find the assessment by patientId
             var assessment = await _context.PsychiatricAssessments
-                                           .FirstOrDefaultAsync(a => a.PatientId == patientId);
+                                        .FirstOrDefaultAsync(a => a.PatientId == patientId);
 
             if (assessment == null)
             {
@@ -540,11 +537,28 @@ namespace safehavenpms.Controllers
             assessment.Status = PsychiatricEnumStatus.Completed.ToString();
             assessment.CompletedDate = DateTime.UtcNow;
 
+            // Update patient status to Intreatment
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId);
+            if (patient != null)
+            {
+                patient.PatientStatus = PatientStatusEnum.InTreatment.ToString();
+                _context.Patients.Update(patient);
+            }
+
+            // Mark related NewAppointment as Completed
+            var appointment = await _context.NewAppointments
+                .FirstOrDefaultAsync(a => a.PatientId == patientId && a.Type == "Psychiatric Assessment" && a.Status != "Completed");
+            if (appointment != null)
+            {
+                appointment.Status = SafehavenPMS.Enum.AppointmentEnum.Completed.ToString();
+                _context.NewAppointments.Update(appointment);
+            }
+
             // Save changes
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Assessment submitted successfully and marked as completed.";
             return RedirectToAction("Index", "PsychiatricAssessment");
         }
-    }
+    }   
 }

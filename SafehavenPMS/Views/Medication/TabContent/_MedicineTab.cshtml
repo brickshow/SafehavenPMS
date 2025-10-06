@@ -1,30 +1,33 @@
 ﻿@using SafehavenPMS.Enum
 @model List<SafehavenPMS.ViewModel.MedicineViewModel>
 
-<div class="w-100 h-100 p-2 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
+<div class="w-100 h-100 bg-white pb-4 mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     <div class="table-header d-flex justify-content-center align-items-center text-center">
         <h5 class="mb-0">
             @Model.Count() @((Model.Count() == 1) ? "Medicine" : "Medicines")
         </h5>
     </div>
 
-    <div class="d-flex flex-row align-items-center justify-content-between gap-3 w-100 mt-3">
-        <div class="d-flex flex-row">
-            <input type="text" class="form-control me-2" placeholder="Search medicine...">
-            <button class="btn-custom btn-sm btn-primary">Search</button>
-        </div>
-        <div class="d-flex flex-row">
-            <select class="form-select ms-2" style="width: auto;">
-                <option>Form</option>
-                <option>Pending</option>
-                <option>Taken</option>
-                <option>Refused</option>
-            </select>
-            <button class="btn-custom btn-sm ms-2" style="background-color: #26a69a; color: white; border: none; border-radius: 6px;">Sort by</button>
-        </div>
+    <div class="d-flex flex-row align-items-center justify-content-between gap-3 w-auto mt-3 m-4">
+        <form asp-controller="Medication" asp-action="Index" method="get" class="d-flex align-items-center justify-content-between w-100 gap-3">
+            <div class="d-flex align-items-center gap-2">
+                 <input type="text" name="medSearch" class="form-control me-2" style="max-width:300px;" placeholder="Search medicine..." value="@ViewBag.MedSearch" />
+                <button class="btn-custom btn-sm btn-primary" type="submit">Search</button>
+            </div>
+            <div>
+                <select name="medSortBy" class="form-select form-select-sm" style="min-width:160px; max-width:200px;" onchange="this.form.submit()">
+                    <option value="" selected='@(ViewBag.MedSortBy == "" ? "selected" : "")'>Sort by</option>
+                    <option value="Name" selected='@(ViewBag.MedSortBy == "Name" ? "selected" : "")'>Name</option>
+                    <option value="DateAdded" selected='@(ViewBag.MedSortBy == "DateAdded" ? "selected" : "")'>Date Added</option>
+                </select>
+                <input type="hidden" name="medSortOrder" value="@(ViewBag.MedSortOrder == "descending" ? "ascending" : "descending")" />
+            </div>
+            
+           
+        </form>
     </div>
 
-    <div class="table-responsive-custom mt-3">
+    <div class="table-responsive-custom m-4 border">
         <table class="table mb-0">
             <thead class="table-header-custom table-light">
                 <tr>

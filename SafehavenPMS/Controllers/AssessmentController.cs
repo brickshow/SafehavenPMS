@@ -60,10 +60,21 @@ namespace SafehavenPMS.Controllers
                     p.PatientId.ToString().Contains(searchQuery));
             }
 
-            // Apply status filter
+            // Apply status filter using PatientStatusEnum
             if (!string.IsNullOrEmpty(status))
             {
-                query = query.Where(p => p.PatientStatus == status);
+                if (status == "Pending")
+                {
+                    query = query.Where(p => p.PatientStatus == PatientStatusEnum.Admitted.ToString());
+                }
+                else if (status == "Completed")
+                {
+                    query = query.Where(p => p.PatientStatus == PatientStatusEnum.InTreatment.ToString());
+                }
+                else // InProgress
+                {
+                    query = query.Where(p => p.PatientStatus == PatientStatusEnum.OnAssessment.ToString());
+                }
             }
 
             // Apply sorting
@@ -93,7 +104,8 @@ namespace SafehavenPMS.Controllers
             .Where(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString() ||
                         p.PatientStatus == PatientStatusEnum.OnAssessment.ToString() ||
                         p.PatientStatus == PatientStatusEnum.PendingApproval.ToString() ||
-                        p.PatientStatus == PatientStatusEnum.Admitted.ToString())
+                        p.PatientStatus == PatientStatusEnum.Admitted.ToString() ||
+                        p.PatientStatus == PatientStatusEnum.InTreatment.ToString())
             .Select(p => new PendingAssessmentViewModel
             {
                 PatientId = p.PatientId,

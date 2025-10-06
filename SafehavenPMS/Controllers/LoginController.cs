@@ -15,8 +15,6 @@ using SafehavenPMS.ViewModel;
 
 namespace SafehavenPMS.Controllers
 {
-    [AllowAnonymous]
-[Authorize]
     public class LoginController : Controller
     {
         private readonly SafehavenPMSContext _context;

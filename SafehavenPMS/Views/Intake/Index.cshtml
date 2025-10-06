@@ -14,15 +14,13 @@
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
                     @* Search bar: target Intake.Search *@
-<form asp-controller="Intake" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
-    <div class="search-input-wrapper d-flex flex-row gap-2">
-        <i class='bx bx-search search-icon'></i>
-        <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
-    </div>
-    <button type="submit" class="btn-custom" style="height:30px">Search</button>
-</form>
-
-                   
+                    <form asp-controller="Intake" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                        <div class="search-input-wrapper d-flex flex-row gap-2">
+                            <i class='bx bx-search search-icon'></i>
+                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+                        </div>
+                        <button type="submit" class="btn-custom" style="height:30px">Search</button>
+                    </form>
                 </div>
             </div>
         </div>

@@ -397,6 +397,23 @@ namespace SafehavenPMS.Controllers
                 patient.PatientStatus = PatientStatusEnum.Admitted.ToString();
                 _context.Patients.Update(patient);
 
+                // Pre-populate NewAppointment with PsychiatricAssesment if not already present for this admission
+                var hasPsychAssessment = await _context.NewAppointments
+                    .AnyAsync(a => a.PatientId == patient.PatientId && a.Type == "Psychiatric Assesment");
+    
+                if (!hasPsychAssessment)
+                {
+                    var psychAssessment = new NewAppointment
+                    {
+                        PatientId = patient.PatientId,
+                        Type = "Psychiatric Assessment",
+                        Status = SchedulingStatus.Pending.ToString(),
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User?.Identity?.Name ?? "System"
+                    };
+                    await _context.NewAppointments.AddAsync(psychAssessment);
+                }
+
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
 

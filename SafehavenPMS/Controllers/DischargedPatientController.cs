@@ -23,60 +23,72 @@ namespace SafehavenPMS.Controllers
                    int? pageSize = 10,
                    string searchQuery = null,
                    string status = null,
-                   string sortOrder = null)
+                   string sortOrder = null,
+                  string sortBy = null)
         {
-            // Query discharged patients with patient information
+            ViewBag.SortBy = sortBy ?? "";
+            ViewBag.PageSize = pageSize ?? 10;
+            sortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.SearchQuery = searchQuery;
+
+            // Do not filter by status here — return all records from DischargedPatients
             var query = _context.DischargedPatients
                 .Include(a => a.Patient)
                 .AsQueryable();
 
-            // Only get patients with Discharged status
-            query = query.Where(a => a.Status == Enum.PatientStatusEnum.Discharged.ToString());
-
-            // Get discharged count
-            ViewBag.DischargedCount = await _context.DischargedPatients
-                .CountAsync(p => p.Status == Enum.PatientStatusEnum.Discharged.ToString());
-
-            // Pass current filters/sorting to view
-            ViewBag.CurrentPage = page ?? 1;
-            ViewBag.PageSize = pageSize ?? 10;
-            ViewBag.SearchQuery = searchQuery;
-            ViewBag.Status = status;
-            ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
-
             // Apply search filter if provided
             if (!string.IsNullOrEmpty(searchQuery))
             {
-                searchQuery = searchQuery.ToLower();
+                var q = searchQuery.ToLower();
                 query = query.Where(a =>
-                    a.Patient.Firstname.ToLower().Contains(searchQuery) ||
-                    a.Patient.Lastname.ToLower().Contains(searchQuery) ||
-                    a.PatientId.ToString().Contains(searchQuery));
+                    a.Patient.Firstname.ToLower().Contains(q) ||
+                    a.Patient.Lastname.ToLower().Contains(q) ||
+                    a.PatientId.ToString().Contains(q));
             }
 
-            // Apply status filter (optional)
-            if (!string.IsNullOrEmpty(status))
+            // Apply sorting: support Name, DateAdded (patient.CreatedAt) and default DischargeDate
+            var asc = string.Equals(sortOrder, "ascending", StringComparison.OrdinalIgnoreCase);
+            if (string.Equals(sortBy, "Name", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(a => a.Status == status);
+                query = asc
+                    ? query.OrderBy(a => a.Patient.Firstname).ThenBy(a => a.Patient.Lastname)
+                    : query.OrderByDescending(a => a.Patient.Firstname).ThenByDescending(a => a.Patient.Lastname);
             }
-
-            // Apply sorting
-            query = sortOrder == "ascending"
-                ? query.OrderBy(a => a.Patient.Firstname).ThenBy(a => a.Patient.Lastname)
-                : query.OrderByDescending(a => a.DischargeDate);
+            else if (string.Equals(sortBy, "DateAdded", StringComparison.OrdinalIgnoreCase))
+            {
+                // assumes Patient.CreatedAt exists; fallback to DischargeDate if null
+                query = asc
+                    ? query.OrderBy(a => a.Patient.CreatedAt)
+                    : query.OrderByDescending(a => a.Patient.CreatedAt);
+            }
+            else
+            {
+                query = asc
+                    ? query.OrderBy(a => a.DischargeDate)
+                    : query.OrderByDescending(a => a.DischargeDate);
+            }
 
             // Pagination and projection
             int totalItems = await query.CountAsync();
             ViewBag.TotalPatientCount = totalItems;
-            int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
+            int totalPages = (pageSize > 0 && pageSize.Value > 0) ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
             int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = currentPage;
 
-            var dischargedPatients = await query
-                .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
-                .Take(pageSize > 0 ? pageSize.Value : totalItems)
-                .ToListAsync();
+            List<SafehavenPMS.Models.DischargedPatient> dischargedPatients;
+            if (pageSize == 0)
+            {
+                dischargedPatients = await query.ToListAsync();
+            }
+            else
+            {
+                dischargedPatients = await query
+                    .Skip((currentPage - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .ToListAsync();
+            }
 
             var viewModel = dischargedPatients.Select(a => new DischargedViewModel
             {
@@ -102,7 +114,6 @@ namespace SafehavenPMS.Controllers
                 searchQuery,
                 page = 1,
                 pageSize = 10,
-                status = PatientStatusEnum.Discharged.ToString(),
                 sortOrder = "descending"
             });
         }
@@ -118,6 +129,16 @@ namespace SafehavenPMS.Controllers
             // Set status to NewIntake when reopening a discharged patient
             patient.PatientStatus = PatientStatusEnum.NewIntake.ToString();
             _context.Patients.Update(patient);
+
+            //Remove the Patients From PatientDischarged Table
+            var dischargedRecord = await _context.DischargedPatients
+                .FirstOrDefaultAsync(d => d.PatientId == patientId);
+
+            if (dischargedRecord != null)
+            {
+                _context.DischargedPatients.Remove(dischargedRecord);
+            }
+
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Patient reopened to New Intake.";
