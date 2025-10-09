@@ -1,114 +1,182 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using SafehavenPMS.Data;
-using Microsoft.AspNetCore.Authorization;
-
+using SafehavenPMS.Models;
+using SafehavenPMS.Services;
+using SafehavenPMS.ViewModel;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SafehavenPMS.Controllers
 {
-[Authorize]
+    [Authorize]
     public class UserController : Controller
     {
         private readonly SafehavenPMSContext _context;
-        private readonly ILogger<UserController> _logger;
+        private readonly IEmailService _emailService;
 
-        public UserController(SafehavenPMSContext context, ILogger<UserController> logger)
+        public UserController(
+            SafehavenPMSContext context,
+            IEmailService emailService)
         {
             _context = context;
-            _logger = logger;
+            _emailService = emailService;
         }
 
-        // Index with search / filters / paging to match the Index.cshtml logic
-        public async Task<IActionResult> Index(string searchQuery = "", string role = "", string showInactive = "", int page = 1, int pageSize = 10)
+        // GET: /User
+        public async Task<IActionResult> Index(string searchQuery = "", int page = 1, int pageSize = 10)
         {
             var q = _context.Users
                 .Include(u => u.ClinicalStaff)
                 .AsQueryable();
 
-            // filter active by default
-            var includeInactive = !string.IsNullOrEmpty(showInactive) && (showInactive == "1" || showInactive.Equals("true", StringComparison.OrdinalIgnoreCase));
-            if (!includeInactive)
-                q = q.Where(u => u.IsActive);
-
-            if (!string.IsNullOrWhiteSpace(role))
-                q = q.Where(u => u.Role == role);
-
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
-                var s = searchQuery.Trim();
+                var sq = searchQuery.ToLower();
                 q = q.Where(u =>
-                    u.Username.Contains(s) ||
-                    (u.Email != null && u.Email.Contains(s)) ||
-                    (u.ClinicalStaff != null && (u.ClinicalStaff.Firstname + " " + u.ClinicalStaff.Lastname).Contains(s))
-                );
+                    u.Username.ToLower().Contains(sq) ||
+                    (u.Email != null && u.Email.ToLower().Contains(sq)) ||
+                    (u.ClinicalStaff != null &&
+                     ((u.ClinicalStaff.Firstname + " " + u.ClinicalStaff.Lastname).ToLower().Contains(sq))));
             }
 
             var total = await q.CountAsync();
+            if (pageSize > 0)
+            {
+                q = q
+                    .OrderByDescending(u => u.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize);
+            }
 
-            // handle "All" when pageSize == 0
-            int take = pageSize <= 0 ? (int)total : pageSize;
-            int currentPage = Math.Max(1, page);
-            int totalPages = take == 0 ? 1 : (int)Math.Ceiling(total / (double)take);
-
-            var items = await q.OrderBy(u => u.Username)
-                               .Skip((currentPage - 1) * take)
-                               .Take(take)
-                               .ToListAsync();
-
-            // populate ViewBag used by the view
-            ViewBag.SearchQuery = searchQuery ?? string.Empty;
-            ViewBag.Role = role ?? string.Empty;
-            // always set a string value to avoid mixed-type comparisons in Razor
-            ViewBag.ShowInactive = includeInactive ? "1" : "0";
-            ViewBag.PageSize = pageSize;
-            ViewBag.CurrentPage = currentPage;
             ViewBag.TotalUserCount = total;
-            ViewBag.TotalPages = totalPages;
+            ViewBag.CurrentPage = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.SearchQuery = searchQuery;
+            ViewBag.TotalPages = pageSize > 0 ? (int)Math.Ceiling(total / (double)pageSize) : 1;
 
-            return View(items);
+            var list = await q.ToListAsync();
+            return View(list);
         }
 
-        //Add user step1 
-        public IActionResult NewUser()
+        // GET: /User/Create
+        [HttpGet]
+        public IActionResult Create()
         {
-            return View();
+            return View(new UserCreateViewModel());
         }
 
+        // POST: /User/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Deactivate(int id, string searchQuery = "", string role = "", string showInactive = "", int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Create(UserCreateViewModel model)
         {
-            var user = await _context.Users.FindAsync(id);
+            if (!ModelState.IsValid)
+                return View(model);
+
+            if (await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower()))
+            {
+                ModelState.AddModelError("Username", "Username already exists.");
+                return View(model);
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Email))
+            {
+                ModelState.AddModelError("Email", "Email required to send credentials.");
+                return View(model);
+            }
+
+            var plainPassword = GenerateSecurePassword();
+
+            var user = new User
+            {
+                Username = model.Username.Trim(),
+                Email = model.Email.Trim(),
+                Role = model.Role,
+                IsActive = model.IsActive,
+                CreatedBy = User?.Identity?.Name
+            };
+
+            // Hash password like in AccountController (instantiate PasswordHasher directly)
+            var hasher = new PasswordHasher<User>();
+            user.PasswordHash = hasher.HashPassword(user, plainPassword);
+            user.PasswordSalt = null; // keep null for backward compatibility
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _emailService.SendStaffCredentialsAsync(user.Email, user.Username, plainPassword, user.Username);
+                TempData["SuccessMessage"] = "User created. Credentials emailed.";
+            }
+            catch
+            {
+                TempData["Error"] = "User created but sending email failed.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: /User/Details/5
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var user = await _context.Users
+                .Include(u => u.ClinicalStaff)
+                .FirstOrDefaultAsync(u => u.UserId == id);
             if (user == null)
             {
                 TempData["Error"] = "User not found.";
-                return RedirectToAction("Index", new { page, pageSize, searchQuery, role, showInactive });
+                return RedirectToAction(nameof(Index));
             }
+            return View(user);
+        }
 
-            if (!user.IsActive)
+        // POST: /User/Deactivate
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Deactivate(int id, string searchQuery, int page = 1, int pageSize = 10)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id);
+            if (user == null)
             {
-                TempData["Error"] = "User is already inactive.";
-                return RedirectToAction("Index", new { page, pageSize, searchQuery, role, showInactive });
+                TempData["Error"] = "User not found.";
+                return RedirectToAction(nameof(Index), new { searchQuery, page, pageSize });
             }
-
             user.IsActive = false;
-            try
-            {
-                _context.Update(user);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "User deactivated.";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to deactivate user {UserId}", id);
-                TempData["Error"] = "Failed to deactivate user.";
-            }
+            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedBy = User?.Identity?.Name;
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "User deactivated.";
+            return RedirectToAction(nameof(Index), new { searchQuery, page, pageSize });
+        }
 
-            return RedirectToAction("Index", new { page, pageSize, searchQuery, role, showInactive });
+        // ADD helper below existing HashPassword
+        private static string GenerateSecurePassword(int length = 12)
+        {
+            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string lower = "abcdefghijkmnopqrstuvwxyz";
+            const string digits = "23456789";
+            const string symbols = "!@#$%^&*?";
+            string all = upper + lower + digits + symbols;
+
+            var bytes = new byte[length];
+            RandomNumberGenerator.Fill(bytes);
+            var chars = new char[length];
+
+            for (int i = 0; i < length; i++)
+                chars[i] = all[bytes[i] % all.Length];
+
+            // Ensure at least one from each group
+            chars[0] = upper[bytes[0] % upper.Length];
+            if (length > 1) chars[1] = lower[bytes[1] % lower.Length];
+            if (length > 2) chars[2] = digits[bytes[2] % digits.Length];
+            if (length > 3) chars[3] = symbols[bytes[3] % symbols.Length];
+
+            return new string(chars.OrderBy(_ => Guid.NewGuid()).ToArray());
         }
     }
 }

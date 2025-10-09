@@ -33,6 +33,8 @@ namespace SafehavenPMS.ViewModel
         // Add this property to hold all interventions for the patient
         public List<Intervention> Interventions { get; set; } = new List<Intervention>();
 
+        
+
         public PatientProfilePageViewModel()
         {
             OverViewTab = new PatientOverViewTabViewModel();
@@ -48,6 +50,7 @@ namespace SafehavenPMS.ViewModel
     {
         public int PatientId { get; set; }
         public List<PatientDocument> Documents { get; set; } = new();
+        public List<AssessmentFormViewModel> Assessments { get; set; } = new List<AssessmentFormViewModel>();
         public bool CanUpload { get; set; } = true; // toggle if needed later
     }
 
@@ -146,5 +149,15 @@ namespace SafehavenPMS.ViewModel
             return string.Join("|", parts);
         }
     }
-    public class PatientActivityLogTabViewModel { }
+    public class PatientActivityLogTabViewModel
+    {
+        public int PatientId { get; set; }
+        public List<ActivityLog> ActivityLogs { get; set; } = new();
+        // Backwards alias if any code tried to use Logs
+        public List<ActivityLog> Logs
+        {
+            get => ActivityLogs;
+            set => ActivityLogs = value;
+        }
+    }
 }

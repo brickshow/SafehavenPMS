@@ -1,0 +1,50 @@
+@model SafehavenPMS.ViewModel.Billing.BillingSetupViewModel
+@{
+    ViewBag.Title = "Setup Billing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="header">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <h5 class="mb-0">Setup Billing</h5>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success py-2">@TempData["SuccessMessage"]</div>
+}
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h6 class="fw-bold mb-3">Standard Monthly Program Fee</h6>
+                    <a asp-action="EditMonthlyFee" class="small text-decoration-none">Edit</a>
+                </div>
+                <div class="d-flex justify-content-between"><span>Treatment Fee</span><span>@Model.CurrentFees.TreatmentFee.ToString("N0")</span></div>
+                <div class="d-flex justify-content-between"><span>Food</span><span>@Model.CurrentFees.FoodFee.ToString("N0")</span></div>
+                <div class="d-flex justify-content-between"><span>Accommodation & Amenities</span><span>@Model.CurrentFees.AccommodationAmenitiesFee.ToString("N0")</span></div>
+                <hr />
+                <div class="d-flex justify-content-between fw-semibold">
+                    <span>Total</span>
+                    <span>@Model.Total.ToString("N0")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h6 class="fw-bold mb-3">Bank Information</h6>
+                    <a asp-action="EditBank" class="small text-decoration-none">Edit</a>
+                </div>
+                <div class="mb-1"><strong>Bank Name</strong><br />@Model.Bank.BankName</div>
+                <div class="mb-1"><strong>Account Name</strong><br />@Model.Bank.AccountName</div>
+                <div class="mb-1"><strong>Account Number</strong><br />@Model.Bank.AccountNumber</div>
+            </div>
+        </div>
+    </div>
+</div>

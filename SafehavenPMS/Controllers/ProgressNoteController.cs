@@ -8,6 +8,7 @@ using SafehavenPMS.Data;
 using SafehavenPMS.Models;
 using SafehavenPMS.ViewModel;
 using Microsoft.AspNetCore.Authorization;
+using SafehavenPMS.Services; // <-- added
 
 
 namespace SafehavenPMS.Controllers
@@ -16,10 +17,13 @@ namespace SafehavenPMS.Controllers
     public partial class ProgressNoteController : Controller
     {
         private readonly SafehavenPMSContext _context;
+        private readonly ActivityLogService _activityService; // <-- added
+        private static string PatientFullName(Patient p) => p == null ? "" : $"{p.Firstname} {p.Lastname}"; // <-- added
 
-        public ProgressNoteController(SafehavenPMSContext context)
+        public ProgressNoteController(SafehavenPMSContext context, ActivityLogService activityService) // <-- modified
         {
             _context = context;
+            _activityService = activityService; // <-- added
         }
 
         // Show interventions and (when patientId provided) medication orders for a patient.
@@ -333,8 +337,6 @@ namespace SafehavenPMS.Controllers
                 Assessment = string.IsNullOrWhiteSpace(model.Assessment) ? null : model.Assessment,
                 Plan = string.IsNullOrWhiteSpace(model.Plan) ? null : model.Plan
             };
-
-            // Build SoapRaw like S:...|O:...|A:...|P:...
             var parts = new List<string>();
             if (!string.IsNullOrWhiteSpace(model.Subjective)) parts.Add($"S:{model.Subjective}");
             if (!string.IsNullOrWhiteSpace(model.Objective)) parts.Add($"O:{model.Objective}");
@@ -345,8 +347,23 @@ namespace SafehavenPMS.Controllers
             _context.ProgressNotes.Add(note);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Progress note saved.";
+            // --- log --- (added)
+            var user = User?.Identity?.Name ?? "System";
+            Patient pat = null;
+            if (note.PatientId.HasValue)
+                pat = await _context.Patients.FindAsync(note.PatientId.Value);
+            await _activityService.LogAsync(user,
+                "Created Progress Note",
+                $"Created progress note (ID {note.ProgressNoteId}) for {PatientFullName(pat)} (Intervention {note.InterventionId})",
+                "ProgressNote",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Progress note created for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
+            TempData["SuccessMessage"] = "Progress note saved.";
             return RedirectToAction("ProgressNoteLists", "ProgressNote", new { id = model.PatientId });
         }
 
@@ -410,10 +427,10 @@ namespace SafehavenPMS.Controllers
         public async Task<IActionResult> EditSoap(ProgressNoteEditViewModel vm)
         {
             if (!ModelState.IsValid) return View(vm);
- 
+
             var note = await _context.ProgressNotes.FindAsync(vm.ProgressNoteId);
             if (note == null) return NotFound();
- 
+
             // If user provided a SoapRaw, prefer that. Otherwise compose from fields.
             if (!string.IsNullOrWhiteSpace(vm.SoapRaw))
             {
@@ -421,35 +438,41 @@ namespace SafehavenPMS.Controllers
             }
             else
             {
-                // Build SoapRaw only from non-empty parts
-                var parts = new System.Collections.Generic.List<string>();
+                var parts = new List<string>();
                 if (!string.IsNullOrWhiteSpace(vm.Subjective)) parts.Add("S:" + vm.Subjective.Trim());
                 if (!string.IsNullOrWhiteSpace(vm.Objective)) parts.Add("O:" + vm.Objective.Trim());
                 if (!string.IsNullOrWhiteSpace(vm.Assessment)) parts.Add("A:" + vm.Assessment.Trim());
                 if (!string.IsNullOrWhiteSpace(vm.Plan)) parts.Add("P:" + vm.Plan.Trim());
-
                 note.SoapRaw = parts.Count > 0 ? string.Join("|", parts) : null;
             }
- 
-            // Keep separate stored fields in sync (optional but helpful)
             note.Subjective = string.IsNullOrWhiteSpace(vm.Subjective) ? null : vm.Subjective.Trim();
             note.Objective = string.IsNullOrWhiteSpace(vm.Objective) ? null : vm.Objective.Trim();
             note.Assessment = string.IsNullOrWhiteSpace(vm.Assessment) ? null : vm.Assessment.Trim();
             note.Plan = string.IsNullOrWhiteSpace(vm.Plan) ? null : vm.Plan.Trim();
- 
-            // Debug: show resulting SoapRaw before save
-            Console.WriteLine($"[EditSoap POST] Saving note {note.ProgressNoteId}: SoapRawLength={(note.SoapRaw?.Length ?? 0)} SoapRawPreview={(note.SoapRaw != null && note.SoapRaw.Length > 200 ? note.SoapRaw.Substring(0,200) + "..." : note.SoapRaw ?? "<null>")}");
- 
+
             _context.Update(note);
             await _context.SaveChangesAsync();
 
-            // Re-read saved entity to verify persistence and log final values
             var saved = await _context.ProgressNotes
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ProgressNoteId == note.ProgressNoteId);
-            Console.WriteLine($"[EditSoap POST] DB verify: ProgressNoteId={(saved?.ProgressNoteId.ToString() ?? "<null>")}, PatientId={(saved?.PatientId?.ToString() ?? "<null>")}, InterventionId={(saved?.InterventionId?.ToString() ?? "<null>")}, SoapRawLength={(saved?.SoapRaw?.Length ?? 0)}, SoapRawPreview={(saved?.SoapRaw ?? "<null>")}");
- 
-            // Redirect to the list view and show the updated data; select the intervention so the UI shows the updated Soap snippet
+
+            // --- log --- (added)
+            var user = User?.Identity?.Name ?? "System";
+            Patient pat = null;
+            if (saved?.PatientId != null)
+                pat = await _context.Patients.FindAsync(saved.PatientId.Value);
+            await _activityService.LogAsync(user,
+                "Updated Progress Note",
+                $"Updated progress note (ID {saved?.ProgressNoteId}) for {PatientFullName(pat)} (Intervention {saved?.InterventionId})",
+                "ProgressNote",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Progress note updated for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction(nameof(ProgressNoteLists), new { patientId = saved?.PatientId, selectedId = saved?.InterventionId });
         }
     }

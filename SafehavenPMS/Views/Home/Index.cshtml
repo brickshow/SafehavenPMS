@@ -1,109 +1,98 @@
-﻿@{
+﻿@model SafehavenPMS.ViewModel.Dashboard.DashboardStatsViewModel
+@{
     ViewData["Title"] = "Dashboard";
 }
-
 <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
-<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Font Awesome CDN -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
 <div class="dashboard-wrapper container-fluid">
-    
     <div class="stats-grid row gx-3 gy-3">
-        <!-- stat cards changed to anchor tags (clickable) - adjust controllers/actions if needed -->
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Index","Patient")">
                 <div class="stat-inner">
                     <div>
                         <div class="stat-label">Total Patients</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-value" data-target="@Model.TotalPatients">0</div>
                     </div>
-                    <i class="fa-solid fa-users stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-users stat-icon"></i>
                 </div>
             </a>
         </div>
-
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Create","PatientRegistration")">
                 <div class="stat-inner">
                     <div>
-                        <div class="stat-label">New Patient</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-label">New Patient (Month)</div>
+                        <div class="stat-value" data-target="@Model.NewPatientsThisMonth">0</div>
                     </div>
-                    <i class="fa-solid fa-user-plus stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-user-plus stat-icon"></i>
                 </div>
             </a>
         </div>
-
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Index","ClinicalStaff")">
                 <div class="stat-inner">
                     <div>
                         <div class="stat-label">Doctor</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-value" data-target="@Model.Doctors">0</div>
                     </div>
-                    <i class="fa-solid fa-user-doctor stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-user-doctor stat-icon"></i>
                 </div>
             </a>
         </div>
-
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Index","ClinicalStaff")">
                 <div class="stat-inner">
                     <div>
                         <div class="stat-label">Nurse</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-value" data-target="@Model.Nurses">0</div>
                     </div>
-                    <i class="fa-solid fa-user-nurse stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-user-nurse stat-icon"></i>
                 </div>
             </a>
         </div>
-
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Index","Services")">
                 <div class="stat-inner">
                     <div>
                         <div class="stat-label">Coach</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-value" data-target="@Model.Coaches">0</div>
                     </div>
-                    <i class="fa-solid fa-chalkboard-user stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-chalkboard-user stat-icon"></i>
                 </div>
             </a>
         </div>
-
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Index","Appointment")">
                 <div class="stat-inner">
                     <div>
                         <div class="stat-label">Appointment</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-value" data-target="@Model.Appointments">0</div>
                     </div>
-                    <i class="fa-solid fa-calendar-check stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-calendar-check stat-icon"></i>
                 </div>
             </a>
         </div>
-
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Index","Billing")">
                 <div class="stat-inner">
                     <div>
                         <div class="stat-label">Invoice</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-value" data-target="@Model.Invoices">0</div>
                     </div>
-                    <i class="fa-solid fa-file-invoice stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-file-invoice stat-icon"></i>
                 </div>
             </a>
         </div>
-
         <div class="col-12 col-sm-6 col-md-3">
             <a class="stat-card text-decoration-none" href="@Url.Action("Index","User")">
                 <div class="stat-inner">
                     <div>
                         <div class="stat-label">Total Users</div>
-                        <div class="stat-value" data-value="5">0</div>
+                        <div class="stat-value" data-target="@Model.Users">0</div>
                     </div>
-                    <i class="fa-solid fa-users stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-users stat-icon"></i>
                 </div>
             </a>
         </div>
@@ -120,7 +109,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-12 col-lg-6">
             <div class="panel-body d-flex align-items-center justify-content-center">
                 @await Html.PartialAsync("_CalendarPartial")
@@ -156,7 +144,7 @@
   min-height:80px;
 }
 .stat-card .stat-label{ font-size:16px; opacity:0.95; }
-.stat-card .stat-value{ font: size 25px;px; font-weight:700; }
+.stat-card .stat-value{ font-size:36px; font-weight:700; line-height:1; }
 .stat-card .stat-inner{
   display:flex;
   align-items:center;
@@ -212,68 +200,67 @@
   .stat-card .stat-value{ font-size:24px; }
   .stat-card .stat-icon{ font-size:26px; } /* reduced for small screens */
 }
-</style>    
+</style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Simple counter animation
-    document.querySelectorAll('.stat-value').forEach(function (el) {
-        const target = parseInt(el.getAttribute('data-value') || '0', 10);
-        let current = 0;
-        const step = Math.max(1, Math.floor(target / 20));
-        const interval = setInterval(function () {
-            current += step;
-            if (current >= target) {
-                current = target;
-                clearInterval(interval);
-            }
-            el.textContent = current;
-        }, 20);
-    });
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.stat-value').forEach(el => {
+      const target = parseInt(el.dataset.target || '0',10);
+      if(isNaN(target)){ el.textContent='0'; return; }
+      let start=0;
+      const duration=600;
+      const t0=performance.now();
+      const step=(ts)=>{
+        const p=Math.min((ts - t0)/duration,1);
+        el.textContent = Math.round(p*target).toLocaleString();
+        if(p<1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+  });
 
-    // Chart.js Pie Chart integration (from official docs)
-    const ctx = document.getElementById('patientsPieChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: [
-                'Admitted',
-                'Pending Approval',
-                'On Assessment',
-                'New Referral',
-                'Discharge'
-            ],
-            datasets: [{
-                label: 'Patient Statuses',
-                data: [25, 20, 15, 25, 15],
-                backgroundColor: [
-                    '#ff9f40',
-                    '#ffd86b',
-                    '#ff6b86',
-                    '#1dd1a1',
-                    '#2e86de'
-                ],
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top', // <-- Show legend at the top of the pie chart
-                    labels: {
-                        boxWidth: 18,
-                        padding: 18
-                    }
-                }
-            }
-        }
-    });
+  // Chart.js Pie Chart integration (from official docs)
+  const ctx = document.getElementById('patientsPieChart').getContext('2d');
+  new Chart(ctx, {
+      type: 'pie',
+      data: {
+          labels: [
+              'Admitted',
+              'Pending Approval',
+              'On Assessment',
+              'New Referral',
+              'Discharge'
+          ],
+          datasets: [{
+              label: 'Patient Statuses',
+              data: [25, 20, 15, 25, 15],
+              backgroundColor: [
+                  '#ff9f40',
+                  '#ffd86b',
+                  '#ff6b86',
+                  '#1dd1a1',
+                  '#2e86de'
+              ],
+              hoverOffset: 4
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+              legend: {
+                  display: true,
+                  position: 'top', // <-- Show legend at the top of the pie chart
+                  labels: {
+                      boxWidth: 18,
+                      padding: 18
+                  }
+              }
+          }
+      }
+  });
 
-    // set canvas height for nicer layout
-    const canvas = document.getElementById('patientsPieChart');
-    canvas.parentElement.style.minHeight = '220px';
+  // set canvas height for nicer layout
+  const canvas = document.getElementById('patientsPieChart');
+  canvas.parentElement.style.minHeight = '220px';
 });
 </script>

@@ -24,65 +24,32 @@
 
 
 
-    @* Appointment Details Modal *@
-    <div class="modal fade" id="appointmentDetailModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+    @* Appointment Details Modal (action dropdown removed) *@
+    <div class="modal fade" id="appointmentDetailModal" tabindex="-1" aria-labelledby="appointmentDetailLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header text-white d-flex justify-content-between" style="background: linear-gradient(to right, #069FB2, #058594);">
-                    <h5 class="modal-title">Appointment Details</h5>
-                    <div class="dropdown" data-bs-display="static">
-                        <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bx bx-dots-vertical fs-5 text-muted"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
-                            <li class="px-2 text-muted fw-semibold small">Options</li>
-                            @* Add condition that if current session log is Admin show all *@
-
-                            @* Mark as Completed Form *@
-                            <li>
-                                <form asp-action="Completed" asp-controller="Appointment" method="post" class="d-inline">
-                                    <input type="hidden" name="id" id="ApointmentId" />
-                                    <input type="hidden" name="patientId" id="patientId" />
-                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">
-                                        Mark as Completed
-                                    </button>
-                                </form>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Open Assessment Form</a>
-                            </li>
-                            <li>
-                                <a id="rescheduleLink" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                   href="#">
-                                    Reschedule Appointment
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Cancel Appointment</a>
-                            </li>
-
-                            @* <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">Create New Appointment</a>
-                            </li>
-                         *@
-
-                        </ul>
-                    </div>
+                <div class="modal-header text-white" style="background: linear-gradient(to right, #069FB2, #058594);">
+                    <h5 class="modal-title" id="appointmentDetailLabel">Appointment Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p>
                         <strong>Status:</strong>
-                        <span class="justify-content-end text-center p-2" style="background-color:#BDDBF4; border-radius:6px" id="detailStatus"></span>
+                        <span class="justify-content-end text-center p-2"
+                              style="background-color:#BDDBF4; border-radius:6px"
+                              id="detailStatus"></span>
                     </p>
                     <p><strong>Patient        :</strong> <span id="detailPatient"></span></p>
                     <p><strong>Doctor         :</strong> <span id="detailDoctor"></span></p>
                     <p><strong>Visit Type     :</strong> <span id="detailVisitType"></span></p>
                     <p><strong>Scheduled Date :</strong> <span id="detailDate"></span></p>
                     <p><strong>Scheduled Time :</strong> <span id="detailTime"></span></p>
-                    <p><strong>Description :</strong> <span id="detailDescription"></span></p>
+                    <p><strong>Description    :</strong> <span id="detailDescription"></span></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
@@ -282,8 +249,7 @@
             eventClick: function (info) {
                 info.jsEvent.preventDefault();
 
-                document.getElementById("ApointmentId").value = info.event.id;
-                document.getElementById("patientId").value = info.event.extendedProps.patientId;
+                // Populate only display fields (no form actions)
                 document.getElementById("detailVisitType").innerText = info.event.extendedProps.visitType;
                 document.getElementById("detailTime").innerText = info.event.extendedProps.time;
                 document.getElementById("detailDate").innerText = info.event.start.toLocaleDateString("en-us", {
@@ -294,11 +260,7 @@
                 document.getElementById("detailDoctor").innerText = info.event.extendedProps.doctorName;
                 document.getElementById("detailDescription").innerText = info.event.extendedProps.description;
 
-                const rescheduleLink = document.getElementById('rescheduleLink');
-                rescheduleLink.href = `/Appointment/ScheduleAppointment?id=${info.event.extendedProps.patientId}`;
-
-                var appointmentDetailModal = new bootstrap.Modal(document.getElementById('appointmentDetailModal'));
-                appointmentDetailModal.show();
+                new bootstrap.Modal(document.getElementById('appointmentDetailModal')).show();
             },
 
             headerToolbar: {
@@ -308,34 +270,20 @@
             },
 
             eventContent: function (info) {
-                let visitType = info.event.extendedProps.visitType;
-                let patient = info.event.extendedProps.patientName;
-                let doctor = info.event.extendedProps.doctorName;
                 let status = info.event.extendedProps.status;
-                let time = info.event.extendedProps.time;
-
                 let bgColor = "rgba(200,200,200,0.5)";
                 if (status === "Confirmed") bgColor = "#BDDBF4";
                 if (status === "Completed") bgColor = "#AEEBAB";
-
                 return {
                     html: `
                         <div class="text-center" style="
-                            background-color: ${bgColor};
-                            width: 100%;
-                            box-sizing: border-box;
-                            border-radius: 6px;
-                            white-space: normal;
-                            word-wrap: break-word;
-                            overflow-wrap: break-word;
-                            padding: 2px;
-                        ">
-                            <strong>${visitType}</strong><br/>
-                            <small>Doctor: ${doctor}</small><br/>
-                            <small>Patient: ${patient}</small><br/>
-                            <small>${time}</small><br/>
-                        </div>
-                    `
+                            background-color:${bgColor};
+                            width:100%;border-radius:6px;padding:2px;">
+                            <strong>${info.event.extendedProps.visitType}</strong><br/>
+                            <small>Doctor: ${info.event.extendedProps.doctorName}</small><br/>
+                            <small>Patient: ${info.event.extendedProps.patientName}</small><br/>
+                            <small>${info.event.extendedProps.time}</small>
+                        </div>`
                 };
             }
         });

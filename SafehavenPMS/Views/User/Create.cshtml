@@ -1,0 +1,80 @@
+@model SafehavenPMS.ViewModel.UserCreateViewModel
+@{
+    ViewBag.Title = "Create User";
+}
+
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <i class="bx bxs-user-plus fs-2 me-2" title="New User"></i>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+<div class="d-flex align-items-start justify-content-center bg-light">
+    <div class="card shadow-sm mb-4" style="width:820px; max-width:95%;">
+        <div class="card-header" style="background:#0b6b6f; color:#fff;">
+            <h5 class="mb-0">User Information</h5>
+        </div>
+
+        <form asp-action="Create" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="d-flex flex-column card-body py-4">
+                <div class="mb-3">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+                </div>
+
+                <!-- Vertically aligned single-column layout -->
+                <div class="form-stack">
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label fw-semibold"></label>
+                        <input asp-for="Username" class="form-control" />
+                        <span asp-validation-for="Username" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold"></label>
+                        <input asp-for="Email" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Role" class="form-label fw-semibold"></label>
+                        <select asp-for="Role" class="form-select">
+                            <option value="">-- Select Role --</option>
+                            <option>Administrator</option>
+                            <option>Finanace Officer</option>
+                            <option>Cashier</option>
+                        </select>
+                        <span asp-validation-for="Role" class="text-danger small"></span>
+                    </div>
+
+                    <div class="alert alert-info py-2 small">
+                        Password will be auto-generated and sent to the email provided.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-white border-top d-flex justify-content-end gap-2">
+                <a href="@Url.Action("Index","User")" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-next px-4">Save User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .text-custom { color:#0b6b6f; }
+    .card-header h5 { font-weight:600; }
+    @@media (max-width: 576px){
+        .card { width:100%; }
+    }
+    .form-stack .mb-3:last-child { margin-bottom: 0; }
+</style>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+}

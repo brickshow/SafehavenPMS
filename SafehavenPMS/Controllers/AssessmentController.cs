@@ -8,6 +8,7 @@ using SafehavenPMS.ViewModel;
 using SafehavenPMS.ViewModel.Assessment;
 using SafehavenPMS.ViewModel.Assessment.SafehavenPMS.ViewModel.Assessment;
 using Microsoft.AspNetCore.Authorization;
+using SafehavenPMS.Services; // <-- added
 
 
 
@@ -17,10 +18,14 @@ namespace SafehavenPMS.Controllers
     public class AssessmentController : Controller
     {
         private readonly SafehavenPMSContext _context;
+        private readonly ActivityLogService _activityService; // <-- added
 
-        public AssessmentController(SafehavenPMSContext context)
+        private static string PatientFullName(Patient p) => p == null ? "" : $"{p.Firstname} {p.Lastname}"; // <-- added
+
+        public AssessmentController(SafehavenPMSContext context, ActivityLogService activityService) // <-- modified
         {
             _context = context;
+            _activityService = activityService; // <-- added
         }
 
         public async Task<IActionResult> Index(
@@ -512,6 +517,21 @@ namespace SafehavenPMS.Controllers
                 // patient.UpdatedBy = User.Identity.Name ?? "System";
 
                 await _context.SaveChangesAsync();
+
+                // --- activity log & notification (History Present) ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved History of Present Illness",
+                    $"Updated HPI for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"HPI saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
                 TempData["SuccessMessage"] = "Initial assessment form has been saved successfully.";
                 return View("EditInitialAssessmentForm", model);
             }
@@ -589,8 +609,22 @@ namespace SafehavenPMS.Controllers
                 await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Drug history has been saved successfully.";
 
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Drug Use History",
+                    $"Updated drug use history for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Drug history saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Drug history has been saved successfully.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
             catch (Exception ex)
@@ -726,8 +760,22 @@ namespace SafehavenPMS.Controllers
                 await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Medical history has been saved successfully.";
 
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Medical History",
+                    $"Updated medical history for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Medical history saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Medical history has been saved successfully.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
             catch (Exception ex)
@@ -810,8 +858,22 @@ namespace SafehavenPMS.Controllers
                 await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Physical examination has been saved successfully.";
 
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Physical Examination",
+                    $"Updated physical exam for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Physical exam saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Physical examination has been saved successfully.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
             catch (Exception ex)
@@ -955,6 +1017,21 @@ namespace SafehavenPMS.Controllers
 
                 // Save changes
                 await _context.SaveChangesAsync();
+
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Diagnosis",
+                    $"Updated diagnosis for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Diagnosis saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
                 TempData["SuccessMessage"] = "Diagnosis has been saved successfully.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
@@ -1079,8 +1156,22 @@ namespace SafehavenPMS.Controllers
 
                 // Save all changes
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Problem list has been saved successfully.";
 
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Problem List",
+                    $"Updated problem list for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Problem list saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Problem list has been saved successfully.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
             catch (DbUpdateException dbEx)
@@ -1148,8 +1239,22 @@ namespace SafehavenPMS.Controllers
                 await EnsurePatientStatusOnAssessment(model.PatientId);
 
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Recommendation has been saved successfully.";
 
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Recommendation",
+                    $"Updated recommendation for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Recommendation saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Recommendation has been saved successfully.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
             }
             catch (DbUpdateException dbEx)
@@ -1240,8 +1345,22 @@ namespace SafehavenPMS.Controllers
                 // --- end appointment/availability updates ---
 
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Assessment submitted for approval and appointment/availability updated.";
 
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(patientId);
+                await _activityService.LogAsync(user,
+                    "Submitted Assessment",
+                    $"Submitted assessment for {PatientFullName(pat)} (status -> PendingApproval)",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Assessment submitted for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Assessment submitted for approval and appointment/availability updated.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -1389,6 +1508,20 @@ namespace SafehavenPMS.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Mental Status Examination",
+                    $"Updated MSE for {PatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"MSE saved for {PatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
 
                 TempData["SuccessMessage"] = "Mental status examination saved successfully.";
                 return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId.Value });

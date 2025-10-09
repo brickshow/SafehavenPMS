@@ -1,0 +1,84 @@
+﻿@model SafehavenPMS.ViewModel.PatientActivityLogTabViewModel
+@{
+    var patientId = Model.PatientId;
+    var logs = Model.ActivityLogs ?? new List<SafehavenPMS.Models.ActivityLog>();
+}
+
+<div id="al-container" style="max-height:540px; overflow:auto; border:1px solid #e2e6e9; border-radius:8px; padding:12px; background:#fff;">
+    @if (!logs.Any())
+    {
+        <div class="text-muted small">No activity recorded.</div>
+    }
+    else
+    {
+        <ul class="list-unstyled m-0" id="al-list">
+            @foreach (var l in logs)
+            {
+                var color = l.Severity switch {
+                    "Critical" => "#dc3545",
+                    "Warning" => "#ffc107",
+                    _ => "#0d6efd"
+                };
+                <li class="mb-3" data-id="@l.ActivityLogId">
+                    <div style="display:flex; align-items:flex-start; gap:10px;">
+                        <div style="width:10px;height:10px;border-radius:50%;margin-top:6px;background:@color;"></div>
+                        <div style="flex:1;">
+                            <div style="font-size:.8rem; color:#555;">
+                                <strong>@l.Action</strong>
+                                <span class="text-muted">(@l.Category)</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(l.Description))
+                            {
+                                <div style="font-size:.7rem; color:#666;">@l.Description</div>
+                            }
+                            <div style="font-size:.65rem; color:#999;">
+                                @l.UserName • @l.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+
+<script>
+(() => {
+    const patientId = @patientId;
+    let page = 1;
+    const list = document.getElementById('al-list');
+    const loadBtn = document.getElementById('al-load-more');
+    const search = document.getElementById('al-search');
+    const category = document.getElementById('al-category');
+    const refresh = document.getElementById('al-refresh');
+
+    async function fetchLogs(reset=false){
+        if (reset){ page = 1; if (list) list.innerHTML=''; }
+        const params = new URLSearchParams({
+            patientId, page,
+            search: search.value || '',
+            category: category.value || ''
+        });
+        const r = await fetch(`/PatientProfile/ActivityLogs?${params.toString()}`);
+        const html = await r.text();
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const newLis = temp.querySelectorAll('#al-list > li');
+        if (!newLis.length && page === 1 && list){
+            list.innerHTML = '<div class="text-muted small">No activity recorded.</div>';
+            return;
+        }
+        newLis.forEach(li => list.appendChild(li));
+    }
+
+    loadBtn?.addEventListener('click', () => { page++; fetchLogs(); });
+    refresh?.addEventListener('click', () => fetchLogs(true));
+    search?.addEventListener('input', debounce(() => fetchLogs(true), 400));
+    category?.addEventListener('change', () => fetchLogs(true));
+
+    function debounce(fn, ms){
+        let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
+    }
+})();
+</script>

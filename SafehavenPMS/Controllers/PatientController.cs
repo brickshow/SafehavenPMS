@@ -1,5 +1,7 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
@@ -12,11 +14,10 @@ using SafehavenPMS.Helpers;
 using SafehavenPMS.Models;
 using SafehavenPMS.Services;
 using SafehavenPMS.ViewModel;
+using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using System.Linq;
 
 namespace SafehavenPMS.Controllers
 {
@@ -377,6 +378,7 @@ namespace SafehavenPMS.Controllers
                     PhotoUrl = tempUrl ?? string.Empty,
                     Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}",
                     CreatedAt = DateTime.Now,
+                    CreatedBy = GetCurrentUserName()
                 };
 
                 await _context.Patients.AddAsync(patient);
@@ -463,7 +465,23 @@ namespace SafehavenPMS.Controllers
             return View(patients);
         }
 
-        
+        private string GetCurrentUserName()
+        {
+            // Try to get display name first
+            var name = User?.FindFirst(ClaimTypes.Name)?.Value;
+            if (!string.IsNullOrEmpty(name)) return name;
+
+            // Fall back to email if name not available
+            var email = User?.FindFirst(ClaimTypes.Email)?.Value;
+            if (!string.IsNullOrEmpty(email)) return email;
+
+            // Fall back to basic identity name
+            var identityName = User?.Identity?.Name;
+            if (!string.IsNullOrEmpty(identityName)) return identityName;
+
+            // Last resort
+            return "Unknown";
+        }
     }
 }
 

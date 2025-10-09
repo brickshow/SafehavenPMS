@@ -11,6 +11,7 @@ using SafehavenPMS.Data;
 using CloudinaryDotNet;
 using SafehavenPMS.Services;
 using Microsoft.AspNetCore.Authorization;
+using SafehavenPMS.Services.Billing;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,8 @@ builder.Services.AddDbContext<SafehavenPMSContext>(options =>
 
 // Register email service if used by controllers
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ActivityLogService>();
+builder.Services.AddScoped<IBillingService, BillingService>();
 
 // Add MVC
 builder.Services.AddControllersWithViews();

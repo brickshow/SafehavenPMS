@@ -14,8 +14,48 @@
                  style="width: 60px; height: 60px; object-fit: cover;"/>
 
             <div>
-                <h4 class="mb-0 fw-bold text-custom">@(!string.IsNullOrWhiteSpace(Model.PatientName) ? Model.PatientName : "-")</h4>
-                <span class="text-muted">Patient - @(!string.IsNullOrWhiteSpace(Model.PatientRefId.ToString()) ? Model.PatientId.ToString() : "-")</span>
+                <div class="d-flex align-items-center mb-1 gap-3">
+                    <h4 class="mb-0 fw-bold text-custom">@(!string.IsNullOrWhiteSpace(Model.PatientName) ? Model.PatientName : "-")</h4>
+                    @{
+                        // Expect Model.Status to hold the enum name as string
+                        var status = Model.Status ?? "";
+                        string badgeClass;
+                        string label;
+
+                        switch (status)
+                        {
+                            case "NewIntake":
+                                badgeClass = "bg-secondary"; label = "New Intake"; break;
+                            case "InProgress":
+                                badgeClass = "bg-primary"; label = "In Progress"; break;
+                            case "Waitlisted":
+                                badgeClass = "bg-warning text-dark"; label = "Waitlisted"; break;
+                            case "PendingAssessment":
+                                badgeClass = "bg-warning text-dark"; label = "Pending Assessment"; break;
+                            case "OnAssessment":
+                                badgeClass = "bg-info"; label = "On Assessment"; break;
+                            case "PendingApproval":
+                                badgeClass = "bg-warning text-dark"; label = "Pending Approval"; break;
+                            case "PendingAdmission":
+                                badgeClass = "bg-warning text-dark"; label = "Pending Admission"; break;
+                            case "Admitted":
+                                badgeClass = "bg-success"; label = "Admitted"; break;
+                            case "InTreatment":
+                                badgeClass = "bg-success"; label = "In Treatment"; break;
+                            case "Closed":
+                                badgeClass = "bg-dark"; label = "Closed"; break;
+                            case "Relapsed":
+                                badgeClass = "bg-danger"; label = "Relapsed"; break;
+                            case "Discharged":
+                                badgeClass = "bg-info"; label = "Discharged"; break;
+                            default:
+                                badgeClass = "bg-light text-dark border"; label = "Unknown"; break;
+                        }
+                    }
+                    <span class="badge ms-2 @badgeClass">@label</span>
+                </div>
+
+                <span class="text-muted">@(!string.IsNullOrWhiteSpace(Model.PatientRefId.ToString()) ? Model.PatientRefId.ToString() : "-")</span>
             </div>
         </div>
 
@@ -62,7 +102,7 @@
         @await Html.PartialAsync("ProfileTabs/_ClinicalMedicationTab", Model.ClinicalFormTab)
     </div>
     <div class="tab-pane fade" id="tab-medical-history" role="tabpanel" aria-labelledby="medical-history-tab">
-        @await Html.PartialAsync("ProfileTabs/_MedicalHistory", Model.MedicalHistoryTab)
+        @await Html.PartialAsync("ProfileTabs/MedicalHistoryTab/_MedicalHistoryMainTab", Model.MedicalHistoryTab)
     </div>
     <div class="tab-pane fade" id="tab-treatment" role="tabpanel" aria-labelledby="treatment-tab">
         @await Html.PartialAsync("ProfileTabs/_TreatmentPlanTab", Model.TreatmentPlanTab)
@@ -70,14 +110,8 @@
     <div class="tab-pane fade" id="tab-progress-note" role="tabpanel" aria-labelledby="progress-note-tab">
         @await Html.PartialAsync("ProfileTabs/_ProgressNotes", Model.ProgressNotesTab)
     </div>
-    <div class="tab-pane fade" id="tab-prescription" role="tabpanel" aria-labelledby="prescription-tab">
-        @* Add prescription & medication partial here *@
-    </div>
-    <div class="tab-pane fade" id="tab-billing" role="tabpanel" aria-labelledby="billing-tab">
-        @* Add billing partial here *@
-    </div>
     <div class="tab-pane fade" id="tab-activity" role="tabpanel" aria-labelledby="activity-tab">
-        @* Add activity logs partial here *@
+        @await Html.PartialAsync("ProfileTabs/_ActivityLogsTab", Model.ActivityLogTab)
     </div>
 </div>
 

@@ -9,7 +9,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-
+using SafehavenPMS.Services; // <-- added
 
 namespace SafehavenPMS.Controllers
 {
@@ -17,10 +17,14 @@ namespace SafehavenPMS.Controllers
     public class TreatmentPlanController : Controller
     {
         private readonly SafehavenPMSContext _context;
+        private readonly ActivityLogService _activityService; // <-- added
 
-        public TreatmentPlanController(SafehavenPMSContext context)
+        private static string PatientFullName(Patient p) => p == null ? "" : $"{p.Firstname} {p.Lastname}"; // <-- added
+
+        public TreatmentPlanController(SafehavenPMSContext context, ActivityLogService activityService) // <-- modified
         {
             _context = context;
+            _activityService = activityService; // <-- added
         }
 
         public IActionResult Index()
@@ -55,6 +59,20 @@ namespace SafehavenPMS.Controllers
             _context.PsyProblemLists.Add(problem);
             await _context.SaveChangesAsync();
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(patientId);
+            await _activityService.LogAsync(user,
+                "Added Psychiatric Problem",
+                $"Added problem '{problemText}' for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Problem added for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
@@ -71,6 +89,20 @@ namespace SafehavenPMS.Controllers
 
             _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(patientId);
+            await _activityService.LogAsync(user,
+                "Edited Psychiatric Problem",
+                $"Edited problem (ID {psyProblemListId}) for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Problem updated for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
@@ -89,6 +121,20 @@ namespace SafehavenPMS.Controllers
             _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(patientId);
+            await _activityService.LogAsync(user,
+                "Resolved Psychiatric Problem",
+                $"Marked problem (ID {psyProblemListId}) as Resolved for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Problem resolved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
@@ -105,6 +151,20 @@ namespace SafehavenPMS.Controllers
 
             _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(patientId);
+            await _activityService.LogAsync(user,
+                "Inactivated Psychiatric Problem",
+                $"Marked problem (ID {psyProblemListId}) as Inactive for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Problem inactive for {PatientFullName(pat)}",
+                type: "Info");
+            // --- end ---
 
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
@@ -123,6 +183,20 @@ namespace SafehavenPMS.Controllers
             _context.PsyProblemLists.Update(problem);
             await _context.SaveChangesAsync();
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(patientId);
+            await _activityService.LogAsync(user,
+                "Activated Psychiatric Problem",
+                $"Marked problem (ID {psyProblemListId}) as Active for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Problem active for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
@@ -139,16 +213,7 @@ namespace SafehavenPMS.Controllers
             if (ServiceModality == 0)
                 return BadRequest("Service is required.");
 
-            string status = string.Empty;
-            //Save status based on start date
-            if (StartDate > DateTime.Now)
-            {
-                status = "Not Started";
-            }
-            if (StartDate <= DateTime.Now)
-            {
-                status = "Active";
-            }
+            string status = StartDate > DateTime.Now ? "Not Started" : "Active";
 
             var intervention = new Intervention
             {
@@ -166,7 +231,20 @@ namespace SafehavenPMS.Controllers
             _context.Interventions.Add(intervention);
             await _context.SaveChangesAsync();
 
-            // Redirect back to patient profile or treatment plan view
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(patientId);
+            await _activityService.LogAsync(user,
+                "Added Intervention",
+                $"Added intervention (Problem ID {problemId}, Service {ServiceModality}) for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Intervention added for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("Index", "PatientProfile", new { id = patientId });
         }
 
@@ -185,10 +263,23 @@ namespace SafehavenPMS.Controllers
             _context.Update(medication);
             await _context.SaveChangesAsync();
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(medication.PatientId);
+            await _activityService.LogAsync(user,
+                "Discontinued Medication",
+                $"Medication order {id} marked Discontinued for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Warning",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Medication discontinued for {PatientFullName(pat)}",
+                type: "Info");
+            // --- end ---
+
             TempData["SuccessMessage"] = "Medication order marked as discontinued.";
             return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
         }
-
 
         //Action to mark medication as completed
         [HttpPost]
@@ -205,6 +296,20 @@ namespace SafehavenPMS.Controllers
             medication.Status = "Completed";
             _context.Update(medication);
             await _context.SaveChangesAsync();
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(medication.PatientId);
+            await _activityService.LogAsync(user,
+                "Completed Medication",
+                $"Medication order {id} marked Completed for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Medication completed for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
             TempData["SuccessMessage"] = "Medication order marked as completed.";
             return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
@@ -225,6 +330,20 @@ namespace SafehavenPMS.Controllers
             _context.Update(medication);
             await _context.SaveChangesAsync();
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(medication.PatientId);
+            await _activityService.LogAsync(user,
+                "Removed Medication",
+                $"Medication order {id} marked Removed for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Medication removed for {PatientFullName(pat)}",
+                type: "Warning");
+            // --- end ---
+
             TempData["SuccessMessage"] = "Medication order removed.";
             return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
         }
@@ -243,6 +362,20 @@ namespace SafehavenPMS.Controllers
             medication.Status = "Active";
             _context.Update(medication);
             await _context.SaveChangesAsync();
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(medication.PatientId);
+            await _activityService.LogAsync(user,
+                "Activated Medication",
+                $"Medication order {id} marked Active for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Medication active for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
             TempData["SuccessMessage"] = "Medication order marked as active.";
             return RedirectToAction("Index", "PatientProfile", new { id = medication.PatientId });
@@ -263,6 +396,20 @@ namespace SafehavenPMS.Controllers
             _context.Update(intervention);
             await _context.SaveChangesAsync();
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(intervention.PatientId);
+            await _activityService.LogAsync(user,
+                "Discontinued Intervention",
+                $"Intervention {id} marked Discontinued for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Warning",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Intervention discontinued for {PatientFullName(pat)}",
+                type: "Info");
+            // --- end ---
+
             TempData["SuccessMessage"] = "Intervention marked as discontinued.";
             return RedirectToAction("Index", "PatientProfile", new { id = intervention.PatientId });
         }
@@ -282,10 +429,24 @@ namespace SafehavenPMS.Controllers
             _context.Update(intervention);
             await _context.SaveChangesAsync();
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(intervention.PatientId);
+            await _activityService.LogAsync(user,
+                "Completed Intervention",
+                $"Intervention {id} marked Completed for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Intervention completed for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             TempData["SuccessMessage"] = "Intervention marked as completed.";
             return RedirectToAction("Index", "PatientProfile", new { id = intervention.PatientId });
         }
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteIntervention(int id)
@@ -300,6 +461,20 @@ namespace SafehavenPMS.Controllers
             intervention.Status = "Removed";
             _context.Update(intervention);
             await _context.SaveChangesAsync();
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(intervention.PatientId);
+            await _activityService.LogAsync(user,
+                "Removed Intervention",
+                $"Intervention {id} marked Removed for {PatientFullName(pat)}",
+                "TreatmentPlan",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Intervention removed for {PatientFullName(pat)}",
+                type: "Warning");
+            // --- end ---
 
             TempData["SuccessMessage"] = "Intervention removed.";
             return RedirectToAction("Index", "PatientProfile", new { id = intervention.PatientId });

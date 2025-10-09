@@ -27,128 +27,227 @@ namespace SafehavenPMS.Controllers
             _cloudinary = cloudinary;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+    string billableSearch = null,
+    string invoiceSearch = null,
+    string invoiceStatus = null,
+    string paymentSearch = null,
+    string paymentStatus = null,
+    string historyFrom = null,
+    string historyTo = null)
+{
+    var userIsFamily = User.IsInRole("Family");
+    var today = DateTime.UtcNow.Date;
+
+    // Placeholder: resolve accessible patient ids for Family user
+    // TODO: replace with actual linkage (e.g. FamilyPatient table)
+    IQueryable<Patient> patientQuery = _context.Patients.AsQueryable();
+    if (userIsFamily)
+    {
+        // restrict to none (until linkage implemented)
+        patientQuery = patientQuery.Where(p => false);
+    }
+
+    var patientIds = await patientQuery.Select(p => p.PatientId).ToListAsync();
+
+    // Billables
+    var billablesQuery = _context.Billables
+        .Include(b => b.Patient)
+        .AsQueryable();
+
+    if (userIsFamily)
+        billablesQuery = billablesQuery.Where(b => patientIds.Contains(b.PatientId));
+
+    if (!string.IsNullOrWhiteSpace(billableSearch))
+    {
+        var s = billableSearch.Trim().ToLower();
+        billablesQuery = billablesQuery.Where(b =>
+            b.Description.ToLower().Contains(s) ||
+            b.PatientId.ToString().Contains(s) ||
+            ((b.Patient.Firstname ?? "") + " " + (b.Patient.Lastname ?? "")).ToLower().Contains(s));
+    }
+
+    var billables = await billablesQuery
+        .OrderByDescending(b => b.DateAdded)
+        .ToListAsync();
+
+    // Invoices
+    var invoicesQuery = _context.Invoices
+        .Include(i => i.Patient)
+        .Include(i => i.Lines)
+        .AsQueryable();
+
+    if (userIsFamily)
+        invoicesQuery = invoicesQuery.Where(i => patientIds.Contains(i.PatientId));
+
+    if (!string.IsNullOrWhiteSpace(invoiceSearch))
+    {
+        var s = invoiceSearch.Trim().ToLower();
+        invoicesQuery = invoicesQuery.Where(i =>
+            i.InvoiceNumber.ToLower().Contains(s) ||
+            i.PatientId.ToString().Contains(s) ||
+            ((i.Patient.Firstname ?? "") + " " + (i.Patient.Lastname ?? "")).ToLower().Contains(s));
+    }
+
+    var invoicesRaw = await invoicesQuery
+        .OrderByDescending(i => i.CreatedAt)
+        .ToListAsync();
+
+    // Payments
+    var paymentsQuery = _context.Payments
+        .Include(p => p.Patient)
+        .Include(p => p.Invoice)
+        .AsQueryable();
+
+    if (userIsFamily)
+        paymentsQuery = paymentsQuery.Where(p => patientIds.Contains(p.PatientId ?? 0));
+
+    if (!string.IsNullOrWhiteSpace(paymentSearch))
+    {
+        var s = paymentSearch.Trim().ToLower();
+        paymentsQuery = paymentsQuery.Where(p =>
+            (p.TransactionNumber ?? "").ToLower().Contains(s) ||
+            p.PaymentRefId.ToLower().Contains(s) ||
+            (p.Invoice.InvoiceNumber ?? "").ToLower().Contains(s) ||
+            p.InvoiceId.ToString().Contains(s) ||
+            ((p.Patient.Firstname ?? "") + " " + (p.Patient.Lastname ?? "")).ToLower().Contains(s));
+    }
+
+    if (!string.IsNullOrWhiteSpace(paymentStatus))
+        paymentsQuery = paymentsQuery.Where(p => p.status == paymentStatus);
+
+    var payments = await paymentsQuery
+        .OrderByDescending(p => p.CreatedAt)
+        .ToListAsync();
+
+    // Payment History (date range filters)
+    DateTime? fromDate = null;
+    DateTime? toDate = null;
+    if (DateTime.TryParse(historyFrom, out var fd)) fromDate = fd.Date;
+    if (DateTime.TryParse(historyTo, out var td)) toDate = td.Date.AddDays(1).AddTicks(-1);
+
+    var historyQuery = _context.PaymentHistories
+        .Include(ph => ph.Invoice)
+        .Include(ph => ph.Payment)
+        .ThenInclude(p => p.Patient)
+        .AsQueryable();
+
+    if (userIsFamily)
+        historyQuery = historyQuery.Where(h => patientIds.Contains(h.Invoice.PatientId));
+
+    if (fromDate.HasValue)
+        historyQuery = historyQuery.Where(h => h.CreatedAt >= fromDate.Value);
+    if (toDate.HasValue)
+        historyQuery = historyQuery.Where(h => h.CreatedAt <= toDate.Value);
+
+    var paymentHistories = await historyQuery
+        .OrderByDescending(h => h.CreatedAt)
+        .ToListAsync();
+
+    // Preload verified payments per invoice for invoice status computation
+    var verifiedPaymentsPerInvoice = await _context.Payments
+        .Where(p => p.status == "Verified")
+        .GroupBy(p => p.InvoiceId)
+        .Select(g => new { InvoiceId = g.Key, Paid = g.Sum(x => x.AmountPaid) })
+        .ToDictionaryAsync(x => x.InvoiceId, x => x.Paid);
+
+    var invoiceVMs = invoicesRaw.Select(inv =>
+    {
+        verifiedPaymentsPerInvoice.TryGetValue(inv.InvoiceId, out var paid);
+        paid = paid < 0 ? 0 : paid;
+
+        var amountDue = Math.Max(0m, inv.TotalAmount - paid);
+        string derivedStatus;
+        if (amountDue == 0 && inv.TotalAmount > 0) derivedStatus = "Paid";
+        else if (paid > 0 && amountDue > 0) derivedStatus = "Partial";
+        else if (paid == 0 && inv.DueDate.Date < today) derivedStatus = "Overdue";
+        else derivedStatus = "NotYetPaid";
+
+        // honor stored status if it is "Voided"
+        if (string.Equals(inv.Status, "Voided", StringComparison.OrdinalIgnoreCase))
+            derivedStatus = "Voided";
+
+        return new InvoiceListItemViewModel
         {
-            var billables = await _context.Billables
-                                .Include(p => p.Patient)
-                                .ToListAsync();
+            InvoiceId = inv.InvoiceId,
+            PatientId = inv.PatientId,
+            PatientName = inv.Patient != null ? $"{inv.Patient.Firstname} {inv.Patient.Lastname}" : string.Empty,
+            InvoiceNumber = inv.InvoiceNumber,
+            Month = inv.Month,
+            Year = inv.Year,
+            DueDate = inv.DueDate,
+            TotalAmount = inv.TotalAmount,
+            AmountDue = amountDue,
+            Status = derivedStatus
+        };
+    }).ToList();
 
-            var invoice = await _context.Invoices
-                                .Include(i => i.Lines)
-                                .Include(i => i.Patient)
-                                .ToListAsync();
+    if (!string.IsNullOrWhiteSpace(invoiceStatus))
+        invoiceVMs = invoiceVMs.Where(i => i.Status.Equals(invoiceStatus, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            var uploadPayments = await _context.Payments
-                                .Include(p => p.Patient)
-                                .ToListAsync();
-            // var medItems = medOrders.Select(b => new BillableItemViewModel
-            // {
-            //     PatientId = b.PatientId,
-            //     PatientName = b.Patient != null ? $"{b.Patient.Firstname} {b.Patient.Lastname}" : null,
-            //     MedicationId = b.MedicineId,
-            //     Category = "Medication",
-            //     Description = $"{b.Medicine?.GenericName}",
-            //     Quantity = b.UnitPerDose,
-            //     UnitPrice = b.Medicine?.Price ?? 0m,
-            //     DateAdded = b.CreatedAt,
-            //     CreatedBy = b.CreatedBy
-            // }).ToList();
+    var viewModel = new BillablesPageViewModel
+    {
+        Items = billables.Select(b => new BillableItemViewModel
+        {
+            BillableId = b.BillableId,
+            PatientId = b.PatientId,
+            PatientName = b.Patient != null ? $"{b.Patient.Firstname} {b.Patient.Lastname}" : string.Empty,
+            ReferenceType = b.ReferenceType,
+            Category = b.Category,
+            Description = b.Description,
+            Quantity = b.Quantity,
+            UnitPrice = b.UnitPrice,
+            CreatedBy = b.CreatedBy,
+            DateAdded = b.DateAdded
+        }).ToList(),
+        Invoices = invoiceVMs,
+        UploadPayments = payments.Select(p => new UploadPaymentViewModel
+        {
+            PaymentId = p.PaymentId,
+            InvoiceId = p.InvoiceId,
+            PatientId = p.PatientId,
+            PatientName = p.Patient != null ? $"{p.Patient.Firstname} {p.Patient.Lastname}" : string.Empty,
+            AmountPaid = p.AmountPaid,
+            TransactionNumber = p.TransactionNumber,
+            PaymentMethod = p.PaymentMethod,
+            PhotoUrl = p.ProofFileName,
+            Status = p.status,
+            Remarks = p.Remarks,
+            CreatedAt = p.CreatedAt,
+            CreatedBy = p.CreatedBy
+        }).ToList(),
+        PaymentHistories = paymentHistories.Select(ph => new PaymentHistoryItemViewModel
+        {
+            PaymentHistoryId = ph.PaymentHistoryId,
+            PaymentId = ph.PaymentId,
+            PaymentRefNumber = ph.Payment?.PaymentRefId,
+            InvoiceId = ph.InvoiceId,
+            InvoiceRefNumber = ph.Invoice?.InvoiceRefId,
+            Period = ph.Period,
+            Month = ph.Month,
+            Year = ph.Year,
+            DueDate = ph.DueDate,
+            TotalAmount = ph.TotalAmount,
+            AmountDue = ph.AmountDue,
+            AmountToApply = ph.AmountToApply,
+            Remarks = ph.Remarks,
+            RecordedBy = ph.RecordedBy,
+            CreatedAt = ph.CreatedAt
+        }).ToList()
+    };
 
-            // // map miscellaneous items to the same view-model shape
-            // var misc = await _context.MiscellaneousItems
-            //                 .Include(m => m.Patient)
-            //                 .ToListAsync();
+    ViewBag.Filters = new {
+        billableSearch,
+        invoiceSearch,
+        invoiceStatus,
+        paymentSearch,
+        paymentStatus,
+        historyFrom,
+        historyTo
+    };
 
-            // var miscItems = billables.Select(m => new BillableItemViewModel
-            // {
-            //     PatientId = m.PatientId,
-            //     PatientName = m.Patient != null ? $"{m.Patient.Firstname} {m.Patient.Lastname}" : null,
-            //     MedicationId = null,
-            //     Category = "Miscellaneous",
-            //     Description = m.Description,
-            //     Quantity = 1,
-            //     UnitPrice = m.Amount,
-            //     CreatedBy = m.CreatedBy
-            // }).ToList();
-
-            // load payment history entries (use Set<T>() to avoid depending on DbSet property name)
-            var paymentHistories = await _context.PaymentHistories
-                                                 .Include(ph => ph.Payment)
-                                                 .Include(ph => ph.Invoice)
-                                                 .ThenInclude(i => i.Patient)
-                                                 .ToListAsync();
-
-            var viewModel = new BillablesPageViewModel
-            {
-                Items = billables.Select(b => new BillableItemViewModel
-                {
-                    PatientId = b.PatientId,
-                    PatientName = b.Patient != null ? $"{b.Patient.Firstname} {b.Patient.Lastname}" : string.Empty,
-                    ReferenceType = b.ReferenceType,
-                    Category = b.Category,
-                    Description = b.Description,
-                    Quantity = b.Quantity,
-                    UnitPrice = b.Amount,
-                    CreatedBy = b.CreatedBy
-                }).ToList(),
-
-                // The BillablesPageViewModel expects a list of Invoice entities; assign the loaded entity list directly.
-                Invoices = invoice.Select(i => new InvoiceListItemViewModel
-                {
-                    InvoiceId = i.InvoiceId,
-                    PatientId = i.PatientId,
-                    PatientName = i.Patient != null ? $"{i.Patient.Firstname} {i.Patient.Lastname}" : string.Empty,
-                    InvoiceNumber = i.InvoiceNumber,
-                    Month = i.Month,
-                    Year = i.Year,
-                    DueDate = i.DueDate,
-                    TotalAmount = i.TotalAmount,
-                    AmountDue = i.TotalAmount, // This should be calculated based on payments made; using TotalAmount as a placeholder.
-                    Status = i.Status ?? "NotYetPaid"
-                }).ToList(),
-
-                UploadPayments = uploadPayments.Select(p => new UploadPaymentViewModel
-                {
-                    PaymentId = p.PaymentId,
-                    InvoiceId = p.InvoiceId,
-                    PatientId = p.PatientId,
-                    // prevent NRE when p.Patient is null
-                    PatientName = p.Patient != null
-                                  ? $"{(p.Patient.Firstname ?? "").Trim()} {(p.Patient.Lastname ?? "").Trim()}".Trim()
-                                  : string.Empty,
-                    AmountPaid = p.AmountPaid,
-                    TransactionNumber = p.TransactionNumber,
-                    PaymentMethod = p.PaymentMethod,
-                    // support both property names if model differs (ProofUrl preferred)
-                    PhotoUrl = p.ProofFileName,
-                    Status = p.status,
-                    Remarks = p.Remarks,
-                    CreatedAt = p.CreatedAt,
-                    CreatedBy = p.CreatedBy
-                }).ToList(),
-
-                PaymentHistories = paymentHistories.Select(ph => new PaymentHistoryItemViewModel
-                {
-                    PaymentHistoryId = ph.PaymentHistoryId,
-                    PaymentId = ph.PaymentId,
-                    PaymentRefNumber = ph.Payment?.PaymentRefId,
-                    InvoiceId = ph.InvoiceId,
-                    InvoiceRefNumber = ph.Invoice.InvoiceRefId,
-                    Period = ph.Period,
-                    Month = ph.Month,
-                    Year = ph.Year,
-                    DueDate = ph.DueDate,
-                    TotalAmount = ph.TotalAmount,
-                    AmountDue = ph.AmountDue,
-                    AmountToApply = ph.AmountToApply,
-                    Remarks = ph.Remarks,
-                    RecordedBy = ph.RecordedBy,
-                    CreatedAt = ph.CreatedAt
-                }).ToList()
-            };
-
-            return View(viewModel);
-        }
+    return View(viewModel);
+}
 
         // GET: /Billing/AddMiscellaneousItem
         [HttpGet]
@@ -292,7 +391,7 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpGet]
-        public IActionResult GenerateInvoice()
+        public async Task<IActionResult> GenerateInvoice()
         {
             var vm = new GenerateInvoiceViewModel
             {
@@ -300,17 +399,28 @@ namespace SafehavenPMS.Controllers
                 DueDate = DateTime.UtcNow.Date
             };
 
-            // read TempData messages (view will display them)
+            var latestFees = await _context.BillingMonthlyFees
+                                .OrderByDescending(f => f.EffectiveDate)
+                                .FirstOrDefaultAsync();
+
+            ViewBag.TreatmentFee = latestFees?.TreatmentFee ?? 0m;
+            ViewBag.FoodFee = latestFees?.FoodFee ?? 0m;
+            ViewBag.AccommodationAmenitiesFee = latestFees?.AccommodationAmenitiesFee ?? 0m;
+            ViewBag.TotalMonthlyFee = (latestFees?.TreatmentFee ?? 0m)
+                                    + (latestFees?.FoodFee ?? 0m)
+                                    + (latestFees?.AccommodationAmenitiesFee ?? 0m);
+            ViewBag.HasMonthlyFeeConfig = latestFees != null;
+            ViewBag.EffectiveDate = latestFees?.EffectiveDate.ToLocalTime().ToString("MMM dd, yyyy");
+
             return View(vm);
         }
 
-        // NEW: handle form post, call BillingHelper to generate invoices
+        // POST: generate invoices using the configured monthly fee (no manual entry)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> GenerateInvoiceConfirm(GenerateInvoiceViewModel model)
         {
-            if (model == null)
-                return BadRequest();
+            if (model == null) return BadRequest();
 
             if (!model.Month.HasValue || !model.Year.HasValue)
             {
@@ -318,14 +428,53 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction(nameof(GenerateInvoice));
             }
 
-            // prepare parameters
+            var latestFees = await _context.BillingMonthlyFees
+                                .OrderByDescending(f => f.EffectiveDate)
+                                .FirstOrDefaultAsync();
+
+            if (latestFees == null)
+            {
+                TempData["Warning"] = "Monthly fee not configured. Set it up first.";
+                return RedirectToAction("Index", "BillingSetup");
+            }
+
+            var today = DateTime.UtcNow.Date;
             int month = model.Month.Value;
             int year = model.Year.Value;
-            decimal standardFee = 35000;
-            DateTime dueDate = model.DueDate ?? DateTime.UtcNow.Date;
+
+            // Rule: Only completed past months allowed
+            if (year > today.Year || (year == today.Year && month >= today.Month))
+            {
+                TempData["Warning"] = "You may only generate invoices for completed past months.";
+                return RedirectToAction(nameof(GenerateInvoice));
+            }
+
+            DateTime periodStart = new DateTime(year, month, 1);
+            DateTime periodEnd = periodStart.AddMonths(1).AddTicks(-1);
+
+            // Due date must be ≥ 15 days from generation date
+            DateTime dueDate = model.DueDate ?? today;
+            if (dueDate < today.AddDays(15))
+            {
+                TempData["Warning"] = "Due Date must be at least 15 days after today.";
+                return RedirectToAction(nameof(GenerateInvoice));
+            }
+
+            decimal standardFee = latestFees.TreatmentFee
+                                + latestFees.FoodFee
+                                + latestFees.AccommodationAmenitiesFee;
+
+            bool anyBillables = await _context.Billables
+                .AnyAsync(b => b.DateAdded >= periodStart && b.DateAdded <= periodEnd);
+
+            if (!anyBillables && standardFee <= 0m)
+            {
+                TempData["Warning"] = "No billables found for the selected period.";
+                return RedirectToAction(nameof(GenerateInvoice));
+            }
+
             string createdBy = User?.Identity?.Name ?? "system";
 
-            // call helper to generate invoices for all patients for the period
             var invoices = await BillingHelper.GenerateMonthlyInvoicesAsync(
                 _context,
                 month,
@@ -335,22 +484,9 @@ namespace SafehavenPMS.Controllers
                 createdBy,
                 persist: true);
 
-            TempData["Success"] = $"Monthly invoices generated for {new DateTime(year, month, 1):MMMM yyyy}.";
+            TempData["Success"] = $"Monthly invoices generated for {periodStart:MMMM yyyy}.";
             TempData["GeneratedCount"] = invoices.Count;
-            try
-            {
-                var json = System.Text.Json.JsonSerializer.Serialize(invoices, new System.Text.Json.JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-                Console.WriteLine("Generated invoices:");
-                Console.WriteLine(json);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error serializing invoices: " + ex.Message);
-            }
-            return RedirectToAction("index");
+            return RedirectToAction("Index");
         }
 
         // GET: /Billing/Invoice/5

@@ -1065,3 +1065,49 @@
         });
     });
 </script>
+
+<style>
+    /* Existing styles ... */
+
+    .problem-list-row {
+        border:1px solid #e5e5e5;
+        transition: border-color .18s ease, background .18s ease;
+    }
+    .problem-list-row.active-problem {
+        border-color:#0097A7 !important;      /* light teal border */
+        background:#D6F2F7 !important;        /* keep your light blue fill */
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function activateRow(btn){
+            document.querySelectorAll('.problem-list-row').forEach(r=>{
+                r.classList.remove('active-problem');
+            });
+            if(!btn) return;
+            const row = btn.closest('.problem-list-row');
+            if(row) row.classList.add('active-problem');
+        }
+
+        // initial
+        const firstBtn = document.querySelector('#problemTab button.active') || document.querySelector('#problemTab button');
+        activateRow(firstBtn);
+
+        // click handlers
+        document.querySelectorAll('#problemTab button').forEach(b=>{
+            b.addEventListener('click', ()=> activateRow(b));
+        });
+
+        // when clicking row (outside dropdown)
+        document.querySelectorAll('#problemTab .problem-list-row').forEach(r=>{
+            r.addEventListener('click', e=>{
+                if(e.target.closest('.dropdown')) return;
+                const btn = r.querySelector('button');
+                if(btn){
+                    btn.click();
+                }
+            });
+        });
+    });
+</script>

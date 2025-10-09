@@ -30,7 +30,6 @@
         foreach (var d in Model.Documents)
         {
             bool isImage = d.ContentType?.StartsWith("image/") == true;
-            bool isPdf = d.ContentType == "application/pdf";
             <div class="mh-card" style="flex:1 1 230px; max-width:250px; background:#fff; border:1px solid #d9e4e7; border-radius:10px; padding:12px;">
                 <div style="font-size:.75rem; font-weight:600; color:#555; word-break:break-word;">@d.FileName</div>
                 <div style="margin:10px 0; height:130px; display:flex; align-items:center; justify-content:center; background:#f1f6f7; border-radius:6px; overflow:hidden;">
@@ -38,51 +37,22 @@
                     {
                         <img src="@d.Url" alt="@d.FileName" style="max-width:100%; max-height:100%; object-fit:contain;" />
                     }
-                    else if (isPdf)
+                    else if (d.ContentType == "application/pdf")
                     {
-                        <i class="bx bxs-file-pdf" style="font-size:2.4rem; color:#c22;"></i>
+                        <i class="bx bxs-file-pdf" style="font-size:2.2rem; color:#c22;"></i>
                     }
                     else
                     {
-                        <i class="bx bxs-file" style="font-size:2.2rem; color:#555;"></i>
+                        <i class="bx bxs-file" style="font-size:2rem; color:#555;"></i>
                     }
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:4px;">
-                    @if (isPdf)
-                    {
-                        <button type="button"
-                                class="btn btn-sm btn-outline-primary view-pdf"
-                                data-url="@d.Url"
-                                title="View PDF">
-                            View
-                        </button>
-                    }
-                    else
-                    {
-                        <a class="btn btn-sm btn-outline-primary" target="_blank" href="@d.Url">Open</a>
-                    }
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <a class="btn btn-sm btn-outline-primary" target="_blank" href="@d.Url">Open</a>
                     <span style="font-size:.55rem; color:#888;">@d.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
                 </div>
             </div>
         }
     }
-</div>
-
-<!-- Modal for PDF preview -->
-<div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width:90%;">
-    <div class="modal-content" style="height:90vh;">
-      <div class="modal-header py-2">
-        <h6 class="modal-title">PDF Preview</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-0" style="height:100%;">
-        <iframe id="pdfPreviewFrame" title="PDF Preview"
-                style="border:0; width:100%; height:100%;"
-                src="about:blank"></iframe>
-      </div>
-    </div>
-  </div>
 </div>
 
 @if (canUpload)
@@ -94,42 +64,20 @@
     const grid = document.getElementById('mh-doc-grid');
     const progWrap = document.getElementById('mh-progress');
     const progBar = progWrap?.querySelector('.progress-bar');
-    const pdfModalEl = document.getElementById('pdfPreviewModal');
-    const pdfFrame = document.getElementById('pdfPreviewFrame');
     const patientId = @Model.PatientId;
 
-    // PDF modal instance (bootstrap 5)
-    let pdfModal = null;
-    if (pdfModalEl) {
-        pdfModal = new bootstrap.Modal(pdfModalEl);
-        pdfModalEl.addEventListener('hidden.bs.modal', () => {
-            if (pdfFrame) pdfFrame.src = 'about:blank';
-        });
-    }
+    if (!area) return;
 
-    // Delegated click for dynamically added PDF buttons
-    grid.addEventListener('click', e => {
-        const btn = e.target.closest('.view-pdf');
-        if (!btn) return;
-        const url = btn.getAttribute('data-url');
-        if (!url) return;
-        // Use iframe (native browser PDF viewer). Append #toolbar=0 if you want minimal UI.
-        pdfFrame.src = encodeURI(url);
-        pdfModal?.show();
+    const pick = () => input.click();
+    area.addEventListener('click', pick);
+    area.addEventListener('dragover', e => { e.preventDefault(); area.style.background='#e9f8fb'; });
+    area.addEventListener('dragleave', e => { e.preventDefault(); area.style.background='#f5fbfd'; });
+    area.addEventListener('drop', e => {
+        e.preventDefault();
+        area.style.background='#f5fbfd';
+        if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
     });
-
-    if (area) {
-        const pick = () => input.click();
-        area.addEventListener('click', pick);
-        area.addEventListener('dragover', e => { e.preventDefault(); area.style.background='#e9f8fb'; });
-        area.addEventListener('dragleave', e => { e.preventDefault(); area.style.background='#f5fbfd'; });
-        area.addEventListener('drop', e => {
-            e.preventDefault();
-            area.style.background='#f5fbfd';
-            if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
-        });
-        input.addEventListener('change', e => handleFiles(e.target.files));
-    }
+    input.addEventListener('change', e => handleFiles(e.target.files));
 
     function handleFiles(list){
         if(!list) return;
@@ -153,31 +101,22 @@
         }
     }
     function setProgress(p){ if(!progBar) return; progBar.style.width=p+'%'; progBar.textContent=p+'%'; }
-
     function addCard(d){
         if(grid.querySelector('.text-muted')) grid.innerHTML='';
         const isImage = (d.contentType||'').startsWith('image/');
-        const isPdf = d.contentType === 'application/pdf';
         const card=document.createElement('div');
         card.className='mh-card';
         card.style.cssText="flex:1 1 230px; max-width:250px; background:#fff; border:1px solid #d9e4e7; border-radius:10px; padding:12px;";
         card.innerHTML=`
             <div style="font-size:.75rem;font-weight:600;color:#555;word-break:break-word;">${d.fileName}</div>
             <div style="margin:10px 0;height:130px;display:flex;align-items:center;justify-content:center;background:#f1f6f7;border-radius:6px;overflow:hidden;">
-                ${
-                    isImage
-                        ? `<img src="${d.url}" style="max-width:100%;max-height:100%;object-fit:contain;">`
-                        : (isPdf
-                            ? '<i class="bx bxs-file-pdf" style="font-size:2.4rem;color:#c22;"></i>'
-                            : '<i class="bx bxs-file" style="font-size:2.2rem;color:#555;"></i>')
-                }
+                ${isImage ? `<img src="${d.url}" style="max-width:100%;max-height:100%;object-fit:contain;">`
+                : (d.contentType==='application/pdf'
+                    ? '<i class="bx bxs-file-pdf" style="font-size:2.2rem;color:#c22;"></i>'
+                    : '<i class="bx bxs-file" style="font-size:2rem;color:#555;"></i>')}
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;">
-                ${
-                    isPdf
-                       ? `<button type="button" class="btn btn-sm btn-outline-primary view-pdf" data-url="${d.url}">View</button>`
-                       : `<a class="btn btn-sm btn-outline-primary" target="_blank" href="${d.url}">Open</a>`
-                }
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <a class="btn btn-sm btn-outline-primary" target="_blank" href="${d.url}">Open</a>
                 <span style="font-size:.55rem;color:#888;">now</span>
             </div>`;
         grid.prepend(card);

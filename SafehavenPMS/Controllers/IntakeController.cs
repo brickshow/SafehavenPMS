@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using SafehavenPMS.ViewModel;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
+using SafehavenPMS.Services;
 
 
 namespace SafehavenPMS.Controllers
@@ -20,32 +21,38 @@ namespace SafehavenPMS.Controllers
     public class IntakeController : Controller
     {
         private readonly SafehavenPMSContext _context;
-        public IntakeController(SafehavenPMSContext context)
+        private readonly ActivityLogService _activityService; // added
+        public IntakeController(SafehavenPMSContext context, ActivityLogService activityService) // modified
         {
             _context = context;
+            _activityService = activityService;
         }
 
+        private static string GetPatientFullName(Patient p) => $"{p.Firstname} {p.Lastname}";
+
         public async Task<IActionResult> Index(
-                   int? page = 1,
-                   int? pageSize = 10,
-                   string searchQuery = null,
-                   string status = null,
-                   string sortOrder = null,
-                   string sortBy = null)
-         {
-            // Default to show all (except discharged) when no explicit status provided
+    int? page = 1,
+    int? pageSize = 10,
+    string searchQuery = null,
+    string status = null,
+    string sortOrder = null,
+    string sortBy = null)
+        {
             if (string.IsNullOrEmpty(status))
             {
-                status = "All"; // previously defaulted to NewIntake — change to All so we don't suppress non-discharged patients
+                status = "All";
             }
+
+            var currentUser = User?.Identity?.Name;
 
             var query = _context.Patients
                 .Include(i => i.IntakeForm)
                 .Include(c => c.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
+                .Where(p => p.CreatedBy == currentUser || p.IntakeForm.CreatedBy == currentUser) // Add this line
                 .AsQueryable();
 
-            // --- Role-based restriction: Admin sees all, non-Admin only assigned patients ---
+            // Rest of your existing role-based restrictions
             var userIdClaim = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out var userId))
             {
@@ -55,24 +62,24 @@ namespace SafehavenPMS.Controllers
                     if (appUser.ClinicalStaffID.HasValue)
                     {
                         var csId = appUser.ClinicalStaffID.Value;
-                        query = query.Where(p => p.ClinicalStaffPatients.Any(csp => csp.ClinicalStaffId == csId));
+                        query = query.Where(p =>
+                            p.ClinicalStaffPatients.Any(csp => csp.ClinicalStaffId == csId) ||
+                            p.CreatedBy == currentUser ||
+                            p.IntakeForm.CreatedBy == currentUser);
                     }
                     else
                     {
-                        // not linked to a clinical staff — don't expose patients
-                        query = query.Where(p => false);
+                        // If not admin and not clinical staff, only show own created records
+                        query = query.Where(p => p.CreatedBy == currentUser || p.IntakeForm.CreatedBy == currentUser);
                     }
                 }
             }
 
-            // Exclude discharged patients from the intake list
-            query = query.Where(p => p.PatientStatus != PatientStatusEnum.Discharged.ToString());
-            
-            // Counts for each status
-            ViewBag.TotalPatientCount = await _context.Patients.CountAsync();
-            ViewBag.WaitlistedCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.Waitlisted.ToString());
-            ViewBag.PendingAssessmentCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingAssessment.ToString());
-            ViewBag.PendingApprovalCount = await _context.Patients.CountAsync(p => p.PatientStatus == Enum.PatientStatusEnum.PendingApproval.ToString());
+            // Modify the status counts to reflect only the filtered patients
+            ViewBag.TotalPatientCount = await query.CountAsync();
+            ViewBag.WaitlistedCount = await query.CountAsync(p => p.PatientStatus == PatientStatusEnum.Waitlisted.ToString());
+            ViewBag.PendingAssessmentCount = await query.CountAsync(p => p.PatientStatus == PatientStatusEnum.PendingAssessment.ToString());
+            ViewBag.PendingApprovalCount = await query.CountAsync(p => p.PatientStatus == PatientStatusEnum.PendingApproval.ToString());
 
             // Pass current filters/sorting to view
             ViewBag.CurrentPage = page ?? 1;
@@ -159,28 +166,24 @@ namespace SafehavenPMS.Controllers
                 .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
-    
-            // Project to IntakeViewModel
-             var intakeViewModels = patientList
-                                    .Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
-                                    {
-                                        PatientId = p.PatientId,
-                                        FullName = $"{p.Firstname} {p.Lastname}",
-                                        ReferredBy = p.IntakeForm?.AccompaniedBy ?? string.Empty,
-                                        ReferredByPhoneNumber = p.IntakeForm?.PhoneNumber ?? string.Empty,
-                                        CreatedBy = p.IntakeForm.CreatedBy ?? "System", // Populate if you have this info
-                                        IntakeDate = p.IntakeForm?.CreatedAt != null ? ((DateTime)p.IntakeForm.CreatedAt).ToString("yyyy-MM-dd") : "-",
-                                        CompletedDate = p.CreatedAt != null ? ((DateTime)p.CreatedAt).ToString("MMM dd, yyyy") : "-",
-                                        // SAFE: don't call ToString() on a null IntakeForm or null IntakeStatus
-                                        IntakeStatus = p.PatientStatus ?? "-",
-                                    }).ToList() ?? new List<SafehavenPMS.ViewModel.IntakeViewModel>();
 
-            //Return Total number of new referral
-            var Pending = await _context.Patients
-                                    .Where(p => p.PatientStatus == PatientStatusEnum.NewIntake.ToString())
-                                    .ToListAsync();
+            // Update the view model projection to include creator information
+            var intakeViewModels = patientList
+                .Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
+                {
+                    PatientId = p.PatientId,
+                    FullName = $"{p.Firstname} {p.Lastname}",
+                    ReferredBy = p.IntakeForm?.AccompaniedBy ?? string.Empty,
+                    ReferredByPhoneNumber = p.IntakeForm?.PhoneNumber ?? string.Empty,
+                    CreatedBy = p.CreatedBy ?? p.IntakeForm?.CreatedBy ?? "System",
+                    IntakeDate = p.IntakeForm?.CreatedAt != null ? ((DateTime)p.IntakeForm.CreatedAt).ToString("yyyy-MM-dd") : "-",
+                    CompletedDate = p.CreatedAt != null ? ((DateTime)p.CreatedAt).ToString("MMM dd, yyyy") : "-",
+                    IntakeStatus = p.PatientStatus ?? "-",
+                }).ToList() ?? new List<SafehavenPMS.ViewModel.IntakeViewModel>();
 
-            ViewBag.Pending = Pending.Count();
+            ViewBag.Pending = await query
+                .CountAsync(p => p.PatientStatus == PatientStatusEnum.NewIntake.ToString());
+
             return View(intakeViewModels);
         }
 
@@ -206,7 +209,7 @@ namespace SafehavenPMS.Controllers
                 .FirstOrDefaultAsync(i => i.PatientId == id);
 
             if (intake == null)
-                return NotFound();
+                return View();  
 
             // Calculate age from DoB
             string age = "-";
@@ -317,7 +320,15 @@ namespace SafehavenPMS.Controllers
                 
                 await _context.SaveChangesAsync();
                 
+                var fullName = GetPatientFullName(intakeForm);
                 TempData["SuccessMessage"] = "Intake details saved.";
+                await _activityService.LogAsync(
+                    User?.Identity?.Name ?? "System",
+                    "Updated intake details",
+                    $"Updated basic intake details for patient {fullName}",
+                    "Intake",
+                    "Info",
+                    intakeForm.PatientId);
             }
             catch (Exception ex)
             {
@@ -347,7 +358,7 @@ namespace SafehavenPMS.Controllers
 
             if (intakeForm == null)
             {
-                return NotFound();
+                return View();
             }
 
             try
@@ -401,7 +412,15 @@ namespace SafehavenPMS.Controllers
 
                 await _context.SaveChangesAsync();
                 
+                var fullName = GetPatientFullName(intakeForm);
                 TempData["SuccessMessage"] = $"Family information saved successfully. Added {intakeForm.IntakeForm.FamilyMembers.Count} family members.";
+                await _activityService.LogAsync(
+                    User?.Identity?.Name ?? "System",
+                    "Updated family data",
+                    $"Saved {intakeForm.IntakeForm.FamilyMembers.Count} family members for patient {fullName}",
+                    "Intake",
+                    "Info",
+                    intakeForm.PatientId);
             }
             catch (Exception ex)
             {
@@ -428,7 +447,7 @@ namespace SafehavenPMS.Controllers
 
             if (intakeForm == null)
             {
-                return NotFound();
+                return View();
             }
 
             try
@@ -462,7 +481,15 @@ namespace SafehavenPMS.Controllers
                 await UpdatePatientStatus(intakeForm.PatientId);
 
                 await _context.SaveChangesAsync();
+                var fullName = GetPatientFullName(intakeForm);
                 TempData["SuccessMessage"] = "Presenting problems saved successfully.";
+                await _activityService.LogAsync(
+                    User?.Identity?.Name ?? "System",
+                    "Updated presenting problems",
+                    $"Presenting problems updated for patient {fullName}",
+                    "Intake",
+                    "Info",
+                    intakeForm.PatientId);
             }
             catch (Exception ex)
             {
@@ -489,7 +516,7 @@ namespace SafehavenPMS.Controllers
             //TODO RETURN TEMDATA
             if (intakeForm == null)
             {
-                return NotFound();
+                return View();
             }
 
             try
@@ -523,7 +550,15 @@ namespace SafehavenPMS.Controllers
                 await UpdatePatientStatus(intakeForm.PatientId);
 
                 await _context.SaveChangesAsync();
+                var fullName = GetPatientFullName(intakeForm);
                 TempData["SuccessMessage"] = "Counselor impressions saved successfully.";
+                await _activityService.LogAsync(
+                    User?.Identity?.Name ?? "System",
+                    "Updated counselor impressions",
+                    $"Counselor impressions updated for patient {fullName}",
+                    "Intake",
+                    "Info",
+                    intakeForm.PatientId);
             }
             catch (Exception ex)
             {
@@ -554,7 +589,14 @@ namespace SafehavenPMS.Controllers
             }   
          
             await _context.SaveChangesAsync();
-
+            var fullName = GetPatientFullName(patient);
+            await _activityService.LogAsync(
+                User?.Identity?.Name ?? "System",
+                "Updated patient status",
+                $"Patient {fullName} status now {patient.PatientStatus}",
+                "Status",
+                "Info",
+                patient.PatientId);
         }
 
         //Action to Submit Intake form for assessment
@@ -565,7 +607,7 @@ namespace SafehavenPMS.Controllers
             var patient = await _context.Patients.FindAsync(PatientId);
             if (patient == null)
             {
-                return NotFound();
+                return View();
             }
 
             // set CreatedBy on patient when submitting
@@ -594,6 +636,14 @@ namespace SafehavenPMS.Controllers
                 await _context.NewAppointments.AddAsync(scheduling);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Intake form submitted for assessment successfully.";
+                var fullName = GetPatientFullName(patient);
+                await _activityService.LogAsync(
+                    User?.Identity?.Name ?? "System",
+                    "Submitted intake form",
+                    $"Intake form submitted; patient {fullName} status set to Waitlisted",
+                    "Intake",
+                    "Info",
+                    patient.PatientId);
             }
             catch (Exception ex)
             {

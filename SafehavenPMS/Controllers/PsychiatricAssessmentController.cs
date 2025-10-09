@@ -9,6 +9,7 @@ using System.Linq;
 using System;
 using safehavenpms.Enum;
 using Microsoft.AspNetCore.Authorization;
+using SafehavenPMS.Services; // <-- added
 
 
 namespace safehavenpms.Controllers
@@ -17,99 +18,127 @@ namespace safehavenpms.Controllers
     public partial class PsychiatricAssessmentController : Controller
     {
         private readonly SafehavenPMSContext _context;
-        public PsychiatricAssessmentController(SafehavenPMSContext context)
+        private readonly ActivityLogService _activityService; // <-- added
+        private static string PatientFullName(Patient p) => p == null ? "" : $"{p.Firstname} {p.Lastname}"; // <-- added
+
+        public PsychiatricAssessmentController(SafehavenPMSContext context, ActivityLogService activityService) // <-- modified
         {
             _context = context;
+            _activityService = activityService; // <-- added
         }
 
         public async Task<IActionResult> Index(
-                                                int? page = 1,
-                                                int? pageSize = 10,
-                                                string searchQuery = null,
-                                                string status = null,
-                                                string sortOrder = null,
-                                                string sortBy = null)
+    int? page = 1,
+    int? pageSize = 10,
+    string searchQuery = null,
+    string status = null,
+    string sortOrder = null,
+    string sortBy = null)
+{
+    var admitted = PatientStatusEnum.Admitted.ToString();
+
+    var query = _context.Patients
+        .Include(pt => pt.PsychiatricAssessments)
+        .Where(p => p.PatientStatus == admitted || p.PatientStatus == PatientStatusEnum.InTreatment.ToString()) // still restrict to admitted
+        .AsQueryable();
+
+    if (!string.IsNullOrEmpty(searchQuery))
+    {
+        var sq = searchQuery.ToLower();
+        query = query.Where(p =>
+            (p.Firstname ?? "").ToLower().Contains(sq) ||
+            (p.Lastname ?? "").ToLower().Contains(sq) ||
+            p.PatientId.ToString().Contains(sq));
+    }
+
+    if (!string.IsNullOrEmpty(status))
+    {
+        var inProgressVal = PsychiatricEnumStatus.InProgress.ToString();
+        var completedVal  = PsychiatricEnumStatus.Completed.ToString();
+
+        if (status == "Pending")
         {
-            var query = _context.Patients
-                .Include(pt => pt.PsychiatricAssessments)
-                .AsQueryable();
+            // Pending = Admitted (no started assessment yet or latest still null/Pending)
+            query = query.Where(p =>
+                p.PatientStatus == admitted &&
+                (
+                    !p.PsychiatricAssessments.Any() ||
+                    p.PsychiatricAssessments
+                        .OrderByDescending(a => a.CreatedAt)
+                        .FirstOrDefault().Status == null ||
+                    p.PsychiatricAssessments
+                        .OrderByDescending(a => a.CreatedAt)
+                        .FirstOrDefault().Status == "Pending"
+                ));
+        }
+        else if (status.Equals("InProgress", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(p =>
+                p.PsychiatricAssessments.Any(a => a.Status == inProgressVal));
+        }
+        else if (status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(p =>
+                p.PsychiatricAssessments.Any(a => a.Status == completedVal));
+        }
+        else
+        {
+            // fallback: direct match on assessment status
+            query = query.Where(p =>
+                p.PsychiatricAssessments.Any(a => a.Status == status));
+        }
+    }
 
-            // Search filter
-            if (!string.IsNullOrEmpty(searchQuery))
+    if (string.IsNullOrEmpty(sortBy) || sortBy == "Name")
+    {
+        query = (sortOrder == "ascending"
+            ? query.OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
+            : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname));
+    }
+    else if (sortBy == "ScheduledDate")
+    {
+        query = (sortOrder == "ascending"
+            ? query.OrderBy(p => p.CreatedAt)
+            : query.OrderByDescending(p => p.CreatedAt));
+    }
+
+    int totalItems = await query.CountAsync();
+    int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
+    int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
+
+    var patientList = await query
+        .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
+        .Take(pageSize > 0 ? pageSize.Value : totalItems)
+        .ToListAsync();
+
+    var psychiatricViewModels = patientList
+        .Select(p =>
+        {
+            var assessment = p.PsychiatricAssessments
+                .OrderByDescending(a => a.CreatedAt)
+                .FirstOrDefault();
+            return new PsychiatricAssessmentViewModel
             {
-                searchQuery = searchQuery.ToLower();
-                query = query.Where(p =>
-                    (p.Firstname ?? "").ToLower().Contains(searchQuery) ||
-                    (p.Lastname ?? "").ToLower().Contains(searchQuery) ||
-                    p.PatientId.ToString().Contains(searchQuery)
-                );
-            }   
+                PatientId = p.PatientId,
+                FullName = $"{p.Firstname} {p.Lastname}",
+                Type = assessment?.Type ?? "-",
+                Date = assessment?.Date ?? p.CreatedAt,
+                CompletedDate = assessment?.CompletedDate,
+                Status = assessment?.Status ?? "Pending"
+            };
+        }).ToList();
 
-           // Status filter using PatientStatusEnum
-           if (!string.IsNullOrEmpty(status))
-            {
-                if (status == "Pending")
-                {
-                    // Patients with NO assessments are considered Pending
-                    query = query.Where(p => !p.PsychiatricAssessments.Any());
-                }
-                else
-                {
-                    // Patients with ANY assessment matching the selected status
-                    query = query.Where(p => p.PsychiatricAssessments.Any(a => a.Status == status));
-                }
-            }
+    ViewBag.CurrentPage = currentPage;
+    ViewBag.PageSize = pageSize ?? 10;
+    ViewBag.SearchQuery = searchQuery;
+    ViewBag.Status = status;
+    ViewBag.SortOrder = sortOrder ?? "descending";
+    ViewBag.SortBy = sortBy;
+    ViewBag.TotalPages = totalPages;
+    ViewBag.TotalPatientCount = totalItems;
+    ViewBag.OnlyAdmitted = true;
 
-            // Sorting
-            if (string.IsNullOrEmpty(sortBy) || sortBy == "Name")
-            {
-                query = sortOrder == "ascending"
-                    ? query.OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
-                    : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
-            }
-            else if (sortBy == "ScheduledDate")
-            {
-                query = sortOrder == "ascending"
-                    ? query.OrderBy(p => p.CreatedAt)
-                    : query.OrderByDescending(p => p.CreatedAt);
-            }
-
-            // Pagination
-            int totalItems = await query.CountAsync();
-            int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalItems / pageSize.Value) : 1;
-            int currentPage = Math.Max(1, Math.Min(page ?? 1, totalPages));
-
-            var patientList = await query
-                .Skip(pageSize > 0 ? (currentPage - 1) * pageSize.Value : 0)
-                .Take(pageSize > 0 ? pageSize.Value : totalItems)
-                .ToListAsync();
-
-            // Project to ViewModel
-            var psychiatricViewModels = patientList
-                .Select(p => {
-                    var assessment = p.PsychiatricAssessments.OrderByDescending(a => a.CreatedAt).FirstOrDefault();
-                    return new PsychiatricAssessmentViewModel
-                    {
-                        PatientId = p.PatientId,
-                        FullName = $"{p.Firstname} {p.Lastname}",
-                        Type = assessment?.Type ?? "-",
-                        Date = assessment?.Date ?? p.CreatedAt,
-                        CompletedDate = assessment?.CompletedDate,
-                        Status = assessment?.Status ?? "Pending"
-                    };
-                }).ToList();
-
-            // Pass filter/sort/search state to view
-            ViewBag.CurrentPage = currentPage;
-            ViewBag.PageSize = pageSize ?? 10;
-            ViewBag.SearchQuery = searchQuery;
-            ViewBag.Status = status;
-            ViewBag.SortOrder = sortOrder ?? "descending";
-            ViewBag.SortBy = sortBy;
-            ViewBag.TotalPages = totalPages;
-            ViewBag.TotalPatientCount = totalItems;
-
-            return View(psychiatricViewModels);
+    return View(psychiatricViewModels);
         }
 
         [HttpGet]
@@ -203,8 +232,6 @@ namespace safehavenpms.Controllers
         {
             int PatientId = model.PatientId;
             string ChiefComplaint = model.ChiefComplaint;
-
-            //Find assessment by patient id
             var assessment = await _context.PsychiatricAssessments.FirstOrDefaultAsync(a => a.PatientId == PatientId);
             if (assessment != null)
             {
@@ -224,11 +251,24 @@ namespace safehavenpms.Controllers
                     CreatedAt = DateTime.Now,
                     CreatedBy = User.Identity?.Name ?? "System"
                 };
-
                 _context.PsychiatricAssessments.Add(newAssessment);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Chief Complaint saved successfully.";
             }
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(PatientId);
+            await _activityService.LogAsync(user,
+                "Saved Chief Complaint",
+                $"Updated chief complaint for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Chief Complaint saved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
             return RedirectToAction("PsychiatricAssessmentForm", new { id = PatientId });
         }
@@ -240,8 +280,6 @@ namespace safehavenpms.Controllers
         {
             int PatientId = model.PatientId;
             string HistoryOfPresentIllness = model.HistoryOfPresentIllness;
-
-            //Find assessment by patient id
             var assessment = await _context.PsychiatricAssessments.FirstOrDefaultAsync(a => a.PatientId == PatientId);
             if (assessment != null)
             {
@@ -261,11 +299,24 @@ namespace safehavenpms.Controllers
                     CreatedAt = DateTime.Now,
                     CreatedBy = User.Identity?.Name ?? "System"
                 };
-
                 _context.PsychiatricAssessments.Add(newAssessment);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "History of Present Illness saved successfully.";
             }
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(PatientId);
+            await _activityService.LogAsync(user,
+                "Saved History of Present Illness",
+                $"Updated psychiatric HPI for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Psych HPI saved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
             return RedirectToAction("PsychiatricAssessmentForm", new { id = PatientId });
         }
@@ -295,11 +346,25 @@ namespace safehavenpms.Controllers
                 };
                 _context.PsychiatricAssessments.Add(newAssessment);
                 await _context.SaveChangesAsync();
+                assessment = newAssessment;
             }
 
-            //Update status to In Progress
             assessment.Status = PsychiatricEnumStatus.InProgress.ToString();
             await _context.SaveChangesAsync();
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(model.PatientId);
+            await _activityService.LogAsync(user,
+                "Saved Personal & Family History",
+                $"Updated personal/family history for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Personal & Family history saved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
             TempData["SuccessMessage"] = "Personal and Family History saved successfully.";
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
@@ -333,6 +398,20 @@ namespace safehavenpms.Controllers
                 TempData["SuccessMessage"] = "Mental Status saved successfully.";
             }
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(model.PatientId);
+            await _activityService.LogAsync(user,
+                "Saved Mental Status Examination",
+                $"Updated psychiatric MSE for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Psych MSE saved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
         }
 
@@ -363,6 +442,20 @@ namespace safehavenpms.Controllers
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Impression saved successfully.";
             }
+
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System";
+            var pat = await _context.Patients.FindAsync(model.PatientId);
+            await _activityService.LogAsync(user,
+                "Saved Impression",
+                $"Updated impression for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user,
+                $"Impression saved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
 
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
         }
@@ -444,6 +537,20 @@ namespace safehavenpms.Controllers
                  TempData["Error"] = "Error saving problem: " + ex.Message;
              }
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System"; // <-- added
+            var pat = await _context.Patients.FindAsync(model.PatientId); // <-- added
+            await _activityService.LogAsync(user, // <-- added
+                "Saved Psychiatric Problem List",
+                $"Updated psychiatric problem list for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user, // <-- added
+                $"Psych problem list saved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
         }
 
@@ -516,6 +623,20 @@ namespace safehavenpms.Controllers
                 TempData["Error"] = "Error saving diagnosis: " + ex.Message;
             }
 
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System"; // <-- added
+            var pat = await _context.Patients.FindAsync(model.PatientId); // <-- added
+            await _activityService.LogAsync(user, // <-- added
+                "Saved Psychiatric Diagnosis",
+                $"Updated psychiatric diagnosis list for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user, // <-- added
+                $"Psych diagnosis saved for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("PsychiatricAssessmentForm", new { id = model.PatientId });
         }
 
@@ -557,7 +678,20 @@ namespace safehavenpms.Controllers
             // Save changes
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Assessment submitted successfully and marked as completed.";
+            // --- log ---
+            var user = User?.Identity?.Name ?? "System"; // <-- added
+            var pat = await _context.Patients.FindAsync(patientId); // <-- added
+            await _activityService.LogAsync(user, // <-- added
+                "Submitted Psychiatric Assessment",
+                $"Submitted psychiatric assessment for {PatientFullName(pat)}",
+                "PsychiatricAssessment",
+                "Info",
+                pat?.PatientId);
+            await _activityService.NotifyAsync(user, // <-- added
+                $"Psych assessment submitted for {PatientFullName(pat)}",
+                type: "Success");
+            // --- end ---
+
             return RedirectToAction("Index", "PsychiatricAssessment");
         }
     }   

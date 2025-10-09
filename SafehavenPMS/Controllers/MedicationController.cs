@@ -60,15 +60,21 @@ namespace SafehavenPMS.Controllers
                 // Add more sort options as needed
             }
 
-            // --- Administration Logs ---
-            var todayStart = DateTime.Now.Date;
+            // --- Administration Logs (today) ---
+            var todayStart = DateTime.Today;
             var todayEnd = todayStart.AddDays(1);
+
+            // Pull today's administration (taken) statuses
             var administrationLogs = await _context.AdministrationLogs
                 .Where(a => a.AdministrationDate >= todayStart && a.AdministrationDate < todayEnd)
                 .ToListAsync();
-            // Filtering/searching for logs can be added similarly
 
-            // Map to view models as before...
+            // Fast lookup by MedicationOrderId
+            var adminLogDict = administrationLogs
+                .GroupBy(a => a.MedicationOrderId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            // Map to view model
             var model = new MedicationPageViewModel
             {
                 Medicines = medicines.Select(m => new MedicineViewModel
@@ -112,24 +118,40 @@ namespace SafehavenPMS.Controllers
                         PatientId = g.Key,
                         PatientName = g.First().Patient != null ? $"{g.First().Patient.Firstname} {g.First().Patient.Lastname}" : string.Empty,
                         TotalMeds = g.Count(),
-                        ScheduleTimes = string.Join(", ", new[] { g.Any(x => x.Breakfast) ? "BF" : null, g.Any(x => x.Lunch) ? "L" : null, g.Any(x => x.Dinner) ? "D" : null, g.Any(x => x.Bedtime) ? "BT" : null }.Where(x => x != null)),
-                        Medications = g.Select(m => new MedicationOrderViewModel
+                        ScheduleTimes = string.Join(", ", new[]
                         {
-                            MedicationOrderId = m.MedicationOrderId,
-                            PatientId = m.PatientId,
-                            MedicineId = m.MedicineId,
-                            MedicineName = m.Medicine != null ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength} {m.Medicine.Unit} {m.Medicine.Form}" : string.Empty,
-                            UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
-                            Note = m.Note,
-                            ScheduledType = m.ScheduledType,
-                            Breakfast = m.Breakfast,
-                            Lunch = m.Lunch,
-                            Dinner = m.Dinner,
-                            Bedtime = m.Bedtime,
-                            StartDate = m.StartDate,
-                            DiscontinueDate = m.DiscontinueDate,
-                            NoDiscontinueDate = m.NoDiscontinueDate,
-                            Status = m.Status
+                            g.Any(x => x.Breakfast) ? "BF" : null,
+                            g.Any(x => x.Lunch) ? "L" : null,
+                            g.Any(x => x.Dinner) ? "D" : null,
+                            g.Any(x => x.Bedtime) ? "BT" : null
+                        }.Where(x => x != null)),
+                        Medications = g.Select(m =>
+                        {
+                            adminLogDict.TryGetValue(m.MedicationOrderId, out var taken);
+                            return new MedicationOrderViewModel
+                            {
+                                MedicationOrderId = m.MedicationOrderId,
+                                PatientId = m.PatientId,
+                                MedicineId = m.MedicineId,
+                                MedicineName = m.Medicine != null ? $"{m.Medicine.GenericName} ({m.Medicine.BrandName}) - {m.Medicine.Strength} {m.Medicine.Unit} {m.Medicine.Form}" : string.Empty,
+                                UnitPerDoseDisplay = $"{m.UnitPerDose} {m.Medicine?.Form}",
+                                Note = m.Note,
+                                ScheduledType = m.ScheduledType,
+                                Breakfast = m.Breakfast,
+                                Lunch = m.Lunch,
+                                Dinner = m.Dinner,
+                                Bedtime = m.Bedtime,
+                                StartDate = m.StartDate,
+                                DiscontinueDate = m.DiscontinueDate,
+                                NoDiscontinueDate = m.NoDiscontinueDate,
+                                Status = m.Status,
+
+                                // Populate taken flags from today's log (defaults false if none yet)
+                                BreakfastTaken = taken?.BreakfastTaken ?? false,
+                                LunchTaken = taken?.LunchTaken ?? false,
+                                DinnerTaken = taken?.DinnerTaken ?? false,
+                                BedtimeTaken = taken?.BedtimeTaken ?? false
+                            };
                         }).ToList()
                     }).ToList()
             };

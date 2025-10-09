@@ -24,6 +24,7 @@ namespace SafehavenPMS.Models
         public string MaritalStatus { get; set; }
         public string PhotoUrl { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string CreatedBy { get; set; }
 
 
         //One -to-Many Relationships

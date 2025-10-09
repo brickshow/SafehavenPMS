@@ -9,8 +9,8 @@ using SafehavenPMS.ViewModel.PatientProfile;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using SafehavenPMS.Services;
-using Microsoft.AspNetCore.Http;
-using System.Linq;
+using SafehavenPMS.Models;
+using Microsoft.Data.SqlClient;
 
 namespace SafehavenPMS.Controllers
 {
@@ -19,12 +19,17 @@ namespace SafehavenPMS.Controllers
     {
         private readonly SafehavenPMSContext _context;
         private readonly CloudinaryServices _cloudSvc;
+        private readonly ActivityLogService _activityService;
+
+        // Add helper for full name
+        private static string GetPatientFullName(Patient p) => $"{p.Firstname} {p.Lastname}";
 
         //Constructor
-        public PatientProfileController(SafehavenPMSContext context, CloudinaryServices cloudSvc)
+        public PatientProfileController(SafehavenPMSContext context, CloudinaryServices cloudSvc, ActivityLogService activityService)
         {
             _context = context;
             _cloudSvc = cloudSvc;
+            _activityService = activityService;
         }
 
         public async Task<IActionResult> Index(int? id)
@@ -380,6 +385,7 @@ namespace SafehavenPMS.Controllers
                 PatientRefId = patient.PatientRefId,
                 AvatarUrl = patient.PhotoUrl,
                 PatientName = $"{patient.Firstname} {patient.Lastname}",
+                Status = patient.PatientStatus,
                 OverViewTab = new PatientOverViewTabViewModel
                 {
                     FoodAllergies = new List<string> { "Peanuts", "Shellfish" },
@@ -475,6 +481,27 @@ namespace SafehavenPMS.Controllers
                 })
                 .ToList();
 
+            // after patient loaded
+            List<ActivityLog> initialLogs = new();
+            try
+            {
+                initialLogs = await _context.ActivityLogs
+                    .Where(l => l.PatientId == patient.PatientId)
+                    .OrderByDescending(l => l.CreatedAt)
+                    .Take(25)
+                    .ToListAsync();
+            }
+            catch (SqlException)
+            {
+                // Table likely missing (migration not applied). Skip silently.
+            }
+
+            viewModel.ActivityLogTab = new PatientActivityLogTabViewModel
+            {
+                PatientId = patient.PatientId,
+                ActivityLogs = initialLogs
+            };
+
             return View(viewModel);
         }
 
@@ -486,6 +513,8 @@ namespace SafehavenPMS.Controllers
             if (birthDate.Date > today.AddYears(-age)) age--;
             return age.ToString();
         }
+        
+        
 
         // AJAX: refresh partial
         [HttpGet]
@@ -514,8 +543,13 @@ namespace SafehavenPMS.Controllers
             if (file.Length > 50_000_000)
                 return BadRequest("File too large.");
 
-            var patientExists = await _context.Patients.AnyAsync(p => p.PatientId == patientId);
-            if (!patientExists) return NotFound("Patient not found.");
+            var patient = await _context.Patients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PatientId == patientId);
+
+            if (patient == null) return NotFound("Patient not found.");
+
+            var patientName = GetPatientFullName(patient);
 
             // Sanitize filename
             var originalName = Path.GetFileName(file.FileName);
@@ -537,6 +571,19 @@ namespace SafehavenPMS.Controllers
             _context.PatientDocuments.Add(doc);
             await _context.SaveChangesAsync();
 
+            await _activityService.LogAsync(
+                User?.Identity?.Name ?? "System",
+                "Uploaded document",
+                $"File: {safeName} for {patientName}",
+                category: "MedicalHistory",
+                severity: "Info",
+                patientId: patientId);
+
+            await _activityService.NotifyAsync(
+                User?.Identity?.Name ?? "System",
+                $"Document '{safeName}' uploaded for {patientName}",
+                type: "Success");
+
             return Ok(new
             {
                 doc.PatientDocumentId,
@@ -546,6 +593,60 @@ namespace SafehavenPMS.Controllers
                 OriginalFileName = originalName,
                 UploadedAt = doc.UploadedAt.ToString("u")
             });
+        }
+
+        // Example logging (place in actions where changes occur)
+        private async Task LogPatientAsync(int patientId, string action, string? desc = null, string category = "Profile")
+        {
+            var name = await _context.Patients
+                .Where(p => p.PatientId == patientId)
+                .Select(p => p.Firstname + " " + p.Lastname)
+                .FirstOrDefaultAsync() ?? $"Patient {patientId}";
+
+            var fullDesc = string.IsNullOrWhiteSpace(desc) ? $"For {name}" : $"{desc} (For {name})";
+            await _activityService.LogAsync(User?.Identity?.Name ?? "System", action, fullDesc, category, "Info", patientId);
+        }
+
+        // Activity logs partial (AJAX)
+        [HttpGet]
+        public async Task<IActionResult> ActivityLogs(int patientId, int page = 1, string? search = null, string? category = null)
+        {
+            var logs = await _activityService.GetPatientLogsAsync(patientId, page, 30, search, category);
+            var vm = new PatientActivityLogTabViewModel
+            {
+                PatientId = patientId,
+                ActivityLogs = logs
+            };
+            return PartialView("ProfileTabs/_ActivityLogsTab", vm);
+        }
+
+        // Notifications endpoints (optional)
+        [HttpGet]
+        public async Task<IActionResult> UnreadNotifications()
+        {
+            try
+            {
+                var list = await _activityService.GetUnreadAsync(User?.Identity?.Name ?? "-");
+                return Json(list.Select(n => new {
+                    n.NotificationId,
+                    n.Message,
+                    n.Type,
+                    CreatedAt = n.CreatedAt.ToString("u"),
+                    n.LinkUrl
+                }));
+            }
+            catch (SqlException)
+            {
+                // Notifications table not yet created
+                return Json(Array.Empty<object>());
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkNotificationRead(int id)
+        {
+            await _activityService.MarkReadAsync(id, User?.Identity?.Name ?? "-");
+            return Ok();
         }
     }
 }

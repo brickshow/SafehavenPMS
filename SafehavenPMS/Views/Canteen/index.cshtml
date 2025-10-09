@@ -1,3 +1,5 @@
+@using SafehavenPMS.Models
+@model IEnumerable<CanteenPurchase>
 @{
     ViewBag.Title = "Canteen";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -7,74 +9,113 @@
     <div class="d-flex justify-content-between align-items-center mb-0">
         <div class="d-flex align-items-center gap-2">
             <div class="d-flex justify-content-center align-items-center">
-                @* <i class='bx bx-bowl-hot fs-2 me-2'></i> *@
-                <h5 class="text-custom mb-0">Canteen</h5>
+                <h5 class="text-custom mb-0">Canteen Purchases</h5>
             </div>
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
-                    <form class="d-flex flex-row justify-content-center m-1 gap-2">
+                    <form asp-controller="Canteen" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
                         <div class="search-input-wrapper d-flex flex-row gap-2">
                             <i class='bx bx-search search-icon'></i>
-                            <input name="searchQuery" class="form-control search-input" placeholder="Search patient..." />
+                            <input name="searchQuery" value="@ViewBag.SearchQuery" class="form-control search-input" placeholder="Search patient / item..." />
                         </div>
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
                 </div>
             </div>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <a href="#" class="btn-custom text-decoration-none btn-primary">
-                <i class='bx bx-plus me-1'></i>
-                Record Purchase
-            </a>
-        </div>
+        @if (User.IsInRole("Cashier") || User.IsInRole("Admin"))
+        {
+            <div class="d-flex align-items-center gap-2">
+                <a asp-action="Create" asp-controller="Canteen" class="btn-custom text-decoration-none btn-primary">
+                    <i class='bx bx-plus me-1'></i>
+                    Record Purchase
+                </a>
+            </div>
+        }
     </div>
     <hr class="mt-0 mb-2" />
 </div>
 
-<!-- Status and filter controls -->
-<div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
-    <div class="d-flex align-items-center gap-2">
-        <span class="text-muted small">Show</span>
-        <form class="d-flex align-items-center gap-2">
-            <select class="form-select form-select-sm" style="width: auto;">
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="0">All</option>
-            </select>
-        </form>
-    </div>
-    <div class="d-flex align-items-center justify-content-between">
-        <div class="me-3">
-            <form class="m-0 d-flex align-items-center">
-                <select class="form-select form-select-sm" style="min-width:180px;">
-                    <option value="">All Statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
-                </select>
-            </form>
+<div class="w-100 h-100 bg-white mt-3 p-0" style="box-shadow:0 2px 10px rgba(0,0,0,0.1); border-radius:10px">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-success border-0" id="successToast">
+                <div class="d-flex">
+                    <div class="toast-body">@TempData["SuccessMessage"]</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
         </div>
-        <div class="sort-by d-flex align-items-center">
-            <form class="d-flex align-items-center gap-2">
-                <select class="form-select form-select-sm" style="min-width:160px;">
-                    <option value="">Sort by</option>
-                    <option value="Patient">Patient</option>
-                    <option value="Date">Date</option>
-                    <option value="Status">Status</option>
-                </select>
-            </form>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast align-items-center text-bg-danger border-0" id="errorToast">
+                <div class="d-flex">
+                    <div class="toast-body">@TempData["Error"]</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
+    }
 
-<!-- Table Container -->
-<div class="w-100 h-100 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
     <div class="table-header d-flex justify-content-center align-items-center text-center m-0">
-        <h5 class="mb-0">8 Items</h5>
+        <h5 class="mb-0">@(ViewBag.TotalPurchaseCount > 0 ? ViewBag.TotalPurchaseCount + " Purchases" : "No Purchases found")</h5>
     </div>
+
+    <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Show</span>
+            <form asp-controller="Canteen" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+                <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                <input type="hidden" name="status" value="@ViewBag.Status" />
+                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                <input type="hidden" name="sortBy" value="@ViewBag.SortBy" />
+                <select class="form-select form-select-sm" name="pageSize" style="width:auto;" onchange="this.form.submit()">
+                    <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                    <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                    <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                    <option value="100" selected="@(ViewBag.PageSize == 100)">100</option>
+                    <option value="0" selected="@(ViewBag.PageSize == 0)">All</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="me-3">
+                <form asp-controller="Canteen" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                    <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                    <input type="hidden" name="sortBy" value="@ViewBag.SortBy" />
+                    <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
+                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
+                        <option value="Pending Review" selected='@(ViewBag.Status == "Pending Review" ? "selected" : "")'>Pending Review</option>
+                        <option value="Approved" selected='@(ViewBag.Status == "Approved" ? "selected" : "")'>Approved</option>
+                        <option value="Rejected" selected='@(ViewBag.Status == "Rejected" ? "selected" : "")'>Rejected</option>
+                    </select>
+                </form>
+            </div>
+
+            <div class="sort-by d-flex align-items-center">
+                <form asp-controller="Canteen" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                    <input type="hidden" name="status" value="@ViewBag.Status" />
+                    <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+                    <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
+                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
+                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Patient Name</option>
+                        <option value="DateAdded" selected='@(ViewBag.SortBy == "DateAdded" ? "selected" : "")'>Date Added</option>
+                        <option value="Amount" selected='@(ViewBag.SortBy == "Amount" ? "selected" : "")'>Amount</option>
+                        <option value="Status" selected='@(ViewBag.SortBy == "Status" ? "selected" : "")'>Status</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="table-responsive-custom m-4 mr-4 mt-2 border">
         <table class="table mb-0">
             <thead class="table-light">
@@ -87,166 +128,135 @@
                     <th>Qty</th>
                     <th>Unit Price</th>
                     <th>Total Amount</th>
-                    <th>Approved by</th>
                     <th class="text-center">Status</th>
                     <th class="text-center">Action</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>CAN-1234</td>
-                    <td>John Doe</td>
-                    <td>2025-08-15</td>
-                    <td>Tuna Pata</td>
-                    <td>2</td>
-                    <td>P100.00</td>
-                    <td>P100.00</td>
-                    <td>Name</td>
-                    <td class="text-center">
-                        <div style="background-color: #ffe082; color: #333; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                            Pending Review
-                        </div>
-                    </td>
-                    <td class="position-relative text-center">
-                        <div class="dropdown" data-bs-display="static">
-                            <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bx bx-dots-vertical fs-5 text-muted"></i>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 180px;">
-                                <li class="px-2 text-muted fw-semibold small">Options</li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                        Approve
+                @if (Model == null || !Model.Any())
+                {
+                    <tr>
+                        <td colspan="10" class="text-center">No purchases found.</td>
+                    </tr>
+                }
+                else
+                {
+                    int row = (ViewBag.PageSize != 0)
+                        ? ((ViewBag.CurrentPage - 1) * ViewBag.PageSize) + 1
+                        : 1;
+
+                    foreach (var purchase in Model)
+                    {
+                        var total = purchase.Quantity * purchase.UnitPrice;
+                        string bg = purchase.Status switch
+                        {
+                            "Approved" => "#b8f5b8",
+                            "Rejected" => "#f7b8b8",
+                            "Pending Review" => "#ffe082",
+                            _ => "#f8f9fa"
+                        };
+                        string fg = purchase.Status switch
+                        {
+                            "Rejected" => "#c94a4a",
+                            _ => "#212529"
+                        };
+                        <tr>
+                            <td>@row</td>
+                            <td>@($"CAN-{purchase.Id:00000}")</td>
+                            <td>@(purchase.Patient != null ? purchase.Patient.Firstname + " " + purchase.Patient.Lastname : "-")</td>
+                            <td>@purchase.CreatedAt.ToString("MMM dd, yyyy")</td>
+                            <td>@purchase.ItemDescription</td>
+                            <td>@purchase.Quantity</td>
+                            <td>@purchase.UnitPrice.ToString("N2")</td>
+                            <td>@total.ToString("N2")</td>
+                            <td class="text-center">
+                                <div style="background-color:@bg; color:@fg; border-radius:6px; padding:4px 12px; display:inline-block;">
+                                    @purchase.Status
+                                </div>
+                            </td>
+                            <td class="position-relative text-center">
+                                <div class="dropdown" data-bs-display="static">
+                                    <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-dots-vertical fs-5 text-muted"></i>
                                     </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger" href="#">
-                                        Reject
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                        Edit
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger" href="#">
-                                        Remove
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>CAN-1234</td>
-                    <td>John Doe</td>
-                    <td>2025-08-15</td>
-                    <td>Tuna</td>
-                    <td>2</td>
-                    <td>P100.00</td>
-                    <td>P100.00</td>
-                    <td>Name</td>
-                    <td class="text-center">
-                        <div style="background-color: #b8f5b8; color: #222; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                            Approved
-                        </div>
-                    </td>
-                    <td class="position-relative text-center">
-                        <div class="dropdown" data-bs-display="static">
-                            <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bx bx-dots-vertical fs-5 text-muted"></i>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 180px;">
-                                <li class="px-2 text-muted fw-semibold small">Options</li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger" href="#">
-                                        Revoke Approval
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                        Edit
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger" href="#">
-                                        Remove
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td></td>
-                    <td></td>
-                    <td>2025-08-15</td>
-                    <td>Tuna</td>
-                    <td>2</td>
-                    <td>P100.00</td>
-                    <td>P100.00</td>
-                    <td>Name</td>
-                    <td class="text-center">
-                        <div style="background-color: #f7b8b8; color: #c94a4a; border-radius: 6px; padding: 4px 12px; display: inline-block;">
-                            Rejected
-                        </div>
-                    </td>
-                    <td class="position-relative text-center">
-                        <div class="dropdown" data-bs-display="static">
-                            <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bx bx-dots-vertical fs-5 text-muted"></i>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 180px;">
-                                <li class="px-2 text-muted fw-semibold small">Options</li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger" href="#">
-                                        Undo Rejection
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
-                                        Edit
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger" href="#">
-                                        Remove
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
+                                    <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 200px;">
+                                        <li class="px-2 text-muted fw-semibold small">Options</li>
+
+                                        @if ((User.IsInRole("Coach") || User.IsInRole("Admin")) && purchase.Status == "Pending Review")
+                                        {
+                                            <li>
+                                                <form asp-action="Approve" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@purchase.Id" />
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2">Approve</button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form asp-action="Reject" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@purchase.Id" />
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger">Reject</button>
+                                                </form>
+                                            </li>
+                                        }
+                                        @if ((User.IsInRole("Coach") || User.IsInRole("Admin")) && purchase.Status == "Approved")
+                                        {
+                                            <li>
+                                                <form asp-action="RevokeApproval" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@purchase.Id" />
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger">Revoke Approval</button>
+                                                </form>
+                                            </li>
+                                        }
+                                        @if ((User.IsInRole("Coach") || User.IsInRole("Admin")) && purchase.Status == "Rejected")
+                                        {
+                                            <li>
+                                                <form asp-action="UndoRejection" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@purchase.Id" />
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2 text-danger">Undo Rejection</button>
+                                                </form>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        row++;
+                    }
+                }
             </tbody>
-        </table>
+        </table
     </div>
+
     <div class="bot-content py-3">
         <div class="d-flex justify-content-between align-items-center px-3">
             <div style="opacity:.5;">
-                <span>Showing 3 out of 8</span>
+                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalPurchaseCount ?? 0)</span>
             </div>
-            <nav aria-label="Canteen list pagination">
+            <nav aria-label="Canteen pagination">
                 <ul class="pagination mb-0">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" aria-label="Previous">
+                    <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "Canteen", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status, sortBy = ViewBag.SortBy })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
-                    <li class="page-item active">
-                        <a class="page-link" href="#">1</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">2</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">3</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="#" aria-label="Next">
+                    @if (ViewBag.PageSize != null && (int)ViewBag.PageSize > 0)
+                    {
+                        int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+                        int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+                        int startPage = Math.Max(1, currentPage - 2);
+                        int endPage = Math.Min(totalPages, currentPage + 2);
+                        for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", "Canteen", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status, sortBy = ViewBag.SortBy })">@i</a>
+                            </li>
+                        }
+                    }
+                    <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", "Canteen", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status, sortBy = ViewBag.SortBy })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>
@@ -257,36 +267,27 @@
 </div>
 
 <style>
-    .header { margin: 0 !important; padding: 0; }
+    .header { margin:0 !important; padding:0; }
     .table-header {
-        width: 100%;
-        height: 50px;
-        background: linear-gradient(to right, #069FB2, #058594);
-        color: white;
-        font-weight: 600;
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
+        width:100%; height:50px;
+        background:linear-gradient(to right,#069FB2,#058594);
+        color:white; font-weight:600;
+        border-top-left-radius:6px;
+        border-top-right-radius:6px;
     }
-    .table-responsive-custom {
-        overflow: visible !important;
-    }
-    .dropdown-menu {
-        position: absolute !important;
-        z-index: 1055 !important;
-    }
-    .table td, .table th {
-        white-space: nowrap;
-    }
-    .dropdown {
-        position: relative;
-        z-index: auto !important;
-    }
-    .pagination .page-item.active .page-link {
-        background: #0097A7;
-        color: #fff;
-        border: none;
-    }
-    .pagination .page-link {
-        color: #0097A7;
-    }
+    .table-responsive-custom { overflow:visible !important; }
+    .dropdown-menu { position:absolute !important; z-index:1055 !important; }
+    .table td, .table th { white-space:nowrap; }
+    .dropdown { position:relative; z-index:auto !important; }
+    .pagination .page-item.active .page-link { background:#0097A7; color:#fff; border:none; }
+    .pagination .page-link { color:#0097A7; }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    ['successToast','errorToast'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){ new bootstrap.Toast(el).show(); }
+    });
+});
+</script>

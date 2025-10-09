@@ -48,21 +48,39 @@ namespace SafehavenPMS.Controllers
                 return View("Login", model);
             }
 
+            var input = model.Username?.Trim();
+            if (string.IsNullOrEmpty(input))
+            {
+                ModelState.AddModelError(string.Empty, "Username / Email required.");
+                return View("Login", model);
+            }
+
+            // Case-insensitive lookup (username or email)
+            var lowered = input.ToLower();
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == model.Username || u.Email == model.Username);
+                .FirstOrDefaultAsync(u =>
+                    u.Username.ToLower() == lowered ||
+                    (u.Email != null && u.Email.ToLower() == lowered));
 
             if (user == null)
             {
+                _logger.LogInformation("Login failed: user not found (input='{Input}')", input);
                 ModelState.AddModelError(string.Empty, "Invalid username or password.");
-                _logger.LogInformation("Login failed: user not found for '{Username}'", model.Username);
+                return View("Login", model);
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogInformation("Login blocked: inactive userId={UserId}", user.UserId);
+                ModelState.AddModelError(string.Empty, "Account is deactivated.");
                 return View("Login", model);
             }
 
             var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash ?? string.Empty, model.Password);
             if (verify == PasswordVerificationResult.Failed)
             {
+                _logger.LogInformation("Login failed: bad password userId={UserId}", user.UserId);
                 ModelState.AddModelError(string.Empty, "Invalid username or password.");
-                _logger.LogInformation("Login failed: invalid password for userId={UserId}", user.UserId);
                 return View("Login", model);
             }
 
@@ -71,20 +89,13 @@ namespace SafehavenPMS.Controllers
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.Username ?? user.Email ?? "user")
             };
-
-            // ensure role claim is added
             if (!string.IsNullOrWhiteSpace(user.Role))
-            {
                 claims.Add(new Claim(ClaimTypes.Role, user.Role.Trim()));
-            }
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
-            _logger.LogInformation("User signed in: userId={UserId}", user.UserId);
-
-            // Always redirect to the homepage after login
+            _logger.LogInformation("User signed in userId={UserId}", user.UserId);
             return RedirectToAction("Index", "Home");
         }
 

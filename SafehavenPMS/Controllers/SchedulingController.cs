@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using SafehavenPMS.ViewModel;
 using System.Reflection.Metadata.Ecma335;
+using SafehavenPMS.Services; // <-- added
 
 namespace SafehavenPMS.Controllers
 {
@@ -18,10 +19,15 @@ namespace SafehavenPMS.Controllers
     public class SchedulingController : Controller
     {
         private readonly SafehavenPMSContext _context;
+        private readonly ActivityLogService _activityService; // <-- added
 
-        public SchedulingController(SafehavenPMSContext context)
+        private static string FullName(Patient p) => p == null ? "" : $"{p.Firstname} {p.Lastname}"; // <-- added
+        private static string StaffName(ClinicalStaff s) => s == null ? "" : $"{s.Firstname} {s.Lastname}"; // <-- added
+
+        public SchedulingController(SafehavenPMSContext context, ActivityLogService activityService) // <-- modified
         {
             _context = context;
+            _activityService = activityService;
         }
         public async Task<IActionResult> Index(
                    int? page = 1,
@@ -526,6 +532,26 @@ namespace SafehavenPMS.Controllers
                     _context.Patients.Update(patient);
                     await _context.SaveChangesAsync();
                 }
+
+                // --- added activity log + notification ---
+                var user = User?.Identity?.Name ?? "System";
+                var patientName = FullName(patient);
+                var doctorName = StaffName(doctor);
+                await _activityService.LogAsync(
+                    user,
+                    "Scheduled appointment",
+                    $"{existingAppointment.Type} for {patientName}" +
+                        (string.IsNullOrWhiteSpace(doctorName) ? "" : $" with {doctorName}") +
+                        $" on {existingAppointment.ScheduleDate:yyyy-MM-dd} {(existingAppointment.ScheduleTime ?? "(All Day)")}",
+                    "Appointment",
+                    "Info",
+                    existingAppointment.PatientId);
+
+                await _activityService.NotifyAsync(
+                    user,
+                    $"Scheduled {existingAppointment.Type} for {patientName} {existingAppointment.ScheduleDate:yyyy-MM-dd}",
+                    type: "Success");
+                // --- end added ---
             }
             catch (Exception ex)
             {
@@ -651,6 +677,24 @@ namespace SafehavenPMS.Controllers
                 _context.NewAppointments.Update(appt);
                 await _context.SaveChangesAsync();
 
+                // --- added activity log + notification ---
+                var pat = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == appt.PatientId);
+                var doc = await _context.ClinicalStaffs.FirstOrDefaultAsync(c => c.ClinicalStaffID == appt.ClinicalStaffID);
+                var user = User?.Identity?.Name ?? "System";
+                await _activityService.LogAsync(
+                    user,
+                    "Rescheduled appointment",
+                    $"{appt.Type} for {FullName(pat)} to {appt.ScheduleDate:yyyy-MM-dd} {appt.ScheduleTime ?? "(All Day)"}",
+                    "Appointment",
+                    "Info",
+                    appt.PatientId);
+
+                await _activityService.NotifyAsync(
+                    user,
+                    $"Rescheduled {appt.Type} for {FullName(pat)}",
+                    type: "Warning");
+                // --- end added ---
+
                 TempData["SuccessMessage"] = "Appointment rescheduled successfully.";
                 return RedirectToAction("Index");
             }
@@ -707,6 +751,24 @@ namespace SafehavenPMS.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // --- added activity log + notification ---
+                var pat = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == appt.PatientId);
+                var user = User?.Identity?.Name ?? "System";
+                await _activityService.LogAsync(
+                    user,
+                    "Cancelled appointment",
+                    $"{appt.Type} for {FullName(pat)} scheduled {appt.ScheduleDate:yyyy-MM-dd} {appt.ScheduleTime}",
+                    "Appointment",
+                    "Info",
+                    appt.PatientId);
+
+                await _activityService.NotifyAsync(
+                    user,
+                    $"Cancelled {appt.Type} for {FullName(pat)}",
+                    type: "Info");
+                // --- end added ---
+
                 TempData["SuccessMessage"] = "Appointment cancelled successfully.";
             }
             catch (Exception ex)
@@ -926,6 +988,31 @@ namespace SafehavenPMS.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+
+                // --- added activity log + notification ---
+                var pat = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+                var doc = await _context.ClinicalStaffs.FirstOrDefaultAsync(c => c.ClinicalStaffID == model.ClinicalStaffID);
+                var appt = await _context.NewAppointments
+                    .OrderByDescending(a => a.ScheduleId)
+                    .FirstOrDefaultAsync(a => a.PatientId == model.PatientId && a.Type == model.VisitType);
+
+                var user = User?.Identity?.Name ?? "System";
+                if (appt != null)
+                {
+                    await _activityService.LogAsync(
+                        user,
+                        "Scheduled appointment",
+                        $"{appt.Type} for {FullName(pat)} with {StaffName(doc)} on {appt.ScheduleDate:yyyy-MM-dd} {(appt.ScheduleTime ?? "(All Day)")}",
+                        "Appointment",
+                        "Info",
+                        appt.PatientId);
+
+                    await _activityService.NotifyAsync(
+                        user,
+                        $"Scheduled {appt.Type} for {FullName(pat)}",
+                        type: "Success");
+                }
+                // --- end added ---
             }
             catch (Exception ex)
             {
@@ -939,7 +1026,7 @@ namespace SafehavenPMS.Controllers
             return RedirectToAction("Index");
         }
 
-         [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> SelectPsyDoctor(ScheduleAppointmentViewModel model)
         {
             // If no doctor selected, just reload the form
@@ -1484,6 +1571,31 @@ namespace SafehavenPMS.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+
+                // --- added activity log + notification ---
+                var pat = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+                var doc = await _context.ClinicalStaffs.FirstOrDefaultAsync(c => c.ClinicalStaffID == model.ClinicalStaffID);
+                var appt = await _context.NewAppointments
+                    .OrderByDescending(a => a.ScheduleId)
+                    .FirstOrDefaultAsync(a => a.PatientId == model.PatientId && a.Type == model.VisitType);
+
+                var user = User?.Identity?.Name ?? "System";
+                if (appt != null)
+                {
+                    await _activityService.LogAsync(
+                        user,
+                        "Scheduled appointment",
+                        $"{appt.Type} for {FullName(pat)} with {StaffName(doc)} on {appt.ScheduleDate:yyyy-MM-dd} {(appt.ScheduleTime ?? "(All Day)")}",
+                        "Appointment",
+                        "Info",
+                        appt.PatientId);
+
+                    await _activityService.NotifyAsync(
+                        user,
+                        $"Scheduled {appt.Type} for {FullName(pat)}",
+                        type: "Success");
+                }
+                // --- end added ---
             }
             catch (Exception ex)
             {

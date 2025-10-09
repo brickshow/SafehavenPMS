@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using SafehavenPMS.Models;
 using Microsoft.AspNetCore.Authorization;
+using SafehavenPMS.Models.Billing;
+using SafehavenPMS.Models.Audit;
 
 
 namespace SafehavenPMS.Data
@@ -71,6 +73,12 @@ namespace SafehavenPMS.Data
         public DbSet<SafehavenPMS.Models.Invoice> Invoices { get; set; }
         public DbSet<SafehavenPMS.Models.InvoiceLine> InvoiceLines { get; set; }
         public DbSet<PatientDocument> PatientDocuments { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<Notification> Notifications { get; set; }  // ensure this exists
+        public DbSet<CanteenPurchase> CanteenPurchases { get; set; }
+        public DbSet<BillingMonthlyFee> BillingMonthlyFees { get; set; }
+        public DbSet<BankInformation> BankInformations { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

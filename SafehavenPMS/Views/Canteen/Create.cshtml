@@ -1,0 +1,142 @@
+@model SafehavenPMS.ViewModel.Canteen.CreateCanteenPurchaseViewModel
+@{
+    ViewBag.Title = "Add Canteen Purchase";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a asp-action="Index" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+</a>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="p-2" style="background-color:#0097a7; color:#fff;">
+            <h5 class="modal-title mb-0">New Canteen Purchase</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" method="post" id="canteenForm">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Patient</label>
+                    <div class="position-relative">
+                        <div class="input-group">
+                            <input type="text" id="patientSearch" class="form-control" placeholder="Search patient name / id..." autocomplete="off" />
+                            <button type="button" class="btn btn-info text-white" id="patientSearchBtn">Search</button>
+                        </div>
+                        <ul id="patientSuggestions" class="list-group position-absolute w-100 start-0"
+                            style="z-index:1055; display:none; max-height:240px; overflow:auto;"></ul>
+                    </div>
+                    <input asp-for="PatientId" id="PatientId" type="hidden" />
+                    <span class="text-danger" data-valmsg-for="PatientId" data-valmsg-replace="true"></span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="ItemDescription" class="form-label fw-semibold"></label>
+                        <input asp-for="ItemDescription" class="form-control" placeholder="e.g. Sandwich" />
+                        <span asp-validation-for="ItemDescription" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Quantity" class="form-label fw-semibold"></label>
+                        <input asp-for="Quantity" class="form-control" min="1" />
+                        <span asp-validation-for="Quantity" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="UnitPrice" class="form-label fw-semibold"></label>
+                        <input asp-for="UnitPrice" class="form-control" step="0.01" min="0.01" />
+                        <span asp-validation-for="UnitPrice" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Total</label>
+                        <input id="TotalDisplay" class="form-control bg-light" readonly />
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-info text-white">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function(){
+            const qty = document.getElementById('Quantity');
+            const price = document.getElementById('UnitPrice');
+            const total = document.getElementById('TotalDisplay');
+            function calc(){
+                const q = parseFloat(qty.value)||0;
+                const p = parseFloat(price.value)||0;
+                total.value = (q*p).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+            }
+            qty?.addEventListener('input', calc);
+            price?.addEventListener('input', calc);
+            calc();
+
+            const input = document.getElementById('patientSearch');
+            const list = document.getElementById('patientSuggestions');
+            const hiddenId = document.getElementById('PatientId');
+            let debounce;
+
+            async function fetchPatients(q){
+                const res = await fetch('/Canteen/SearchPatients?q=' + encodeURIComponent(q));
+                if(!res.ok) return [];
+                return await res.json();
+            }
+            function render(items){
+                if(!items.length){ list.style.display='none'; list.innerHTML=''; return; }
+                list.innerHTML = items.map(i=>`<li class="list-group-item list-group-item-action" data-id="${i.id}">${i.text}</li>`).join('');
+                list.style.display='block';
+            }
+            function clearSelection(){
+                hiddenId.value='';
+            }
+            input.addEventListener('input', ()=>{
+                const q = input.value.trim();
+                clearSelection();
+                if(q.length<1){ list.style.display='none'; list.innerHTML=''; return; }
+                clearTimeout(debounce);
+                debounce = setTimeout(async()=>{
+                    const data = await fetchPatients(q);
+                    render(data);
+                },200);
+            });
+            document.getElementById('patientSearchBtn')?.addEventListener('click', ()=>{
+                const q = input.value.trim();
+                if(q.length<1) return;
+                fetchPatients(q).then(render);
+            });
+            list.addEventListener('click', e=>{
+                const li = e.target.closest('li[data-id]');
+                if(!li) return;
+                input.value = li.textContent.trim();
+                hiddenId.value = li.getAttribute('data-id');
+                list.style.display='none';
+            });
+            document.addEventListener('click', e=>{
+                if(!list.contains(e.target) && !input.contains(e.target))
+                    list.style.display='none';
+            });
+
+            document.getElementById('canteenForm')?.addEventListener('submit', e=>{
+                if(!hiddenId.value){
+                    e.preventDefault();
+                    alert('Please select a patient from search list.');
+                    input.focus();
+                }
+            });
+        })();
+    </script>
+}

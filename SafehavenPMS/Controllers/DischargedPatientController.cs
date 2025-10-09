@@ -1,9 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using SafehavenPMS.Data;
-using SafehavenPMS.ViewModel;
-using Microsoft.AspNetCore.Authorization;
 using SafehavenPMS.Enum;
+using SafehavenPMS.Models;
+using SafehavenPMS.ViewModel;
+using System.Linq;
+using System.Threading.Tasks;
 
 
 namespace SafehavenPMS.Controllers
@@ -143,6 +147,178 @@ namespace SafehavenPMS.Controllers
 
             TempData["SuccessMessage"] = "Patient reopened to New Intake.";
             return RedirectToAction("Index", "DischargedPatient");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Discharge()
+        {
+            var patients = await _context.Patients
+                .Where(p => p.PatientStatus == PatientStatusEnum.Admitted.ToString()
+                         || p.PatientStatus == PatientStatusEnum.InTreatment.ToString()
+                         || p.PatientStatus == PatientStatusEnum.NewIntake.ToString())
+                .OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = $"{p.PatientId} - {p.Firstname} {p.Lastname}"
+                })
+                .ToListAsync();
+
+            // AdmissionDate left at default until a patient is chosen
+            var vm = new DischargePatientViewModel
+            {
+                DischargeDate = DateTime.Today,
+                PatientOptions = patients
+            };
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Discharge(DischargePatientViewModel model)
+        {
+            if (model.PatientId == 0)
+            {
+                ModelState.AddModelError("PatientId", "Please select a patient.");
+                return await RebuildAndReturn(model);
+            }
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+            if (patient == null)
+            {
+                TempData["Error"] = "Patient not found.";
+                return RedirectToAction(nameof(Discharge));
+            }
+
+            // Auto-populate admission date (replace CreatedAt with actual AdmissionDate field if present)
+            var admissionDate = patient.CreatedAt != null ? patient.CreatedAt.Date : DateTime.Today;
+            model.AdmissionDate = admissionDate;
+
+            if (!ModelState.IsValid)
+                return await RebuildAndReturn(model, patient);
+
+            bool hasUnpaid = false;
+            if (_context.Invoices != null)
+                hasUnpaid = await _context.Invoices.AnyAsync(i => i.PatientId == model.PatientId && i.Status == "Unpaid");
+
+            if (hasUnpaid && !model.ProceedAnyway)
+            {
+                ModelState.AddModelError(string.Empty, "Patient has unpaid invoices. Confirm to proceed.");
+                model.HasUnpaidInvoices = true;
+                return await RebuildAndReturn(model, patient);
+            }
+
+            patient.PatientStatus = PatientStatusEnum.Discharged.ToString();
+
+            // Mark related clinical forms as archived (Intake, Initial Assessment, Psychiatric Assessment)
+            try
+            {
+                // Intake Forms
+                if (_context.IntakeForms != null)
+                {
+                    var intakeForms = await _context.IntakeForms
+                        .Where(f => f.PatientId == patient.PatientId)
+                        .ToListAsync();
+
+                    foreach (var f in intakeForms)
+                    {
+                        // Adjust property names if different in your models
+                        var statusProp = f.GetType().GetProperty("Status");
+                        var isArchivedProp = f.GetType().GetProperty("IsArchived");
+                        if (isArchivedProp != null)
+                            isArchivedProp.SetValue(f, true);
+                        if (statusProp != null)
+                            statusProp.SetValue(f, "Archived");
+                    }
+                }
+
+                // Initial Assessments
+                if (_context.InitialAssessmentForms != null)
+                {
+                    var initialAssessments = await _context.InitialAssessmentForms
+                        .Where(f => f.PatientId == patient.PatientId)
+                        .ToListAsync();
+
+                    foreach (var f in initialAssessments)
+                    {
+                        var statusProp = f.GetType().GetProperty("Status");
+                        var isArchivedProp = f.GetType().GetProperty("IsArchived");
+                        if (isArchivedProp != null)
+                            isArchivedProp.SetValue(f, true);
+                        if (statusProp != null)
+                            statusProp.SetValue(f, "Archived");
+                    }
+                }
+
+                // Psychiatric Assessments
+                if (_context.PsychiatricAssessments != null)
+                {
+                    var psych = await _context.PsychiatricAssessments
+                        .Where(f => f.PatientId == patient.PatientId)
+                        .ToListAsync();
+
+                    foreach (var f in psych)
+                    {
+                        var statusProp = f.GetType().GetProperty("Status");
+                        var isArchivedProp = f.GetType().GetProperty("IsArchived");
+                        if (isArchivedProp != null)
+                            isArchivedProp.SetValue(f, true);
+                        if (statusProp != null)
+                            statusProp.SetValue(f, "Archived");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Optional: log ex
+            }
+
+            var record = new DischargedPatient
+            {
+                PatientId = patient.PatientId,
+                AdmissionDate = admissionDate,
+                DischargeDate = model.DischargeDate,
+                Reason = model.Reason,
+                Notes = model.Notes,
+                Status = "Discharged",
+                CreatedBy = User.Identity?.Name
+            };
+
+            _context.DischargedPatients.Add(record);
+            _context.Patients.Update(patient);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Patient discharged.";
+            return RedirectToAction(nameof(Index));
+
+            async Task<IActionResult> RebuildAndReturn(DischargePatientViewModel vm, Patient patientEntity = null)
+            {
+                vm.PatientOptions = await _context.Patients
+                    .Where(p => p.PatientStatus == PatientStatusEnum.Admitted.ToString()
+                             || p.PatientStatus == PatientStatusEnum.InTreatment.ToString()
+                             || p.PatientStatus == PatientStatusEnum.NewIntake.ToString())
+                    .OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = $"{p.PatientId} - {p.Firstname} {p.Lastname}"
+                    })
+                    .ToListAsync();
+
+                if (patientEntity == null && vm.PatientId > 0)
+                    patientEntity = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == vm.PatientId);
+
+                if (patientEntity != null)
+                {
+                    vm.PatientName = $"{patientEntity.Firstname} {patientEntity.Lastname}";
+                    vm.PatientNumber = patientEntity.PatientId.ToString();
+                    vm.PhotoUrl = patientEntity.PhotoUrl;
+                    vm.Sex = patientEntity.Sex;
+                    vm.Address = patientEntity.Address;
+                    vm.AdmissionDate = patientEntity.CreatedAt.Date;
+                }
+                return View("Discharge", vm);
+            }
         }
     }
 }

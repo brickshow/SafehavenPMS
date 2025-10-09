@@ -13,6 +13,8 @@ namespace SafehavenPMS.ViewModel
         public string? ScheduleTimes { get; set; }
         public string? AdministrationStatus { get; set; }
 
+        public DateTime LogDate { get; set; } = DateTime.Now;
+
                 // Daily administration details
         public bool BreakfastTaken { get; set; } = false;
         public bool LunchTaken { get; set; } = false;

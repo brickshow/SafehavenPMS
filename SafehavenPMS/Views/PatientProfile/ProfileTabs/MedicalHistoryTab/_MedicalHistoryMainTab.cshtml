@@ -1,0 +1,177 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+@{
+    // Reuse same visual style as EditInitialAssessmentForm.cshtml
+    ViewBag.Title = "Medical History";
+}
+
+
+<!-- Main Split Layout -->
+<div class="row g-1 shadow">
+    <!-- Vertical navigation -->
+    <div class="col-md-2">
+        <div class="nav flex-column nav-tabs mh-tabs" id="medHistoryTabs" role="tablist">
+            <div class="nav-link active" id="mh-overview-tab" data-bs-toggle="tab" data-bs-target="#mh-overview" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Overview</span>
+                </div>
+            </div>
+            <div class="nav-link" id="mh-conditions-tab" data-bs-toggle="tab" data-bs-target="#mh-conditions" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Chronic Conditions</span>
+                </div>
+            </div>
+            <div class="nav-link" id="mh-surgeries-tab" data-bs-toggle="tab" data-bs-target="#mh-surgeries" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Surgeries</span>
+                </div>
+            </div>
+            <div class="nav-link" id="mh-medications-tab" data-bs-toggle="tab" data-bs-target="#mh-medications" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Medications</span>
+                </div>
+            </div>
+            <div class="nav-link" id="mh-allergies-tab" data-bs-toggle="tab" data-bs-target="#mh-allergies" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Allergies</span>
+                </div>
+            </div>
+            <div class="nav-link" id="mh-immun-tab" data-bs-toggle="tab" data-bs-target="#mh-immun" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Immunizations</span>
+                </div>
+            </div>
+            <div class="nav-link" id="mh-family-tab" data-bs-toggle="tab" data-bs-target="#mh-family" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Family History</span>
+                </div>
+            </div>
+            <div class="nav-link" id="mh-social-tab" data-bs-toggle="tab" data-bs-target="#mh-social" role="tab">
+                <div class="d-flex align-items-center">
+                    <div class="tab-indicator"></div>
+                    <span>Social History</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="col-md-10">
+        <div class="tab-content" id="medHistoryTabContent">
+
+            <div class="tab-pane fade p-4" id="mh-conditions" role="tabpanel">
+                <h6 class="fw-semibold mb-3">Chronic / Active Conditions</h6>
+                <div class="mb-2">
+                    @Html.Partial("MedicalHistory/_ConditionsList", Model)
+                </div>
+            </div>
+
+            <div class="tab-pane fade p-4" id="mh-surgeries" role="tabpanel">
+                <h6 class="fw-semibold mb-3">Past Surgeries / Procedures</h6>
+                @Html.Partial("MedicalHistory/_Surgeries", Model)
+            </div>
+
+            <div class="tab-pane fade p-4" id="mh-medications" role="tabpanel">
+                <h6 class="fw-semibold mb-3">Current Medications</h6>
+                @Html.Partial("MedicalHistory/_Medications", Model)
+            </div>
+
+            <div class="tab-pane fade p-4" id="mh-allergies" role="tabpanel">
+                <h6 class="fw-semibold mb-3">Allergies</h6>
+                @Html.Partial("MedicalHistory/_Allergies", Model)
+            </div>
+
+            <div class="tab-pane fade p-4" id="mh-immun" role="tabpanel">
+                <h6 class="fw-semibold mb-3">Immunizations</h6>
+                @Html.Partial("MedicalHistory/_Immunizations", Model)
+            </div>
+
+            <div class="tab-pane fade p-4" id="mh-family" role="tabpanel">
+                <h6 class="fw-semibold mb-3">Family History</h6>
+                @Html.Partial("MedicalHistory/_FamilyHistory", Model)
+            </div>
+
+            <div class="tab-pane fade p-4" id="mh-social" role="tabpanel">
+                <h6 class="fw-semibold mb-3">Social History</h6>
+                @Html.Partial("MedicalHistory/_SocialHistory", Model)
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .mh-tabs {
+        border: none;
+        height: 100%;
+    }
+    .mh-tabs .nav-link {
+        border: none;
+        border-radius: 0;
+        margin-bottom: 2px;
+        text-align: left;
+        padding: 12px 15px;
+        color: #495057;
+        background-color: #fff;
+        transition: all 0.2s ease;
+        width: 100%;
+        position: relative;
+        cursor:pointer;
+    }
+    .mh-tabs .nav-link .tab-indicator {
+        width:4px;
+        position:absolute;
+        left:-15px;
+        top:0;
+        bottom:0;
+        background:transparent;
+        transition:background-color .2s ease;
+    }
+    .mh-tabs .nav-link.active {
+        background:#006d77;
+        color:#fff;
+    }
+    .mh-tabs .nav-link.active .tab-indicator {
+        background:#00a3b5;
+    }
+    .mh-tabs .nav-link:hover { background:#f8f9fa; }
+    .tab-content {
+        background:#fff;
+        border:1px solid #eee;
+        min-height:500px;
+        box-shadow:0 2px 4px rgba(0,0,0,.05);
+    }
+    .fw-semibold { font-weight:600; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const nav = document.getElementById('medHistoryTabs');
+        const panes = document.getElementById('medHistoryTabContent');
+        const KEY = 'medHistoryActiveTab';
+
+        const stored = localStorage.getItem(KEY);
+        if (stored) {
+            nav.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            panes.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show', 'active'));
+            const link = nav.querySelector(`[data-bs-target="${stored}"]`);
+            const pane = panes.querySelector(stored);
+            if (link && pane) {
+                link.classList.add('active');
+                pane.classList.add('show', 'active');
+            }
+        }
+
+        nav.querySelectorAll('.nav-link').forEach(l => {
+            l.addEventListener('click', () => {
+                const target = l.getAttribute('data-bs-target');
+                if (target) localStorage.setItem(KEY, target);
+            });
+        });
+    });
+</script>

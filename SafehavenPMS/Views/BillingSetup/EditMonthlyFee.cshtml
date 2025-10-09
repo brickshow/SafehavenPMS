@@ -1,0 +1,45 @@
+@model SafehavenPMS.ViewModel.Billing.MonthlyFeeEditViewModel
+@{
+    ViewBag.Title = "Edit Monthly Fee";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="header">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <h5 class="mb-0">Edit Monthly Fee</h5>
+    </div>
+    <hr class="mt-0 mb-3" />
+</div>
+<form asp-action="EditMonthlyFee" method="post" class="card shadow-sm p-4">
+    @Html.AntiForgeryToken()
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="TreatmentFee" class="form-label"></label>
+            <div class="input-group">
+                <span class="input-group-text">P</span>
+                <input asp-for="TreatmentFee" class="form-control" />
+            </div>
+            <span asp-validation-for="TreatmentFee" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="FoodFee" class="form-label"></label>
+            <div class="input-group">
+                <span class="input-group-text">P</span>
+                <input asp-for="FoodFee" class="form-control" />
+            </div>
+            <span asp-validation-for="FoodFee" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="AccommodationAmenitiesFee" class="form-label"></label>
+            <div class="input-group">
+                <span class="input-group-text">P</span>
+                <input asp-for="AccommodationAmenitiesFee" class="form-control" />
+            </div>
+            <span asp-validation-for="AccommodationAmenitiesFee" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="d-flex justify-content-end mt-4 gap-2">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
