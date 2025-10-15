@@ -1,0 +1,374 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+<div class="card">
+    <div class="card-header bg-white mt-2" style="color: #015F6B;">
+        <h5 class="mb-0">PAST MEDICAL HISTORY</h5>
+    </div>
+    <div class="card-body pt-3 p-5">
+        <form asp-action="SaveMedicalHistoryProfile" asp-controller="PatientProfile" method="post" id="medicalHistoryForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PatientId" />
+
+            @* Medical Conditions *@
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Medical Conditions</label>
+                    <div class="d-flex gap-5 align-items-center">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.IsHypertensive" />
+                            <label class="form-check-label">Hypertensive</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.IsDiabetic" />
+                            <label class="form-check-label">Diabetic</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.IsAsthmatic" />
+                            <label class="form-check-label">Asthmatic</label>
+                        </div>
+                        <div class="flex-grow-1">
+                            <input type="text" class="form-control" asp-for="MedicalHistory.OtherConditions" placeholder="Other conditions..." />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Heredofamilial Diseases *@
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Heredofamilial Diseases</label>
+                    <div class="ms-4">
+                        <div class="row mb-3">
+                            <label class="col-2">Maternal Side:</label>
+                            <div class="col-10 d-flex gap-5">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.MaternalHypertension" />
+                                    <label class="form-check-label">Hypertension</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.MaternalDiabetic" />
+                                    <label class="form-check-label">Diabetic</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.MaternalNone" />
+                                    <label class="form-check-label">None</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label class="col-2">Paternal Side:</label>
+                            <div class="col-10 d-flex gap-5">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.PaternalHypertension" />
+                                    <label class="form-check-label">Hypertension</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.PaternalDiabetic" />
+                                    <label class="form-check-label">Diabetic</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" asp-for="MedicalHistory.PaternalNone" />
+                                    <label class="form-check-label">None</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Allergies *@
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Allergies</label>
+                    <div class="ms-4">
+                        @* Food Allergies *@
+                        <div id="foodAllergiesList">
+                            @for (int i = 0; i < Model.MedicalHistory?.FoodAllergies?.Count; i++)
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" 
+                                           name="MedicalHistory.FoodAllergies[@i]" 
+                                           value="@Model.MedicalHistory.FoodAllergies[i]" />
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeAllergy(this)">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <div class="input-group mb-3">
+                            <input type="text" id="newFoodAllergy" class="form-control" placeholder="Add food allergy..." />
+                            <button type="button" class="btn btn-teal" onclick="addFoodAllergy()">
+                                <i class="bx bx-plus"></i>
+                            </button>
+                        </div>
+
+                        @* Drug Allergies *@
+                        <div id="drugAllergiesList">
+                            @for (int i = 0; i < Model.MedicalHistory?.DrugAllergies?.Count; i++)
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" 
+                                           name="MedicalHistory.DrugAllergies[@i]" 
+                                           value="@Model.MedicalHistory.DrugAllergies[i]" />
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeAllergy(this)">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="newDrugAllergy" class="form-control" placeholder="Add drug allergy..." />
+                            <button type="button" class="btn btn-teal" onclick="addDrugAllergy()">
+                                <i class="bx bx-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Surgical Operations Table *@
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label class="form-label fw-medium mb-3" style="font-size: 1.2rem;">Surgical Operations</label>
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Duration</th>
+                                    <th>Hospital</th>
+                                    <th>Operation</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="surgicalOpsList">
+                                @for (int i = 0; i < Model.MedicalHistory?.SurgicalOperations?.Count; i++)
+                                {
+                                    <tr>
+                                        <td><input type="text" class="form-control" name="MedicalHistory.SurgicalOperations[@i].Year" 
+                                                 value="@Model.MedicalHistory.SurgicalOperations[i].Year" /></td>
+                                        <td><input type="text" class="form-control" name="MedicalHistory.SurgicalOperations[@i].Duration" 
+                                                 value="@Model.MedicalHistory.SurgicalOperations[i].Duration" /></td>
+                                        <td><input type="text" class="form-control" name="MedicalHistory.SurgicalOperations[@i].Hospital" 
+                                                 value="@Model.MedicalHistory.SurgicalOperations[i].Hospital" /></td>
+                                        <td><input type="text" class="form-control" name="MedicalHistory.SurgicalOperations[@i].Operation" 
+                                                 value="@Model.MedicalHistory.SurgicalOperations[i].Operation" /></td>
+                                        <td>
+                                            <button type="button" class="btn btn-outline-danger" onclick="removeSurgicalOp(this)">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                                <tr id="newSurgicalOp">
+                                    <td><input type="text" id="newYear" class="form-control" placeholder="Year" /></td>
+                                    <td><input type="text" id="newDuration" class="form-control" placeholder="Duration" /></td>
+                                    <td><input type="text" id="newHospital" class="form-control" placeholder="Hospital" /></td>
+                                    <td><input type="text" id="newOperation" class="form-control" placeholder="Operation" /></td>
+                                    <td>
+                                        <button type="button" class="btn btn-teal" onclick="addSurgicalOp()">
+                                            <i class="bx bx-plus"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @if(User.IsInRole("Admin") || User.IsInRole("Physician")){
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                    <button type="button" class="btn-next btn-primary px-4" onclick="submitMedicalHistoryForm()">Save</button>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: none !important;
+        border: none;
+    }
+
+    .card-header {
+        background: transparent;
+        border-bottom: none;
+    }
+
+    .form-control {
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .form-control:focus {
+        border-color: #006d77;
+        box-shadow: 0 0 0 0.2rem rgba(0,109,119,0.25);
+    }
+
+    .btn-teal {
+        background-color: #006d77;
+        color: white;
+    }
+
+    .btn-teal:hover {
+        background-color: #005c64;
+        color: white;
+    }
+
+    
+    .form-check-input:checked {
+        background-color: #006d77;
+        border-color: #006d77;
+    }
+
+    .form-check-input {
+        border-width: 2px;
+    }
+    
+</style>
+
+<script>
+    // === ADD FOOD ALLERGY ===
+    function addFoodAllergy() { 
+        const input = document.getElementById('newFoodAllergy');
+        if (!input.value.trim()) return;
+
+        const list = document.getElementById('foodAllergiesList');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" class="form-control" />
+            <button type="button" class="btn btn-outline-danger" onclick="removeAllergy(this, 'food')">
+                <i class="bx bx-trash"></i>
+            </button>
+        `;
+        list.appendChild(div);
+
+        reindexAllergies('food');
+        const newInput = div.querySelector('input');
+        newInput.value = input.value;
+        input.value = '';
+    }
+
+    // === ADD DRUG ALLERGY ===
+    function addDrugAllergy() {
+        const input = document.getElementById('newDrugAllergy');
+        if (!input.value.trim()) return;
+
+        const list = document.getElementById('drugAllergiesList');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" class="form-control" />
+            <button type="button" class="btn btn-outline-danger" onclick="removeAllergy(this, 'drug')">
+                <i class="bx bx-trash"></i>
+            </button>
+        `;
+        list.appendChild(div);
+
+        reindexAllergies('drug');
+        const newInput = div.querySelector('input');
+        newInput.value = input.value;
+        input.value = '';
+    }
+
+    // === REINDEX ALLERGIES ===
+    function reindexAllergies(type) {
+        const list = type === 'food'
+            ? document.getElementById('foodAllergiesList')
+            : document.getElementById('drugAllergiesList');
+
+        const rows = Array.from(list.querySelectorAll('.input-group'));
+        rows.forEach((row, idx) => {
+            const input = row.querySelector('input');
+            input.name = type === 'food'
+                ? `MedicalHistory.FoodAllergies[${idx}]`
+                : `MedicalHistory.DrugAllergies[${idx}]`;
+        });
+    }
+
+    // === REMOVE ALLERGY ===
+    function removeAllergy(button, type) {
+        const group = button.closest('.input-group');
+        if (group) group.remove();
+        reindexAllergies(type);
+    }
+
+    // === SURGICAL OPERATIONS ===
+    function addSurgicalOp() {
+        const year = document.getElementById('newYear').value.trim();
+        if (!year) return;
+
+        const duration = document.getElementById('newDuration').value.trim();
+        const hospital = document.getElementById('newHospital').value.trim();
+        const operation = document.getElementById('newOperation').value.trim();
+
+        const tbody = document.getElementById('surgicalOpsList');
+        const newRow = document.getElementById('newSurgicalOp');
+
+        const tr = document.createElement('tr');
+        tr.classList.add('surgical-op-row');
+        tr.innerHTML = `
+            <td><input type="text" class="form-control" value="${year}" /></td>
+            <td><input type="text" class="form-control" value="${duration}" /></td>
+            <td><input type="text" class="form-control" value="${hospital}" /></td>
+            <td><input type="text" class="form-control" value="${operation}" /></td>
+            <td>
+                <button type="button" class="btn btn-outline-danger" onclick="removeSurgicalOp(this)">
+                    <i class="bx bx-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.insertBefore(tr, newRow);
+
+        reindexSurgicalOps();
+
+        // clear fields
+        document.getElementById('newYear').value = '';
+        document.getElementById('newDuration').value = '';
+        document.getElementById('newHospital').value = '';
+        document.getElementById('newOperation').value = '';
+    }
+
+    function removeSurgicalOp(button) {
+        const row = button.closest('tr');
+        if (row) row.remove();
+        reindexSurgicalOps();
+    }
+
+    function reindexSurgicalOps() {
+        const rows = Array.from(document.querySelectorAll('#surgicalOpsList tr.surgical-op-row'));
+        rows.forEach((row, idx) => {
+            const inputs = row.querySelectorAll('input');
+            if (inputs.length >= 4) {
+                inputs[0].name = `MedicalHistory.SurgicalOperations[${idx}].Year`;
+                inputs[1].name = `MedicalHistory.SurgicalOperations[${idx}].Duration`;
+                inputs[2].name = `MedicalHistory.SurgicalOperations[${idx}].Hospital`;
+                inputs[3].name = `MedicalHistory.SurgicalOperations[${idx}].Operation`;
+            }
+        });
+    }
+
+    // === FORM SUBMIT ===
+    function submitMedicalHistoryForm() {
+        const form = document.getElementById('medicalHistoryForm');
+        const formData = new FormData(form);
+        const token = form.querySelector('input[name="__RequestVerificationToken"]');
+        if (token) formData.append('__RequestVerificationToken', token.value);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.text();
+            }
+        })
+        .catch(() => alert('Error saving medical history.'));
+    }
+</script>

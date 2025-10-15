@@ -603,8 +603,10 @@ namespace SafehavenPMS.Controllers
         [HttpPost]
         public async Task<IActionResult> SubmitIntakeForm(int PatientId)
         {
-            // Logic to submit the intake form for assessment
-            var patient = await _context.Patients.FindAsync(PatientId);
+            // Load patient with IntakeForm
+            var patient = await _context.Patients
+                .Include(p => p.IntakeForm)
+                .FirstOrDefaultAsync(p => p.PatientId == PatientId);
             if (patient == null)
             {
                 return View();
@@ -612,16 +614,24 @@ namespace SafehavenPMS.Controllers
 
             // set CreatedBy on patient when submitting
             var submitter = User?.Identity?.Name ?? "";
-            if (!string.IsNullOrEmpty(submitter))
+            if (!string.IsNullOrEmpty(submitter) && patient.IntakeForm != null)
             {
                 patient.IntakeForm.CreatedBy = submitter;
+            }
+
+            // Mark IntakeForm as completed
+            if (patient.IntakeForm != null)
+            {
+                patient.IntakeForm.Status = "Completed";
+                patient.IntakeForm.CompletedAt = DateTime.UtcNow;
+                _context.IntakeForms.Update(patient.IntakeForm);
             }
 
             // Update the status to submitted
             _context.Patients.Update(patient);
 
             //update patient status
-            patient.PatientStatus = PatientStatusEnum.Waitlisted.ToString(); 
+            patient.PatientStatus = PatientStatusEnum.Waitlisted.ToString();
             await _context.SaveChangesAsync();
 
             try

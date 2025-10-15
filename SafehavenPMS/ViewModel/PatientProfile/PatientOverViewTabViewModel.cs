@@ -16,6 +16,9 @@ namespace SafehavenPMS.ViewModel
         public List<string> DrugAllergies { get; set; } = new List<string>();
         public List<string> ActiveMedications { get; set; } = new List<string>();
 
+        // Problem list (replaces Today's Notes in the UI)
+        public List<string> ProblemList { get; set; } = new List<string>();
+
         // Treatment team: can be simple names or richer objects
         public List<TreatmentTeamMemberViewModel> TreatmentTeams { get; set; } = new List<TreatmentTeamMemberViewModel>();
 

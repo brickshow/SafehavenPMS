@@ -12,6 +12,7 @@ using CloudinaryDotNet;
 using SafehavenPMS.Services;
 using Microsoft.AspNetCore.Authorization;
 using SafehavenPMS.Services.Billing;
+using Microsoft.AspNetCore.SignalR;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,6 +59,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "Safehaven.Auth";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
+
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -119,6 +122,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Login}/{action=Login}/{id?}");
+app.MapHub<SafehavenPMS.Hubs.MessageHub>("/messageHub");
 app.Run();
 
 

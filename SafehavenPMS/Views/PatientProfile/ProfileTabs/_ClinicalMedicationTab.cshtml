@@ -3,48 +3,296 @@
     string CardColor(string status) =>
         status switch
         {
-            "Completed" => "#D6F2F7",
+            "Completed"   => "#D6F2F7",
             "In Progress" => "#F7E7D8",
-            "Archived" => "#E5E5E5",
+            "Archived"    => "#E5E5E5",
             "Not Started" => "#EFEFEF",
-            _ => "#EFEFEF"
+            _             => "#EFEFEF"
         };
 
-    // Filter: keep all except forms that are Not Started (unless it's the Intake Form)
     var displayedForms = Model?.Forms?
         .Where(f => f.Status != "Not Started" || f.FormType == "Intake Form")
         .ToList() ?? new List<SafehavenPMS.ViewModel.PatientProfile.ClinicalFormCardViewModel>();
+
+    var totalForms = displayedForms.Count;
 }
-<!-- Clinical Forms List UI -->
-<div style="background:#069FB2;color:#fff;border-radius:10px 10px 0 0;padding:18px 0;text-align:center;font-size:1.4rem;font-weight:700;">
-    @displayedForms.Count Form(s)
-</div>
-<div style="padding:20px;">
-    <div style="display:flex;flex-wrap:wrap;gap:24px;">
-        @foreach (var f in displayedForms)
-        {
-            <div style="flex:1 1 45%;min-width:340px;background:@CardColor(f.Status);border-radius:12px;padding:22px 28px;">
-                <div style="font-weight:700;font-size:1.15rem;">@f.FormType</div>
-                <div style="margin-top:10px;font-size:.95rem;color:#333;line-height:1.4;">
-                    Date Created:
-                    <span style="font-weight:600;">
-                        @(f.CreatedAt?.ToString("yyyy-MM-dd") ?? "--")
-                    </span>
-                    &nbsp;&nbsp; Clinician:
-                    <span style="font-weight:600;">@f.Clinician</span>
-                    &nbsp;&nbsp; Status:
-                    <span style="font-weight:600;">@f.Status</span>
-                </div>
-                <div class="mt-3">
-                    <a href="@f.ActionUrl" class="btn btn-sm btn-primary">
-                        @(f.Exists ? "Open" : "Start")
-                    </a>
-                </div>
-            </div>
-        }
-        @if (!displayedForms.Any())
-        {
-            <div class="text-muted">No clinical forms available.</div>
-        }
+
+<!-- Box 1: Files -->
+<div class="shpms-box m-4">
+    <div class="shpms-strip">
+        <div class="shpms-strip__title" id="filesCountTitle">0 Documents</div>
+    </div>
+    <div class="shpms-body shpms-body--files">
+        <!-- Upload form posts to PatientProfileController -->
+        <form id="filesUploadForm"
+              asp-controller="PatientProfile"
+              asp-action="UploadMedicalHistoryDocument"
+              method="post"
+              enctype="multipart/form-data"
+              class="m-0 p-0">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="patientId" value="@Model.PatientId" />
+            <button type="button" id="uploadBtn" class="btn btn-sm btn-upload">
+                <i class="bx bx-upload me-1"></i> Upload
+            </button>
+            <!-- keep multiple selection; JS will send one-by-one as 'file' -->
+            <input id="filesInput" type="file" multiple class="d-none" />
+        </form>
+    </div>
+
+    <!-- Uploaded files (loaded via MedicalHistoryPartial) -->
+    <div class="shpms-body shpms-body--uploads">
+        <div id="cm-files-container">
+            <div class="text-muted small">Loading files…</div>
+        </div>
     </div>
 </div>
+
+<!-- Box 2: Forms -->
+<div class="shpms-box mt-3 m-4">
+    <div class="shpms-strip">
+        <div class="shpms-strip__title">@totalForms Forms</div>
+        <div></div>
+    </div>
+
+    <div class="shpms-body">
+        <!-- Search row -->
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="input-group input-group-sm shpms-search-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bx bx-search"></i></span>
+                <input id="formSearchBox" type="text" class="form-control border-start-0" placeholder="Search document ..." />
+            </div>
+            <button id="formSearchBtn" class="btn btn-sm btn-primary">Search</button>
+        </div>
+
+        <!-- Two-column grid -->
+        <div class="shpms-forms__grid">
+            @foreach (var f in displayedForms)
+            {
+                var bg = CardColor(f.Status ?? "");
+                var actionUrl = string.IsNullOrWhiteSpace(f.ActionUrl)
+                    ? Url.Action("OpenForm", "PatientProfile", new { patientId = Model.PatientId, formType = f.FormType, formId = f.FormId })
+                    : f.ActionUrl;
+
+                <div class="shpms-card"
+                     style="--card-bg:@bg"
+                     data-form-text="@($"{f.FormType} {f.Clinician} {f.Status}")">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="shpms-card__title">@f.FormType</div>
+                        <a class="btn btn-sm btn-primary"
+                           href="@actionUrl">Open</a>
+                    </div>
+                    <div class="shpms-card__meta d-flex justify-content-between flex-wrap mt-1">
+                        <div class="shpms-card__left">
+                            <span>Date Created:
+                                <strong>@(f.CreatedAt?.ToString("MM-dd-yy") ?? "--")</strong>
+                            </span>
+                            <span class="ms-3">Clinician:
+                                <strong>@(string.IsNullOrWhiteSpace(f.Clinician) ? "-" : f.Clinician)</strong>
+                            </span>
+                        </div>
+                        <div class="shpms-card__right">
+                            <span>Status: <strong>@(f.Status ?? "-")</strong></span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (!displayedForms.Any())
+            {
+                <div class="text-muted p-3" style="grid-column:1 / span 2;">No clinical forms available.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .shpms-box {
+        background: #e9ecef;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+    }
+
+    .shpms-strip {
+        background: #006d77;
+        color: #fff;
+        border-radius: 10px 10px 0 0;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 700;
+        height: 48px;
+    }
+
+    .shpms-strip__title {
+        font-size: 1.1rem;
+    }
+
+    .shpms-body {
+        background: #fff;
+        border-radius: 0 0 10px 10px;
+        padding: 16px;
+    }
+
+    /* Files body height per design */
+    .shpms-body--files {
+        height: 68px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Uploaded files area: white background body */
+    .shpms-body--uploads {
+        padding-top: 8px;
+        background: #fff; /* ensure white */
+    }
+
+    /* Upload button styling (matches screenshot) */
+    .btn-upload {
+        background: #069FB2;
+        color: #fff;
+        border: 1px solid #008a9a;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-weight: 600;
+        box-shadow: 0 2px 3px rgba(0,0,0,.15);
+    }
+    .btn-upload:hover {
+        background: #048fa0;
+        color: #fff;
+    }
+
+    /* Forms grid and cards */
+    .shpms-forms__grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+    .shpms-card {
+        background: var(--card-bg, #EFEFEF);
+        border-radius: 12px;
+        padding: 18px 22px;
+        border-left: 6px solid rgba(0, 0, 0, .06);
+        min-height: 90px;
+    }
+    .shpms-card__title {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #0e3a42;
+        margin-bottom: 6px;
+    }
+    .shpms-card__meta { font-size: .95rem; color: #333; }
+    .shpms-card__left span + span { margin-left: 12px; }
+
+    .shpms-note { color: #e53935; font-weight: 700; text-transform: uppercase; letter-spacing: .2px; }
+    .shpms-note--top { grid-column: 2; align-self: start; }
+    .shpms-note--bottom { grid-column: 2; }
+
+    .input-group-text i { color: #7c7c7c; }
+    .shpms-search-group { width: 320px; }
+
+    /* Ensure uploaded documents render as white cards */
+    #cm-files-container .mh-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    }
+    #cm-files-container .mh-card + .mh-card { margin-top: 8px; }
+</style>
+
+<script>
+    (function () {
+        // Forms search
+        const box = document.getElementById('formSearchBox');
+        const btn = document.getElementById('formSearchBtn');
+
+        function applyFilter() {
+            const q = (box?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.shpms-card').forEach(c => {
+                const t = (c.getAttribute('data-form-text') || '').toLowerCase();
+                c.style.display = q && !t.includes(q) ? 'none' : '';
+            });
+        }
+
+        btn?.addEventListener('click', function (e) {
+            e.preventDefault();
+            applyFilter();
+        });
+
+        box?.addEventListener('keyup', function (e) {
+            if (e.key === 'Enter') applyFilter();
+            if (!box.value) applyFilter();
+        });
+
+        // Upload to PatientProfile/UploadMedicalHistoryDocument
+        const uploadBtn = document.getElementById('uploadBtn');
+        const input = document.getElementById('filesInput');
+        const title = document.getElementById('filesCountTitle');
+        const form = document.getElementById('filesUploadForm');
+        const token = form?.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        const patientId = form?.querySelector('input[name="patientId"]')?.value || '';
+
+        async function loadFiles() {
+            try {
+                const res = await fetch(`/PatientProfile/MedicalHistoryPartial?patientId=${patientId}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const html = await res.text();
+                const container = document.getElementById('cm-files-container');
+                if (!container) return;
+
+                // Strip drag-and-drop elements from the partial
+                const tpl = document.createElement('template');
+                tpl.innerHTML = html;
+
+                tpl.content.querySelectorAll(
+                    '.dropzone, .dz-message, .dz-default.dz-message, ' +
+                    '[data-role="drop-message"], [data-upload-hint], .drop-hint'
+                ).forEach(el => el.remove());
+
+                container.innerHTML = '';
+                container.appendChild(tpl.content);
+
+                const count = container.querySelectorAll('.mh-card').length;
+                if (title) title.textContent = `${count} Files`;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadFiles);
+
+        uploadBtn?.addEventListener('click', () => input?.click());
+
+        input?.addEventListener('change', async () => {
+            const files = Array.from(input.files || []);
+            if (!files.length) return;
+            try {
+                for (const file of files) {
+                    const data = new FormData();
+                    data.append('__RequestVerificationToken', token);
+                    data.append('patientId', patientId);
+                    data.append('file', file);
+
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        body: data,
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!res.ok) throw new Error('Upload failed');
+                    await res.json();
+                }
+                await loadFiles();
+                input.value = '';
+            } catch (err) {
+                console.error(err);
+                alert('Failed to upload files. Please try again.');
+            }
+        });
+    })();
+</script>

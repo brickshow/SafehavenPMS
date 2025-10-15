@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Authorization;
 using SafehavenPMS.Services;
 using SafehavenPMS.Models;
 using Microsoft.Data.SqlClient;
+using SafehavenPMS.ViewModel.Assessment;
+using SafehavenPMS.Enum;
 
 namespace SafehavenPMS.Controllers
 {
@@ -458,6 +460,7 @@ namespace SafehavenPMS.Controllers
             }
 
             ViewBag.PatientId = patient.PatientId;
+            ViewBag.InitialAssessmentFormId = initialAssessment?.InitialAssessmentFormId; // add this
 
             var serviceTypesList = await _context.ServiceTypes
                                     .Where(st => st.Status == "Active")
@@ -501,6 +504,7 @@ namespace SafehavenPMS.Controllers
                 PatientId = patient.PatientId,
                 ActivityLogs = initialLogs
             };
+
 
             return View(viewModel);
         }
@@ -647,6 +651,545 @@ namespace SafehavenPMS.Controllers
         {
             await _activityService.MarkReadAsync(id, User?.Identity?.Name ?? "-");
             return Ok();
+        }
+
+        // Medical History Main Tab
+        [HttpGet]
+        public async Task<IActionResult> MedicalHistoryMainTab(int patientId, int initialAssessmentFormId)
+         {
+            var ia = await _context.InitialAssessmentForms
+                .Include(f => f.Patient)
+                .Include(f => f.HistoryPresent)
+                .Include(f => f.MedicalHistory)
+                .Include(f => f.DrugUses)
+                .Include(f => f.MedicalAllergies)
+                .Include(f => f.SurgicalHistories)
+                .Include(f => f.PhysicalExam)
+                .Include(f => f.Diagnosis).ThenInclude(d => d.SubstanceUseEntries)
+                .Include(f => f.Problems).ThenInclude(p => p.Goals)
+                .Include(f => f.Recommendation)
+                .Include(f => f.MentalStatusExamination)
+                .FirstOrDefaultAsync(f => f.PatientId == patientId && f.InitialAssessmentFormId == initialAssessmentFormId);
+
+            if (ia == null)
+            {
+                TempData["ErrorMessage"] = "No medical history found for this patient.";
+                return PartialView("ProfileTabs/MedicalHistoryTab/_MedicalHistoryMainTab", new AssessmentFormViewModel());
+            }
+
+            var vm = new AssessmentFormViewModel
+            {
+                PatientId = ia.PatientId,
+                AssessmentId = ia.InitialAssessmentFormId,
+
+                HistoryPresent = ia.HistoryPresent == null ? null : new HistoryPresentViewModel
+                {
+                    HistoryPresentId = ia.HistoryPresent.HistoryPresentId,
+                    OnsetOfDrugUse = ia.HistoryPresent.OnsetOfDrugUse,
+                    ReasonForFirstUse = ia.HistoryPresent.ReasonForFirstUse,
+                    HistoryOfImprisonment = ia.HistoryPresent.HistoryOfImprisonment,
+                    PreviousDrugRehab = ia.HistoryPresent.PreviousDrugRehab,
+                    WhoInvitedFirstUse = ia.HistoryPresent.WhoInvitedFirstUse,
+                    NumberOfPeopleFirstUse = ia.HistoryPresent.NumberOfPeopleFirstUse,
+                    LastUseOfSubstance = ia.HistoryPresent.LastUseOfSubstance,
+                    AmountConsumedFirstUse = ia.HistoryPresent.AmountConsumedFirstUse,
+                },
+
+                MedicalHistory = ia.MedicalHistory == null ? null : new MedicalHistoryViewModel
+                {
+                    IsHypertensive = ia.MedicalHistory.IsHypertensive,
+                    IsDiabetic = ia.MedicalHistory.IsDiabetic,
+                    IsAsthmatic = ia.MedicalHistory.IsAsthmatic,
+                    OtherConditions = ia.MedicalHistory.OtherConditions,
+                    MaternalHypertension = ia.MedicalHistory.MaternalHypertension,
+                    MaternalDiabetic = ia.MedicalHistory.MaternalDiabetic,
+                    MaternalNone = ia.MedicalHistory.MaternalNone,
+                    PaternalHypertension = ia.MedicalHistory.PaternalHypertension,
+                    PaternalDiabetic = ia.MedicalHistory.PaternalDiabetic,
+                    PaternalNone = ia.MedicalHistory.PaternalNone,
+
+                    // 🥗 Map Food Allergies
+                    FoodAllergies = ia.MedicalAllergies?
+                        .Where(a => a.AllergyType == "Food")
+                        .Select(a => a.AllergyName)
+                        .ToList() ?? new List<string>(),
+
+                    // 💊 Map Drug Allergies
+                    DrugAllergies = ia.MedicalAllergies?
+                        .Where(a => a.AllergyType == "Drug")
+                        .Select(a => a.AllergyName)
+                        .ToList() ?? new List<string>(),
+
+                    // 🏥 Map Surgical Operations
+                    SurgicalOperations = ia.SurgicalHistories?
+                        .Select(s => new SurgicalOperation
+                        {
+                            Year = s.Year,
+                            Duration = s.Duration,
+                            Hospital = s.Hospital,
+                            Operation = s.Operation
+                        }).ToList() ?? new List<SurgicalOperation>()
+                },
+
+
+                DrugUseHistory = new DrugUseHistoryViewModel
+                {
+                    DrugUseEntries = ia.DrugUses?.Select(d => new DrugUseEntry
+                    {
+                        DrugHistoryId = d.DrugUseId,
+                        AssessmentFormId = d.InitialAssessmentFormId,
+                        SubstanceName = d.SubstanceName,
+                        Route = d.Route,
+                        QuantityPerDay = d.QuantityPerDay,
+                        Frequency = d.Frequency,
+                        FirstUse = d.FirstUse,
+                        EffectsWhenHigh = d.EffectsWhenHigh,
+                        EffectsWhenWanes = d.EffectsWhenWanes,
+                        CreatedAt = d.CreatedAt,
+                        CreatedBy = d.CreatedBy,
+                        UpdatedAt = d.UpdatedAt,
+                        UpdatedBy = d.UpdatedBy
+                    }).ToList() ?? new List<DrugUseEntry>()
+                },
+            };
+
+            return PartialView("ProfileTabs/MedicalHistoryTab/_MedicalHistoryMainTab", vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> OverviewTab(int patientId)
+        {
+            if (patientId <= 0) return BadRequest("Invalid patientId.");
+
+            var vm = new PatientOverViewTabViewModel
+            {
+                PatientId = patientId
+            };
+
+            // Clinical team
+            vm.TreatmentTeams = await _context.ClinicalStaffPatients
+                .AsNoTracking()
+                .Where(x => x.PatientId == patientId)
+                .Include(x => x.ClinicalStaff)
+                .Select(x => new TreatmentTeamMemberViewModel
+                {
+                    ClinicalStaffId = x.ClinicalStaffId,
+                    Firstname = x.ClinicalStaff.Firstname,  // adjust property names if different
+                    Lastname = x.ClinicalStaff.Lastname,
+                    Position = x.ClinicalStaff.Position,
+                    // AvatarUrl = x.ClinicalStaff.ImageUrl
+                })
+                .ToListAsync();
+
+            // Allergies from InitialAssessmentForm.MedicalAllergies
+            var iaf = await _context.InitialAssessmentForms
+                .AsNoTracking()
+                .Include(i => i.MedicalAllergies)
+                .FirstOrDefaultAsync(i => i.PatientId == patientId);
+
+            if (iaf?.MedicalAllergies != null)
+            {
+                vm.FoodAllergies = iaf.MedicalAllergies
+                    .Where(a => a.AllergyType == "Food" && !string.IsNullOrWhiteSpace(a.AllergyName))
+                    .Select(a => a.AllergyName!.Trim())
+                    .Distinct()
+                    .ToList();
+
+                vm.DrugAllergies = iaf.MedicalAllergies
+                    .Where(a => a.AllergyType == "Drug" && !string.IsNullOrWhiteSpace(a.AllergyName))
+                    .Select(a => a.AllergyName!.Trim())
+                    .Distinct()
+                    .ToList();
+            }
+
+            // Optionally populate today's notes and active meds here if needed
+
+            return PartialView("ProfileTabs/_OverviewTab", vm);
+        }
+        
+         [HttpPost]
+        public async Task<IActionResult> SaveHistoryOfPresentIllnessProfile(AssessmentFormViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid || model.PatientId == null)
+                {
+                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Find the patient
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+
+                if (patient == null)
+                {
+                    TempData["ErrorMessage"] = "Patient not found.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Get or create assessment form
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.HistoryPresent)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
+
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = patient.PatientId,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity.Name ?? "System"
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    assessmentForm.UpdatedAt = DateTime.Now;
+                    assessmentForm.UpdatedBy = User.Identity.Name ?? "System";
+                }
+
+                // Handle History Present section
+                if (model.HistoryPresent != null)
+                {
+                    if (assessmentForm.HistoryPresent == null)
+                    {
+                        assessmentForm.HistoryPresent = new HistoryPresent
+                        {
+                            InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = User.Identity.Name ?? "System"
+                        };
+                        _context.HistoryPresents.Add(assessmentForm.HistoryPresent);
+                    }
+                    else
+                    {
+                        assessmentForm.HistoryPresent.UpdatedAt = DateTime.Now;
+                        assessmentForm.HistoryPresent.UpdatedBy = User.Identity.Name ?? "System";
+                    }
+
+                    // Map ViewModel to Model
+                    assessmentForm.HistoryPresent.OnsetOfDrugUse = model.HistoryPresent.OnsetOfDrugUse ?? string.Empty;
+                    assessmentForm.HistoryPresent.ReasonForFirstUse = model.HistoryPresent.ReasonForFirstUse ?? string.Empty;
+                    assessmentForm.HistoryPresent.HistoryOfImprisonment = model.HistoryPresent.HistoryOfImprisonment ?? string.Empty;
+                    assessmentForm.HistoryPresent.PreviousDrugRehab = model.HistoryPresent.PreviousDrugRehab ?? string.Empty;
+                    assessmentForm.HistoryPresent.WhoInvitedFirstUse = model.HistoryPresent.WhoInvitedFirstUse ?? string.Empty;
+                    assessmentForm.HistoryPresent.NumberOfPeopleFirstUse = model.HistoryPresent.NumberOfPeopleFirstUse;
+                    assessmentForm.HistoryPresent.LastUseOfSubstance = model.HistoryPresent.LastUseOfSubstance ?? string.Empty;
+                    assessmentForm.HistoryPresent.AmountConsumedFirstUse = model.HistoryPresent.AmountConsumedFirstUse ?? string.Empty;
+                }
+
+                // Update patient status
+                await EnsurePatientStatusOnAssessment(patient.PatientId);
+
+                await _context.SaveChangesAsync();
+
+                // --- activity log & notification (History Present) ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved History of Present Illness",
+                    $"Updated HPI for {GetPatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"HPI saved for {GetPatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Initial assessment form has been saved successfully.";
+                // FIX: Redirect to Index with patientId only
+                return RedirectToAction("Index", new { id = model.PatientId });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                TempData["ErrorMessage"] = "Database error occurred while saving the assessment.";
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An unexpected error occurred while saving the assessment.";
+                return View(model);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveDrugHistoryProfile(AssessmentFormViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Get or create assessment form
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.DrugUses)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
+
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = model.PatientId.Value,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System",
+                        DrugUses = new List<DrugUse>()
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                }
+
+                // Update or add drug use entries
+                if (model.DrugUseHistory?.DrugUseEntries != null)
+                {
+                    var existingUses = assessmentForm.DrugUses?.ToList() ?? new List<DrugUse>();
+
+                    // Remove deleted ones
+                    foreach (var existing in existingUses)
+                    {
+                        if (!model.DrugUseHistory.DrugUseEntries.Any(e => e.SubstanceName == existing.SubstanceName))
+                        {
+                            _context.DrugUses.Remove(existing);
+                        }
+                    }
+
+                    // Add or update entries
+                    foreach (var entry in model.DrugUseHistory.DrugUseEntries)
+                    {
+                        var existing = existingUses.FirstOrDefault(e => e.SubstanceName == entry.SubstanceName);
+                        if (existing != null)
+                        {
+                            existing.Route = entry.Route;
+                            existing.QuantityPerDay = entry.QuantityPerDay;
+                            existing.Frequency = entry.Frequency;
+                            existing.FirstUse = entry.FirstUse;
+                            existing.EffectsWhenHigh = entry.EffectsWhenHigh;
+                            existing.EffectsWhenWanes = entry.EffectsWhenWanes;
+                            existing.UpdatedAt = DateTime.Now;
+                            existing.UpdatedBy = User.Identity?.Name ?? "System";
+                        }
+                        else
+                        {
+                            assessmentForm.DrugUses.Add(new DrugUse
+                            {
+                                SubstanceName = entry.SubstanceName,
+                                Route = entry.Route,
+                                QuantityPerDay = entry.QuantityPerDay,
+                                Frequency = entry.Frequency,
+                                FirstUse = entry.FirstUse,
+                                EffectsWhenHigh = entry.EffectsWhenHigh,
+                                EffectsWhenWanes = entry.EffectsWhenWanes,
+                                CreatedAt = DateTime.Now,
+                                CreatedBy = User.Identity?.Name ?? "System"
+                            });
+                        }
+                    }
+                }
+
+
+                // Update patient status
+                await EnsurePatientStatusOnAssessment(model.PatientId);
+
+                await _context.SaveChangesAsync();
+
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Drug Use History",
+                    $"Updated drug use history for {GetPatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Drug history saved for {GetPatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Drug history has been saved successfully.";
+                return RedirectToAction("Index", new { id = model.PatientId });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while saving the drug history.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SaveMedicalHistoryProfile(AssessmentFormViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Please correct the validation errors and try again.";
+                    return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+                }
+
+                // Get or create assessment form
+                var assessmentForm = await _context.InitialAssessmentForms
+                    .Include(iaf => iaf.MedicalHistory)
+                    .Include(iaf => iaf.MedicalAllergies)
+                    .Include(iaf => iaf.SurgicalHistories)
+                    .FirstOrDefaultAsync(iaf => iaf.PatientId == model.PatientId);
+
+                if (assessmentForm == null)
+                {
+                    assessmentForm = new InitialAssessmentForm
+                    {
+                        PatientId = model.PatientId.Value,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                    _context.InitialAssessmentForms.Add(assessmentForm);
+                    await _context.SaveChangesAsync(); // Save to get ID
+                }
+
+                // Update or create medical history
+                if (assessmentForm.MedicalHistory == null)
+                {
+                    assessmentForm.MedicalHistory = new MedicalHistory
+                    {
+                        InitialAssessmentFormId = assessmentForm.InitialAssessmentFormId,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = User.Identity?.Name ?? "System"
+                    };
+                }
+
+                // Update medical conditions
+                assessmentForm.MedicalHistory.IsHypertensive = model.MedicalHistory.IsHypertensive;
+                assessmentForm.MedicalHistory.IsDiabetic = model.MedicalHistory.IsDiabetic;
+                assessmentForm.MedicalHistory.IsAsthmatic = model.MedicalHistory.IsAsthmatic;
+                assessmentForm.MedicalHistory.OtherConditions = model.MedicalHistory.OtherConditions;
+
+                // Update heredofamilial diseases
+                assessmentForm.MedicalHistory.MaternalHypertension = model.MedicalHistory.MaternalHypertension;
+                assessmentForm.MedicalHistory.MaternalDiabetic = model.MedicalHistory.MaternalDiabetic;
+                assessmentForm.MedicalHistory.MaternalNone = model.MedicalHistory.MaternalNone;
+                assessmentForm.MedicalHistory.PaternalHypertension = model.MedicalHistory.PaternalHypertension;
+                assessmentForm.MedicalHistory.PaternalDiabetic = model.MedicalHistory.PaternalDiabetic;
+                assessmentForm.MedicalHistory.PaternalNone = model.MedicalHistory.PaternalNone;
+
+                // Update allergies
+                if (assessmentForm.MedicalAllergies != null)
+                {
+                    _context.MedicalAllergies.RemoveRange(assessmentForm.MedicalAllergies);
+                }
+
+                // Add food allergies
+                if (model.MedicalHistory.FoodAllergies != null)
+                {
+                    foreach (var allergy in model.MedicalHistory.FoodAllergies)
+                    {
+                        if (!string.IsNullOrWhiteSpace(allergy))
+                        {
+                            assessmentForm.MedicalAllergies.Add(new MedicalAllergy
+                            {
+                                AllergyType = "Food",
+                                AllergyName = allergy,
+                                CreatedAt = DateTime.Now,
+                                CreatedBy = User.Identity?.Name ?? "System"
+                            });
+                        }
+                    }
+                }
+
+                // Add drug allergies
+                if (model.MedicalHistory.DrugAllergies != null)
+                {
+                    foreach (var allergy in model.MedicalHistory.DrugAllergies)
+                    {
+                        if (!string.IsNullOrWhiteSpace(allergy))
+                        {
+                            assessmentForm.MedicalAllergies.Add(new MedicalAllergy
+                            {
+                                AllergyType = "Drug",
+                                AllergyName = allergy,
+                                CreatedAt = DateTime.Now,
+                                CreatedBy = User.Identity?.Name ?? "System"
+                            });
+                        }
+                    }
+                }
+
+                // Update surgical operations
+                if (assessmentForm.SurgicalHistories != null)
+                {
+                    _context.SurgicalHistories.RemoveRange(assessmentForm.SurgicalHistories);
+                }
+
+                if (model.MedicalHistory.SurgicalOperations != null)
+                {
+                    foreach (var operation in model.MedicalHistory.SurgicalOperations)
+                    {
+                        if (!string.IsNullOrWhiteSpace(operation.Operation))
+                        {
+                            assessmentForm.SurgicalHistories.Add(new SurgicalHistory
+                            {
+                                Year = operation.Year,
+                                Duration = operation.Duration,
+                                Hospital = operation.Hospital,
+                                Operation = operation.Operation,
+                                CreatedAt = DateTime.Now,
+                                CreatedBy = User.Identity?.Name ?? "System"
+                            });
+                        }
+                    }
+                }
+
+                // Update patient status
+                await EnsurePatientStatusOnAssessment(model.PatientId);
+
+                await _context.SaveChangesAsync();
+
+                // --- log ---
+                var user = User?.Identity?.Name ?? "System";
+                var pat = await _context.Patients.FindAsync(model.PatientId);
+                await _activityService.LogAsync(user,
+                    "Saved Medical History",
+                    $"Updated medical history for {GetPatientFullName(pat)}",
+                    "Assessment",
+                    "Info",
+                    pat?.PatientId);
+                await _activityService.NotifyAsync(user,
+                    $"Medical history saved for {GetPatientFullName(pat)}",
+                    type: "Success");
+                // --- end ---
+
+                TempData["SuccessMessage"] = "Medical history has been saved successfully.";
+                return RedirectToAction("Index", new { id = model.PatientId });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while saving the medical history.";
+                return RedirectToAction("EditInitialAssessmentForm", new { id = model.PatientId });
+            }
+        }
+        
+
+           private async Task EnsurePatientStatusOnAssessment(int? patientId)
+        {
+            if (!patientId.HasValue) return;
+
+            var patient = await _context.Patients.FindAsync(patientId.Value);
+            if (patient == null) return;
+
+            var Pending = PatientStatusEnum.PendingAssessment.ToString();
+            var onAssessment = PatientStatusEnum.OnAssessment.ToString();
+
+            if (patient.PatientStatus == Pending)
+            {
+                patient.PatientStatus = onAssessment;
+            }
+            // if already onAssessment -> keep it
+            // do not override PendingApproval, Admitted, etc.
+
+            await _context.SaveChangesAsync();
         }
     }
 }

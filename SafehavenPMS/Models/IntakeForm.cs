@@ -32,6 +32,7 @@ namespace SafehavenPMS.Models
         public string? ProblemPresentation { get; set; }
         public string? CouncilorImpression { get; set; }
         public string? OtherFamilyDetails { get; set; }
+        public string? Status { get; set; }
 
         // Family constellation
         public List<FamilyMember> FamilyMembers { get; set; } = new();

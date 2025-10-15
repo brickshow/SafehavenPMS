@@ -93,7 +93,38 @@
 
 <div class="tab-content" id="tabContentArea">
     <div class="tab-pane fade show active" id="tab-overview" role="tabpanel" aria-labelledby="overview-tab">
-        @await Html.PartialAsync("ProfileTabs/_OverviewTab", Model.OverViewTab)
+        <div id="overviewTabContainer" data-patient-id="@Model.PatientId">
+            <div class="text-muted small">Loading overview…</div>
+        </div>
+
+        <script>
+            (function () {
+                async function loadOverview() {
+                    const c = document.getElementById('overviewTabContainer');
+                    if (!c) return;
+                    const pid = c.getAttribute('data-patient-id');
+                    if (!pid) return;
+
+                    try {
+                        const res = await fetch(`/PatientProfile/OverviewTab?patientId=${pid}`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        c.innerHTML = await res.text();
+                    } catch (e) {
+                        console.error(e);
+                        c.innerHTML = '<div class="text-danger small">Failed to load overview.</div>';
+                    }
+                }
+
+                // Load on page ready; if you use tabs, call loadOverview when Overview tab is shown.
+                document.addEventListener('DOMContentLoaded', loadOverview);
+
+                // Optional Bootstrap tab hook:
+                document.addEventListener('shown.bs.tab', (ev) => {
+                    if (ev.target?.getAttribute('data-tab') === 'overview') loadOverview();
+                });
+            })();
+        </script>
     </div>
     <div class="tab-pane fade" id="tab-personal" role="tabpanel" aria-labelledby="personal-tab">
         @await Html.PartialAsync("ProfileTabs/_PatientProfileTab", Model.PersonalInfoTab)
@@ -102,7 +133,11 @@
         @await Html.PartialAsync("ProfileTabs/_ClinicalMedicationTab", Model.ClinicalFormTab)
     </div>
     <div class="tab-pane fade" id="tab-medical-history" role="tabpanel" aria-labelledby="medical-history-tab">
-        @await Html.PartialAsync("ProfileTabs/MedicalHistoryTab/_MedicalHistoryMainTab", Model.MedicalHistoryTab)
+        <div id="medical-history-main"
+             data-patient-id="@Model.PatientId"
+             data-ia-id="@(ViewBag.InitialAssessmentFormId ?? 0)">
+            <div class="text-muted p-3">Loading medical history…</div>
+        </div>
     </div>
     <div class="tab-pane fade" id="tab-treatment" role="tabpanel" aria-labelledby="treatment-tab">
         @await Html.PartialAsync("ProfileTabs/_TreatmentPlanTab", Model.TreatmentPlanTab)
@@ -170,5 +205,54 @@
                 tab.show();
             }
         }
+
+        const mhTabTrigger = document.getElementById('medical-history-tab');
+        const mhContainer = document.getElementById('medical-history-main');
+        const loadMh = () => {
+            if (mhContainer.dataset.loaded === '1') return;
+
+            const pid = mhContainer.getAttribute('data-patient-id');
+            const iaId = mhContainer.getAttribute('data-ia-id');
+            if (!iaId || iaId === '0') {
+                mhContainer.innerHTML = '<div class="text-warning p-3">No Initial Assessment found for this patient.</div>';
+                mhContainer.dataset.loaded = '1';
+                return;
+            }
+
+            const url = '@Url.Action("MedicalHistoryMainTab", "PatientProfile")'
+                        + `?patientId=${pid}&initialAssessmentFormId=${iaId}`;
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.text())
+                .then(html => {
+                    mhContainer.innerHTML = html;
+
+                    // Execute inline scripts from the loaded partial
+                    const scripts = mhContainer.querySelectorAll('script');
+                    scripts.forEach(old => {
+                        const s = document.createElement('script');
+                        if (old.src) {
+                            s.src = old.src;
+                        } else {
+                            s.text = old.textContent || old.innerText || '';
+                        }
+                        document.body.appendChild(s);
+                        old.remove();
+                    });
+
+                    mhContainer.dataset.loaded = '1';
+                })
+                .catch(err => {
+                    console.error(err);
+                    mhContainer.innerHTML = '<div class="text-danger p-3">Failed to load medical history.</div>';
+                });
+        };
+
+        // Load when tab is shown
+        if (mhTabTrigger) {
+            mhTabTrigger.addEventListener('shown.bs.tab', loadMh);
+        }
+        // If the tab is initially active, load immediately
+        if (mhTabTrigger && mhTabTrigger.classList.contains('active')) loadMh();
     });
 </script>

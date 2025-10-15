@@ -1,27 +1,26 @@
 ﻿@{
     ViewBag.Title = "Email";
-
-    // Section to query (use Context.Request in Pages)
-    var section = (Context.Request.Query["section"].ToString() ?? "").ToLower();
+    var section = ViewBag.Section as string ?? "inbox";
+    var messages = ViewBag.Messages as List<SafehavenPMS.Models.Message>;
 }
 
 <div class="email-container">
     @* Email header panel *@
     <div class="header-panel">
-        <button class="btn" id="composeBtn">Compose</button>
+        <button class="btn btn-next" id="composeBtn">Compose</button>
 
         @* header navigation *@
         <nav class="email-navigation g-3">
             <ul class="email-nav-list d-flex flex-row list-unstyled">
-                <li class="email-nav-item @(string.IsNullOrEmpty(section) || section == "inbox" ? "active" : "")">
-                    <a asp-page="/Email/Index" asp-route-section="inbox" class="email-nav-link">Inbox</a>
+                <li class="email-nav-item @(section == "inbox" ? "active" : "")">
+                    <a href="@Url.Action("Index", "Email", new { section = "inbox" })" class="email-nav-link">Inbox</a>
                 </li>
-                <li class="email-nav-item @(section == "sent" ? "active" : "")">
-                    <a asp-page="/Email/Index" asp-route-section="sent" class="email-nav-link">Sent</a>
+                @* <li class="email-nav-item @(section == "sent" ? "active" : "")">
+                    <a href="@Url.Action("Index", "Email", new { section = "sent" })" class="email-nav-link">Sent</a>
                 </li>
                 <li class="email-nav-item @(section == "archive" ? "active" : "")">
-                    <a asp-page="/Email/Index" asp-route-section="archive" class="email-nav-link">Archive</a>
-                </li>
+                    <a href="@Url.Action("Index", "Email", new { section = "archive" })" class="email-nav-link">Archive</a>
+                </li> *@
             </ul>
         </nav>
         <hr class="mt-0 mb-2" />
@@ -35,7 +34,7 @@
             <form>
                 <div class="input-message">
                     <label for="to" class="form-label">To:</label>
-                    <input type="text" id="to" class="form-control" placeholder="Email" />
+                    <input type="text" id="to" class="form-control" placeholder="Recipient Username" />
                 </div>
                 <div class="mb-2 input-message">
                     <label for="subject" class="form-label">Subject:</label>
@@ -46,54 +45,44 @@
                     <textarea id="body" class="form-control" rows="4" placeholder="Type your message..."></textarea>
                 </div>
                 <div class="mb02 d-flex justify-content-end align-items-center">
-                    <div class="file-upload">
-                        <input type="file" id="attachment" class="d-none" multiple />
-                        <button type="button" class="btn btn-light" onclick="document.getElementById('attachment').click()">
-                            <i class="bx bx-paperclip"></i> Attach Files
-                        </button>
-                        <small id="fileList" class="text-muted ms-2"></small>
-                    </div>
                     <button type="submit" class="btn btn-primary">Send</button>
                 </div>
-               
             </form>
         </div>
     </div>
 
     @* Email message container  *@
     <div class="email-msg-container">
-
-        @* Swicth case and load the selected page *@
-        @switch (section)
+        @if (messages != null && messages.Any())
         {
-            //if sent seleted load the sent pages
-            case "sent": 
-                @await Html.PartialAsync("_SentPartial");
-                break;
-                //This is just a test
-            case "archive":
-                <div class="email-msg-container">
-                    <div class="nothing-follows text-center text-muted mt-3">Archive is empty.</div>
-                </div>
-                break;
-            case "inbox":
-            default:
-
-                <div class="email-msg-container">
-                    <div class="email-msg-row d-flex align-items-center">
-                        <div class="col-md-4 col-12 message-header">From: Brix Lampago</div>
-                        <div class="col-md-4 col-12">(no subject)</div>
-                        <div class="col-md-3 col-10 text-muted">06/18/2025 - 10:50AM</div>
-                        <div class="col-md-1 col-2 text-end message-actions justify-content-center align-items-center">
-                            <i class="bx bx-archive fs-5" data-toggle="tooltip" data-placement="top" title="Archive Message"></i>
-                            <i class="text-danger bx bx-trash fs-5" data-toggle=" tooltip" data-placement="top" title="Delete Message"></i>
-                        </div>
+            foreach (var msg in messages)
+            {
+                <div class="email-msg-row d-flex align-items-center">
+                    <div class="col-md-4 col-12 message-header">
+                        @(section == "sent" ? $"To: {msg.ToUser}" : $"From: {msg.FromUser}")
                     </div>
-                    <div class="nothing-follows text-center text-muted mt-3">Nothing follows.</div>
+                    <div class="col-md-4 col-12">@msg.Subject</div>
+                    <div class="col-md-3 col-10 text-muted">@msg.SentAt.ToString("g")</div>
+                    <div class="col-md-1 col-2 text-end message-actions justify-content-center align-items-center">
+                        @if (section == "inbox")
+                        {
+                            <form method="post" asp-action="ArchiveMessage" style="display:inline;">
+                                <input type="hidden" name="id" value="@msg.Id" />
+                                <button type="submit" title="Archive Message"><i class="bx bx-archive fs-5"></i></button>
+                            </form>
+                        }
+                        <form method="post" asp-action="DeleteMessage" style="display:inline;">
+                            <input type="hidden" name="id" value="@msg.Id" />
+                            <button type="submit" title="Delete Message"><i class="text-danger bx bx-trash fs-5"></i></button>
+                        </form>
+                    </div>
                 </div>
-                break;
+            }
         }
-      
+        else
+        {
+            <div class="nothing-follows text-center text-muted mt-3">Nothing follows.</div>
+        }
     </div>
 </div>
 
@@ -212,6 +201,7 @@
     }
 </style>
 
+<script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
 <script>
      // Show modal when Compose is clicked
     document.addEventListener('DOMContentLoaded', function () {
@@ -227,12 +217,53 @@
             modal.style.display = 'none';
         });
 
-        // Optional: close modal when clicking outside the modal content
-        // modal.addEventListener('click', function (e) {
-        //     if (e.target === modal) {
-        //         modal.style.display = 'none';
-        //     }
-        // });
+        // SignalR script for real-time messaging
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/messageHub")
+            .build();
+
+        connection.on("ReceiveMessage", function (fromUser, subject, body) {
+            alert(`New message from ${fromUser}: ${subject}`);
+            location.reload();
+        });
+
+        connection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        document.querySelector("#composeModal form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const to = document.getElementById("to").value;
+            const subject = document.getElementById("subject").value;
+            const body = document.getElementById("body").value;
+
+         fetch("/Email/SendMessage", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]')?.value || ""
+                },
+                body: JSON.stringify({
+                    to: to.trim(),
+                    subject: subject.trim(),
+                    body: body.trim()
+                })
+            })
+            .then(async res => {
+                if (res.ok) {
+                    alert("✅ Message sent!");
+                    modal.style.display = "none";
+                    location.reload(); // optional: refresh inbox
+                } else {
+                    const error = await res.text();
+                    alert("❌ Failed to send: " + error);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("❌ Error sending message.");
+            });
+
+        });
     });
 </script>
-   

@@ -1,0 +1,122 @@
+@model SafehavenPMS.ViewModel.AssessmentFormViewModel
+
+@{
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Physician");
+    var isDisabled = !canEdit;
+}
+
+<div>
+    <div class="card-header bg-white mt-2" style="color: #015F6B;">
+        <h5 class="mb-0">HISTORY OF PRESENT ILLNESS</h5>
+    </div>
+    <div class="card-body pt-3 p-5">
+        <form id="hpiForm" asp-action="SaveHistoryOfPresentIllnessProfile" asp-controller="PatientProfile" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="HistoryPresent.HistoryPresentId"/>
+            <input type="hidden" asp-for="PatientId"/>
+
+            <div class="mb-3">
+                <label class="form-label">Onset of Drug Use</label>
+                <input type="text" class="form-control" asp-for="HistoryPresent.OnsetOfDrugUse" readonly="@(isDisabled)" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Reason for First Use</label>
+                <textarea class="form-control" rows="3" asp-for="HistoryPresent.ReasonForFirstUse" readonly="@isDisabled"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">History of Imprisonment</label>
+                <textarea class="form-control" rows="3" asp-for="HistoryPresent.HistoryOfImprisonment" readonly="@isDisabled"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">History of previous drug rehabilitation</label>
+                <textarea class="form-control" rows="3" asp-for="HistoryPresent.PreviousDrugRehab" readonly="@isDisabled"></textarea>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Who invited for first use</label>
+                    <input type="text" class="form-control" asp-for="HistoryPresent.WhoInvitedFirstUse" readonly="@isDisabled"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">No. of people on first use</label>
+                    <input type="number" class="form-control" asp-for="HistoryPresent.NumberOfPeopleFirstUse"
+                        readonly="@(isDisabled)" />              
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Last use of the substance</label>
+                    <input type="text" class="form-control" asp-for="HistoryPresent.LastUseOfSubstance" readonly="@isDisabled"/>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Amount consumed on first use</label>
+                    <input type="text" class="form-control" asp-for="HistoryPresent.AmountConsumedFirstUse" readonly="@isDisabled"/>
+                </div>
+            </div>
+            @if (canEdit)
+            {
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn-cancel px-4" onclick="history.back();">Cancel</button>
+                    <button type="button" class="btn-next btn-primary px-4" onclick="submitHPIForm()">Save</button>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<style>
+    .bg-teal {
+        background-color: #006d77;
+    }
+    
+    .btn-teal {
+        background-color: #006d77;
+        color: white;
+    }
+    
+    .btn-teal:hover {
+        background-color: #005c64;
+        color: white;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .form-control:focus {
+        border-color: #006d77;
+        box-shadow: 0 0 0 0.2rem rgba(0,109,119,0.25);
+    }
+
+    .form-label {
+        font-size: 1rem;
+    }
+</style>
+
+<script>
+function submitHPIForm() {
+    const form = document.getElementById('hpiForm');
+    const formData = new FormData(form);
+    const token = form.querySelector('input[name="__RequestVerificationToken"]');
+    if (token) {
+        formData.append('__RequestVerificationToken', token.value);
+    }
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            return response.text();
+        }
+    })
+    .then(data => {
+        // Optionally handle response data (e.g., show success/error message)
+    })
+    .catch(error => {
+        alert('Error saving form.');
+    });
+}
+</script>

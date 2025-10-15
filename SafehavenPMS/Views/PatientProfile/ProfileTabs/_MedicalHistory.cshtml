@@ -2,22 +2,6 @@
 @{
     var canUpload = Model?.CanUpload ?? false;
 }
-<div class="mb-3">
-    @if (canUpload)
-    {
-        <div id="mh-upload-area" style="border:2px dashed #079; padding:22px; text-align:center; border-radius:8px; background:#f5fbfd; cursor:pointer;">
-            <strong>Drop files here</strong> or click to browse
-            <br /><small>Any file type (max 50MB)</small>
-            <input id="mhFileInput" type="file" multiple style="display:none;" />
-        </div>
-        <div id="mh-progress" class="mt-2" style="display:none;">
-            <div class="progress">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%">0%</div>
-            </div>
-        </div>
-    }
-</div>
-
 <h5>Uploaded Documents</h5>
 
 <div id="mh-doc-grid" style="display:flex; flex-wrap:wrap; gap:16px;">
@@ -59,48 +43,9 @@
 {
 <script>
 (() => {
-    const area = document.getElementById('mh-upload-area');
-    const input = document.getElementById('mhFileInput');
     const grid = document.getElementById('mh-doc-grid');
-    const progWrap = document.getElementById('mh-progress');
-    const progBar = progWrap?.querySelector('.progress-bar');
     const patientId = @Model.PatientId;
 
-    if (!area) return;
-
-    const pick = () => input.click();
-    area.addEventListener('click', pick);
-    area.addEventListener('dragover', e => { e.preventDefault(); area.style.background='#e9f8fb'; });
-    area.addEventListener('dragleave', e => { e.preventDefault(); area.style.background='#f5fbfd'; });
-    area.addEventListener('drop', e => {
-        e.preventDefault();
-        area.style.background='#f5fbfd';
-        if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
-    });
-    input.addEventListener('change', e => handleFiles(e.target.files));
-
-    function handleFiles(list){
-        if(!list) return;
-        [...list].forEach(uploadFile);
-    }
-    async function uploadFile(file){
-        progWrap.style.display='block';
-        setProgress(0);
-        const fd=new FormData();
-        fd.append('patientId', patientId);
-        fd.append('file', file);
-        try{
-            const r=await fetch('/PatientProfile/UploadMedicalHistoryDocument',{method:'POST',body:fd});
-            if(!r.ok){console.error('upload failed');return;}
-            const d=await r.json();
-            addCard(d);
-        }catch(err){console.error(err);}
-        finally{
-            setProgress(100);
-            setTimeout(()=>{progWrap.style.display='none'; setProgress(0);},600);
-        }
-    }
-    function setProgress(p){ if(!progBar) return; progBar.style.width=p+'%'; progBar.textContent=p+'%'; }
     function addCard(d){
         if(grid.querySelector('.text-muted')) grid.innerHTML='';
         const isImage = (d.contentType||'').startsWith('image/');

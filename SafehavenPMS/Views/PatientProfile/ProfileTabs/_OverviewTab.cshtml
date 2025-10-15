@@ -1,6 +1,6 @@
 ﻿@model SafehavenPMS.ViewModel.PatientOverViewTabViewModel
 
-<div class="row">
+<div class="row bg-light">
     <!-- LEFT column -->
     <div class="col-lg-6">
         <div class="mb-3">
@@ -79,40 +79,34 @@
             </div>
         </div>
 
+        <!-- Replace TODAY'S NOTES with PROBLEM LIST -->
         <div>
             <div class="card">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Today's Notes</h6>
-                        <small class="text-muted">Latest progress notes for today</small>
+                        <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Problem List</h6>
+                        <small class="text-muted">Only active problems</small>
                     </div>
                     <div class="d-flex gap-2">
-                        <a class="text-muted small" href="@Url.Action("List", "ProgressNote", new { patientId = Model?.PatientId })">View All</a>
+                        <a class="text-muted small" href="#">View</a>
                     </div>
                 </div>
 
-                <div class="card-body p-0">
-                    @if (Model?.TodaysNotes != null && Model.TodaysNotes.Any())
+                <div class="card-body pt-0">
+                    @if (Model?.ProblemList != null && Model.ProblemList.Any())
                     {
                         <ul class="list-group list-group-flush m-3 mt-0 mb-0">
-                            @foreach (var note in Model.TodaysNotes)
+                            @foreach (var problem in Model.ProblemList)
                             {
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="fw-semibold">Progress Note</div>
-                                        <div class="text-muted small">"@note.Summary"</div>
-                                        <div class="text-muted small mt-1">Created by: @note.CreatedBy</div>
-                                    </div>
-                                    <div class="text-end">
-                                        <a class="text-primary small" href="@Url.Action("Details", "ProgressNote", new { id = note.NoteId })">View</a>
-                                    </div>
+                                    <div class="fw-semibold">@problem</div>
                                 </li>
                             }
                         </ul>
                     }
                     else
                     {
-                        <div class="p-3 text-center text-muted">No notes have been found.</div>
+                        <div class="p-3 text-center text-muted">No problems have been recorded.</div>
                     }
                 </div>
             </div>
@@ -125,7 +119,6 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="mb-0 fw-semibold" style="color:#015F6B; font-size: 1.2rem;">Treatment Team</h6>
-                    <a class="small" style="color:#767676;" href="@Url.Action("Assign", "ClinicalStaff", new { patientId = Model?.PatientId })">Manage</a>
                 </div>
 
                 <div>
@@ -143,7 +136,7 @@
                                         <div class="small text-muted">@member.Position</div>
                                     </div>
                                 </div>
-                                <a class="small" href="@Url.Action("Details", "ClinicalStaff", new { id = member.ClinicalStaffId })">View Profile</a>
+                                <a class="small text-decoration-none" href="@Url.Action("Profile", "ClinicalStaff", new { id = member.ClinicalStaffId })">View Profile</a>
                             </div>
                         }
                     }
