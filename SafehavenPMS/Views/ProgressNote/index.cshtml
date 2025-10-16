@@ -219,6 +219,13 @@
                                             {
                                                 <li>
                                                     <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                    href="@Url.Action("ProgressNoteLists", "ProgressNote", new { patientId = intervention.PatientId})">
+                                                        <span class="badge-dot bg-primary"></span>
+                                                        View Progress Notes
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                     href="@Url.Action("Create", "ProgressNote", new { patientId = intervention.PatientId, interventionId = intervention.InterventionId })">
                                                         <span class="badge-dot bg-primary"></span>
                                                         Add Progress Note

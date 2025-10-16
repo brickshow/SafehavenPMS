@@ -583,31 +583,19 @@ namespace SafehavenPMS.Controllers
             return View(patients);
         }
 
-        private string GetCurrentUserName()
+         private string GetCurrentUserName()
         {
-            // Preferred: explicit full name claim (if you issue one)
-            var fullNameClaim = User?.FindFirst("full_name")?.Value;
-            if (!string.IsNullOrWhiteSpace(fullNameClaim)) return fullNameClaim.Trim();
-
-            // Next: combine given name + surname if available
-            var given = User?.FindFirst(ClaimTypes.GivenName)?.Value;
-            var family = User?.FindFirst(ClaimTypes.Surname)?.Value;
-            if (!string.IsNullOrWhiteSpace(given) || !string.IsNullOrWhiteSpace(family))
-            {
-                return $"{given?.Trim()} {family?.Trim()}".Trim();
-            }
-
-            // Some identity providers put the full display name in ClaimTypes.Name
+            // Try to get display name first
             var name = User?.FindFirst(ClaimTypes.Name)?.Value;
-            if (!string.IsNullOrWhiteSpace(name)) return name.Trim();
+            if (!string.IsNullOrEmpty(name)) return name;
 
             // Fall back to email if name not available
             var email = User?.FindFirst(ClaimTypes.Email)?.Value;
-            if (!string.IsNullOrWhiteSpace(email)) return email.Trim();
+            if (!string.IsNullOrEmpty(email)) return email;
 
             // Fall back to basic identity name
             var identityName = User?.Identity?.Name;
-            if (!string.IsNullOrWhiteSpace(identityName)) return identityName.Trim();
+            if (!string.IsNullOrEmpty(identityName)) return identityName;
 
             // Last resort
             return "Unknown";

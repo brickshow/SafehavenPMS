@@ -31,12 +31,12 @@ namespace SafehavenPMS.Controllers
         private static string GetPatientFullName(Patient p) => $"{p.Firstname} {p.Lastname}";
 
         public async Task<IActionResult> Index(
-    int? page = 1,
-    int? pageSize = 10,
-    string searchQuery = null,
-    string status = null,
-    string sortOrder = null,
-    string sortBy = null)
+            int? page = 1,
+            int? pageSize = 10,
+            string searchQuery = null,
+            string status = null,
+            string sortOrder = null,
+            string sortBy = null)
         {
             if (string.IsNullOrEmpty(status))
             {
@@ -45,11 +45,12 @@ namespace SafehavenPMS.Controllers
 
             var currentUser = User?.Identity?.Name;
 
+            // start with the base patient query (don't pre-filter to "created by" here)
+            // so role-based logic below can show assigned patients for clinical staff users.
             var query = _context.Patients
                 .Include(i => i.IntakeForm)
                 .Include(c => c.ClinicalStaffPatients)
                     .ThenInclude(csp => csp.ClinicalStaff)
-                .Where(p => p.CreatedBy == currentUser || p.IntakeForm.CreatedBy == currentUser) // Add this line
                 .AsQueryable();
 
             // Rest of your existing role-based restrictions
@@ -89,7 +90,7 @@ namespace SafehavenPMS.Controllers
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
             ViewBag.SortBy = string.IsNullOrEmpty(sortBy) ? "" : sortBy;
 
-            // 🔎 Apply search filter
+            // Apply search filter
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 searchQuery = searchQuery.ToLower();
@@ -167,7 +168,56 @@ namespace SafehavenPMS.Controllers
                 .Take(pageSize > 0 ? pageSize.Value : totalItems)
                 .ToListAsync();
 
-            // Update the view model projection to include creator information
+            // Resolve creator full names for display
+            var creatorKeys = patientList
+                .Select(p => p.CreatedBy ?? p.IntakeForm?.CreatedBy)
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var users = await _context.Users
+                .Where(u => creatorKeys.Contains(u.Username) || (u.Email != null && creatorKeys.Contains(u.Email)))
+                .ToListAsync();
+
+            var staffs = await _context.ClinicalStaffs
+                .Where(cs => cs.Email != null && creatorKeys.Contains(cs.Email))
+                .ToListAsync();
+
+            var creatorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var u in users)
+            {
+                var keyByUserName = u.Username ?? string.Empty;
+                var keyByEmail = u.Email ?? string.Empty;
+                var fullName = u.Fullname;
+                if (string.IsNullOrEmpty(fullName))
+                    fullName = !string.IsNullOrEmpty(keyByUserName) ? keyByUserName : keyByEmail;
+
+                if (!string.IsNullOrWhiteSpace(keyByUserName) && !creatorMap.ContainsKey(keyByUserName))
+                    creatorMap[keyByUserName] = fullName;
+                if (!string.IsNullOrWhiteSpace(keyByEmail) && !creatorMap.ContainsKey(keyByEmail))
+                    creatorMap[keyByEmail] = fullName;
+            }
+
+            foreach (var cs in staffs)
+            {
+                var key = cs.Email ?? string.Empty;
+                var fullName = $"{(cs.Firstname ?? "").Trim()} {(cs.Lastname ?? "").Trim()}".Trim();
+                if (string.IsNullOrEmpty(fullName))
+                    fullName = key;
+
+                if (!string.IsNullOrWhiteSpace(key) && !creatorMap.ContainsKey(key))
+                    creatorMap[key] = fullName;
+            }
+
+            string ResolveCreatorDisplay(string? key)
+            {
+                if (string.IsNullOrWhiteSpace(key)) return "System";
+                if (creatorMap.TryGetValue(key, out var name)) return name;
+                return key;
+            }
+
+            // Update the view model projection to include creator information (use full name when available)
             var intakeViewModels = patientList
                 .Select(p => new SafehavenPMS.ViewModel.IntakeViewModel
                 {
@@ -175,7 +225,7 @@ namespace SafehavenPMS.Controllers
                     FullName = $"{p.Firstname} {p.Lastname}",
                     ReferredBy = p.IntakeForm?.AccompaniedBy ?? string.Empty,
                     ReferredByPhoneNumber = p.IntakeForm?.PhoneNumber ?? string.Empty,
-                    CreatedBy = p.CreatedBy ?? p.IntakeForm?.CreatedBy ?? "System",
+                    CreatedBy = ResolveCreatorDisplay(p.CreatedBy ?? p.IntakeForm?.CreatedBy),
                     IntakeDate = p.IntakeForm?.CreatedAt != null ? ((DateTime)p.IntakeForm.CreatedAt).ToString("yyyy-MM-dd") : "-",
                     CompletedDate = p.CreatedAt != null ? ((DateTime)p.CreatedAt).ToString("MMM dd, yyyy") : "-",
                     IntakeStatus = p.PatientStatus ?? "-",

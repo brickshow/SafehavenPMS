@@ -54,9 +54,9 @@
                                                 <div><span class="badge @(interv.Status == "Active" ? "bg-success" : "bg-secondary")">@interv.Status</span></div>
                                             </div>
                                         </div>
-                                    </button>
+                                    </button>   
 
-                                    <div class="dropdown ms-2" style="position:relative;">
+                                    @* <div class="dropdown ms-2" style="position:relative;">
                                         <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="d-flex align-items-center px-2">
                                             <i class="bx bx-dots-vertical fs-5 text-muted"></i>
                                         </a>
@@ -65,7 +65,7 @@
                                             <li><a class="dropdown-item" href="@Url.Action("Edit", "Intervention", new { id = interv.InterventionId })">Edit Intervention</a></li>
                                             <li><a class="dropdown-item" href="@Url.Action("Details", "Intervention", new { id = interv.InterventionId })">View Details</a></li>
                                         </ul>
-                                    </div>
+                                    </div> *@
                                 </div>
                             </li>
                                 }

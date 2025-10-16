@@ -225,12 +225,11 @@
                 </li>
             }
 
-            @* Patient Movements (Intake/Approval/Admission/Discharge) - typically admin + clinical staff *@
-            @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist", "Recovery Coach"))
+           @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Recovery Coach"))
             {
                 <li class="navigation">
-                    <a href="#" class="nav-parent">
-                        <i class='bx bx-detail'></i> 
+                    <a href="#" class="nav-parent"> 
+                        <i class='bx bx-detail'></i>
                         <span class="link_name">Patient Movements</span>
                         <i class='bx bx-chevron-down caret'></i>
                     </a>
@@ -239,14 +238,21 @@
                         {
                             <li><a asp-controller="Intake" asp-action="Index"><span>Intake</span></a></li>
                         }
-                        else{
-                            <li><a asp-controller="Approval" asp-action="Index"><span>Approval</span></a></li>
+                        else
+                        {
+                            @* Show Approval only for Admin *@
+                            @if (HasAnyRole("Admin"))
+                            {
+                                <li><a asp-controller="Approval" asp-action="Index"><span>Approval</span></a></li>
+                            }
+
                             <li><a asp-controller="Admission" asp-action="Index"><span>Admission</span></a></li>
                             <li><a asp-controller="DischargedPatient" asp-action="Index"><span>Discharge</span></a></li>
                         }
                     </ul>
                 </li>
             }
+
             @if (HasAnyRole("Admin","Physician","Psychiatrist","Recovery Coach"))
             {
                 <li class="navigation">
@@ -368,7 +374,7 @@
             }
 
                 @* Administration / Services: Admin + Setup roles *@
-                @if (HasAnyRole("Admin","Staff"))
+                @if (HasAnyRole("Admin"))
                 {
                     <li class="navigation">
                         <a href="#" class="nav-parent">
@@ -381,6 +387,16 @@
                             <li><a asp-controller="BillingSetup" asp-action="Index"><span>Setup Billing</span></a></li>
                         </ul>
                     </li>
+
+                    @* <li class="navigation">
+                        <a href="/Reports/Index/" data-label="Users">
+                                <i class='bx bxs-user-account'></i> 
+                            <span class="sd-link-name">Reports</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="/Reports/Index/">Reports</a></li>
+                        </ul>
+                    </li> *@
 
                     <li class="navigation">
                         <a href="/User/Index/" data-label="Users">

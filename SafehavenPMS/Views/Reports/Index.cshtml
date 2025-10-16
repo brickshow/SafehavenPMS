@@ -1,0 +1,138 @@
+@model SafehavenPMS.ViewModel.FinancialReportViewModel
+
+@{
+    ViewBag.Title = "Financial Reports";
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0">Financial Reports</h5>
+            <small class="text-muted">Overview of income, expenses and profit</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <form asp-controller="Reports" asp-action="Index" method="get" class="d-flex gap-2 align-items-center">
+                <input name="startDate" id="startDate" class="form-control form-control-sm" style="width:160px" placeholder="Start date" value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? "")" />
+                <input name="endDate" id="endDate" class="form-control form-control-sm" style="width:160px" placeholder="End date" value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? "")" />
+                <select name="groupBy" class="form-select form-select-sm" style="width:120px">
+                    @if (Model.GroupBy == "Month")
+                    {
+                        <option value="Month" selected>Month</option>
+                    }
+                    else
+                    {
+                        <option value="Month">Month</option>
+                    }
+
+                    @if (Model.GroupBy == "Quarter")
+                    {
+                        <option value="Quarter" selected>Quarter</option>
+                    }
+                    else
+                    {
+                        <option value="Quarter">Quarter</option>
+                    }
+
+                    @if (Model.GroupBy == "Year")
+                    {
+                        <option value="Year" selected>Year</option>
+                    }
+                    else
+                    {
+                        <option value="Year">Year</option>
+                    }
+                </select>
+                <button class="btn btn-teal btn-sm" type="submit">Apply</button>
+            </form>
+
+            <a asp-controller="Reports" asp-action="ExportCsv" asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-endDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-groupBy="@Model.GroupBy" class="btn btn-outline-secondary btn-sm">Export CSV</a>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="mb-4">
+            <canvas id="financeChart" height="120"></canvas>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-header-custom">
+                    <tr>
+                        <th>Period</th>
+                        <th class="text-end">Income</th>
+                        <th class="text-end">Expense</th>
+                        <th class="text-end">Profit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Labels.Count; i++)
+                    {
+                        <tr>
+                            <td>@Model.Labels[i]</td>
+                            <td class="text-end">@Model.IncomeValues[i].ToString("N2")</td>
+                            <td class="text-end">@Model.ExpenseValues[i].ToString("N2")</td>
+                            <td class="text-end">@Model.ProfitValues[i].ToString("N2")</td>
+                        </tr>
+                    }
+                    <tr class="fw-bold">
+                        <td>Total</td>
+                        <td class="text-end">@Model.TotalIncome.ToString("N2")</td>
+                        <td class="text-end">@Model.TotalExpense.ToString("N2")</td>
+                        <td class="text-end">@Model.TotalProfit.ToString("N2")</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Hook up flatpickr if present
+        if (window.flatpickr) {
+            flatpickr("#startDate", { dateFormat: "Y-m-d" });
+            flatpickr("#endDate", { dateFormat: "Y-m-d" });
+        }
+
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Labels));
+        const income = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.IncomeValues));
+        const expense = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ExpenseValues));
+
+        const ctx = document.getElementById('financeChart').getContext('2d');
+        const financeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: income,
+                        backgroundColor: 'rgba(6,159,178,0.85)'
+                    },
+                    {
+                        label: 'Expense',
+                        data: expense,
+                        backgroundColor: 'rgba(255,99,132,0.85)'
+                    },
+                    {
+                        label: 'Profit',
+                        data: income.map((v,i)=> v - (expense[i] ?? 0)),
+                        type: 'line',
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255,193,7,0.2)',
+                        tension: 0.2,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                interaction: { mode: 'index', intersect: false }
+            }
+        });
+    </script>
+}

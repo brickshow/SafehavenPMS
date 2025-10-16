@@ -204,6 +204,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  // animate stat cards (existing)
   document.querySelectorAll('.stat-value').forEach(el => {
       const target = parseInt(el.dataset.target || '0',10);
       if(isNaN(target)){ el.textContent='0'; return; }
@@ -218,29 +219,30 @@ document.addEventListener('DOMContentLoaded', () => {
       requestAnimationFrame(step);
   });
 
-  // Chart.js Pie Chart integration (from official docs)
+  // --- NEW: dynamic pie chart data from server (via ViewBag JSON) ---
+  const labels = @Html.Raw(ViewBag.PatientStatusLabelsJson ?? "[]");
+  const counts = @Html.Raw(ViewBag.PatientStatusValuesJson ?? "[]");
+
+  // fallback minimal data if nothing provided
+  const fallbackLabels = ['Admitted','Pending Approval','On Assessment','New Referral','Discharge'];
+  const fallbackCounts = [25,20,15,25,15];
+
+  const chartLabels = (labels && labels.length) ? labels : fallbackLabels;
+  const chartData = (counts && counts.length) ? counts : fallbackCounts;
+
+  // generate a color palette (repeats if needed)
+  const baseColors = ['#ff9f40','#ffd86b','#ff6b86','#1dd1a1','#2e86de','#06a9be','#7f8c8d','#9b59b6','#f39c12','#16a085'];
+  const bgColors = chartLabels.map((_,i) => baseColors[i % baseColors.length]);
+
   const ctx = document.getElementById('patientsPieChart').getContext('2d');
   new Chart(ctx, {
       type: 'pie',
       data: {
-          labels: [
-              'Admitted',
-              'Pending Approval',
-              'On Assessment',
-              'New Referral',
-              'Discharge'
-          ],
+          labels: chartLabels,
           datasets: [{
-              label: 'Patient Statuses',
-              data: [25, 20, 15, 25, 15],
-              backgroundColor: [
-                  '#ff9f40',
-                  '#ffd86b',
-                  '#ff6b86',
-                  '#1dd1a1',
-                  '#2e86de'
-              ],
-              hoverOffset: 4
+              data: chartData,
+              backgroundColor: bgColors,
+              hoverOffset: 6
           }]
       },
       options: {
@@ -249,18 +251,25 @@ document.addEventListener('DOMContentLoaded', () => {
           plugins: {
               legend: {
                   display: true,
-                  position: 'top', // <-- Show legend at the top of the pie chart
-                  labels: {
-                      boxWidth: 18,
-                      padding: 18
+                  position: 'top',
+                  labels: { boxWidth: 14, padding: 12 }
+              },
+              tooltip: {
+                  callbacks: {
+                      label: function(context) {
+                          const label = context.label || '';
+                          const value = context.parsed || 0;
+                          return `${label}: ${value.toLocaleString()}`;
+                      }
                   }
               }
           }
       }
   });
 
-  // set canvas height for nicer layout
+  // ensure canvas container has height
   const canvas = document.getElementById('patientsPieChart');
   canvas.parentElement.style.minHeight = '220px';
+  // -------------------------------------------------------------------
 });
 </script>
