@@ -47,6 +47,122 @@ public class AccountController : Controller
         return View(viewModel);
     }
 
+    //public async Task<IActionResult> CreateAccount(int? id)
+    //{
+    //    if (id == null) return NotFound();
+
+    //    var staff = await _context.ClinicalStaffs.FirstOrDefaultAsync(i => i.ClinicalStaffID == id);
+    //    if (staff == null) return NotFound();
+
+    //    var viewModel = new AccountViewModel
+    //    {
+    //        ClinicalStaffId = staff.ClinicalStaffID,
+    //        Firstname = staff.Firstname,
+    //        MiddleName = staff.MiddleName,
+    //        Lastname = staff.Lastname,
+    //        Email = staff.Email,
+    //        Position = staff.Position,
+    //        PhoneNumber = staff.PhoneNumber
+    //    };
+
+    //    return View(viewModel);
+    //}
+
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public async Task<IActionResult> CreateAccount(int? id)
+    //{
+    //    var vm = await _context.ClinicalStaffs.FirstOrDefaultAsync(i => i.ClinicalStaffID == id);
+
+    //    // Check if username already exists
+    //    if (await _context.Users.AnyAsync(u => u.Username == vm.ClinicalStaffRefId))
+    //    {
+    //        ModelState.AddModelError("", $"An account already exists for Clinical Staff ID {vm.ClinicalStaffRefId}.");
+    //        Console.WriteLine("Account already exists for " + vm.ClinicalStaffRefId);
+    //        return View(vm);
+    //    }
+
+
+    //    var user = new User
+    //    {
+    //        Username = vm.ClinicalStaffRefId,
+    //        Email = vm.Email,
+    //        Role = vm.Position,
+    //        IsActive = true,
+    //        CreatedAt = DateTime.UtcNow,
+    //        ClinicalStaffID = vm.ClinicalStaffID,
+    //    };
+
+    //    // Hash password
+    //    var hasher = new PasswordHasher<User>();
+    //    user.PasswordHash = hasher.HashPassword(user, vm.Password);
+
+    //    try
+    //    {
+    //        _context.Users.Add(user);
+    //        await _context.SaveChangesAsync();
+    //        Console.WriteLine($"User saved: Username={user.Username}, Email={user.Email}, Role={user.Role}");
+    //    }
+    //    catch (DbUpdateException ex)
+    //    {
+    //        _logger.LogError(ex, "Error saving account to database");
+    //        Console.WriteLine("Error saving account: " + ex.Message);
+    //        ModelState.AddModelError(string.Empty, "Unable to save account.");
+    //        return View(vm);
+    //    }
+
+    //    // Send credentials email
+    //    var toEmail = user.Email;
+    //    var staffName = $"{staff.Firstname} {staff.Lastname}".Trim();
+    //    if (!string.IsNullOrWhiteSpace(toEmail))
+    //    {
+    //        try
+    //        {
+    //            Console.WriteLine($"Sending credentials to {toEmail}...");
+    //            await _email.SendStaffCredentialsAsync(toEmail, user.Username, vm.Password, staffName);
+    //            Console.WriteLine("Credentials email sent.");
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _logger.LogError(ex, "Failed to send credentials email to {Email}", toEmail);
+    //            Console.WriteLine($"Failed to send email: {ex.Message}");
+    //        }
+    //    }
+
+    //    TempData["ToastMessage"] = $"Account created successfully for {staffName} ({username}).";
+    //    return RedirectToAction("Index", "Cl
+
+
+    //private static string GenerateSecurePassword(int length = 8)
+    //{
+    //    const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    //    const string lower = "abcdefghijkmnopqrstuvwxyz";
+    //    const string digits = "23456789";
+    //    const string symbols = "!@#$%*?-.";
+    //    string all = upper + lower + digits + symbols;
+
+    //    var bytes = new byte[length];
+    //    using var rng = RandomNumberGenerator.Create();
+
+
+    //    rng.GetBytes(bytes);
+
+    //    var chars = new char[length];
+    //    for (int i = 0; i < length; i++)
+    //    {
+    //        chars[i] = all[bytes[i] % all.Length];
+    //    }
+
+    //    // ensure at least one char from each required set for complexity
+    //    chars[0] = upper[bytes[0] % upper.Length];
+    //    chars[1] = lower[bytes[1] % lower.Length];
+    //    chars[2] = digits[bytes[2] % digits.Length];
+    //    chars[3] = symbols[bytes[3] % symbols.Length];
+
+    //    return new string(chars);
+    //}
+
+    // Create Account page (GET)
     public async Task<IActionResult> CreateAccount(int? id)
     {
         if (id == null) return NotFound();
@@ -68,131 +184,98 @@ public class AccountController : Controller
         return View(viewModel);
     }
 
+    // Create Account (POST)
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateAccount(AccountViewModel vm)
+    public async Task<IActionResult> CreateAccountConfirmed(int? id)
     {
-        Console.WriteLine($"CreateAccount POST called. Username={vm?.Username}, RecoveryEmail={vm?.RecoveryEmail}, Role={vm?.Role}, ClinicalStaffId={vm?.ClinicalStaffId}");
+        if (id == null) return NotFound();
 
-        // If no password was provided in the form, generate one and remove the ModelState error
-        if (string.IsNullOrWhiteSpace(vm?.Password))
+        var staff = await _context.ClinicalStaffs.FirstOrDefaultAsync(i => i.ClinicalStaffID == id);
+        if (staff == null) return NotFound();
+
+        // Check if username already exists
+        if (await _context.Users.AnyAsync(u => u.Username == staff.ClinicalStaffRefId))
         {
-            vm.Password = GenerateSecurePassword(8);
-            // remove any ModelState entry for Password so ModelState.IsValid can be true
-            ModelState.Remove(nameof(vm.Password));
-            Console.WriteLine("No password supplied — generated a temporary password.");
+            ModelState.AddModelError("", $"An account already exists for Clinical Staff ID {staff.ClinicalStaffRefId}.");
+            Console.WriteLine("Account already exists for " + staff.ClinicalStaffRefId);
+            return View("CreateAccount", staff);
         }
 
-        Console.WriteLine("ModelState.IsValid: " + ModelState.IsValid);
-        foreach (var entry in ModelState)
-        {
-            var errors = entry.Value.Errors;
-            if (errors.Count == 0)
-            {
-                Console.WriteLine($"ModelState[{entry.Key}] = OK");
-            }
-            else
-            {
-                for (int i = 0; i < errors.Count; i++)
-                {
-                    var err = errors[i];
-                    var msg = !string.IsNullOrEmpty(err.ErrorMessage) ? err.ErrorMessage : (err.Exception?.Message ?? "<unknown>");
-                    Console.WriteLine($"ModelState[{entry.Key}].Errors[{i}] = {msg}");
-                }
-            }
-        }
-
-        if (!ModelState.IsValid)
-            return View(vm);
-
-        if (await _context.Users.AnyAsync(u => u.Username == vm.Username))
-        {
-            ModelState.AddModelError(nameof(vm.Username), "Username is already taken.");
-            Console.WriteLine("Username already taken: " + vm.Username);
-            return View(vm);
-        }
-
-        ClinicalStaff staff = null;
-        if (vm.ClinicalStaffId != null)
-        {
-            staff = await _context.ClinicalStaffs.FindAsync(vm.ClinicalStaffId.Value);
-            if (staff == null)
-            {
-                Console.WriteLine("ClinicalStaff not found with ID: " + vm.ClinicalStaffId);
-                return NotFound();
-            }
-        }
-
+        // Generate a secure password
+        string generatedPassword = GenerateSecurePassword(8);
+        string Fullname = staff.Firstname + " " + staff.Lastname;
         var user = new User
         {
-            Username = vm.Username,
-            Email = vm.RecoveryEmail ?? staff?.Email,
-            Role = vm.Role,
+            Username = staff.ClinicalStaffRefId,
+            Email = staff.Email,
+            Fullname = Fullname,
+            Number = staff.PhoneNumber,
+            Role = staff.Position,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
-            ClinicalStaffID = vm.ClinicalStaffId,
+            ClinicalStaffID = staff.ClinicalStaffID
         };
 
-        // hash the provided (or generated) password
+        // Hash password
         var hasher = new PasswordHasher<User>();
-        user.PasswordHash = hasher.HashPassword(user, vm.Password);
+        user.PasswordHash = hasher.HashPassword(user, generatedPassword);
 
         try
         {
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            Console.WriteLine($"User saved to database. Username={user.Username}, Email={user.Email}, Role={user.Role}, ClinicalStaffID={user.ClinicalStaffID}");
+            Console.WriteLine($"User saved: Username={user.Username}, Email={user.Email}, Role={user.Role}");
         }
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Error saving account to database");
-            Console.WriteLine("Error saving account to database: " + ex.Message);
+            Console.WriteLine("Error saving account: " + ex.Message);
             ModelState.AddModelError(string.Empty, "Unable to save account.");
-            return View(vm);
+            return View("CreateAccount", staff);
         }
 
+        // Send credentials via email
         var toEmail = user.Email;
-        var staffName = $"{staff?.Firstname} {staff?.Lastname}".Trim();
+        var staffName = $"{staff.Firstname} {staff.Lastname}".Trim();
+
         if (!string.IsNullOrWhiteSpace(toEmail))
         {
             try
             {
-                Console.WriteLine($"Attempting to send credentials email to {toEmail} (username={user.Username}).");
-                await _email.SendStaffCredentialsAsync(toEmail, user.Username, vm.Password, staffName);
-                Console.WriteLine("Credentials email sent (not logging password).");
+                Console.WriteLine($"Sending credentials to {toEmail}...");
+                await _email.SendStaffCredentialsAsync(toEmail, user.Username, generatedPassword, staffName);
+                Console.WriteLine("Credentials email sent.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send credentials email to {Email}", toEmail);
-                Console.WriteLine($"Failed to send credentials email to {toEmail}: {ex.Message}");
-                // continue
+                Console.WriteLine($"Failed to send email: {ex.Message}");
             }
         }
 
+        TempData["ToastMessage"] = $"Account created successfully for {staffName} ({user.Username}).";
         return RedirectToAction("Index", "ClinicalStaff");
     }
 
+    // Helper for password generation
     private static string GenerateSecurePassword(int length = 8)
     {
         const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
         const string lower = "abcdefghijkmnopqrstuvwxyz";
         const string digits = "23456789";
         const string symbols = "!@#$%*?-.";
-        string all = upper + lower + digits + symbols;
 
+        string all = upper + lower + digits + symbols;
         var bytes = new byte[length];
         using var rng = RandomNumberGenerator.Create();
-
-
         rng.GetBytes(bytes);
 
         var chars = new char[length];
         for (int i = 0; i < length; i++)
-        {
             chars[i] = all[bytes[i] % all.Length];
-        }
 
-        // ensure at least one char from each required set for complexity
+        // Ensure complexity
         chars[0] = upper[bytes[0] % upper.Length];
         chars[1] = lower[bytes[1] % lower.Length];
         chars[2] = digits[bytes[2] % digits.Length];

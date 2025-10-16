@@ -9,6 +9,7 @@ namespace SafehavenPMS.Models
     {
         //Personal Information
         public int ClinicalStaffID { get; set; }
+        public string ClinicalStaffRefId { get; set; }
         public string Firstname { get; set; }
         public string Lastname { get; set; }
         public string? MiddleName { get; set; }//Accept null

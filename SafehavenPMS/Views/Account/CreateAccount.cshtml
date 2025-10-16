@@ -1,161 +1,34 @@
-@model SafehavenPMS.ViewModel.AccountViewModel
-
 @{
-    ViewBag.Title = "Setup Account";
+    ViewBag.Title = "Successful Message";
 }
 
-@* Content Header - make same as Confirmation.cshtml *@
-<div class="header">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="d-flex align-items-center">
-            <i class="bx bxs-group fs-2 me-2" title="Staff"></i>
-            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-sm text-center" style="width: 420px; border-radius: 8px;">
+        <div class="card-header py-2" style="background-color: #007178; color: #fff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+            <h6 class="mb-0">Successful Message</h6>
+        </div>
+
+        <div class="card-body py-4">
+            <h5 class="text-success fw-bold mb-3">Clinical Staff Added Successfully</h5>
+            <p class="mb-4 px-3 text-secondary">
+                The clinical staff member has been added, and a user account has been automatically created.
+                An email with account login details has been sent to the registered email address.
+            </p>
+            <a asp-controller="ClinicalStaff" asp-action="Index" class="btn btn-outline-secondary px-4">ok</a>
         </div>
     </div>
-    <hr class="mt-0 mb-2" />
 </div>
 
-
-@* Use the same form layout / input styles as AddNewClinicalStaff.cshtml
-   Labels are placed above inputs (remain at the top) *@
-
-    <div class="card shadow-sm w-50 m-auto my-4">
-        <div class="card-header" style="background:#0b6b6f; color:#fff;">
-            <div class="d-flex align-items-center">
-                <i class="bx bx-user-circle fs-3 me-2" title="Setup Account"></i>
-                <h5 class="mb-0">Set up Account</h5>
-            </div>
-        </div>
-
-        <div class="card-body p-0">
-            <div class="p-3">
-
-                <form asp-action="CreateAccount" asp-controller="Account" method="post" class="p-3" novalidate>
-                    @Html.AntiForgeryToken()
-
-                    @* keep staff link if available *@
-                    @if (Model?.ClinicalStaffId != null)
-                    {
-                        <input type="hidden" asp-for="ClinicalStaffId" />
-                    }
-
-                    <div class="row mb-3 justify-content-center">
-                        <div class="col-md-8 mb-3 pe-3">
-                            <label asp-for="Role" class="form-label mb-2">Role <span class="text-danger">*</span></label>
-                            <div class="d-flex flex-column uniform-input">
-                                <select asp-for="Role" class="form-select form-control" required>
-                                    <option value="" disabled selected>Select role</option>
-                                    <option value="Physician">Physician</option>
-                                    <option value="Psychiatrist">Psychiatrist</option>
-                                    <option value="RecoveryCoach">Recovery Coach</option>
-                                    <option value="Nurse">Nurse</option>
-                                    <option value="FinanceOfficer">Finance Officer</option>
-                                    <option value="Cashier">Cashier</option>
-                                    <option value="SocialWorker">Social Worker</option>
-                                    <option value="OccupationalTherapist">Occupational Therapist</option>
-                                    <option value="Psychologist">Psychologist</option>
-                                    <option value="Admin">Administrator</option>
-                                </select>
-                                <span asp-validation-for="Role" class="text-danger small mt-1"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3 justify-content-center">
-                        <div class="col-md-8 mb-3 pe-3">
-                            <label asp-for="Username" class="form-label mb-2">Username <span class="text-danger">*</span></label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="Username" class="form-control" />
-                                <span asp-validation-for="Username" class="text-danger small mt-1"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    @* <div class="row mb-3 justify-content-center">
-                        <div class="col-md-8 mb-3 pe-3">
-                            <label asp-for="Password" class="form-label mb-2">Password <span class="text-danger">*</span></label>
-                            <div class="d-flex flex-column uniform-input">
-                                <div class="input-group">
-                                    <input asp-for="Password" type="password" class="form-control" />
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="togglePw" title="Show/Hide">
-                                        <i class="bx bx-low-vision"></i>
-                                    </button>
-                                </div>
-                                <span asp-validation-for="Password" class="text-danger small mt-1"></span>
-                            </div>
-                        </div>
-                    </div> *@
-
-                    <div class="row mb-4 justify-content-center">
-                        <div class="col-md-8 mb-3 pe-3">
-                            <label asp-for="RecoveryEmail" class="form-label mb-2">Recovery Email</label>
-                            <div class="d-flex flex-column uniform-input">
-                                <input asp-for="RecoveryEmail" type="email" class="form-control" />
-                                <span asp-validation-for="RecoveryEmail" class="text-danger small mt-1"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    
-
-                    <div class="p-3">
-                        <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" asp-controller="ClinicalStaff" class="btn-cancel btn btn-outline-secondary px-4">Cancel</a>
-                            <button type="submit" class="btn-next btn btn-primary px-4">Create</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
 <style>
-    .add-satff-content {
-        background: white;
-        width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        max-width: 820px;
-        margin: 1.5rem auto;
+    body {
+        background-color: #f6f8f8;
     }
 
-    .form-label { font-weight: 500; margin-bottom: 0.25rem; }
-    .uniform-input { flex: 1; min-width: 0; }
-    .text-nowrap { white-space: nowrap; }
-
-    /* unify select and inputs sizing */
-    .form-control,
-    .form-select {
-        border-radius: 6px;
-        padding: .6rem .75rem;
-        height: auto;
-        font-size: 1rem;
-        line-height: 1.4;
+    .card {
+        border: none;
     }
 
-    /* ensure bootstrap select caret spacing doesn't break layout */
-    .form-select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-
-    .btn-cancel { background: transparent; }
-    .btn-next { background: #0aa0a6; border-color: #0aa0a6; color: #fff; }
-
-    .input-group .btn { border-top-left-radius: 0; border-bottom-left-radius: 0; }
-
-    @@media (max-width: 576px) {
-        .add-satff-content { margin: 0.75rem; }
+    .text-success {
+        color: #009966 !important;
     }
 </style>
-
-@section Scripts {
-    <script>
-        (function () {
-            const toggle = document.getElementById('togglePw');
-            toggle?.addEventListener('click', function () {
-                const input = this.closest('.input-group')?.querySelector('input[type="password"], input[type="text"]');
-                if (!input) return;
-                if (input.type === 'password') { input.type = 'text'; this.querySelector('i')?.classList.replace('bx-low-vision', 'bx-show'); }
-                else { input.type = 'password'; this.querySelector('i')?.classList.replace('bx-show', 'bx-low-vision'); }
-            });
-        })();
-    </script>
-}

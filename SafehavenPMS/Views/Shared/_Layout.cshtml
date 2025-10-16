@@ -153,7 +153,7 @@
             </li>
 
     @* Patient Management *@
-    @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse","RecoveryCoach","SocialWorker","OccupationalTherapist","Psychologist"))
+    @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
     {
         <li class="navigation">
             <a href="#" class="nav-parent">
@@ -173,7 +173,7 @@
                 }
 
                 @* Patient list: Admin, staff and clinical roles (clinicians will be filtered by controller) *@
-                @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","RecoveryCoach","SocialWorker","OccupationalTherapist","Psychologist"))
+                @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
                 {
                     <li>
                         <a asp-controller="Patient" asp-action="Index">
@@ -183,7 +183,7 @@
                 }
 
                 @* Progress notes: clinical roles only (view / add depends on ProgressNote controller permissions) *@
-                @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","RecoveryCoach","SocialWorker","OccupationalTherapist","Psychologist"))
+                @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
                 {
                     <li>
                         <a asp-controller="ProgressNote" asp-action="Index">
@@ -214,7 +214,7 @@
     }
 
     @* Scheduling: clinicians + admin + recovery coach (clinician pages will filter assigned patients) *@
-    @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse","RecoveryCoach"))
+    @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse","Recovery   Coach"))
     {
         <li class="navigation">
             <a href="#" class="nav-parent">
@@ -275,7 +275,7 @@
     }
 
     @* Billing: Finance roles and Admin *@
-    @if (HasAnyRole("Admin","FinanceOfficer", "Family"))
+    @if (HasAnyRole("Admin","Finance Officer", "Family"))
     {
          <li class="navigation">
             <a href="/Billing/Index/" data-label="Billing">
@@ -289,7 +289,7 @@
     }
 
     @* Canteen: Cashier, RecoveryCoach, Admin *@
-    @if (HasAnyRole("Admin","Cashier","RecoveryCoach"))
+    @if (HasAnyRole("Admin","Cashier","Recovery Coach"))
     {
           <li class="navigation">
             <a href="/Canteen/Index/" data-label="Canteen">
@@ -697,4 +697,32 @@
         loadNotifications();
         setInterval(() => loadNotifications(), 60000);
     })();
+
+    (function () {
+    const msgBadge = document.getElementById('msgBadge');
+    if (!msgBadge) return;
+
+    async function loadUnreadMessages() {
+        try {
+            const r = await fetch('/Email/GetUnreadCount', { headers: { 'Accept': 'application/json' } });
+            if (!r.ok) throw new Error('Failed to load');
+            const data = await r.json();
+            
+            const count = data.unreadCount || 0;
+            if (count > 0) {
+                msgBadge.textContent = count;
+                msgBadge.classList.remove('d-none');
+            } else {
+                msgBadge.classList.add('d-none');
+            }
+        } catch (err) {
+            console.error('Error fetching unread messages:', err);
+        }
+    }
+
+    // Initial load and auto-refresh every minute
+    loadUnreadMessages();
+    setInterval(loadUnreadMessages, 60000);
+})();
+
 </script>

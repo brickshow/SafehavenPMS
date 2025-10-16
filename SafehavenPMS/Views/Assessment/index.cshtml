@@ -188,7 +188,8 @@
                                         @if (pending.Status == PatientStatusEnum.PendingAssessment.ToString())
                                        {
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action("Index", "PatientProfile", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-info"></span>
                                                     View Profile
                                                 </a>
@@ -204,7 +205,8 @@
                                         else
                                         {
                                             <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" href="#">
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                   href="@Url.Action("Index", "PatientProfile", new { id = pending.PatientId })">
                                                     <span class="badge-dot bg-info"></span>
                                                     View Profile
                                                 </a>

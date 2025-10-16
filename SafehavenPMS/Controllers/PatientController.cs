@@ -441,10 +441,128 @@ namespace SafehavenPMS.Controllers
             return View(viewModel);
         }
 
-        public IActionResult Edit(int Id)
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
         {
+            var patient = await _context.Patients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PatientId == id);
 
-            return View();
+            if (patient == null)
+            {
+                TempData["Error"] = "Patient not found.";
+                return RedirectToAction("Index");
+            }
+
+            string houseUnit = string.Empty, street = string.Empty, subdivision = string.Empty,
+                   barangay = string.Empty, city = string.Empty, province = string.Empty;
+            if (!string.IsNullOrWhiteSpace(patient.Address))
+            {
+                var parts = patient.Address.Split(',');
+                if (parts.Length >= 6)
+                {
+                    houseUnit = parts[0].Trim();
+                    street = parts[1].Trim();
+                    subdivision = parts[2].Trim();
+                    barangay = parts[3].Trim();
+                    city = parts[4].Trim();
+                    province = parts[5].Trim();
+                }
+            }
+
+            var model = new AddNewPatientViewModel
+            {
+                PatientId = patient.PatientId,
+                Firstname = patient.Firstname,
+                MiddleName = patient.MiddleName,
+                Lastname = patient.Lastname,
+                DateOfBirth = patient.DateOfBirth,
+                ContactNumber = patient.PhoneNumber,
+                Sex = patient.Sex,
+                Occupation = patient.Occupation,
+                Education = patient.Education,
+                Religion = patient.Religion,
+                MaritalStatus = patient.MaritalStatus,
+                PhotoUrl = patient.PhotoUrl,
+                House_Unit = houseUnit,
+                Street = street,
+                Subdivision_Village = subdivision,
+                Barangay = barangay,
+                City = city,
+                Province = province
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(AddNewPatientViewModel model)
+        {
+            ModelState.Remove("PhotoUrl");
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == model.PatientId);
+            if (patient == null)
+            {
+                TempData["Error"] = "Patient not found.";
+                return RedirectToAction("Index");
+            }
+
+            if (model.DateOfBirth > DateTime.Now)
+            {
+                TempData["Message"] = "Please provide a valid Birthdate";
+                return View(model);
+            }
+
+            string? uploadedUrl = null;
+            if (model.Filename != null && model.Filename.Length > 0)
+            {
+                try
+                {
+                    using (var stream = model.Filename.OpenReadStream())
+                    {
+                        uploadedUrl = await _cloudinaryServices.UploadImageAsync(stream, model.Filename.FileName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = $"Failed to upload profile image: {ex.Message}";
+                    return View(model);
+                }
+            }
+
+            try
+            {
+                patient.Firstname = model.Firstname;
+                patient.MiddleName = model.MiddleName ?? string.Empty;
+                patient.Lastname = model.Lastname;
+                patient.DateOfBirth = model.DateOfBirth;
+                patient.PhoneNumber = model.ContactNumber ?? string.Empty;
+                patient.Sex = model.Sex;
+                patient.Occupation = model.Occupation ?? string.Empty;
+                patient.Education = model.Education ?? string.Empty;
+                patient.Religion = model.Religion ?? string.Empty;
+                patient.MaritalStatus = model.MaritalStatus;
+                patient.Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}";
+                if (!string.IsNullOrEmpty(uploadedUrl))
+                {
+                    patient.PhotoUrl = uploadedUrl;
+                }
+
+                _context.Patients.Update(patient);
+                await _context.SaveChangesAsync();
+                TempData["Message"] = "Patient updated.";
+                return RedirectToAction("Index", "PatientProfile", new {id = model.PatientId});
+            }
+            catch
+            {
+                TempData["Error"] = "There was an error updating the patient.";
+                return View(model);
+            }
         }
 
         public IActionResult IntakeForm()

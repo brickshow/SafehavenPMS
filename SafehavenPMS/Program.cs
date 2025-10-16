@@ -61,6 +61,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, SafehavenPMS.Hubs.UsernameUserIdProvider>();
 
 var app = builder.Build();
 
@@ -75,12 +76,14 @@ using (var scope = app.Services.CreateScope())
         context.Database.Migrate();
 
         // only create admin if not exists
-        if (!context.Users.Any(u => u.Username == "admin"))
+        if (!context.Users.Any(u => u.Username == "Admin"))
         {
             var admin = new User
             {
-                Username = "admin",
+                Fullname = "Administrator",
+                Username = "Admin",
                 Email = "act.blampago@gmail.com",
+                Number = "09213571928",
                 Role = "Admin",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow

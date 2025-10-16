@@ -2,11 +2,12 @@
 @{
     ViewBag.Title = "Create User";
 }
+   
 
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
-            <i class="bx bxs-user-plus fs-2 me-2" title="New User"></i>
+            <i class="bx bxs-group fs-2 me-2" title="Staff"></i>
             <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
         </div>
     </div>
@@ -19,7 +20,7 @@
             <h5 class="mb-0">User Information</h5>
         </div>
 
-        <form asp-action="Create" method="post" novalidate>
+        <form asp-action="Create" method="post">
             @Html.AntiForgeryToken()
 
             <div class="d-flex flex-column card-body py-4">
@@ -29,31 +30,35 @@
 
                 <!-- Vertically aligned single-column layout -->
                 <div class="form-stack">
+
                     <div class="mb-3">
-                        <label asp-for="Username" class="form-label fw-semibold"></label>
-                        <input asp-for="Username" class="form-control" />
-                        <span asp-validation-for="Username" class="text-danger small"></span>
+                        <label asp-for="Role" class="form-label fw-semibold"></label>
+                        <select asp-for="Role" class="form-select">
+                            <option value="">-- Select Role --</option>
+                            <option value="Admin">Administrator</option>
+                            <option value="Finanace Officer">Finanace Officer</option>
+                            <option value="Cashier">Cashier</option>
+                        </select>
+                        <span asp-validation-for="Role" class="text-danger small"></span>
+                    </div>
+
+
+                    <div class="mb-3">
+                        <label asp-for="Fullname" class="form-label fw-semibold"></label>
+                        <input asp-for="Fullname" class="form-control" />
+                        <span asp-validation-for="Fullname" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Number" class="form-label fw-semibold"></label>
+                        <input asp-for="Number" class="form-control" />
+                        <span asp-validation-for="Number" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Email" class="form-label fw-semibold"></label>
                         <input asp-for="Email" class="form-control" />
                         <span asp-validation-for="Email" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Role" class="form-label fw-semibold"></label>
-                        <select asp-for="Role" class="form-select">
-                            <option value="">-- Select Role --</option>
-                            <option>Administrator</option>
-                            <option>Finanace Officer</option>
-                            <option>Cashier</option>
-                        </select>
-                        <span asp-validation-for="Role" class="text-danger small"></span>
-                    </div>
-
-                    <div class="alert alert-info py-2 small">
-                        Password will be auto-generated and sent to the email provided.
                     </div>
                 </div>
             </div>

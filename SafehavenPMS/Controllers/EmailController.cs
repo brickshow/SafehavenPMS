@@ -1,23 +1,24 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using SafehavenPMS.Data;
 using SafehavenPMS.Hubs;
 using SafehavenPMS.Models;
-using SafehavenPMS.Data;
-using System.Threading.Tasks;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SafehavenPMS.Controllers
 {
+    [Authorize]
     public class EmailController : Controller
     {
         private readonly SafehavenPMSContext _context;
-        private readonly IHubContext<MessageHub> _hubContext;
 
-        public EmailController(SafehavenPMSContext context, IHubContext<MessageHub> hubContext)
+        public EmailController(SafehavenPMSContext context)
         {
             _context = context;
-            _hubContext = hubContext;
         }
 
         public IActionResult Index(string section)
@@ -45,7 +46,8 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SendMessage([FromBody] MessageDto dto)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMessage(MessageDto dto)
 
         {
             var fromUser = User.Identity.Name;
@@ -54,7 +56,8 @@ namespace SafehavenPMS.Controllers
             var recipient = _context.Users.FirstOrDefault(u => u.Username == dto.To && u.IsActive);
             if (recipient == null)
             {
-                return BadRequest("Recipient does not exist or is not active.");
+                TempData["ToastMessage"] = "Recipient does not exist or is not active.";
+                return View("Index");
             }
 
             var message = new Message
@@ -69,12 +72,15 @@ namespace SafehavenPMS.Controllers
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            await _hubContext.Clients.User(dto.To).SendAsync("ReceiveMessage", fromUser, dto.Subject, dto.Body);
+            //// This is correct and triggers the SignalR client event
+            //await _hubContext.Clients.User(dto.To).SendAsync("ReceiveMessage", fromUser, dto.Subject, dto.Body);
 
-            return Ok();
+
+            return Redirect("Index?section=inbox");
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ArchiveMessage(int id)
         {
             var message = await _context.Messages.FindAsync(id);
@@ -82,11 +88,20 @@ namespace SafehavenPMS.Controllers
             {
                 message.IsArchived = true;
                 await _context.SaveChangesAsync();
+                TempData["ToastMessage"] = "Message archived successfully.";
+                TempData["ToastType"] = "success";
             }
-            return Ok();
+            else
+            {
+                TempData["ToastMessage"] = "Unable to archive message.";
+                TempData["ToastType"] = "error";
+            }
+
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteMessage(int id)
         {
             var message = await _context.Messages.FindAsync(id);
@@ -94,9 +109,62 @@ namespace SafehavenPMS.Controllers
             {
                 _context.Messages.Remove(message);
                 await _context.SaveChangesAsync();
+                TempData["ToastMessage"] = "Message deleted successfully.";
+                TempData["ToastType"] = "success";
             }
-            return Ok();
+            else
+            {
+                TempData["ToastMessage"] = "Unable to delete message.";
+                TempData["ToastType"] = "error";
+            }
+
+            return RedirectToAction("Index");
         }
+
+
+        [HttpGet]
+        public IActionResult GetUnreadCount()
+        {
+            var username = User.Identity.Name;
+            var unreadCount = _context.Messages
+                .Count(e => e.ToUser == username && !e.IsRead);
+
+            return Json(new { unreadCount });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsRead(int id)
+        {
+            var message = await _context.Messages.FindAsync(id);
+            var currentUser = User.Identity.Name;
+            
+            // Only the recipient can mark a message as read
+            if (message != null && message.ToUser == currentUser)
+            {
+                // Only mark as read if it is currently unread
+                if (!message.IsRead)
+                {
+                    message.IsRead = true;
+                    await _context.SaveChangesAsync();
+                    TempData["ToastMessage"] = "Message marked as read.";
+                    TempData["ToastType"] = "success";
+                }
+                else
+                {
+                    TempData["ToastMessage"] = "Message is already read.";
+                    TempData["ToastType"] = "info";
+                }
+
+                return RedirectToAction("Index");
+            }
+
+            TempData["ToastMessage"] = "Unable to mark message as read.";
+            TempData["ToastType"] = "error";
+            return RedirectToAction("Index");
+        }
+    
+
     }
 
     // Add this DTO class inside the controller or in a shared location

@@ -15,6 +15,9 @@ namespace SafehavenPMS.Models
         [Required, StringLength(100)]
         public string Username { get; set; }
 
+        public string Fullname { get; set; }
+
+        public string Number { get; set; }
 
         [EmailAddress, StringLength(200)]
         public string Email { get; set; }

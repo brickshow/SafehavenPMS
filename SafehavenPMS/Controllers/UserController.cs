@@ -76,45 +76,59 @@ namespace SafehavenPMS.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            if (await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower()))
-            {
-                ModelState.AddModelError("Username", "Username already exists.");
-                return View(model);
-            }
-
             if (string.IsNullOrWhiteSpace(model.Email))
             {
                 ModelState.AddModelError("Email", "Email required to send credentials.");
                 return View(model);
             }
 
+            // ?? Generate secure password automatically
             var plainPassword = GenerateSecurePassword();
 
+            // ?? Get latest UserID and generate username (SF-0000001 format)
+            int lastId = await _context.Users
+                .OrderByDescending(u => u.UserId)
+                .Select(u => u.UserId)
+                .FirstOrDefaultAsync();
+
+            string newUsername = $"SF-{(lastId + 1).ToString("D7")}";
+
+            // ?? Create new user
             var user = new User
             {
-                Username = model.Username.Trim(),
-                Email = model.Email.Trim(),
+                Username = newUsername,
+                Fullname = model.Fullname,
+                Number = model.Number,
+                Email = model.Email,
                 Role = model.Role,
                 IsActive = model.IsActive,
-                CreatedBy = User?.Identity?.Name
+                CreatedBy = User?.Identity?.Name,
+                CreatedAt = DateTime.UtcNow
             };
 
-            // Hash password like in AccountController (instantiate PasswordHasher directly)
+            // ?? Hash password
             var hasher = new PasswordHasher<User>();
             user.PasswordHash = hasher.HashPassword(user, plainPassword);
-            user.PasswordSalt = null; // keep null for backward compatibility
+            user.PasswordSalt = null; // backward compatibility
 
+            // ?? Save to DB
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
+            // ?? Send credentials via email
             try
             {
-                await _emailService.SendStaffCredentialsAsync(user.Email, user.Username, plainPassword, user.Username);
-                TempData["SuccessMessage"] = "User created. Credentials emailed.";
+                await _emailService.SendStaffCredentialsAsync(
+                    user.Email,
+                    user.Username,
+                    plainPassword,
+                    user.Fullname
+                );
+                TempData["SuccessMessage"] = $"User {user.Username} created successfully. Credentials sent to {user.Email}.";
             }
             catch
             {
-                TempData["Error"] = "User created but sending email failed.";
+                TempData["Error"] = $"User {user.Username} created but sending email failed.";
             }
 
             return RedirectToAction(nameof(Index));

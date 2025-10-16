@@ -2,7 +2,7 @@
 @{
     ViewBag.Title = "Account Confirmation";
 }
-@* Content Header *@
+
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center">
@@ -13,14 +13,14 @@
     <hr class="mt-0 mb-2" />
 </div>
 
-<div class="d-flex align-items-center justify-content-center bg-light mt-5" >
+<div class="d-flex align-items-center justify-content-center bg-light mt-5">
     <div class="card shadow-sm" style="width:720px; max-width:95%;">
         <div class="card-header" style="background:#0b6b6f; color:#fff;">
             <h5 class="mb-0">Set up Account</h5>
         </div>
 
         <div class="card-body py-5">
-            <p class="lead mb-4 text-center">Would you like to Create an account for staff:</p>
+            <p class="lead mb-4 text-center">Would you like to create an account for staff:</p>
 
             <div class="row justify-content-center">
                 <div class="col-md-8">
@@ -42,17 +42,31 @@
         </div>
 
         <div class="card-footer bg-white border-top d-flex justify-content-end gap-2">
-            <a href="@Url.Action("Index","ClinicalStaff")" class="btn btn-cancel">Cancel</a>
-            <a href="@Url.Action("CreateAccount","Account", new {id = Model.ClinicalStaffId})" class="btn-custom btn-next text-decoration-none">Proceed</a>
+            <a href="@Url.Action("Index", "ClinicalStaff")" class="btn btn-cancel">Cancel</a>
+
+            <!--  POST form for CreateAccount -->
+            <form asp-controller="Account" asp-action="CreateAccountConfirmed" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.ClinicalStaffId" />
+                <button type="submit" class="btn-custom btn-next">Proceed</button>
+            </form>
         </div>
     </div>
 </div>
 
 <style>
-    /* small adjustments to mirror screenshot */
-    dd { margin-bottom: .75rem; }
-    .card-body .lead { font-size: 1.05rem; }
+    dd {
+        margin-bottom: .75rem;
+    }
+
+    .card-body .lead {
+        font-size: 1.05rem;
+    }
+
     @@media (max-width: 576px) {
-        .card { width: 100%; margin: 0 12px; }
+        .card {
+            width: 100%;
+            margin: 0 12px;
+        }
     }
 </style>

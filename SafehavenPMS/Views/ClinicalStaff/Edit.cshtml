@@ -57,7 +57,11 @@
                     <div class="row mb-3">
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Sex" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Sex</label>
-                            <input asp-for="Sex" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <select asp-for="Sex" class="form-control flex-grow-1 uniform-input">
+                                <option value="">Select Sex</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
                             <span asp-validation-for="Sex" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
@@ -67,7 +71,16 @@
                         </div>
                         <div class="col-md-4 d-flex align-items-center mb-3 pe-3">
                             <label asp-for="Position" class="form-label mb-0 me-2 text-nowrap" style="width: 110px;">Position</label>
-                            <input asp-for="Position" type="text" class="form-control flex-grow-1 uniform-input" />
+                            <select asp-for="Position" class="form-control flex-grow-1 uniform-input">
+                                <option value="">Select Position</option>
+                                <option value="Physician">Physician</option>
+                                <option value="Psychiatrist">Psychiatrist</option>
+                                <option value="Nurse">Nurse</option>
+                                <option value="Recovery Coach">Recovery Coach</option>
+                                <option value="Social Worker">Social Worker</option>
+                                <option value="Occupational Therapist">Occupational Therapist</option>
+                                <option value="Psychologist">Psychologist</option>
+                            </select>
                             <span asp-validation-for="Position" class="text-danger"></span>
                         </div>
                     </div>
@@ -90,11 +103,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4 d-flex flex-row align-items-center justify-content-center">
+                <div class="col-md-4 d-flex flex-column align-items-center justify-content-center">
                     <div class="rounded-circle border overflow-hidden mb-2" style="width: 100px; height: 100px;">
                         <img id="imagePreview" src="@(string.IsNullOrEmpty(Model.Filename) ? "/Images/default.png" : Model.Filename)" alt="Profile" class="w-100 h-100 object-fit-cover">
                     </div>
-                    <button type="button" class="change-picture-btn btn-outline-secondary btn-sm ms-3" onclick="document.getElementById('imageInput').click()">Upload Photo</button>
+                    <button type="button" class="change-picture-btn btn-outline-secondary btn-sm" onclick="document.getElementById('imageInput').click()">Upload Photo</button>
                     <input type="file" id="imageInput" asp-for="ImageProfile" class="d-none" accept="image/*" onchange="previewImage(this)">
                 </div>
             </div>

@@ -11,5 +11,7 @@ namespace SafehavenPMS.Models
         public string Body { get; set; }
         public DateTime SentAt { get; set; }
         public bool IsArchived { get; set; }
+        public bool IsRead { get; set; } = false;
+
     }
 }

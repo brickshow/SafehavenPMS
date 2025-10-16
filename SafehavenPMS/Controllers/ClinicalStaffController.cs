@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -268,7 +269,14 @@ namespace SafehavenPMS.Controllers
                 }
             }
 
-            // Prepare ClinicalStaff entity
+            // Get the latest ClinicalStaffID and generate next reference number
+            var lastStaff = await _context.ClinicalStaffs
+                .OrderByDescending(c => c.ClinicalStaffID)
+                .FirstOrDefaultAsync();
+
+            int nextId = (lastStaff != null ? lastStaff.ClinicalStaffID + 1 : 1);
+            string refId = $"CS-{nextId.ToString("D7")}"; // Pads to 7 digits: CS-0000001
+
             var staff = new ClinicalStaff
             {
                 Firstname = model.Firstname,
@@ -281,6 +289,7 @@ namespace SafehavenPMS.Controllers
                 PRC_Licensed = model.RPC_Licensed,
                 Email = model.Email,
                 CreatedAt = DateTime.Now,
+                ClinicalStaffRefId = refId,
                 IsActive = true,
                 Address = $"{model.House_Unit}, {model.Street}, {model.Subdivision_Village}, {model.Barangay}, {model.City}, {model.Province}"
             };
@@ -299,6 +308,7 @@ namespace SafehavenPMS.Controllers
             // Clean up the uploaded file reference in session
             model.ImageProfile = null;
 
+
             TempData["SuccessMessage"] = "Clinical staff added successfully!";
             return RedirectToAction("Confirmation", "Account", new { id = staff.ClinicalStaffID } );
         }
@@ -315,6 +325,22 @@ namespace SafehavenPMS.Controllers
                 return NotFound();
             }
 
+            // Parse address if it exists
+            string houseUnit = "", street = "", subdivision = "", barangay = "", city = "", province = "";
+            if (!string.IsNullOrEmpty(staff.Address))
+            {
+                var addressParts = staff.Address.Split(',');
+                if (addressParts.Length >= 6)
+                {
+                    houseUnit = addressParts[0].Trim();
+                    street = addressParts[1].Trim();
+                    subdivision = addressParts[2].Trim();
+                    barangay = addressParts[3].Trim();
+                    city = addressParts[4].Trim();
+                    province = addressParts[5].Trim();
+                }
+            }
+
             var viewModel = new AddClinicalStaffViewModel
             {
                 ClinicalStaffID = staff.ClinicalStaffID,
@@ -326,6 +352,12 @@ namespace SafehavenPMS.Controllers
                 Position = staff.Position,
                 RPC_Licensed = staff.PRC_Licensed,
                 Email = staff.Email,
+                House_Unit = houseUnit,
+                Street = street,
+                Subdivision_Village = subdivision,
+                Barangay = barangay,
+                City = city,
+                Province = province,
                 // ImageProfile is IFormFile and not set here (handled on POST)
                 Filename = staff.ProfilePictureURL, // Map existing image URL if needed
             };
@@ -359,7 +391,6 @@ namespace SafehavenPMS.Controllers
             }
 
             var existingStaff = await _context.ClinicalStaffs
-                .Include(s => s.Address)
                 .FirstOrDefaultAsync(s => s.ClinicalStaffID == id);
 
             if (existingStaff == null)
@@ -374,36 +405,11 @@ namespace SafehavenPMS.Controllers
             existingStaff.Sex = staff.Sex;
             existingStaff.PhoneNumber = staff.PhoneNumber;
             existingStaff.Position = staff.Position;
-            existingStaff.PRC_Licensed = staff.RPC_Licensed; // Fixed typo
+            existingStaff.PRC_Licensed = staff.RPC_Licensed;
             existingStaff.Email = staff.Email;
 
-            //// Handle address update
-            //if (existingStaff.Address != null)
-            //{
-            //    existingStaff.Address.House_Unit = staff.House_Unit;
-            //    existingStaff.Address.Street = staff.Street;
-            //    existingStaff.Address.Subdivision_Village = staff.Subdivision_Village;
-            //    existingStaff.Address.Barangay = staff.Barangay;
-            //    existingStaff.Address.City = staff.City;
-            //    existingStaff.Address.Province = staff.Province;
-            //}
-            //else if (!string.IsNullOrEmpty(staff.House_Unit) || !string.IsNullOrEmpty(staff.Street) ||
-            //         !string.IsNullOrEmpty(staff.Subdivision_Village) || !string.IsNullOrEmpty(staff.Barangay) ||
-            //         !string.IsNullOrEmpty(staff.City) || !string.IsNullOrEmpty(staff.Province))
-            //{
-            //    var newAddress = new Address
-            //    {
-            //        House_Unit = staff.House_Unit,
-            //        Street = staff.Street,
-            //        Subdivision_Village = staff.Subdivision_Village,
-            //        Barangay = staff.Barangay,
-            //        City = staff.City,
-            //        Province = staff.Province
-            //    };
-            //    _context.Addresses.Add(newAddress);
-            //    await _context.SaveChangesAsync();
-            //    existingStaff.AddressID = newAddress.AddressID;
-            //}
+            // Update address
+            existingStaff.Address = $"{staff.House_Unit}, {staff.Street}, {staff.Subdivision_Village}, {staff.Barangay}, {staff.City}, {staff.Province}";
 
             // Handle profile picture update
             if (staff.ImageProfile != null && staff.ImageProfile.Length > 0)
@@ -434,17 +440,26 @@ namespace SafehavenPMS.Controllers
             {
                 _context.ClinicalStaffs.Update(existingStaff);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Clinical staff updated successfully!";
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!ClinicalStaffExists(id))
                 {
-                    return NotFound();
+                    TempData["Error"] = "Staff member not found.";
+                    return RedirectToAction(nameof(Index));
                 }
                 else
                 {
-                    throw;
+                    TempData["Error"] = "An error occurred while updating the staff member.";
+                    return View(staff);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error updating staff: " + ex.Message);
+                TempData["Error"] = "An error occurred while updating the staff member.";
+                return View(staff);
             }
 
             return RedirectToAction(nameof(Index));
