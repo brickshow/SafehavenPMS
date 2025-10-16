@@ -13,6 +13,11 @@
         if (pageSize > 0) row = ((currentPage - 1) * pageSize) + 1;
     }
     catch { row = 1; }
+
+      var roleClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+     bool isPhysicianOrPsychiatrist = 
+        roleClaim.Equals("Physician", StringComparison.OrdinalIgnoreCase) ||
+        roleClaim.Equals("Psychiatrist", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="header">
@@ -210,20 +215,23 @@
                                     <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0 px-2 py-2 rounded-3" style="min-width: 220px;">
                                         <li class="px-2 text-muted fw-semibold small">Options</li>
                                         @* Action for View Profile *@
-                                            <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("Create", "ProgressNote", new { patientId = intervention.PatientId, interventionId = intervention.InterventionId })">
-                                                    <span class="badge-dot bg-primary"></span>
+                                          @if (!isPhysicianOrPsychiatrist)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
+                                                    href="@Url.Action("Create", "ProgressNote", new { patientId = intervention.PatientId, interventionId = intervention.InterventionId })">
+                                                        <span class="badge-dot bg-primary"></span>
+                                                        Add Progress Note
+                                                    </a>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="text-muted d-flex align-items-center gap-2 py-2 rounded-2" style="cursor: not-allowed; opacity: 0.6;">
+                                                    <span class="badge-dot bg-secondary"></span>
                                                     Add Progress Note
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
-                                                   href="@Url.Action("ProgressNoteLists", "ProgressNote", new { patientId = intervention.PatientId, selectedId = intervention.InterventionId })">
-                                                    <span class="badge-dot bg-success"></span>
-                                                    View Progress Notes
-                                            </a>
-                                        </li>
+                                                </li>
+                                            }
                                     </ul>
                                 </div>
                             </td>

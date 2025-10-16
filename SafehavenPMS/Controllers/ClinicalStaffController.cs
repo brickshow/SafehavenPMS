@@ -41,19 +41,21 @@ namespace SafehavenPMS.Controllers
                    .Build()
            );
         }
-        public async Task<IActionResult> Index(int? page = 1, int? pageSize = 10, string searchQuery = null, string status = null, string sortOrder = null)
+        public async Task<IActionResult> Index(int? page = 1, int? pageSize = 10, string searchQuery = null, string status = null, string sortOrder = null, string sortBy = null)
         {
             var query = _context.ClinicalStaffs
                 .Where(d => d.IsDeleted == false)
                 .AsQueryable();
 
-            // Calculate total staff count (unfiltered, unpaged)
-            int totalStaffCount = await _context.ClinicalStaffs.CountAsync();
+            // total (non-deleted)
+            int totalStaffCount = await _context.ClinicalStaffs.Where(d => d.IsDeleted == false).CountAsync();
             ViewBag.TotalStaffCount = totalStaffCount;
+
             ViewBag.CurrentPage = page ?? 1;
             ViewBag.PageSize = pageSize ?? 10;
             ViewBag.SearchQuery = searchQuery;
-            ViewBag.Status = status;
+            ViewBag.Status = status ?? "";             // <- ensure this is set
+            ViewBag.SortBy = sortBy ?? "";
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
 
             // Apply search

@@ -15,10 +15,12 @@
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
                     <!-- Search bar -->
                     <!-- Search bar -->
-                    <form asp-controller="ClinicalStaff" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2" id="searchForm">
+                    <form asp-controller="ClinicalStaff" asp-action="Index" method="get" class="d-flex flex-row justify-content-center m-1 gap-2" id="searchForm">
+                        <input type="hidden" name="page" value="1" />
                         <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 10)" />
                         <input type="hidden" name="status" value="@ViewBag.Status" />
                         <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                        <input type="hidden" name="sortBy" value="@(ViewBag.SortBy ?? "")" />
                         <div class="search-input-wrapper d-flex flex-row gap-2">
                             <i class='bx bx-search search-icon'></i>
                             <input name="searchQuery" id="searchInput" class="form-control search-input" placeholder="Search staff..." value="@ViewBag.SearchQuery" />
@@ -95,16 +97,17 @@
     }
     <div class="table-header d-flex justify-content-center align-items-center text-center">
         <h5 class="mb-0">@(ViewBag.TotalStaffCount > 0 ?  ViewBag.TotalStaffCount + " Clinical Staff" : "No Clinical Staff")</h5>
-    </div>
+    </div>  
 
     @* Print and show number of row section *@
     <div class="d-flex justify-content-between align-items-center m-4 mt-3 mb-0">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="ClinicalStaff" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                 <input type="hidden" name="status" value="@ViewBag.Status" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                <input type="hidden" name="sortBy" value="@(ViewBag.SortBy ?? "")" />
                 <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
                     <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
                     <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
@@ -118,37 +121,33 @@
         <div class="d-flex align-items-center justify-content-between">
             <!-- Status filter (left of Sort by) -->
             <div class="me-3">
-                <form asp-controller="Patient" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
+                <form asp-controller="ClinicalStaff" asp-action="Index" method="get" class="m-0 d-flex align-items-center">
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-                    <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
-                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
-                        <option value="Active" selected='@(ViewBag.Status == "Active" ? "selected" : "")'>Active</option>
-                        <option value="Inactive" selected='@(ViewBag.Status == "Inactive" ? "selected" : "")'>Inactive</option>
-                    </select>
+                    <input type="hidden" name="sortBy" value="@(ViewBag.SortBy ?? "")" />
+                 <select id="statusDropdown" name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="saveStatusAndSubmit(this)">
+                    <option value="">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
                 </form>
             </div>
 
             <!-- Sort by -->
             <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
-                    @* preserve existing query params so logic is unchanged *@
+                <form asp-controller="ClinicalStaff" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                    @* preserve existing query params *@
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="status" value="@ViewBag.Status" />
                     <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-
                     <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
                         <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
                         <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
                     </select>
-
-                    
                 </form>
             </div>
-
-            
         </div>
     </div>
 
@@ -215,7 +214,7 @@
                                                data-bs-target="#deleteConfirmModal"
                                                data-id="@staff.ClinicalStaffID">
                                                  <span class="badge-dot bg-danger"></span>
-                                                Delete
+                                                Deactivate
                                             </a>
                                         </li>
                                     </ul>
@@ -369,7 +368,15 @@
 
 @section Scripts {
     <script>
+        // ✅ Save and submit form when dropdown changes
+        function saveStatusAndSubmit(select) {
+            localStorage.setItem('selectedStatus', select.value);
+            select.form.submit();
+        }
+
+        // ✅ Restore saved selection on page load
         document.addEventListener('DOMContentLoaded', function () {
+            // --- Existing toast code ---
             var successToastEl = document.getElementById('successToast');
             if (successToastEl) {
                 var successToast = new bootstrap.Toast(successToastEl);
@@ -382,13 +389,27 @@
                 errorToast.show();
             }
 
-        });
+            // ✅ Restore dropdown value from localStorage
+            const savedStatus = localStorage.getItem('selectedStatus');
+            const statusDropdown = document.getElementById('statusDropdown');
+            if (savedStatus && statusDropdown) {
+                statusDropdown.value = savedStatus;
+            }
 
+            // ✅ Clear saved status if user resets to "All"
+            if (statusDropdown && statusDropdown.value === '') {
+                localStorage.removeItem('selectedStatus');
+            }
 
-         document.getElementById('deleteConfirmModal').addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var staffId = button.getAttribute('data-id');
-            document.getElementById('staffIdToDelete').value = staffId;
+            // --- Delete modal handler ---
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            if (deleteModal) {
+                deleteModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var staffId = button.getAttribute('data-id');
+                    document.getElementById('staffIdToDelete').value = staffId;
+                });
+            }
         });
     </script>
 }

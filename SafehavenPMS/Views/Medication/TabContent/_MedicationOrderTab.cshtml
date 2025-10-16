@@ -44,7 +44,9 @@
                     <th>Ordering Doctor</th>
                     <th>Note</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    @if(!User.IsInRole("Nurse")){
+                        <th>Action</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -68,7 +70,8 @@
                             <td>-</td>
                             <td>@order.Note</td>
                             <td>@order.Status.ToString()</td>
-                            <td class="position-relative text-center">
+                            @if(!User.IsInRole("Nurse")){
+                                <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bx bx-dots-vertical fs-5 text-muted"></i>
@@ -107,6 +110,8 @@
                                     </ul>
                                 </div>
                             </td>
+                            }
+                            
                         </tr>
                         rowNum++;
                     }

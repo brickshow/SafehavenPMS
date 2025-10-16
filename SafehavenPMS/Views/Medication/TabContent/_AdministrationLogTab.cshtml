@@ -126,15 +126,18 @@
                                     <span class="badge text-dark">Pending</span>
                                 </div>
                             </td>
-                            <td class="text-center">
-                                <a href="#"
-                                   class="btn btn-sm btn-outline-primary"
-                                   data-patientid="@log.PatientId"
-                                   data-bs-toggle="modal"
-                                   data-bs-target="#administrationLogModal-@log.PatientId">
-                                    <i class="bx bx-edit"></i>
-                                </a>
-                            </td>
+                            @if(User.IsInRole("Physician") || User.IsInRole("Psychiatrist")){
+                                <td class="text-center">
+                                    <a href="#"
+                                        class="btn btn-sm btn-outline-primary"
+                                        data-patientid="@log.PatientId"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#administrationLogModal-@log.PatientId">
+                                        <i class="bx bx-edit"></i>
+                                    </a>
+                                </td>
+                            }
+                            
                         </tr>
                     }}
             </tbody>

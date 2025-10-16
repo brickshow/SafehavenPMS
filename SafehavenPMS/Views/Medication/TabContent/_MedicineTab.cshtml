@@ -38,7 +38,9 @@
                     <th>Dose</th>
                     <th>Price</th>
                     <th>Status</th>
-                    <th class="text-center">Action</th>
+                    @if(!User.IsInRole("Nurse")){
+                        <th class="text-center">Action</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -74,7 +76,8 @@
                                     </div>
                                 }
                             </td>
-                            <td class="position-relative text-center">
+                            @if(!User.IsInRole("Nurse")){
+                                <td class="position-relative text-center">
                                 <div class="dropdown" data-bs-display="static">
                                     <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bx bx-dots-vertical fs-5 text-muted"></i>
@@ -115,6 +118,7 @@
                                     </ul>
                                 </div>
                             </td>
+                            }
                         </tr>
 
                         rowNum++;

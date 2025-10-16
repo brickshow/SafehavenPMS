@@ -125,7 +125,7 @@
                     if (string.Equals(claim.Value, "false", StringComparison.OrdinalIgnoreCase)) return false;
                 }
                 // allowlist roles that should see dashboard
-                return HasAnyRole("Admin", "Manager", "Doctor", "Physician");
+                return HasAnyRole("Admin");
             }
 
             // return home url depending on role - Finance Officer goes to Billing
@@ -213,7 +213,7 @@
                         }
 
                         @* Progress notes: clinical roles only (view / add depends on ProgressNote controller permissions) *@
-                        @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
+                        @if (HasAnyRole("Admin","Physician","Psychiatrist","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
                         {
                             <li>
                                 <a asp-controller="ProgressNote" asp-action="Index">
@@ -226,7 +226,7 @@
             }
 
             @* Patient Movements (Intake/Approval/Admission/Discharge) - typically admin + clinical staff *@
-            @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse", "Recovery Coach"))
+            @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist", "Recovery Coach"))
             {
                 <li class="navigation">
                     <a href="#" class="nav-parent">
@@ -240,32 +240,14 @@
                             <li><a asp-controller="Intake" asp-action="Index"><span>Intake</span></a></li>
                         }
                         else{
-                            <li><a asp-controller="Waitlist" asp-action="Index"><span>Waitlist</span></a></li> <li><a asp-controller="Approval" asp-action="Index"><span>Approval</span></a></li>
+                            <li><a asp-controller="Approval" asp-action="Index"><span>Approval</span></a></li>
                             <li><a asp-controller="Admission" asp-action="Index"><span>Admission</span></a></li>
                             <li><a asp-controller="DischargedPatient" asp-action="Index"><span>Discharge</span></a></li>
                         }
                     </ul>
                 </li>
             }
-
-            @* Scheduling: clinicians + admin + recovery coach (clinician pages will filter assigned patients) *@
-            @* If the user is ONLY a Recovery Coach show only General Scheduling.
-               If user is Admin/Staff/Doctor/Physician/Psychiatrist/Nurse show the regular Scheduling menu.
-               If user has both roles (e.g. Admin + Recovery Coach) they'll see the full menu. *@
-            @if (HasAnyRole("Recovery Coach") && !HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse"))
-            {
-                <li class="navigation">
-                    <a href="#" class="nav-parent">
-                        <i class='bx bxs-calendar'></i>
-                        <span class="link_name">Scheduling</span>
-                        <i class='bx bx-chevron-down caret'></i>
-                    </a>
-                    <ul class="submenu">
-                        <li><a asp-controller="Scheduling" asp-action="Index"><span>General Scheduling</span></a></li>
-                    </ul>
-                </li>
-            }
-            else if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse"))
+            @if (HasAnyRole("Admin","Physician","Psychiatrist","Recovery Coach"))
             {
                 <li class="navigation">
                     <a href="#" class="nav-parent">
@@ -275,27 +257,58 @@
                     </a>
                     <ul class="submenu">
                         <li><a asp-controller="Appointment" asp-action="Index"><span>Doctor's Calendar</span></a></li>
-                        @* show General Scheduling as well if the user also has Recovery Coach role *@
-                        @if (HasAnyRole("Recovery Coach")) { <li><a asp-controller="Scheduling" asp-action="Index"><span>General Scheduling</span></a></li> }
+                        <li><a asp-controller="Scheduling" asp-action="Index"><span>General Scheduling</span></a></li>
                     </ul>
                 </li>
             }
-
-            @* Assessment: clinicians only *@
-            @if (HasAnyRole("Admin","Doctor","Physician","Psychiatrist","Nurse"))
+            else if (HasAnyRole("Social Worker", "Occupational Therapist", "Psychologist"))
             {
                 <li class="navigation">
                     <a href="#" class="nav-parent">
-                        <i class='bx bx-clipboard'></i>      
+                        <i class='bx bxs-calendar'></i>
+                        <span class="link_name">Scheduling</span>
+                        <i class='bx bx-chevron-down caret'></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a asp-controller="Appointment" asp-action="Index"><span>Doctor's Calendar</span></a></li>
+                    </ul>
+                </li>
+}
+
+
+            @* Assessment: clinicians only *@
+            @if (HasAnyRole("Admin", "Doctor", "Physician", "Psychiatrist"))
+            {
+                <li class="navigation">
+                    <a href="#" class="nav-parent">
+                        <i class='bx bx-clipboard'></i>
                         <span class="link_name">Assessment</span>
                         <i class='bx bx-chevron-down caret'></i>
                     </a>
                     <ul class="submenu">
-                        <li><a asp-controller="Assessment" asp-action="Index"><span>Initial Assessment</span></a></li>
-                        <li><a asp-controller="PsychiatricAssessment" asp-action="Index"><span>Psychiatric Assessment</span></a></li>
+                        @* Show "Initial Assessment" to Physicians and others *@
+                        @if (HasAnyRole("Admin", "Doctor", "Physician", "Nurse"))
+                        {
+                            <li>
+                                <a asp-controller="Assessment" asp-action="Index">
+                                    <span>Initial Assessment</span>
+                                </a>
+                            </li>
+                        }
+
+                        @* Show "Psychiatric Assessment" only to Psychiatrists, Doctors, and Admin *@
+                        @if (HasAnyRole("Admin", "Doctor", "Psychiatrist"))
+                        {
+                            <li>
+                                <a asp-controller="PsychiatricAssessment" asp-action="Index">
+                                    <span>Psychiatric Assessment</span>
+                                </a>
+                            </li>
+                        }
                     </ul>
                 </li>
             }
+
 
             @* Clinical Staff: show to Admin and Staff *@
             @if (HasAnyRole("Admin","Staff"))

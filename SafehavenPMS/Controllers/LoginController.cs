@@ -115,7 +115,13 @@ namespace SafehavenPMS.Controllers
             {
                 return RedirectToAction("Index", "Billing");
             }
-             if (string.Equals(role, "Recovery Coach", StringComparison.OrdinalIgnoreCase))
+             if (string.Equals(role, "Recovery Coach", StringComparison.OrdinalIgnoreCase) || 
+             string.Equals(role, "Physician", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(role, "Psychiatrist", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(role, "Nurse", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(role, "Psychologist", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(role, "Occupational Therapist", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(role, "Social Worker", StringComparison.OrdinalIgnoreCase))
             {
                 return RedirectToAction("Index", "Patient");
             }
