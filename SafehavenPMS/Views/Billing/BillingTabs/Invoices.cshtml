@@ -10,38 +10,6 @@
     int overdueCount = invoices.Count(i => i.DueDate < DateTime.UtcNow.Date && (string.Equals(i.Status, "NotYetPaid", StringComparison.OrdinalIgnoreCase) || string.Equals(i.Status, "Partial", StringComparison.OrdinalIgnoreCase) || string.Equals(i.Status, "Unpaid", StringComparison.OrdinalIgnoreCase)));
 }
 
-@* <div class="row g-3 mb-3">
-    <div class="col-auto">
-        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
-            <div class="h3 mb-0 text-teal">@totalCount</div>
-            <div class="small text-muted">Total Invoices</div>
-        </div>
-    </div>
-    <div class="col-auto">
-        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
-            <div class="h3 mb-0 text-teal">@unpaidCount</div>
-            <div class="small text-muted">Unpaid</div>
-        </div>
-    </div>
-    <div class="col-auto">
-        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
-            <div class="h3 mb-0 text-teal">@paidCount</div>
-            <div class="small text-muted">Paid</div>
-        </div>
-    </div>
-    <div class="col-auto">
-        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
-            <div class="h3 mb-0 text-teal">@partialCount</div>
-            <div class="small text-muted">Partial</div>
-        </div>
-    </div>
-    <div class="col-auto">
-        <div class="card p-3" style="min-width:140px; border:1px solid #e6f0ef;">
-            <div class="h3 mb-0 text-teal">@overdueCount</div>
-            <div class="small text-muted">Overdue</div>
-        </div>
-    </div>
-</div> *@
 
 <div class="row mb-3">
     <div class="col-md-4">

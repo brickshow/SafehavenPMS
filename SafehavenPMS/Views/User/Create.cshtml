@@ -36,7 +36,7 @@
                         <select asp-for="Role" class="form-select">
                             <option value="">-- Select Role --</option>
                             <option value="Admin">Administrator</option>
-                            <option value="Finanace Officer">Finanace Officer</option>
+                            <option value="Finance Officer">Finance Officer</option>
                             <option value="Cashier">Cashier</option>
                         </select>
                         <span asp-validation-for="Role" class="text-danger small"></span>
@@ -50,14 +50,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Number" class="form-label fw-semibold"></label>
+                        <label asp-for="Number" class="form-label fw-semibold">Emergency Number</label>
                         <input asp-for="Number" class="form-control" />
                         <span asp-validation-for="Number" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Email" class="form-label fw-semibold"></label>
-                        <input asp-for="Email" class="form-control" />
+                        <input type="email" asp-for="Email" class="form-control" />
                         <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
                 </div>

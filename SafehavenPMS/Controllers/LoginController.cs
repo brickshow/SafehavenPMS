@@ -87,15 +87,40 @@ namespace SafehavenPMS.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Name, user.Username ?? user.Email ?? "user")
+                new Claim(ClaimTypes.Name, user.Username ?? string.Empty),
+                // include full name for display (used by GetCurrentUserName)
+                new Claim("full_name", string.IsNullOrWhiteSpace(user.Fullname) ? (user.Username ?? string.Empty) : user.Fullname),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.Role, user.Role ?? string.Empty)
             };
-            if (!string.IsNullOrWhiteSpace(user.Role))
-                claims.Add(new Claim(ClaimTypes.Role, user.Role.Trim()));
-
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
             _logger.LogInformation("User signed in userId={UserId}", user.UserId);
+
+            // prefer explicit returnUrl when it's a local url
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            // role-based landing: Admin -> Dashboard, Finance Officer/Family -> Billing, others -> Home
+            var role = (user.Role ?? string.Empty).Trim();
+            if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            if (string.Equals(role, "Finance Officer", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(role, "Family", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Billing");
+            }
+             if (string.Equals(role, "Recovery Coach", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Patient");
+            }
+
+            // fallback
             return RedirectToAction("Index", "Home");
         }
 

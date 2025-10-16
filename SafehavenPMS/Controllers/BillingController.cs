@@ -16,7 +16,7 @@ using SafehavenPMS.Services;
 
 namespace SafehavenPMS.Controllers
 {
-[Authorize]
+    [Authorize]
     public partial class BillingController : Controller
     {
         private readonly SafehavenPMSContext _context;
@@ -28,226 +28,247 @@ namespace SafehavenPMS.Controllers
         }
 
         public async Task<IActionResult> Index(
-    string billableSearch = null,
-    string invoiceSearch = null,
-    string invoiceStatus = null,
-    string paymentSearch = null,
-    string paymentStatus = null,
-    string historyFrom = null,
-    string historyTo = null)
-{
-    var userIsFamily = User.IsInRole("Family");
-    var today = DateTime.UtcNow.Date;
-
-    // Placeholder: resolve accessible patient ids for Family user
-    // TODO: replace with actual linkage (e.g. FamilyPatient table)
-    IQueryable<Patient> patientQuery = _context.Patients.AsQueryable();
-    if (userIsFamily)
-    {
-        // restrict to none (until linkage implemented)
-        patientQuery = patientQuery.Where(p => false);
-    }
-
-    var patientIds = await patientQuery.Select(p => p.PatientId).ToListAsync();
-
-    // Billables
-    var billablesQuery = _context.Billables
-        .Include(b => b.Patient)
-        .AsQueryable();
-
-    if (userIsFamily)
-        billablesQuery = billablesQuery.Where(b => patientIds.Contains(b.PatientId));
-
-    if (!string.IsNullOrWhiteSpace(billableSearch))
-    {
-        var s = billableSearch.Trim().ToLower();
-        billablesQuery = billablesQuery.Where(b =>
-            b.Description.ToLower().Contains(s) ||
-            b.PatientId.ToString().Contains(s) ||
-            ((b.Patient.Firstname ?? "") + " " + (b.Patient.Lastname ?? "")).ToLower().Contains(s));
-    }
-
-    var billables = await billablesQuery
-        .OrderByDescending(b => b.DateAdded)
-        .ToListAsync();
-
-    // Invoices
-    var invoicesQuery = _context.Invoices
-        .Include(i => i.Patient)
-        .Include(i => i.Lines)
-        .AsQueryable();
-
-    if (userIsFamily)
-        invoicesQuery = invoicesQuery.Where(i => patientIds.Contains(i.PatientId));
-
-    if (!string.IsNullOrWhiteSpace(invoiceSearch))
-    {
-        var s = invoiceSearch.Trim().ToLower();
-        invoicesQuery = invoicesQuery.Where(i =>
-            i.InvoiceNumber.ToLower().Contains(s) ||
-            i.PatientId.ToString().Contains(s) ||
-            ((i.Patient.Firstname ?? "") + " " + (i.Patient.Lastname ?? "")).ToLower().Contains(s));
-    }
-
-    var invoicesRaw = await invoicesQuery
-        .OrderByDescending(i => i.CreatedAt)
-        .ToListAsync();
-
-    // Payments
-    var paymentsQuery = _context.Payments
-        .Include(p => p.Patient)
-        .Include(p => p.Invoice)
-        .AsQueryable();
-
-    if (userIsFamily)
-        paymentsQuery = paymentsQuery.Where(p => patientIds.Contains(p.PatientId ?? 0));
-
-    if (!string.IsNullOrWhiteSpace(paymentSearch))
-    {
-        var s = paymentSearch.Trim().ToLower();
-        paymentsQuery = paymentsQuery.Where(p =>
-            (p.TransactionNumber ?? "").ToLower().Contains(s) ||
-            p.PaymentRefId.ToLower().Contains(s) ||
-            (p.Invoice.InvoiceNumber ?? "").ToLower().Contains(s) ||
-            p.InvoiceId.ToString().Contains(s) ||
-            ((p.Patient.Firstname ?? "") + " " + (p.Patient.Lastname ?? "")).ToLower().Contains(s));
-    }
-
-    if (!string.IsNullOrWhiteSpace(paymentStatus))
-        paymentsQuery = paymentsQuery.Where(p => p.status == paymentStatus);
-
-    var payments = await paymentsQuery
-        .OrderByDescending(p => p.CreatedAt)
-        .ToListAsync();
-
-    // Payment History (date range filters)
-    DateTime? fromDate = null;
-    DateTime? toDate = null;
-    if (DateTime.TryParse(historyFrom, out var fd)) fromDate = fd.Date;
-    if (DateTime.TryParse(historyTo, out var td)) toDate = td.Date.AddDays(1).AddTicks(-1);
-
-    var historyQuery = _context.PaymentHistories
-        .Include(ph => ph.Invoice)
-        .Include(ph => ph.Payment)
-        .ThenInclude(p => p.Patient)
-        .AsQueryable();
-
-    if (userIsFamily)
-        historyQuery = historyQuery.Where(h => patientIds.Contains(h.Invoice.PatientId));
-
-    if (fromDate.HasValue)
-        historyQuery = historyQuery.Where(h => h.CreatedAt >= fromDate.Value);
-    if (toDate.HasValue)
-        historyQuery = historyQuery.Where(h => h.CreatedAt <= toDate.Value);
-
-    var paymentHistories = await historyQuery
-        .OrderByDescending(h => h.CreatedAt)
-        .ToListAsync();
-
-    // Preload verified payments per invoice for invoice status computation
-    var verifiedPaymentsPerInvoice = await _context.Payments
-        .Where(p => p.status == "Verified")
-        .GroupBy(p => p.InvoiceId)
-        .Select(g => new { InvoiceId = g.Key, Paid = g.Sum(x => x.AmountPaid) })
-        .ToDictionaryAsync(x => x.InvoiceId, x => x.Paid);
-
-    var invoiceVMs = invoicesRaw.Select(inv =>
-    {
-        verifiedPaymentsPerInvoice.TryGetValue(inv.InvoiceId, out var paid);
-        paid = paid < 0 ? 0 : paid;
-
-        var amountDue = Math.Max(0m, inv.TotalAmount - paid);
-        string derivedStatus;
-        if (amountDue == 0 && inv.TotalAmount > 0) derivedStatus = "Paid";
-        else if (paid > 0 && amountDue > 0) derivedStatus = "Partial";
-        else if (paid == 0 && inv.DueDate.Date < today) derivedStatus = "Overdue";
-        else derivedStatus = "NotYetPaid";
-
-        // honor stored status if it is "Voided"
-        if (string.Equals(inv.Status, "Voided", StringComparison.OrdinalIgnoreCase))
-            derivedStatus = "Voided";
-
-        return new InvoiceListItemViewModel
+           string billableSearch = null,
+           string invoiceSearch = null,
+           string invoiceStatus = null,
+           string paymentSearch = null,
+           string paymentStatus = null,
+           string historyFrom = null,
+           string historyTo = null)
         {
-            InvoiceId = inv.InvoiceId,
-            PatientId = inv.PatientId,
-            PatientName = inv.Patient != null ? $"{inv.Patient.Firstname} {inv.Patient.Lastname}" : string.Empty,
-            InvoiceNumber = inv.InvoiceNumber,
-            Month = inv.Month,
-            Year = inv.Year,
-            DueDate = inv.DueDate,
-            TotalAmount = inv.TotalAmount,
-            AmountDue = amountDue,
-            Status = derivedStatus
-        };
-    }).ToList();
+            var userIsFamily = User.IsInRole("Family");
+            var today = DateTime.UtcNow.Date;
 
-    if (!string.IsNullOrWhiteSpace(invoiceStatus))
-        invoiceVMs = invoiceVMs.Where(i => i.Status.Equals(invoiceStatus, StringComparison.OrdinalIgnoreCase)).ToList();
+            IQueryable<Patient> patientQuery = _context.Patients.AsQueryable();
+            if (userIsFamily)
+            {
+                // Find patient ids linked to the current family user account (Users.PatientId)
+                var username = User?.Identity?.Name;
+                var linkedPatientIds = await _context.Users
+                    .Where(u => (u.Username == username || u.Email == username) && u.PatientId != null)
+                    .Select(u => u.PatientId.Value)
+                    .ToListAsync();
 
-    var viewModel = new BillablesPageViewModel
-    {
-        Items = billables.Select(b => new BillableItemViewModel
-        {
-            BillableId = b.BillableId,
-            PatientId = b.PatientId,
-            PatientName = b.Patient != null ? $"{b.Patient.Firstname} {b.Patient.Lastname}" : string.Empty,
-            ReferenceType = b.ReferenceType,
-            Category = b.Category,
-            Description = b.Description,
-            Quantity = b.Quantity,
-            UnitPrice = b.UnitPrice,
-            CreatedBy = b.CreatedBy,
-            DateAdded = b.DateAdded
-        }).ToList(),
-        Invoices = invoiceVMs,
-        UploadPayments = payments.Select(p => new UploadPaymentViewModel
-        {
-            PaymentId = p.PaymentId,
-            InvoiceId = p.InvoiceId,
-            PatientId = p.PatientId,
-            PatientName = p.Patient != null ? $"{p.Patient.Firstname} {p.Patient.Lastname}" : string.Empty,
-            AmountPaid = p.AmountPaid,
-            TransactionNumber = p.TransactionNumber,
-            PaymentMethod = p.PaymentMethod,
-            PhotoUrl = p.ProofFileName,
-            Status = p.status,
-            Remarks = p.Remarks,
-            CreatedAt = p.CreatedAt,
-            CreatedBy = p.CreatedBy
-        }).ToList(),
-        PaymentHistories = paymentHistories.Select(ph => new PaymentHistoryItemViewModel
-        {
-            PaymentHistoryId = ph.PaymentHistoryId,
-            PaymentId = ph.PaymentId,
-            PaymentRefNumber = ph.Payment?.PaymentRefId,
-            InvoiceId = ph.InvoiceId,
-            InvoiceRefNumber = ph.Invoice?.InvoiceRefId,
-            Period = ph.Period,
-            Month = ph.Month,
-            Year = ph.Year,
-            DueDate = ph.DueDate,
-            TotalAmount = ph.TotalAmount,
-            AmountDue = ph.AmountDue,
-            AmountToApply = ph.AmountToApply,
-            Remarks = ph.Remarks,
-            RecordedBy = ph.RecordedBy,
-            CreatedAt = ph.CreatedAt
-        }).ToList()
-    };
+                // If none found, keep an empty result set so family cannot see other patients
+                if (!linkedPatientIds.Any())
+                {
+                    patientQuery = patientQuery.Where(p => false);
+                }
+                else
+                {
+                    patientQuery = patientQuery.Where(p => linkedPatientIds.Contains(p.PatientId));
+                }
+            }
 
-    ViewBag.Filters = new {
-        billableSearch,
-        invoiceSearch,
-        invoiceStatus,
-        paymentSearch,
-        paymentStatus,
-        historyFrom,
-        historyTo
-    };
+            var patientIds = await patientQuery.Select(p => p.PatientId).ToListAsync();
 
-    return View(viewModel);
-}
+            // Billables
+            var billablesQuery = _context.Billables
+                .Include(b => b.Patient)
+                .AsQueryable();
+
+            if (userIsFamily)
+                billablesQuery = billablesQuery.Where(b => patientIds.Contains(b.PatientId));
+
+            if (!string.IsNullOrWhiteSpace(billableSearch))
+            {
+                var s = billableSearch.Trim().ToLower();
+                billablesQuery = billablesQuery.Where(b =>
+                    b.Description.ToLower().Contains(s) ||
+                    b.PatientId.ToString().Contains(s) ||
+                    ((b.Patient.Firstname ?? "") + " " + (b.Patient.Lastname ?? "")).ToLower().Contains(s));
+            }
+
+            var billables = await billablesQuery
+                .OrderByDescending(b => b.DateAdded)
+                .ToListAsync();
+
+            // Invoices
+            var invoicesQuery = _context.Invoices
+                .Include(i => i.Patient)
+                .Include(i => i.Lines)
+                .AsQueryable();
+
+            if (userIsFamily)
+                invoicesQuery = invoicesQuery.Where(i => patientIds.Contains(i.PatientId));
+
+            if (!string.IsNullOrWhiteSpace(invoiceSearch))
+            {
+                var s = invoiceSearch.Trim().ToLower();
+                invoicesQuery = invoicesQuery.Where(i =>
+                    i.InvoiceNumber.ToLower().Contains(s) ||
+                    i.PatientId.ToString().Contains(s) ||
+                    ((i.Patient.Firstname ?? "") + " " + (i.Patient.Lastname ?? "")).ToLower().Contains(s));
+            }
+
+            var invoicesRaw = await invoicesQuery
+                .OrderByDescending(i => i.CreatedAt)
+                .ToListAsync();
+
+            // Payments
+            var paymentsQuery = _context.Payments
+                .Include(p => p.Patient)
+                .Include(p => p.Invoice)
+                .AsQueryable();
+
+            if (userIsFamily)
+                paymentsQuery = paymentsQuery.Where(p => patientIds.Contains(p.PatientId ?? 0));
+
+            if (!string.IsNullOrWhiteSpace(paymentSearch))
+            {
+                var s = paymentSearch.Trim().ToLower();
+                paymentsQuery = paymentsQuery.Where(p =>
+                    (p.TransactionNumber ?? "").ToLower().Contains(s) ||
+                    p.PaymentRefId.ToLower().Contains(s) ||
+                    (p.Invoice.InvoiceNumber ?? "").ToLower().Contains(s) ||
+                    p.InvoiceId.ToString().Contains(s) ||
+                    ((p.Patient.Firstname ?? "") + " " + (p.Patient.Lastname ?? "")).ToLower().Contains(s));
+            }
+
+            if (!string.IsNullOrWhiteSpace(paymentStatus))
+                paymentsQuery = paymentsQuery.Where(p => p.status == paymentStatus);
+
+            var payments = await paymentsQuery
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            // Payment History (date range filters)
+            DateTime? fromDate = null;
+            DateTime? toDate = null;
+            if (DateTime.TryParse(historyFrom, out var fd)) fromDate = fd.Date;
+            if (DateTime.TryParse(historyTo, out var td)) toDate = td.Date.AddDays(1).AddTicks(-1);
+
+            var historyQuery = _context.PaymentHistories
+                .Include(ph => ph.Invoice)
+                .Include(ph => ph.Payment)
+                .ThenInclude(p => p.Patient)
+                .AsQueryable();
+
+            if (userIsFamily)
+                historyQuery = historyQuery.Where(h => patientIds.Contains(h.Invoice.PatientId));
+
+            if (fromDate.HasValue)
+                historyQuery = historyQuery.Where(h => h.CreatedAt >= fromDate.Value);
+
+            if (toDate.HasValue)
+                historyQuery = historyQuery.Where(h => h.CreatedAt <= toDate.Value);
+
+            var paymentHistories = await historyQuery
+                .OrderByDescending(h => h.CreatedAt)
+                .ToListAsync();
+
+            // Preload verified payments per invoice
+            var verifiedPaymentsPerInvoice = await _context.Payments
+                .Where(p => p.status == "Verified")
+                .GroupBy(p => p.InvoiceId)
+                .Select(g => new { InvoiceId = g.Key, Paid = g.Sum(x => x.AmountPaid) })
+                .ToDictionaryAsync(x => x.InvoiceId, x => x.Paid);
+
+            var invoiceVMs = invoicesRaw.Select(inv =>
+            {
+                verifiedPaymentsPerInvoice.TryGetValue(inv.InvoiceId, out var paid);
+                paid = paid < 0 ? 0 : paid;
+
+                var amountDue = Math.Max(0m, inv.TotalAmount - paid);
+                string derivedStatus;
+
+                if (amountDue == 0 && inv.TotalAmount > 0)
+                    derivedStatus = "Paid";
+                else if (paid > 0 && amountDue > 0)
+                    derivedStatus = "Partial";
+                else if (paid == 0 && inv.DueDate.Date < today)
+                    derivedStatus = "Overdue";
+                else
+                    derivedStatus = "NotYetPaid";
+
+                if (string.Equals(inv.Status, "Voided", StringComparison.OrdinalIgnoreCase))
+                    derivedStatus = "Voided";
+
+                return new InvoiceListItemViewModel
+                {
+                    InvoiceId = inv.InvoiceId,
+                    PatientId = inv.PatientId,
+                    PatientName = inv.Patient != null ? $"{inv.Patient.Firstname} {inv.Patient.Lastname}" : string.Empty,
+                    InvoiceNumber = inv.InvoiceNumber,
+                    Month = inv.Month,
+                    Year = inv.Year,
+                    DueDate = inv.DueDate,
+                    TotalAmount = inv.TotalAmount,
+                    AmountDue = amountDue,
+                    Status = derivedStatus
+                };
+            }).ToList();
+
+            if (!string.IsNullOrWhiteSpace(invoiceStatus))
+                invoiceVMs = invoiceVMs.Where(i => i.Status.Equals(invoiceStatus, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            var viewModel = new BillablesPageViewModel
+            {
+                Items = billables.Select(b => new BillableItemViewModel
+                {
+                    BillableId = b.BillableId,
+                    PatientId = b.PatientId,
+                    PatientName = b.Patient != null ? $"{b.Patient.Firstname} {b.Patient.Lastname}" : string.Empty,
+                    ReferenceType = b.ReferenceType,
+                    Category = b.Category,
+                    Description = b.Description,
+                    Quantity = b.Quantity,
+                    UnitPrice = b.UnitPrice,
+                    CreatedBy = b.CreatedBy,
+                    DateAdded = b.DateAdded
+                }).ToList(),
+
+                Invoices = invoiceVMs,
+
+                UploadPayments = payments.Select(p => new UploadPaymentViewModel
+                {
+                    PaymentId = p.PaymentId,
+                    InvoiceId = p.InvoiceId,
+                    PatientId = p.PatientId,
+                    PatientName = p.Patient != null ? $"{p.Patient.Firstname} {p.Patient.Lastname}" : string.Empty,
+                    AmountPaid = p.AmountPaid,
+                    TransactionNumber = p.TransactionNumber,
+                    PaymentMethod = p.PaymentMethod,
+                    PhotoUrl = p.ProofFileName,
+                    Status = p.status,
+                    Remarks = p.Remarks,
+                    CreatedAt = p.CreatedAt,
+                    CreatedBy = p.CreatedBy
+                }).ToList(),
+
+                PaymentHistories = paymentHistories.Select(ph => new PaymentHistoryItemViewModel
+                {
+                    PaymentHistoryId = ph.PaymentHistoryId,
+                    PaymentId = ph.PaymentId,
+                    PaymentRefNumber = ph.Payment?.PaymentRefId,
+                    InvoiceId = ph.InvoiceId,
+                    InvoiceRefNumber = ph.Invoice?.InvoiceRefId,
+                    Period = ph.Period,
+                    Month = ph.Month,
+                    Year = ph.Year,
+                    DueDate = ph.DueDate,
+                    TotalAmount = ph.TotalAmount,
+                    AmountDue = ph.AmountDue,
+                    AmountToApply = ph.AmountToApply,
+                    Remarks = ph.Remarks,
+                    RecordedBy = ph.RecordedBy,
+                    CreatedAt = ph.CreatedAt
+                }).ToList()
+            };
+
+            ViewBag.Filters = new
+            {
+                billableSearch,
+                invoiceSearch,
+                invoiceStatus,
+                paymentSearch,
+                paymentStatus,
+                historyFrom,
+                historyTo
+            };
+
+            return View(viewModel);
+        }
 
         // GET: /Billing/AddMiscellaneousItem
         [HttpGet]

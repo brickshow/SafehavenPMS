@@ -742,6 +742,9 @@ namespace SafehavenPMS.Controllers
 
             var logsToAdd = new List<AdministrationLog>();
             var billablesToAdd = new List<Billable>();
+            // new lists for notifications and activity logs
+            var notificationsToAdd = new List<Notification>();
+            var activitiesToAdd = new List<ActivityLog>();
             var ordersToValidate = new HashSet<int>();
 
             foreach (var item in model.Medications)
@@ -749,8 +752,8 @@ namespace SafehavenPMS.Controllers
                 ordersToValidate.Add(item.MedicationOrderId);
 
                 var order = await _context.MedicationOrders
-                                          .Include(o => o.Medicine)
-                                          .FirstOrDefaultAsync(o => o.MedicationOrderId == item.MedicationOrderId);
+                                      .Include(o => o.Medicine)
+                                      .FirstOrDefaultAsync(o => o.MedicationOrderId == item.MedicationOrderId);
 
                 if (order == null)
                 {
@@ -810,6 +813,21 @@ namespace SafehavenPMS.Controllers
                     logsToAdd.Add(log);
                 }
 
+                // If at least one checkbox is checked, mark the medication order as In Progress
+                var anyTaken = item.BreakfastTaken || item.LunchTaken || item.DinnerTaken || item.BedtimeTaken;
+                if (anyTaken)
+                {
+                    var inProg = "In Progress";
+                    if (order.Status != inProg)
+                    {
+                        order.Status = inProg;
+                        order.UpdatedAt = now;
+                        order.UpdatedBy = currentUser;
+                        _context.MedicationOrders.Update(order);
+                        Console.WriteLine($"OrderId={order.MedicationOrderId} marked as {inProg}");
+                    }
+                }
+
                 // prepare billables (we recreated after removing previous ones)
                 var medicine = order.Medicine;
                 decimal unitPrice = medicine?.Price ?? 0m;
@@ -839,6 +857,98 @@ namespace SafehavenPMS.Controllers
                 if (item.LunchTaken) AddBillable("Lunch");
                 if (item.DinnerTaken) AddBillable("Dinner");
                 if (item.BedtimeTaken) AddBillable("Bedtime");
+
+                // create notifications and activity logs for scheduled doses
+                // Helper: scheduled time of each meal (local hospital defaults)
+                TimeSpan MealTime(string meal) => meal switch
+                {
+                    "Breakfast" => new TimeSpan(8, 0, 0),
+                    "Lunch" => new TimeSpan(12, 0, 0),
+                    "Dinner" => new TimeSpan(18, 0, 0),
+                    "Bedtime" => new TimeSpan(21, 0, 0),
+                    _ => new TimeSpan(12, 0, 0)
+                };
+
+                // Helper: whether the order applies for today (start/discontinue/non-daily)
+                bool IsOrderActiveToday(MedicationOrder o, DateTime todayDate)
+                {
+                    if (o.StartDate.Date > todayDate) return false;
+                    if (!o.NoDiscontinueDate && o.DiscontinueDate.HasValue && o.DiscontinueDate.Value.Date < todayDate) return false;
+                    if (o.ScheduledType == "NonDaily" && o.DaysInterval.HasValue && o.DaysInterval.Value > 0)
+                    {
+                        var daysSinceStart = (todayDate - o.StartDate.Date).Days;
+                        return daysSinceStart % o.DaysInterval.Value == 0;
+                    }
+                    return true;
+                }
+
+                // Add notification/activity only when:
+                // - dose was taken -> create "taken" immediately
+                // - dose NOT taken -> create "missed" only if scheduled time is already past (real-time)
+                void AddNotificationAndActivity(string mealLabel, bool scheduled, bool taken)
+                {
+                    if (!scheduled) return;
+                    if (!IsOrderActiveToday(order, now.Date)) return;
+
+                    var scheduledDateTime = now.Date + MealTime(mealLabel);
+                    var medName = medicine?.GenericName ?? medicine?.BrandName ?? "Medication";
+
+                    if (taken)
+                    {
+                        var message = $"Medication taken: {medName} - {mealLabel}";
+                        notificationsToAdd.Add(new Notification
+                        {
+                            UserName = currentUser,
+                            Message = message,
+                            Type = "Success",
+                            IsRead = false,
+                            CreatedAt = now,
+                            LinkUrl = null
+                        });
+                        activitiesToAdd.Add(new ActivityLog
+                        {
+                            PatientId = order.PatientId,
+                            UserName = currentUser,
+                            Action = "MedicationTaken",
+                            Description = message,
+                            Category = "Clinical",
+                            Severity = "Info",
+                            CreatedAt = now
+                        });
+                        return;
+                    }
+
+                    // Not taken -> only mark missed if scheduled time already passed (real-time requirement)
+                    if (now >= scheduledDateTime)
+                    {
+                        var message = $"Medication missed: {medName} - {mealLabel}";
+                        notificationsToAdd.Add(new Notification
+                        {
+                            UserName = currentUser,
+                            Message = message,
+                            Type = "Warning",
+                            IsRead = false,
+                            CreatedAt = now,
+                            LinkUrl = null
+                        });
+                        activitiesToAdd.Add(new ActivityLog
+                        {
+                            PatientId = order.PatientId,
+                            UserName = currentUser,
+                            Action = "MedicationMissed",
+                            Description = message,
+                            Category = "Clinical",
+                            Severity = "Warning",
+                            CreatedAt = now
+                        });
+                    }
+                    // else: scheduled time not yet arrived -> do not mark missed
+                }
+
+                AddNotificationAndActivity("Breakfast", order.Breakfast, item.BreakfastTaken);
+                AddNotificationAndActivity("Lunch", order.Lunch, item.LunchTaken);
+                AddNotificationAndActivity("Dinner", order.Dinner, item.DinnerTaken);
+                AddNotificationAndActivity("Bedtime", order.Bedtime, item.BedtimeTaken);
             }
 
             if (logsToAdd.Any())
@@ -847,7 +957,14 @@ namespace SafehavenPMS.Controllers
             if (billablesToAdd.Any())
                 await _context.Billables.AddRangeAsync(billablesToAdd);
 
-            // Save changes (adds new logs/billables and applies updates/removals)
+            // add notifications and activity logs
+            if (notificationsToAdd.Any())
+                await _context.Notifications.AddRangeAsync(notificationsToAdd);
+
+            if (activitiesToAdd.Any())
+                await _context.ActivityLogs.AddRangeAsync(activitiesToAdd);
+
+            // Save changes (adds new logs/billables/notifications/activities and applies updates/removals)
             await _context.SaveChangesAsync();
 
             // set ReferenceType after BillableId assigned for newly added billables

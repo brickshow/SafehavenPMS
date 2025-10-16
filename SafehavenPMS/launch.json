@@ -11,7 +11,7 @@
         "cwd": "${workspaceFolder}/SafehavenPMS",
         "stopAtEntry": false,
         "serverReadyAction": {
-          "action": "openExternally",
+          "action": "openExternally", 
           "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
         },
         "env": {

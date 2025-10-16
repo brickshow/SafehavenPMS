@@ -585,17 +585,29 @@ namespace SafehavenPMS.Controllers
 
         private string GetCurrentUserName()
         {
-            // Try to get display name first
+            // Preferred: explicit full name claim (if you issue one)
+            var fullNameClaim = User?.FindFirst("full_name")?.Value;
+            if (!string.IsNullOrWhiteSpace(fullNameClaim)) return fullNameClaim.Trim();
+
+            // Next: combine given name + surname if available
+            var given = User?.FindFirst(ClaimTypes.GivenName)?.Value;
+            var family = User?.FindFirst(ClaimTypes.Surname)?.Value;
+            if (!string.IsNullOrWhiteSpace(given) || !string.IsNullOrWhiteSpace(family))
+            {
+                return $"{given?.Trim()} {family?.Trim()}".Trim();
+            }
+
+            // Some identity providers put the full display name in ClaimTypes.Name
             var name = User?.FindFirst(ClaimTypes.Name)?.Value;
-            if (!string.IsNullOrEmpty(name)) return name;
+            if (!string.IsNullOrWhiteSpace(name)) return name.Trim();
 
             // Fall back to email if name not available
             var email = User?.FindFirst(ClaimTypes.Email)?.Value;
-            if (!string.IsNullOrEmpty(email)) return email;
+            if (!string.IsNullOrWhiteSpace(email)) return email.Trim();
 
             // Fall back to basic identity name
             var identityName = User?.Identity?.Name;
-            if (!string.IsNullOrEmpty(identityName)) return identityName;
+            if (!string.IsNullOrWhiteSpace(identityName)) return identityName.Trim();
 
             // Last resort
             return "Unknown";

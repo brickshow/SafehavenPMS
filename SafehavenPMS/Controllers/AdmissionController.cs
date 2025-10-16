@@ -361,6 +361,7 @@ namespace SafehavenPMS.Controllers
                         {
                             Username = username,
                             Email = model.FamilyEmail,
+                            Fullname = model.FamilyName ?? string.Empty,
                             Role = "Family",
                             IsActive = true,
                             PatientId = model.PatientId,
@@ -388,6 +389,12 @@ namespace SafehavenPMS.Controllers
                         if (existingUser.PatientId == model.PatientId && existingUser.Email != model.FamilyEmail)
                         {
                             existingUser.Email = model.FamilyEmail;
+                            _context.Users.Update(existingUser);
+                        }
+                        // Ensure Fullname is stored/updated
+                        if (existingUser.PatientId == model.PatientId && !string.IsNullOrWhiteSpace(model.FamilyName) && existingUser.Fullname != model.FamilyName)
+                        {
+                            existingUser.Fullname = model.FamilyName;
                             _context.Users.Update(existingUser);
                         }
                     }

@@ -89,7 +89,7 @@
     <div class="sidebar close">
         <!-- Logo -->
         <div class="logo-details">
-            <a href="/Home/Index/" class="d-flex align-items-center text-decoration-none text-white">
+            <a href="@GetHomeUrl()" class="d-flex align-items-center text-decoration-none text-white">
                 <img src="~/Images/safehaven.png" alt="SafeHaven Logo" style="height:50px;width:auto;object-fit:contain;margin-right:6px;" />
                 <span class="logo_name">SafeHaven</span>
             </a>
@@ -97,238 +97,289 @@
 
         @functions {
         // simple helper to check multiple roles
-        private bool HasAnyRole(params string[] roles)
-        {
-            if (User?.Identity?.IsAuthenticated != true) return false;
-            var claims = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value?.Trim().ToLowerInvariant());
-            foreach (var r in roles)
+            private bool HasAnyRole(params string[] roles)
             {
-                if (claims.Contains(r.Trim().ToLowerInvariant())) return true;
+                if (User?.Identity?.IsAuthenticated != true) return false;
+                var claims = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value?.Trim().ToLowerInvariant());
+                foreach (var r in roles)
+                {
+                    if (claims.Contains(r.Trim().ToLowerInvariant())) return true;
+                }
+                // fallback to IsInRole for completeness
+                foreach (var r in roles)
+                {
+                    if (User.IsInRole(r)) return true;
+                }
+                return false;
             }
-            // fallback to IsInRole for completeness
-            foreach (var r in roles)
+
+            // whether current user should see the Dashboard link
+            private bool HasDashboard()
             {
-                if (User.IsInRole(r)) return true;
+                if (User?.Identity?.IsAuthenticated != true) return false;
+                // explicit claim override (optional)
+                var claim = User.Claims.FirstOrDefault(c => c.Type == "can_view_dashboard");
+                if (claim != null)
+                {
+                    if (string.Equals(claim.Value, "true", StringComparison.OrdinalIgnoreCase)) return true;
+                    if (string.Equals(claim.Value, "false", StringComparison.OrdinalIgnoreCase)) return false;
+                }
+                // allowlist roles that should see dashboard
+                return HasAnyRole("Admin", "Manager", "Doctor", "Physician");
             }
-            return false;
+
+            // return home url depending on role - Finance Officer goes to Billing
+            private string GetHomeUrl()
+            {
+                if (User?.Identity?.IsAuthenticated != true) return "/Home/Index/";
+                if (HasDashboard()) return "/Home/Index/";
+                // Finance Officer and Family default to Billing if they don't have dashboard
+                if (HasAnyRole("Finance Officer","Family")) return "/Billing/Index/";
+                // fallback to Home
+                return "/Home/Index/";
+            }
         }
-    }
 
-         @if (User.IsInRole("Family"))
-    {
-        <ul class="sd-nav-links">
-             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
-            <a href="/Home/Index/" data-label="Dashboard">
-                <i class='bx bxs-dashboard'></i>                    <!-- Dashboard -->
-                <span class="sd-link-name">Dashboard</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/Home/Index/">Dashboard</a></li>
-            </ul>
-            </li>
+         @* @if (User.IsInRole("Family"))
+         {
+                <ul class="sd-nav-links">
+                        <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <a href="/Home/Index/" data-label="Dashboard">
+                        <i class='bx bxs-dashboard'></i>                    <!-- Dashboard -->
+                        <span class="sd-link-name">Dashboard</span>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="/Home/Index/">Dashboard</a></li>
+                    </ul>
+                    </li>
 
-            <li class="navigation">
-            <a href="/Billing/Index/" data-label="Billing">
-                 <i class='bx bxs-wallet'></i>            <!-- Billing -->
-                <span class="sd-link-name">Billing</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/Billing/Index/">Billing</a></li>
-            </ul>
-        </li>
-        </ul>
-    }
-    else
-    {
+                    <li class="navigation">
+                    <a href="/Billing/Index/" data-label="Billing">
+                            <i class='bx bxs-wallet'></i>            <!-- Billing -->
+                        <span class="sd-link-name">Billing</span>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="/Billing/Index/">Billing</a></li>
+                    </ul>
+                </li>
+                </ul>
+             }
+             else
+            { *@
+
+
         <ul class="nav-links">
-    <!-- Dashboard -->
-            <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
-            <a href="/Home/Index/" data-label="Dashboard">
-                <i class='bx bxs-dashboard'></i>
-                <span class="sd-link-name">Dashboard</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/Home/Index/">Dashboard</a></li>
-            </ul>
-            </li>
+        @if(HasDashboard()){
+             <li class="navigation @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                 <a href="/Home/Index/" data-label="Dashboard">
+                     <i class='bx bxs-dashboard'></i>
+                     <span class="sd-link-name">Dashboard</span>
+                 </a>
+                 <ul class="submenu">
+                     <li><a href="/Home/Index/">Dashboard</a></li>
+                 </ul>
+             </li>
+         }
+            
 
-    @* Patient Management *@
-    @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
-    {
-        <li class="navigation">
-            <a href="#" class="nav-parent">
-                <i class='bx bxs-user'></i>
-                <span class="link_name">Patient Management</span>
-                <i class='bx bx-chevron-down caret'></i>
-            </a>
-            <ul class="submenu">
-                @* Register patient: Admin or staff roles *@
+            @* Patient Management *@
+            @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
+            {
+                <li class="navigation">
+                    <a href="#" class="nav-parent">
+                        <i class='bx bxs-user'></i>
+                        <span class="link_name">Patient Management</span>
+                        <i class='bx bx-chevron-down caret'></i>
+                    </a>
+                    <ul class="submenu">
+                        @* Register patient: Admin or staff roles *@
+                        @if (HasAnyRole("Admin","Staff", "Recovery Coach"))
+                        {
+                            <li>
+                                <a asp-controller="Patient" asp-action="AddNewPatient">
+                                    <span>Register Patient</span>
+                                </a>
+                            </li>
+                        }
+
+                        @* Patient list: Admin, staff and clinical roles (clinicians will be filtered by controller) *@
+                        @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
+                        {
+                            <li>
+                                <a asp-controller="Patient" asp-action="Index">
+                                    <span>Patient List</span>
+                                </a>
+                            </li>
+                        }
+
+                        @* Progress notes: clinical roles only (view / add depends on ProgressNote controller permissions) *@
+                        @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
+                        {
+                            <li>
+                                <a asp-controller="ProgressNote" asp-action="Index">
+                                    <span>Progress Notes</span>
+                                </a>
+                            </li>
+                        }   
+                    </ul>
+                </li>
+            }
+
+            @* Patient Movements (Intake/Approval/Admission/Discharge) - typically admin + clinical staff *@
+            @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse", "Recovery Coach"))
+            {
+                <li class="navigation">
+                    <a href="#" class="nav-parent">
+                        <i class='bx bx-detail'></i> 
+                        <span class="link_name">Patient Movements</span>
+                        <i class='bx bx-chevron-down caret'></i>
+                    </a>
+                    <ul class="submenu">
+                        @if (HasAnyRole("Recovery Coach"))
+                        {
+                            <li><a asp-controller="Intake" asp-action="Index"><span>Intake</span></a></li>
+                        }
+                        else{
+                            <li><a asp-controller="Waitlist" asp-action="Index"><span>Waitlist</span></a></li> <li><a asp-controller="Approval" asp-action="Index"><span>Approval</span></a></li>
+                            <li><a asp-controller="Admission" asp-action="Index"><span>Admission</span></a></li>
+                            <li><a asp-controller="DischargedPatient" asp-action="Index"><span>Discharge</span></a></li>
+                        }
+                    </ul>
+                </li>
+            }
+
+            @* Scheduling: clinicians + admin + recovery coach (clinician pages will filter assigned patients) *@
+            @* If the user is ONLY a Recovery Coach show only General Scheduling.
+               If user is Admin/Staff/Doctor/Physician/Psychiatrist/Nurse show the regular Scheduling menu.
+               If user has both roles (e.g. Admin + Recovery Coach) they'll see the full menu. *@
+            @if (HasAnyRole("Recovery Coach") && !HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse"))
+            {
+                <li class="navigation">
+                    <a href="#" class="nav-parent">
+                        <i class='bx bxs-calendar'></i>
+                        <span class="link_name">Scheduling</span>
+                        <i class='bx bx-chevron-down caret'></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a asp-controller="Scheduling" asp-action="Index"><span>General Scheduling</span></a></li>
+                    </ul>
+                </li>
+            }
+            else if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse"))
+            {
+                <li class="navigation">
+                    <a href="#" class="nav-parent">
+                        <i class='bx bxs-calendar'></i>
+                        <span class="link_name">Scheduling</span>
+                        <i class='bx bx-chevron-down caret'></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a asp-controller="Appointment" asp-action="Index"><span>Doctor's Calendar</span></a></li>
+                        @* show General Scheduling as well if the user also has Recovery Coach role *@
+                        @if (HasAnyRole("Recovery Coach")) { <li><a asp-controller="Scheduling" asp-action="Index"><span>General Scheduling</span></a></li> }
+                    </ul>
+                </li>
+            }
+
+            @* Assessment: clinicians only *@
+            @if (HasAnyRole("Admin","Doctor","Physician","Psychiatrist","Nurse"))
+            {
+                <li class="navigation">
+                    <a href="#" class="nav-parent">
+                        <i class='bx bx-clipboard'></i>      
+                        <span class="link_name">Assessment</span>
+                        <i class='bx bx-chevron-down caret'></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a asp-controller="Assessment" asp-action="Index"><span>Initial Assessment</span></a></li>
+                        <li><a asp-controller="PsychiatricAssessment" asp-action="Index"><span>Psychiatric Assessment</span></a></li>
+                    </ul>
+                </li>
+            }
+
+            @* Clinical Staff: show to Admin and Staff *@
+            @if (HasAnyRole("Admin","Staff"))
+            {
+                <li class="navigation">
+                    <a href="/ClinicalStaff/Index/" data-label="Clinical Staff">
+                        <i class='bx bxs-group'></i>
+                        <span class="sd-link-name">Clinical Staff</span>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="/ClinicalStaff/Index/">Clinical Staff</a></li>
+                    </ul>
+                </li>
+            }
+
+            @* Medication: Nurses, Doctors, Pharmacist/Med staff, Admin *@
+            @if (HasAnyRole("Admin","Doctor","Physician","Psychiatrist","Nurse","Pharmacist"))
+            {
+                <li class="navigation">
+                    <a href="/Medication/Index/" data-label="Medication">
+                        <i class='bx bxs-capsule'></i>
+                        <span class="sd-link-name">Medication</span>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="/Medication/Index/">Medication</a></li>
+                    </ul>
+                </li>
+        
+            }
+
+            @* Billing: Finance roles and Admin *@
+            @if (HasAnyRole("Admin","Finance Officer", "Family"))
+            {
+                    <li class="navigation">
+                    <a href="/Billing/Index/" data-label="Billing">
+                            <i class='bx bxs-wallet'></i>
+                        <span class="sd-link-name">Billing</span>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="/Billing/Index/">Billing</a></li>
+                    </ul>
+                </li>
+            }
+
+            @* Canteen: Cashier, RecoveryCoach, Admin *@
+            @if (HasAnyRole("Admin","Cashier","Recovery Coach"))
+            {
+                    <li class="navigation">
+                    <a href="/Canteen/Index/" data-label="Canteen">
+                            <i class='bx bxs-coffee'></i>
+                        <span class="sd-link-name">Canteen</span>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="/Canteen/Index/">Canteen</a></li>
+                    </ul>
+                </li>
+            }
+
+                @* Administration / Services: Admin + Setup roles *@
                 @if (HasAnyRole("Admin","Staff"))
                 {
-                    <li>
-                        <a asp-controller="Patient" asp-action="AddNewPatient">
-                            <span>Register Patient</span>
+                    <li class="navigation">
+                        <a href="#" class="nav-parent">
+                            <i class='bx bxs-cog'></i> 
+                            <span class="link_name">Administration</span>
+                            <i class='bx bx-chevron-down caret'></i>
                         </a>
+                        <ul class="submenu">
+                            <li><a asp-controller="Services" asp-action="Index"><span>Services</span></a></li>
+                            <li><a asp-controller="BillingSetup" asp-action="Index"><span>Setup Billing</span></a></li>
+                        </ul>
+                    </li>
+
+                    <li class="navigation">
+                        <a href="/User/Index/" data-label="Users">
+                                <i class='bx bxs-user-account'></i> 
+                            <span class="sd-link-name">Users</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="/User/Index/">Users</a></li>
+                        </ul>
                     </li>
                 }
-
-                @* Patient list: Admin, staff and clinical roles (clinicians will be filtered by controller) *@
-                @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
-                {
-                    <li>
-                        <a asp-controller="Patient" asp-action="Index">
-                            <span>Patient List</span>
-                        </a>
-                    </li>
-                }
-
-                @* Progress notes: clinical roles only (view / add depends on ProgressNote controller permissions) *@
-                @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
-                {
-                    <li>
-                        <a asp-controller="ProgressNote" asp-action="Index">
-                            <span>Progress Notes</span>
-                        </a>
-                    </li>
-                }   
-            </ul>
-        </li>
-    }
-
-    @* Patient Movements (Intake/Approval/Admission/Discharge) - typically admin + clinical staff *@
-    @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse"))
-    {
-        <li class="navigation">
-            <a href="#" class="nav-parent">
-                <i class='bx bx-detail'></i> 
-                <span class="link_name">Patient Movements</span>
-                <i class='bx bx-chevron-down caret'></i>
-            </a>
-            <ul class="submenu">
-                <li><a asp-controller="Intake" asp-action="Index"><span>Intake</span></a></li>
-                <li><a asp-controller="Approval" asp-action="Index"><span>Approval</span></a></li>
-                <li><a asp-controller="Admission" asp-action="Index"><span>Admission</span></a></li>
-                <li><a asp-controller="DischargedPatient" asp-action="Index"><span>Discharge</span></a></li>
-            </ul>
-        </li>
-    }
-
-    @* Scheduling: clinicians + admin + recovery coach (clinician pages will filter assigned patients) *@
-    @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Nurse","Recovery   Coach"))
-    {
-        <li class="navigation">
-            <a href="#" class="nav-parent">
-                <i class='bx bxs-calendar'></i>     
-                <span class="link_name">Scheduling</span>
-                <i class='bx bx-chevron-down caret'></i>
-            </a>
-            <ul class="submenu">
-                <li><a asp-controller="Appointment" asp-action="Index"><span>Doctor's Calendar</span></a></li>
-                <li><a asp-controller="Scheduling" asp-action="Index"><span>General Scheduling</span></a></li>
-            </ul>
-        </li>
-    }
-
-    @* Assessment: clinicians only *@
-    @if (HasAnyRole("Admin","Doctor","Physician","Psychiatrist","Nurse"))
-    {
-        <li class="navigation">
-            <a href="#" class="nav-parent">
-                <i class='bx bx-clipboard'></i>      
-                <span class="link_name">Assessment</span>
-                <i class='bx bx-chevron-down caret'></i>
-            </a>
-            <ul class="submenu">
-                <li><a asp-controller="Assessment" asp-action="Index"><span>Initial Assessment</span></a></li>
-                <li><a asp-controller="PsychiatricAssessment" asp-action="Index"><span>Psychiatric Assessment</span></a></li>
-            </ul>
-        </li>
-    }
-
-    @* Clinical Staff: show to Admin and Staff *@
-    @if (HasAnyRole("Admin","Staff"))
-    {
-        <li class="navigation">
-            <a href="/ClinicalStaff/Index/" data-label="Clinical Staff">
-                <i class='bx bxs-group'></i>
-                <span class="sd-link-name">Clinical Staff</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/ClinicalStaff/Index/">Clinical Staff</a></li>
-            </ul>
-        </li>
-    }
-
-    @* Medication: Nurses, Doctors, Pharmacist/Med staff, Admin *@
-    @if (HasAnyRole("Admin","Doctor","Physician","Psychiatrist","Nurse","Pharmacist"))
-    {
-        <li class="navigation">
-            <a href="/Medication/Index/" data-label="Medication">
-                <i class='bx bxs-capsule'></i>
-                <span class="sd-link-name">Medication</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/Medication/Index/">Medication</a></li>
-            </ul>
-        </li>
-        
-    }
-
-    @* Billing: Finance roles and Admin *@
-    @if (HasAnyRole("Admin","Finance Officer", "Family"))
-    {
-         <li class="navigation">
-            <a href="/Billing/Index/" data-label="Billing">
-                 <i class='bx bxs-wallet'></i>
-                <span class="sd-link-name">Billing</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/Billing/Index/">Billing</a></li>
-            </ul>
-        </li>
-    }
-
-    @* Canteen: Cashier, RecoveryCoach, Admin *@
-    @if (HasAnyRole("Admin","Cashier","Recovery Coach"))
-    {
-          <li class="navigation">
-            <a href="/Canteen/Index/" data-label="Canteen">
-                 <i class='bx bxs-coffee'></i>
-                <span class="sd-link-name">Canteen</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/Canteen/Index/">Canteen</a></li>
-            </ul>
-        </li>
-    }
-
-    @* Administration / Services: Admin + Setup roles *@
-    @if (HasAnyRole("Admin","Staff"))
-    {
-        <li class="navigation">
-            <a href="#" class="nav-parent">
-                <i class='bx bxs-cog'></i> 
-                <span class="link_name">Administration</span>
-                <i class='bx bx-chevron-down caret'></i>
-            </a>
-            <ul class="submenu">
-                <li><a asp-controller="Services" asp-action="Index"><span>Services</span></a></li>
-                <li><a asp-controller="BillingSetup" asp-action="Index"><span>Setup Billing</span></a></li>
-            </ul>
-        </li>
-
-        <li class="navigation">
-            <a href="/User/Index/" data-label="Users">
-                 <i class='bx bxs-user-account'></i> 
-                <span class="sd-link-name">Users</span>
-            </a>
-            <ul class="submenu">
-                <li><a href="/User/Index/">Users</a></li>
-            </ul>
-        </li>
-    }
-</ul>
-    }
+        </ul>
         
         <!-- Bottom Section with DateTime and Logout -->
         <div class="sidebar-footer">
