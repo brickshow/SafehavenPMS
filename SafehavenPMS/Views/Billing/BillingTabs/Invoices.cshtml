@@ -11,35 +11,33 @@
 }
 
 
-<div class="row mb-3">
-    <div class="col-md-4">
-        <input id="dateFilter" class="form-control" placeholder="Date (month/year)" />
-    </div>
-    <div class="col-md-4">
-        <form method="get" asp-action="Index" class="d-flex">
-            <input name="q" class="form-control" placeholder="Search patient by id or name" />
-            <button type="submit" class="btn btn-teal ms-2">Search</button>
-        </form>
-    </div>
-    <div class="col-md-4 text-end">
-        <div class="btn-group">
-            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Status</button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "" })">All</a></li>
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "NotYetPaid" })">Not yet paid</a></li>
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Partial" })">Partially Paid</a></li>
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Paid" })">Paid</a></li>
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Overdue" })">Overdue</a></li>
-                <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Voided" })">Voided</a></li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<div class="card">
+<div class="card ">
     <div class="card-header table-header text-white">
         <h5 class="mb-0">@(totalCount > 0 ? $"{totalCount} Invoices" : "No invoices found")</h5>
     </div>
+    <div class="row m-4 align-items-center">
+        <div class="col-md-4">
+            <form method="get" asp-action="Index" class="d-flex">
+                <input name="q" class="form-control" placeholder="Search patient name" />
+                <button type="submit" class="btn btn-teal ms-2">Search</button>
+            </form>
+        </div>
+        <div class="col-md-8 text-end">
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Status</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "" })">All</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "NotYetPaid" })">Not yet paid</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Partial" })">Partially Paid</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Paid" })">Paid</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Overdue" })">Overdue</a></li>
+                    <li><a class="dropdown-item" href="@Url.Action("Index", "Billing", new { status = "Voided" })">Voided</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
 
     <div class="card-body p-0">
         @if (TempData["Success"] != null)

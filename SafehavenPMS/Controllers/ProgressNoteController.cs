@@ -199,7 +199,13 @@ namespace SafehavenPMS.Controllers
             }
 
             return View(interventions);
-         }
+        }
+
+        [HttpGet]
+        public IActionResult SortBy(string sortBy, string sortOrder, string searchQuery, string status, int? patientId, int page = 1, int pageSize = 10)
+        {
+            return RedirectToAction("Index", new { sortBy, sortOrder, searchQuery, status, patientId, page, pageSize });
+        }
 
         public async Task<IActionResult> ProgressNoteLists(int? patientId = null, int? selectedId = null)
         {

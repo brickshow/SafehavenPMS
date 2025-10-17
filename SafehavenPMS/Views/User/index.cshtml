@@ -4,6 +4,24 @@
     ViewBag.Title = "Users";
 }
 
+@functions {
+    private bool HasAnyRole(params string[] roles)
+    {
+        if (User?.Identity?.IsAuthenticated != true) return false;
+        var claims = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value?.Trim().ToLowerInvariant());
+        foreach (var r in roles)
+        {
+            if (claims.Contains(r.Trim().ToLowerInvariant())) return true;
+        }
+        // fallback to IsInRole for completeness
+        foreach (var r in roles)
+        {
+            if (User.IsInRole(r)) return true;
+        }
+        return false;
+    }
+}
+
 <div class="header">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <div class="d-flex align-items-center g-4">
@@ -27,22 +45,27 @@
                             <input name="searchQuery" value="@(searchQuery)" class="form-control search-input" placeholder="Search users by name, username or email..." />
                         </div>
 
-                        @* role filter (keep commented if not used) *@
-                        @* 
-                        <select name="role" class="form-select" style="width:180px;">
+                        @* <select name="role" class="form-select" style="width:180px;">
                             <option value="" @(string.IsNullOrEmpty(roleVal) ? "selected" : "")>All roles</option>
+                            <option value="Admin" @(roleVal == "Admin" ? "selected" : "")>Admin</option>
                             <option value="Medical Doctor" @(roleVal == "Medical Doctor" ? "selected" : "")>Medical Doctor</option>
-                            <option value="Therapist" @(roleVal == "Therapist" ? "selected" : "")>Therapist</option>
+                            <option value="Physician" @(roleVal == "Physician" ? "selected" : "")>Physician</option>
+                            <option value="Psychiatrist" @(roleVal == "Psychiatrist" ? "selected" : "")>Psychiatrist</option>
+                            <option value="Nurse" @(roleVal == "Nurse" ? "selected" : "")>Nurse</option>
+                            <option value="Psychologist" @(roleVal == "Psychologist" ? "selected" : "")>Psychologist</option>
                             <option value="Social Worker" @(roleVal == "Social Worker" ? "selected" : "")>Social Worker</option>
-                        </select>
-                        *@
+                            <option value="Recovery Coach" @(roleVal == "Recovery Coach" ? "selected" : "")>Recovery Coach</option>
+                            <option value="Occupational Therapist" @(roleVal == "Occupational Therapist" ? "selected" : "")>Occupational Therapist</option>
+                            <option value="Finance Officer" @(roleVal == "Finance Officer" ? "selected" : "")>Finance Officer</option>
+                            <option value="Cashier" @(roleVal == "Cashier" ? "selected" : "")>Cashier</option>
+                        </select> *@
 
-                        @* <div class="form-check d-flex align-items-center ms-1">
+                        <div class="form-check d-flex align-items-center ms-1">
                             <input class="form-check-input" type="checkbox" name="showInactive" value="1" id="showInactive" @(showInactiveVal == "1" ? "checked" : "") />
                             <label class="form-check-label ms-1" for="showInactive">Show inactive</label>
                         </div>
 
-                        <button type="submit" class="btn btn-outline-secondary">Filter</button> *@
+                        <button type="submit" class="btn btn-outline-secondary">Filter</button>
                     </form>
 
                 </div>
@@ -93,10 +116,10 @@
     <div class="d-flex justify-content-between align-items-center m-2 mt-4">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="User" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                <input type="hidden" name="status" value="@ViewBag.Status" />
-                <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                <input type="hidden" name="role" value="@ViewBag.Role" />
+                <input type="hidden" name="showInactive" value="@ViewBag.ShowInactive" />
                 <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
                     <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
                     <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
@@ -107,9 +130,9 @@
             </form>
         </div>
 
-        <div class="d-flex align-items-center justify-content-center">
+        @* <div class="d-flex align-items-center justify-content-center">
             <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
-        </div>
+        </div> *@
     </div>
 
     <div class="table-responsive-custom">
@@ -183,6 +206,15 @@
                                                 View Profile
                                             </a>
                                         </li>
+                                        @if (HasAnyRole("Admin"))
+                                        {
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2" asp-contro  ller="User" asp-action="Edit" asp-route-id="@u.UserId">
+                                                    <span class="badge-dot bg-warning"></span>
+                                                    Edit Account
+                                                </a>
+                                            </li>
+                                        }
                                         <li>
                                             <a href="#" class="dropdown-item d-flex align-items-center gap-2 py-2 rounded-2"
                                                data-bs-toggle="modal"
@@ -212,7 +244,7 @@
             <nav aria-label="User list pagination">
                 <ul class="pagination mb-0">
                     <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "User", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = showInactiveVal })" aria-label="Previous">
+                        <a class="page-link" href="@Url.Action("Index", "User", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = ViewBag.ShowInactive })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
@@ -225,12 +257,12 @@
                         @for (int i = startPage; i <= endPage; i++)
                         {
                             <li class="page-item @(currentPage == i ? "active" : "")">
-                                <a class="page-link" href="@Url.Action("Index", "User", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = showInactiveVal })">@i</a>
+                                <a class="page-link" href="@Url.Action("Index", "User", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = ViewBag.ShowInactive })">@i</a>
                             </li>
                         }
                     }
                     <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "User", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = showInactiveVal })" aria-label="Next">
+                        <a class="page-link" href="@Url.Action("Index", "User", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, role = ViewBag.Role, showInactive = ViewBag.ShowInactive })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>
@@ -257,7 +289,7 @@
                 <input type="hidden" name="id" id="deactivateUserId" value="" />
                 <input type="hidden" name="searchQuery" value="@(ViewBag.SearchQuery ?? String.Empty)" />
                 <input type="hidden" name="role" value="@(ViewBag.Role ?? String.Empty)" />
-                <input type="hidden" name="showInactive" value="@(showInactiveVal ?? "")" />
+                <input type="hidden" name="showInactive" value="@(ViewBag.ShowInactive ?? "")" />
                 <input type="hidden" name="page" value="@(ViewBag.CurrentPage ?? 1)" />
                 <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 10)" />
 

@@ -126,6 +126,11 @@ namespace SafehavenPMS.Controllers
                 return RedirectToAction("Index", "Patient");
             }
 
+
+             if(string.Equals(role, "Cashier", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Canteen");
+            }
             // fallback
             return RedirectToAction("Index", "Home");
         }

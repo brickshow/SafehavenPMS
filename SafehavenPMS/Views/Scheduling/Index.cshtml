@@ -15,9 +15,11 @@
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
                     @* Search bar *@
                     <form asp-controller="Scheduling" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                        <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                        <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                         <div class="search-input-wrapper d-flex flex-row gap-2">
                             <i class='bx bx-search search-icon'></i>
-                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+                            <input name="searchQuery" value="@ViewBag.SearchQuery" class="form-control search-input" placeholder="Search patients..." />
                         </div>
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
@@ -33,34 +35,7 @@
     </div>  
     <hr class="mt-0 mb-2" />
 </div>
-
-@* <div class="d-flex justify-content-start">
-<div class="status">
-    <div class="waitlisted d-flex flex-row flex-wrap gap-2">
-        <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="Waitlisted" />
-            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
-            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
-                Waitlisted (@ViewBag.WaitlistedCount)
-            </button>
-        </form>
-    </div>
 </div>
-
-<div class="status">
-    <div class="waitlisted d-flex flex-row flex-wrap gap-2">
-        <form asp-action="Index" method="get">
-            <input type="hidden" name="status" value="Waitlisted" />
-            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
-            <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
-            <button type="submit" class="btn custom-btn @(ViewBag.Status == "Waitlisted" ? "active" : "")">
-                Psychiatric Queue ()
-            </button>
-        </form>
-    </div>
-</div>  
-</div> *@
 
 
 <!-- Table Container -->
@@ -126,16 +101,16 @@
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                     <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
-                        <option value="" selected='@(string.IsNullOrEmpty(ViewBag.Status as string) ? "selected" : "")'>All Statuses</option>
-                        <option value="Pending" selected='@(ViewBag.Status == "Pending" ? "selected" : "")'>Pending</option>
-                        <option value="Scheduled" selected='@(ViewBag.Status == "Scheduled" ? "selected" : "")'>Scheduled</option>
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status as string))">All Statuses</option>
+                        <option value="Pending" selected="@(ViewBag.Status == "Pending")">Pending</option>
+                        <option value="Scheduled" selected="@(ViewBag.Status == "Scheduled")">Scheduled</option>
                     </select>
                 </form>
             </div>
 
             <!-- Sort by -->
             <div class="sort-by d-flex align-items-center">
-                <form asp-controller="Scheduling" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                <form asp-controller="Scheduling" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
                     @* preserve existing query params so logic is unchanged *@
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
@@ -143,9 +118,9 @@
                     <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
 
                     <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
-                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
-                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
-                        <option value="ScheduledDate" selected='@(ViewBag.SortBy == "ScheduledDate" ? "selected" : "")'>Scheduled Date</option>
+                        <option value="" selected="@(ViewBag.SortBy == "")">Sort by</option>
+                        <option value="Name" selected="@(ViewBag.SortBy == "Name")">Name</option>
+                        <option value="ScheduledDate" selected="@(ViewBag.SortBy == "ScheduledDate")">Scheduled Date</option>
                     </select>
 
                     
@@ -330,7 +305,7 @@
             <nav aria-label="Clinical staff list pagination">
                 <ul class="pagination mb-0">
                     <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Previous">
+                        <a class="page-link" href="@Url.Action("Index", "Scheduling", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status, sortBy = ViewBag.SortBy })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
@@ -343,12 +318,12 @@
                         @for (int i = startPage; i <= endPage; i++)
                         {
                             <li class="page-item @(currentPage == i ? "active" : "")">
-                                <a class="page-link" href="@Url.Action("Index", "Patient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
+                                <a class="page-link" href="@Url.Action("Index", "Scheduling", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status, sortBy = ViewBag.SortBy })">@i</a>
                             </li>
                         }
                     }
                     <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Next">
+                        <a class="page-link" href="@Url.Action("Index", "Scheduling", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status, sortBy = ViewBag.SortBy })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>
@@ -528,7 +503,81 @@
             var errorToast = new bootstrap.Toast(errorToastEl);
             errorToast.show();
         }
+
+        // Load saved filter values from localStorage
+        loadFilterValues();
+        
+        // Save filter values when they change
+        setupFilterListeners();
       });
+
+      // Function to load saved filter values from localStorage
+      function loadFilterValues() {
+        // Load status filter
+        var savedStatus = localStorage.getItem('scheduling_status');
+        if (savedStatus && document.querySelector('select[name="status"]')) {
+          document.querySelector('select[name="status"]').value = savedStatus;
+        }
+
+        // Load sort by filter
+        var savedSortBy = localStorage.getItem('scheduling_sortBy');
+        if (savedSortBy && document.querySelector('select[name="sortBy"]')) {
+          document.querySelector('select[name="sortBy"]').value = savedSortBy;
+        }
+
+        // Load sort order
+        var savedSortOrder = localStorage.getItem('scheduling_sortOrder');
+        if (savedSortOrder && document.querySelector('input[name="sortOrder"]')) {
+          document.querySelector('input[name="sortOrder"]').value = savedSortOrder;
+        }
+
+        // Load search query
+        var savedSearchQuery = localStorage.getItem('scheduling_searchQuery');
+        if (savedSearchQuery && document.querySelector('input[name="searchQuery"]')) {
+          document.querySelector('input[name="searchQuery"]').value = savedSearchQuery;
+        }
+
+        // Load page size
+        var savedPageSize = localStorage.getItem('scheduling_pageSize');
+        if (savedPageSize && document.querySelector('select[name="pageSize"]')) {
+          document.querySelector('select[name="pageSize"]').value = savedPageSize;
+        }
+      }
+
+      // Function to setup listeners for saving filter values
+      function setupFilterListeners() {
+        // Status filter listener
+        var statusSelect = document.querySelector('select[name="status"]');
+        if (statusSelect) {
+          statusSelect.addEventListener('change', function() {
+            localStorage.setItem('scheduling_status', this.value);
+          });
+        }
+
+        // Sort by filter listener
+        var sortBySelect = document.querySelector('select[name="sortBy"]');
+        if (sortBySelect) {
+          sortBySelect.addEventListener('change', function() {
+            localStorage.setItem('scheduling_sortBy', this.value);
+          });
+        }
+
+        // Search query listener
+        var searchInput = document.querySelector('input[name="searchQuery"]');
+        if (searchInput) {
+          searchInput.addEventListener('input', function() {
+            localStorage.setItem('scheduling_searchQuery', this.value);
+          });
+        }
+
+        // Page size listener
+        var pageSizeSelect = document.querySelector('select[name="pageSize"]');
+        if (pageSizeSelect) {
+          pageSizeSelect.addEventListener('change', function() {
+            localStorage.setItem('scheduling_pageSize', this.value);
+          });
+        }
+      }
 
       // When the delete confirmation modal is about to be shown
       document.getElementById('deleteConfirmModal').addEventListener('show.bs.modal', function (event) {

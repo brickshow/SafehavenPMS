@@ -327,7 +327,29 @@ namespace SafehavenPMS.Controllers
             var psychAssessment = await _context.PsychiatricAssessments
                 .FirstOrDefaultAsync(a => a.PatientId == patient.PatientId);
 
-            string StatusFromDates(DateTime? completedAt) => completedAt.HasValue ? "Completed" : "In Progress";
+            string GetFormStatus(object form) 
+            {
+                // Check if form has a Status property and it's "Archived"
+                var statusProperty = form?.GetType().GetProperty("Status");
+                if (statusProperty != null)
+                {
+                    var statusValue = statusProperty.GetValue(form)?.ToString();
+                    if (!string.IsNullOrEmpty(statusValue) && statusValue == "Archived")
+                    {
+                        return "Archived";
+                    }
+                }
+
+                // Fallback to checking CompletedAt for other statuses
+                var completedAtProperty = form?.GetType().GetProperty("CompletedAt");
+                if (completedAtProperty != null)
+                {
+                    var completedAt = completedAtProperty.GetValue(form) as DateTime?;
+                    return completedAt.HasValue ? "Completed" : "In Progress";
+                }
+
+                return "In Progress";
+            }
 
             // BUILD FORMS (skip Not Started except Intake)
             var forms = new List<ClinicalFormCardViewModel>();
@@ -337,7 +359,7 @@ namespace SafehavenPMS.Controllers
             {
                 FormType = "Intake Form",
                 FormId = intakeForm?.IntakeFormsId,
-                Status = intakeForm == null ? "Not Started" : StatusFromDates(intakeForm.CompletedAt),
+                Status = intakeForm == null ? "Not Started" : GetFormStatus(intakeForm),
                 CreatedAt = intakeForm?.CreatedAt,
                 Clinician = intakeForm?.CreatedBy ?? "-",
                 ActionUrl = intakeForm == null
@@ -352,7 +374,7 @@ namespace SafehavenPMS.Controllers
                 {
                     FormType = "Initial Assessment",
                     FormId = initialAssessment.InitialAssessmentFormId,
-                    Status = StatusFromDates(initialAssessment.CompletedAt),
+                    Status = GetFormStatus(initialAssessment),
                     CreatedAt = initialAssessment.CreatedAt,
                     Clinician = initialAssessment.CreatedBy ?? "-",
                     ActionUrl = Url.Action("EditInitialAssessmentForm", "Assessment",
@@ -367,7 +389,7 @@ namespace SafehavenPMS.Controllers
                 {
                     FormType = "Psychiatric Assessment",
                     FormId = psychAssessment.PsychiatricAssessmentId,
-                    Status = psychAssessment.CreatedAt.HasValue ? "Completed" : "In Progress",
+                    Status = GetFormStatus(psychAssessment),
                     CreatedAt = psychAssessment.CreatedAt,
                     Clinician = psychAssessment.CreatedBy ?? "-",
                     ActionUrl = Url.Action("PsychiatricAssessmentForm", "PsychiatricAssessment",

@@ -5,18 +5,20 @@
     var items = Model?.ToList() ?? new List<SafehavenPMS.ViewModel.Billing.PaymentHistoryItemViewModel>();
 }
 
-<div class="row mb-3">
-    <div class="col-md-6">
-        <input id="ph-search" class="form-control" placeholder="Search patient, invoice or remarks..." />
-    </div>
-    <div class="col-md-6 text-end">
-        <button id="ph-search-btn" class="btn btn-teal">Search</button>
-    </div>
-</div>
+
 
 <div class="card">
     <div class="card-header table-header text-white">
         <h5 class="mb-0">@(items.Count > 0 ? $"{items.Count} Payments" : "No payments found")</h5>
+    </div>
+
+    <div class="row m-4 mb-3">
+        <div class="col-md-4 text-end">
+            <form method="get" asp-controller="Billing" asp-action="Index" class="d-flex justify-content-end gap-2">
+                <input name="q" class="form-control me-2" placeholder="Search by patient name" />
+                <button type="submit" class="btn btn-teal">Search</button>
+            </form>
+        </div>
     </div>
 
     <div class="card-body p-0">

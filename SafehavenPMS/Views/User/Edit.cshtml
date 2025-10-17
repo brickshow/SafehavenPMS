@@ -1,0 +1,126 @@
+@model SafehavenPMS.ViewModel.UserEditViewModel
+
+@{
+    ViewBag.Title = "Edit User Account";
+}
+
+<div class="header">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center">
+            <a href="@Url.Action("Index")" class="me-2" title="Back">
+                <i class="bx bx-reply fs-2 text-custom"></i>
+            </a>
+            <i class="bx bxs-user fs-2 me-2" title="User"></i>
+            <span><strong class="fs-4 text-custom">@ViewBag.Title</strong></span>
+        </div>
+    </div>
+    <hr class="mt-0 mb-2" />
+</div>
+
+<div class="d-flex align-items-start justify-content-center bg-light">
+    <div class="card shadow-sm mb-4" style="width:820px; max-width:95%;">
+        <div class="card-header" style="background:#0b6b6f; color:#fff;">
+            <h5 class="mb-0">User Account Information</h5>
+        </div>
+
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="UserId" type="hidden" />
+            <input asp-for="Fullname" type="hidden" />
+            <input asp-for="Username" type="hidden" />
+            <input asp-for="Role" type="hidden" />
+
+            <div class="d-flex flex-column card-body py-4">
+                <div class="mb-3">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+                </div>
+
+                <!-- User Information Display (Read-only) -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold text-muted">Username</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded border">
+                                @Model.Username
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold text-muted">Full Name</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded border">
+                                @Model.Fullname
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold text-muted">Role</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded border">
+                                @Model.Role
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label fw-semibold text-muted">Status</label>
+                            <div class="form-control-plaintext bg-light p-2 rounded border">
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+                <h6 class="text-custom mb-3">Editable Information</h6>
+
+                <!-- Editable Fields -->
+                <div class="form-stack">
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold"></label>
+                        <input type="email" asp-for="Email" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Number" class="form-label fw-semibold">Phone Number</label>
+                        <input asp-for="Number" class="form-control" placeholder="Enter phone number" />
+                        <span asp-validation-for="Number" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-white border-top d-flex justify-content-end gap-2">
+                <a href="@Url.Action("Index","User")" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-next px-4">Update Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .text-custom { color:#0b6b6f; }
+    .card-header h5 { font-weight:600; }
+    .form-control-plaintext {
+        font-size: 0.9rem;
+        color: #495057;
+    }
+    .form-stack .mb-3:last-child { margin-bottom: 0; }
+    @@media (max-width: 576px){
+        .card { width:100%; }
+    }
+</style>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+}

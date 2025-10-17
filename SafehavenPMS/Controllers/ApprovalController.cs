@@ -205,6 +205,12 @@ namespace SafehavenPMS.Controllers
              }
          }
 
+         [HttpGet]
+         public IActionResult SortBy(string sortBy, string sortOrder, string searchQuery, int page = 1, int pageSize = 10)
+         {
+             return RedirectToAction("Index", new { sortBy, sortOrder, searchQuery, page, pageSize });
+         }
+
         //// helper to produce next CaseId in the format CASE-000001
         //private async Task<string> GenerateNextCaseIdAsync()
         //{
@@ -290,6 +296,9 @@ namespace SafehavenPMS.Controllers
             // Update patient status to Discharged
             patient.PatientStatus = PatientStatusEnum.Discharged.ToString();
 
+            // Archive all patient forms
+            await ArchivePatientFormsAsync(patientId);
+
             var dischargedPatient = new DischargedPatient
             {
                 PatientId = patientId,
@@ -334,6 +343,9 @@ namespace SafehavenPMS.Controllers
             // Update patient status to Discharged
             patient.PatientStatus = PatientStatusEnum.Discharged.ToString();
 
+            // Archive all patient forms
+            await ArchivePatientFormsAsync(patientId);
+
             var dischargedPatient = new DischargedPatient
             {
                 PatientId = patientId,
@@ -357,6 +369,90 @@ namespace SafehavenPMS.Controllers
 
             // Redirect back to the Index view
             return RedirectToAction(nameof(Index));
+        }
+
+        // Helper method to archive all patient forms when discharged
+        private async Task ArchivePatientFormsAsync(int patientId)
+        {
+            try
+            {
+                // Intake Forms
+                if (_context.IntakeForms != null)
+                {
+                    var intakeForms = await _context.IntakeForms
+                        .Where(f => f.PatientId == patientId)
+                        .ToListAsync();
+
+                    foreach (var f in intakeForms)
+                    {
+                        f.Status = "Archived";
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
+                    }
+                }
+
+                // Initial Assessment Forms
+                if (_context.InitialAssessmentForms != null)
+                {
+                    var initialAssessments = await _context.InitialAssessmentForms
+                        .Where(f => f.PatientId == patientId)
+                        .ToListAsync();
+
+                    foreach (var f in initialAssessments)
+                    {
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
+                    }
+                }
+
+                // Psychiatric Assessment Forms
+                if (_context.PsychiatricAssessments != null)
+                {
+                    var psychAssessments = await _context.PsychiatricAssessments
+                        .Where(f => f.PatientId == patientId)
+                        .ToListAsync();
+
+                    foreach (var f in psychAssessments)
+                    {
+                        f.Status = "Archived";
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
+                    }
+                }
+
+                // Interventions
+                if (_context.Interventions != null)
+                {
+                    var interventions = await _context.Interventions
+                        .Where(f => f.PatientId == patientId)
+                        .ToListAsync();
+
+                    foreach (var f in interventions)
+                    {
+                        f.Status = "Archived";
+                    }
+                }
+
+                // Medication Orders
+                if (_context.MedicationOrders != null)
+                {
+                    var medicationOrders = await _context.MedicationOrders
+                        .Where(f => f.PatientId == patientId)
+                        .ToListAsync();
+
+                    foreach (var f in medicationOrders)
+                    {
+                        f.Status = "Archived";
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception but don't fail the discharge process
+                Console.WriteLine($"Error archiving forms for patient {patientId}: {ex.Message}");
+            }
         }
     }
 }

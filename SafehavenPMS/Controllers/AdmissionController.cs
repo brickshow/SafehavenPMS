@@ -170,6 +170,12 @@ namespace SafehavenPMS.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult SortBy(string sortBy, string sortOrder, string searchQuery, string status, int page = 1, int pageSize = 10)
+        {
+            return RedirectToAction("Index", new { sortBy, sortOrder, searchQuery, status, page, pageSize });
+        }
+
         // GET: AdmitPatient page to show dropdown of patients with PendingReview
         [HttpGet]
         public async Task<IActionResult> AdmitPatient(int patientId)

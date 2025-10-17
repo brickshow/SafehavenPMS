@@ -142,6 +142,12 @@ namespace safehavenpms.Controllers
         }
 
         [HttpGet]
+        public IActionResult SortBy(string sortBy, string sortOrder, string searchQuery, string status, int page = 1, int pageSize = 10)
+        {
+            return RedirectToAction("Index", new { sortBy, sortOrder, searchQuery, status, page, pageSize });
+        }
+
+        [HttpGet]
         public IActionResult Search(string searchQuery)
         {
             return RedirectToAction("Index", new

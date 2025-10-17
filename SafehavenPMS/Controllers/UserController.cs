@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using SafehavenPMS.Data;
 using SafehavenPMS.Models;
 using SafehavenPMS.Services;
@@ -16,30 +17,52 @@ namespace SafehavenPMS.Controllers
     {
         private readonly SafehavenPMSContext _context;
         private readonly IEmailService _emailService;
+        private readonly ILogger<UserController> _logger;
 
         public UserController(
             SafehavenPMSContext context,
-            IEmailService emailService)
+            IEmailService emailService,
+            ILogger<UserController> logger)
         {
             _context = context;
             _emailService = emailService;
+            _logger = logger;
         }
 
         // GET: /User
-        public async Task<IActionResult> Index(string searchQuery = "", int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(string searchQuery = "", string role = "", string showInactive = "", int page = 1, int pageSize = 10)
         {
             var q = _context.Users
                 .Include(u => u.ClinicalStaff)
                 .AsQueryable();
 
+            // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 var sq = searchQuery.ToLower();
                 q = q.Where(u =>
                     u.Username.ToLower().Contains(sq) ||
                     (u.Email != null && u.Email.ToLower().Contains(sq)) ||
+                    (u.Fullname != null && u.Fullname.ToLower().Contains(sq)) ||
                     (u.ClinicalStaff != null &&
                      ((u.ClinicalStaff.Firstname + " " + u.ClinicalStaff.Lastname).ToLower().Contains(sq))));
+            }
+
+            // Apply role filter
+            if (!string.IsNullOrWhiteSpace(role) && !role.Equals("All", StringComparison.OrdinalIgnoreCase))
+            {
+                q = q.Where(u => u.Role == role);
+            }
+
+            // Apply active/inactive filter
+            if (!string.IsNullOrWhiteSpace(showInactive) && showInactive == "1")
+            {
+                // Show all users (active and inactive)
+            }
+            else
+            {
+                // Show only active users by default
+                q = q.Where(u => u.IsActive);
             }
 
             var total = await q.CountAsync();
@@ -55,6 +78,8 @@ namespace SafehavenPMS.Controllers
             ViewBag.CurrentPage = page;
             ViewBag.PageSize = pageSize;
             ViewBag.SearchQuery = searchQuery;
+            ViewBag.Role = role;
+            ViewBag.ShowInactive = showInactive;
             ViewBag.TotalPages = pageSize > 0 ? (int)Math.Ceiling(total / (double)pageSize) : 1;
 
             var list = await q.ToListAsync();
@@ -152,20 +177,126 @@ namespace SafehavenPMS.Controllers
         // POST: /User/Deactivate
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Deactivate(int id, string searchQuery, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Deactivate(int id, string searchQuery = "", string role = "", string showInactive = "", int page = 1, int pageSize = 10)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id);
             if (user == null)
             {
                 TempData["Error"] = "User not found.";
-                return RedirectToAction(nameof(Index), new { searchQuery, page, pageSize });
+                return RedirectToAction(nameof(Index), new { searchQuery, role, showInactive, page, pageSize });
             }
             user.IsActive = false;
             user.UpdatedAt = DateTime.UtcNow;
             user.UpdatedBy = User?.Identity?.Name;
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "User deactivated.";
-            return RedirectToAction(nameof(Index), new { searchQuery, page, pageSize });
+            return RedirectToAction(nameof(Index), new { searchQuery, role, showInactive, page, pageSize });
+        }
+
+        // GET: /User/Edit/5
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            // Check if current user is admin
+            var currentUser = await GetCurrentUserAsync();
+            if (currentUser == null || !string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Access denied. Only administrators can edit user accounts.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _context.Users
+                .Include(u => u.ClinicalStaff)
+                .FirstOrDefaultAsync(u => u.UserId == id);
+            
+            if (user == null)
+            {
+                TempData["Error"] = "User not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var viewModel = new UserEditViewModel
+            {
+                UserId = user.UserId,
+                Email = user.Email,
+                Number = user.Number,
+                Username = user.Username,
+                Fullname = user.Fullname,
+                Role = user.Role,
+                IsActive = user.IsActive
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: /User/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(UserEditViewModel model)
+        {
+            // Check if current user is admin
+            var currentUser = await GetCurrentUserAsync();
+            if (currentUser == null || !string.Equals(currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "Access denied. Only administrators can edit user accounts.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Reload the user data for display
+                var user = await _context.Users
+                    .Include(u => u.ClinicalStaff)
+                    .FirstOrDefaultAsync(u => u.UserId == model.UserId);
+                
+                if (user != null)
+                {
+                    model.Username = user.Username;
+                    model.Fullname = user.Fullname;
+                    model.Role = user.Role;
+                    model.IsActive = user.IsActive;
+                }
+                
+                return View(model);
+            }
+
+            var userToUpdate = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
+            if (userToUpdate == null)
+            {
+                TempData["Error"] = "User not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Update only email and number
+            userToUpdate.Email = model.Email;
+            userToUpdate.Number = model.Number;
+            userToUpdate.UpdatedAt = DateTime.UtcNow;
+            userToUpdate.UpdatedBy = currentUser.Username;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"User account for {userToUpdate.Fullname} has been updated successfully.";
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Error updating user account");
+                TempData["Error"] = "Unable to update user account. Please try again.";
+                return View(model);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Helper method to get current user
+        private async Task<User?> GetCurrentUserAsync()
+        {
+            var username = User?.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+                return null;
+
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == username || u.Email == username);
         }
 
         // ADD helper below existing HashPassword

@@ -29,6 +29,12 @@ namespace SafehavenPMS.Controllers
             return View(serviceTypes);
         }
 
+        [HttpGet]
+        public IActionResult SortBy(string sortBy, string sortOrder, int page = 1, int pageSize = 10)
+        {
+            return RedirectToAction("Index", new { sortBy, sortOrder, page, pageSize });
+        }
+
         // POST: ServiceType/AddNewServiceType
         [HttpPost]
         [ValidateAntiForgeryToken]

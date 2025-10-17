@@ -110,6 +110,12 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpGet]
+        public IActionResult SortBy(string sortBy, string sortOrder, string searchQuery, int page = 1, int pageSize = 10)
+        {
+            return RedirectToAction("Index", new { sortBy, sortOrder, searchQuery, page, pageSize });
+        }
+
+        [HttpGet]
         public IActionResult Search(string searchQuery)
         {
             // Redirect to this controller's Index so filtering/searching happens on discharged list
@@ -210,7 +216,7 @@ namespace SafehavenPMS.Controllers
 
             patient.PatientStatus = PatientStatusEnum.Discharged.ToString();
 
-            // Mark related clinical forms as archived (Intake, Initial Assessment, Psychiatric Assessment)
+            // Mark all related clinical forms as archived when patient is discharged
             try
             {
                 // Intake Forms
@@ -222,17 +228,13 @@ namespace SafehavenPMS.Controllers
 
                     foreach (var f in intakeForms)
                     {
-                        // Adjust property names if different in your models
-                        var statusProp = f.GetType().GetProperty("Status");
-                        var isArchivedProp = f.GetType().GetProperty("IsArchived");
-                        if (isArchivedProp != null)
-                            isArchivedProp.SetValue(f, true);
-                        if (statusProp != null)
-                            statusProp.SetValue(f, "Archived");
+                        f.Status = "Archived";
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
                     }
                 }
 
-                // Initial Assessments
+                // Initial Assessment Forms
                 if (_context.InitialAssessmentForms != null)
                 {
                     var initialAssessments = await _context.InitialAssessmentForms
@@ -241,36 +243,58 @@ namespace SafehavenPMS.Controllers
 
                     foreach (var f in initialAssessments)
                     {
-                        var statusProp = f.GetType().GetProperty("Status");
-                        var isArchivedProp = f.GetType().GetProperty("IsArchived");
-                        if (isArchivedProp != null)
-                            isArchivedProp.SetValue(f, true);
-                        if (statusProp != null)
-                            statusProp.SetValue(f, "Archived");
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
                     }
                 }
 
-                // Psychiatric Assessments
+                // Psychiatric Assessment Forms
                 if (_context.PsychiatricAssessments != null)
                 {
-                    var psych = await _context.PsychiatricAssessments
+                    var psychAssessments = await _context.PsychiatricAssessments
                         .Where(f => f.PatientId == patient.PatientId)
                         .ToListAsync();
 
-                    foreach (var f in psych)
+                    foreach (var f in psychAssessments)
                     {
-                        var statusProp = f.GetType().GetProperty("Status");
-                        var isArchivedProp = f.GetType().GetProperty("IsArchived");
-                        if (isArchivedProp != null)
-                            isArchivedProp.SetValue(f, true);
-                        if (statusProp != null)
-                            statusProp.SetValue(f, "Archived");
+                        f.Status = "Archived";
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
+                    }
+                }
+
+                // Interventions
+                if (_context.Interventions != null)
+                {
+                    var interventions = await _context.Interventions
+                        .Where(f => f.PatientId == patient.PatientId)
+                        .ToListAsync();
+
+                    foreach (var f in interventions)
+                    {
+                        f.Status = "Archived";
+                    }
+                }
+
+                // Medication Orders
+                if (_context.MedicationOrders != null)
+                {
+                    var medicationOrders = await _context.MedicationOrders
+                        .Where(f => f.PatientId == patient.PatientId)
+                        .ToListAsync();
+
+                    foreach (var f in medicationOrders)
+                    {
+                        f.Status = "Archived";
+                        f.UpdatedAt = DateTime.UtcNow;
+                        f.UpdatedBy = User.Identity?.Name;
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Optional: log ex
+                // Log the exception but don't fail the discharge process
+                Console.WriteLine($"Error archiving forms for patient {patient.PatientId}: {ex.Message}");
             }
 
             var record = new DischargedPatient
