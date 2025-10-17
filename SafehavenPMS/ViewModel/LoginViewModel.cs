@@ -30,8 +30,8 @@ namespace SafehavenPMS.ViewModel
     public class ForgotPasswordViewModel
     {
         [Required]
-        [EmailAddress]
-        public string Email { get; set; }
+        [Display(Name = "Username or Email")]
+        public string UsernameOrEmail { get; set; }
     }
 
     public class ResetPasswordViewModel

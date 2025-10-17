@@ -153,39 +153,61 @@ namespace SafehavenPMS.Controllers
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
-            var recEmail = await _context.Users
-                .Where(u => u.Email == model.Email)
-                .Select(u => u.Email)
-                .FirstOrDefaultAsync();
-
-            var username = await _context.Users
-                .Where(u => u.Email == model.Email)
-                .Select(u => u.Username)
-                .FirstOrDefaultAsync();
-            
-            if (recEmail == null)
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(string.Empty, "No account found with that email.");
-                TempData["Error"] = "No account found with that email.";
                 return View(model);
             }
 
-            if (ModelState.IsValid)
+            var input = model.UsernameOrEmail?.Trim();
+            if (string.IsNullOrEmpty(input))
             {
-                // Generate a random 6-digit code
-                var otp = new Random().Next(100000, 999999).ToString();
-
-                // Store OTP and email as needed (TempData, Session, DB, etc.)
-                TempData["EmailForOtp"] = model.Email;
-                TempData["OtpCode"] = otp;
-
-                // Send OTP to email
-                await _emailService.SendOtpAsync(username, model.Email, otp);
-
-                // Redirect directly to EnterOtp page (no protocol/port logic)
-                return RedirectToAction("EnterOtp", "Login");
+                ModelState.AddModelError(string.Empty, "Username or Email is required.");
+                TempData["Error"] = "Username or Email is required.";
+                return View(model);
             }
-            return View(model);
+
+            // Case-insensitive lookup (username or email)
+            var lowered = input.ToLower();
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u =>
+                    u.Username.ToLower() == lowered ||
+                    (u.Email != null && u.Email.ToLower() == lowered));
+
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "No account found with that username or email.");
+                TempData["Error"] = "No account found with that username or email.";
+                return View(model);
+            }
+
+            if (!user.IsActive)
+            {
+                ModelState.AddModelError(string.Empty, "Account is deactivated.");
+                TempData["Error"] = "Account is deactivated.";
+                return View(model);
+            }
+
+            if (string.IsNullOrEmpty(user.Email))
+            {
+                ModelState.AddModelError(string.Empty, "No email address found for this account.");
+                TempData["Error"] = "No email address found for this account.";
+                return View(model);
+            }
+
+            // Generate a random 6-digit code
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            // Store OTP and email as needed (TempData, Session, DB, etc.)
+            TempData["EmailForOtp"] = user.Email;
+            TempData["OtpCode"] = otp;
+            TempData["UsernameForOtp"] = user.Username;
+
+            // Send OTP to email using either username or fullname
+            var displayName = !string.IsNullOrWhiteSpace(user.Fullname) ? user.Fullname : user.Username;
+            await _emailService.SendOtpAsync(displayName, user.Email, otp);
+
+            // Redirect directly to EnterOtp page
+            return RedirectToAction("EnterOtp", "Login");
         }
 
         [HttpGet]

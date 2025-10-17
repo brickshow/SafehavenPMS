@@ -126,9 +126,11 @@
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+
                     <select name="status" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
-                        <option value="Admitted" selected='@(ViewBag.Status == "Admitted" ? "selected" : "")'>Admitted</option>
-                        <option value="InTreatment" selected='@(ViewBag.Status == "InTreatment" ? "selected" : "")'>In Treatment</option>
+                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.Status) ? "selected" : "")">All Status</option>
+                        <option value="Admitted" selected="@(ViewBag.Status == "Admitted" ? "selected" : "")">Admitted</option>
+                        <option value="InTreatment" selected="@(ViewBag.Status == "InTreatment" ? "selected" : "")">In Treatment</option>
                     </select>
                 </form>
             </div>

@@ -88,12 +88,23 @@
 <body>
     <div class="sidebar close">
         <!-- Logo -->
-        <div class="logo-details">
-            <a href="@GetHomeUrl()" class="d-flex align-items-center text-decoration-none text-white">
+        @if (HasAnyRole("Admin"))
+        {
+            <div class="logo-details">
+                <a href="@GetHomeUrl()" class="d-flex align-items-center text-decoration-none text-white">
+                    <img src="~/Images/safehaven.png" alt="SafeHaven Logo" style="height:50px;width:auto;object-fit:contain;margin-right:6px;" />
+                    <span class="logo_name">SafeHaven</span>
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="logo-details">
                 <img src="~/Images/safehaven.png" alt="SafeHaven Logo" style="height:50px;width:auto;object-fit:contain;margin-right:6px;" />
                 <span class="logo_name">SafeHaven</span>
-            </a>
-        </div>
+            </div>
+        }
+
 
         @functions {
         // simple helper to check multiple roles

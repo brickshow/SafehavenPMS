@@ -40,10 +40,33 @@ namespace SafehavenPMS.Controllers
                     break;
             }
 
+            var messageList = messages.OrderByDescending(m => m.SentAt).ToList();
+
+            // ✅ Replace usernames with full names dynamically
+            foreach (var msg in messageList)
+            {
+                var fromFullName = _context.Users
+                    .Where(u => u.Username == msg.FromUser)
+                    .Select(u => u.Fullname)
+                    .FirstOrDefault();
+
+                var toFullName = _context.Users
+                    .Where(u => u.Username == msg.ToUser)
+                    .Select(u => u.Fullname)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrEmpty(fromFullName))
+                    msg.FromUser = fromFullName;
+
+                if (!string.IsNullOrEmpty(toFullName))
+                    msg.ToUser = toFullName;
+            }
+
             ViewBag.Section = section;
-            ViewBag.Messages = messages.OrderByDescending(m => m.SentAt).ToList();
+            ViewBag.Messages = messageList;
             return View();
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -53,22 +76,28 @@ namespace SafehavenPMS.Controllers
             var fromUser = User.Identity.Name;
 
             // Validate recipient exists and is active
-            var recipient = _context.Users.FirstOrDefault(u => u.Username == dto.To && u.IsActive);
+            var recipient = _context.Users
+                            .FirstOrDefault(u =>
+                                 u.IsActive &&
+                                (u.Username == dto.To || u.Fullname == dto.To));
+
             if (recipient == null)
             {
-                TempData["ToastMessage"] = "Recipient does not exist or is not active.";
-                return View("Index");
+                TempData["ToastMessage"] = "Recipient not found or inactive.";
+                TempData["ToastType"] = "error";
+                return RedirectToAction("Index");
             }
 
             var message = new Message
             {
-                ToUser = dto.To,
+                ToUser = recipient.Username, // always store username
                 FromUser = fromUser,
                 Subject = dto.Subject,
                 Body = dto.Body,
                 SentAt = DateTime.Now,
                 IsArchived = false
             };
+
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
@@ -163,7 +192,27 @@ namespace SafehavenPMS.Controllers
             TempData["ToastType"] = "error";
             return RedirectToAction("Index");
         }
-    
+
+        [HttpGet]
+        public IActionResult SearchUsers(string term)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+                return Json(new { results = new string[0] });
+
+            var matches = _context.Users
+                .Where(u => u.IsActive &&
+                           (u.Username.Contains(term) ||
+                            (u.Fullname != null && u.Fullname.Contains(term))))
+                .Select(u => new
+                {
+                    label = $"{u.Fullname} ({u.Username})",
+                    value = u.Username
+                })
+                .Take(10)
+                .ToList();
+
+            return Json(new { results = matches });
+        }
 
     }
 

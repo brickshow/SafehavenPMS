@@ -97,15 +97,15 @@
                 @Html.AntiForgeryToken()
                 <div class="input-message">
                     <label for="to" class="form-label">To:</label>
-                    <input type="text" id="to" name="To" class="form-control" placeholder="Recipient Username" />
+                    <input type="text" id="to" name="To" class="form-control" placeholder="Recipient Username" required/>
                 </div>
                 <div class="mb-2 input-message">
                     <label for="subject" class="form-label">Subject:</label>
-                    <input type="text" id="subject" name="Subject" class="form-control" placeholder="Subject" />
+                <input type="text" id="subject" name="Subject" class="form-control" placeholder="Subject" required />
                 </div>
                 <div class="mb-2 input-message">
                     <label for="body" class="form-label">Message:</label>
-                    <textarea id="body" name="Body" class="form-control" rows="4" placeholder="Type your message..."></textarea>
+                <textarea id="body" name="Body" class="form-control" rows="4" placeholder="Type your message..." required></textarea>
                 </div>
                 <div class="mb02 d-flex justify-content-end align-items-center">
                     <button type="submit" class="btn btn-primary">Send</button>
@@ -277,6 +277,16 @@
         color: #888;
         cursor: pointer;
     }
+
+    .ui-autocomplete {
+        z-index: 2000 !important; /* make sure it's above modal */
+        background: white;
+        border: 1px solid #ccc;
+        max-height: 200px;
+        overflow-y: auto;
+        border-radius: 4px;
+    }
+
     .modal-content .form-label,
     .compose-modal-content .form-label,
     .reply-modal-content .form-label {
@@ -375,7 +385,8 @@
 
 </style>
 
-<script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 <script>
      // Show modal when Compose is clicked
     document.addEventListener('DOMContentLoaded', function () {
@@ -513,6 +524,26 @@
              .catch(err => console.error('Error fetching unread messages:', err));
          }
             });
-
+                document.addEventListener('DOMContentLoaded', function () {
+        const toInput = document.getElementById('to');
+        if (toInput) {
+            $(toInput).autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: '/Email/SearchUsers',
+                        data: { term: request.term },
+                        success: function (data) {
+                            response(data.results);
+                        }
+                    });
+                },
+                minLength: 1,
+                select: function (event, ui) {
+                    toInput.value = ui.item.value;
+                    return false;
+                }
+            });
+        }
+    });
 
 </script>
