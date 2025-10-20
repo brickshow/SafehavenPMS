@@ -142,10 +142,11 @@
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="status" value="@ViewBag.Status" />
                     <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-                    <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
-                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
-                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
+                    <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="saveSortAndSubmit(this)">
+                        <option value="">Sort by</option>
+                        <option value="Name">Name</option>
                     </select>
+
                 </form>
             </div>
         </div>
@@ -365,7 +366,6 @@
         }
     }
 </style>
-
 @section Scripts {
     <script>
         // ✅ Save and submit form when dropdown changes
@@ -374,31 +374,37 @@
             select.form.submit();
         }
 
-        // ✅ Restore saved selection on page load
+        function saveSortAndSubmit(select) {
+            localStorage.setItem('selectedSortBy', select.value);
+            select.form.submit();
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
-            // --- Existing toast code ---
+            // --- Toasts ---
             var successToastEl = document.getElementById('successToast');
-            if (successToastEl) {
-                var successToast = new bootstrap.Toast(successToastEl);
-                successToast.show();
-            }
+            if (successToastEl) new bootstrap.Toast(successToastEl).show();
 
             var errorToastEl = document.getElementById('errorToast');
-            if (errorToastEl) {
-                var errorToast = new bootstrap.Toast(errorToastEl);
-                errorToast.show();
-            }
+            if (errorToastEl) new bootstrap.Toast(errorToastEl).show();
 
-            // ✅ Restore dropdown value from localStorage
+            // ✅ Restore STATUS dropdown
             const savedStatus = localStorage.getItem('selectedStatus');
             const statusDropdown = document.getElementById('statusDropdown');
             if (savedStatus && statusDropdown) {
                 statusDropdown.value = savedStatus;
             }
-
-            // ✅ Clear saved status if user resets to "All"
             if (statusDropdown && statusDropdown.value === '') {
                 localStorage.removeItem('selectedStatus');
+            }
+
+            // ✅ Restore SORT BY dropdown
+            const savedSortBy = localStorage.getItem('selectedSortBy');
+            const sortByDropdown = document.querySelector('select[name="sortBy"]');
+            if (savedSortBy && sortByDropdown) {
+                sortByDropdown.value = savedSortBy;
+            }
+            if (sortByDropdown && sortByDropdown.value === '') {
+                localStorage.removeItem('selectedSortBy');
             }
 
             // --- Delete modal handler ---
