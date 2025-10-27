@@ -37,6 +37,9 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ActivityLogService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 
+// Register background service for medication reset
+builder.Services.AddHostedService<MedicationResetService>();
+
 // Add MVC
 builder.Services.AddControllersWithViews();
 

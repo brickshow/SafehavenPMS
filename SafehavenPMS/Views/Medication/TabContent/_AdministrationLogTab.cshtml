@@ -15,6 +15,44 @@
         <button type="submit" class="btn-custom" style="height:30px">Search</button>
         </form>
     </div>
+    
+    @* Manual Reset Button for Testing *@
+    <div class="top-right-corner">
+        @if(User.IsInRole("Admin") || User.IsInRole("Physician") || User.IsInRole("Psychiatrist")){
+            <form asp-controller="Medication" asp-action="ManualResetMedicationLogs" method="post" class="d-inline me-2">
+                <button type="submit" class="btn btn-warning btn-sm" 
+                        onclick="return confirm('This will create new administration logs for tomorrow. Continue?')"
+                        title="Reset medication logs for next day (testing only)">
+                    <i class="bx bx-refresh"></i> Reset Logs
+                </button>
+            </form>
+            
+            @* Test buttons for debugging *@
+            <a href="@Url.Action("TestResetService", "Medication")" class="btn btn-info btn-sm me-2" title="Test reset service">
+                <i class="bx bx-test-tube"></i> Test Reset
+            </a>
+            
+            <a href="@Url.Action("DiagnoseDatabase", "Medication")" class="btn btn-danger btn-sm me-2" title="Comprehensive database diagnosis">
+                <i class="bx bx-search-alt"></i> Diagnose
+            </a>
+            
+            <form asp-controller="Medication" asp-action="CreateTestOrder" method="post" class="d-inline me-2">
+                <button type="submit" class="btn btn-success btn-sm" 
+                        onclick="return confirm('Create a test medication order for debugging?')"
+                        title="Create test medication order">
+                    <i class="bx bx-plus"></i> Test Order
+                </button>
+            </form>
+            
+            @if(Model != null && Model.Any())
+            {
+                <a href="@Url.Action("TestStatusChange", "Medication", new { medicationOrderId = Model.First().Medications?.FirstOrDefault()?.MedicationOrderId ?? 0 })" 
+                   class="btn btn-secondary btn-sm" title="Test status change">
+                    <i class="bx bx-bug"></i> Test Status
+                </a>
+            }
+        }
+    </div>
 </div>
 
 <div class="w-100 h-100 bg-white mt-3" style="box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-radius:10px">
@@ -120,13 +158,23 @@
                             <td>@log.PatientName</td>
                             <td class="text-center">@log.TotalMeds</td>
                             <td class="text-center">@log.ScheduleTimes</td>
+                            @{
+                                var status = log.Medications.FirstOrDefault()?.Status ?? "Pending";
+                                string bgColor = status switch
+                                {
+                                    "Pending" => "rgba(255, 233, 105, 0.5)",   // pastel yellow
+                                    "InProgress" => "rgba(144, 238, 144, 0.5)", // pastel light green
+                                    "Completed" => "rgba(102, 205, 170, 0.5)",  // pastel green
+                                    _ => "rgba(255, 233, 105, 0.5)"             // default to pastel yellow
+                                };
+                            }
                             <td class="text-center">
-                                <div class="d-inline-block w-50 rounded text-center"
-                                     style="background-color: rgba(255, 233, 105, 0.5);">
-                                    <span class="badge text-dark">Pending</span>
+                                <div class="d-inline-block w-50 rounded text-center" style="background-color:@bgColor;">
+                                    <span class="badge text-dark">@status</span>
                                 </div>
                             </td>
-                            @if(User.IsInRole("Physician") || User.IsInRole("Psychiatrist")){
+
+                            @if(User.IsInRole("Physician") || User.IsInRole("Psychiatrist") || User.IsInRole("Admin")){
                                 <td class="text-center">
                                     <a href="#"
                                         class="btn btn-sm btn-outline-primary"

@@ -813,19 +813,56 @@ namespace SafehavenPMS.Controllers
                     logsToAdd.Add(log);
                 }
 
-                // If at least one checkbox is checked, mark the medication order as In Progress
-                var anyTaken = item.BreakfastTaken || item.LunchTaken || item.DinnerTaken || item.BedtimeTaken;
-                if (anyTaken)
+                // Determine status based on medication administration completion
+                // Get which doses are scheduled for this medication order
+                var scheduledDoses = new List<bool> 
+                { 
+                    order.Breakfast ? item.BreakfastTaken : true,
+                    order.Lunch ? item.LunchTaken : true,
+                    order.Dinner ? item.DinnerTaken : true,
+                    order.Bedtime ? item.BedtimeTaken : true
+                }.Count(d => d); // count how many are true (either scheduled and taken, or not scheduled)
+
+                var totalScheduledCount = new[] { order.Breakfast, order.Lunch, order.Dinner, order.Bedtime }.Count(s => s);
+                
+                // Debug logging
+                Console.WriteLine($"OrderId={order.MedicationOrderId}: Scheduled={totalScheduledCount}, Taken={scheduledDoses}, BF={item.BreakfastTaken}, L={item.LunchTaken}, D={item.DinnerTaken}, BT={item.BedtimeTaken}");
+                
+                // Determine new status
+                string newStatus = order.Status;
+                
+                if (totalScheduledCount == 0)
                 {
-                    var inProg = "In Progress";
-                    if (order.Status != inProg)
-                    {
-                        order.Status = inProg;
-                        order.UpdatedAt = now;
-                        order.UpdatedBy = currentUser;
-                        _context.MedicationOrders.Update(order);
-                        Console.WriteLine($"OrderId={order.MedicationOrderId} marked as {inProg}");
-                    }
+                    // No doses scheduled, no status change
+                    newStatus = order.Status;
+                    Console.WriteLine($"OrderId={order.MedicationOrderId}: No doses scheduled, keeping status: {newStatus}");
+                }
+                else if (scheduledDoses == totalScheduledCount)
+                {
+                    // All scheduled doses are taken (or not applicable)
+                    newStatus = MedicationOrderStatus.Completed.ToString();
+                    Console.WriteLine($"OrderId={order.MedicationOrderId}: All doses completed, setting status to: {newStatus}");
+                }
+                else if (scheduledDoses > 0)
+                {
+                    // At least one dose taken (including if breakfast is checked)
+                    newStatus = MedicationOrderStatus.InProgress.ToString();
+                    Console.WriteLine($"OrderId={order.MedicationOrderId}: Some doses taken, setting status to: {newStatus}");
+                }
+                else
+                {
+                    Console.WriteLine($"OrderId={order.MedicationOrderId}: No doses taken, keeping status: {newStatus}");
+                }
+
+                // Update the order status if it has changed
+                if (order.Status != newStatus)
+                {
+                    var oldStatus = order.Status;
+                    order.Status = newStatus;
+                    order.UpdatedAt = now;
+                    order.UpdatedBy = currentUser;
+                    _context.MedicationOrders.Update(order);
+                    Console.WriteLine($"OrderId={order.MedicationOrderId} status changed from {oldStatus} to {newStatus}");
                 }
 
                 // prepare billables (we recreated after removing previous ones)
@@ -974,6 +1011,233 @@ namespace SafehavenPMS.Controllers
                     b.ReferenceType = $"BILL-{b.BillableId:D5}";
                 _context.Billables.UpdateRange(billablesToAdd);
                 await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// Manual method to reset medication administration logs for testing purposes
+        /// This simulates what the background service does at midnight
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ManualResetMedicationLogs()
+        {
+            try
+            {
+                var today = DateTime.Today;
+                var tomorrow = today.AddDays(1);
+
+                // Get all active medication orders that should have administration logs for tomorrow
+                var activeMedicationOrders = await _context.MedicationOrders
+                    .Include(mo => mo.Patient)
+                    .Include(mo => mo.Medicine)
+                    .Where(mo => mo.Status == MedicationOrderStatus.Active.ToString() ||
+                                 mo.Status == MedicationOrderStatus.InProgress.ToString())
+                    .Where(mo => mo.StartDate.Date <= tomorrow) // Order should be active by tomorrow
+                    .Where(mo => mo.NoDiscontinueDate || 
+                                 (mo.DiscontinueDate.HasValue && mo.DiscontinueDate.Value.Date >= tomorrow)) // Not discontinued by tomorrow
+                    .ToListAsync();
+
+                var newAdministrationLogs = new List<AdministrationLog>();
+                var notificationsToAdd = new List<Notification>();
+                var activitiesToAdd = new List<ActivityLog>();
+
+                foreach (var order in activeMedicationOrders)
+                {
+                    // Check if this order applies for tomorrow (handles NonDaily scheduling)
+                    if (!IsOrderActiveForDate(order, tomorrow))
+                        continue;
+
+                    // Check if administration log already exists for tomorrow
+                    var existingLog = await _context.AdministrationLogs
+                        .FirstOrDefaultAsync(al => al.MedicationOrderId == order.MedicationOrderId &&
+                                                   al.AdministrationDate.Date == tomorrow);
+
+                    if (existingLog == null)
+                    {
+                        // Create new administration log for tomorrow
+                        var newLog = new AdministrationLog
+                        {
+                            MedicationOrderId = order.MedicationOrderId,
+                            PatientId = order.PatientId,
+                            AdministrationDate = tomorrow,
+                            BreakfastTaken = false,
+                            LunchTaken = false,
+                            DinnerTaken = false,
+                            BedtimeTaken = false,
+                            RecordedBy = User?.Identity?.Name ?? "System",
+                            CreatedAt = DateTime.Now
+                        };
+
+                        newAdministrationLogs.Add(newLog);
+
+                        // Create notification for staff about new medication schedule
+                        var medicineName = order.Medicine?.GenericName ?? order.Medicine?.BrandName ?? "Medication";
+                        var patientName = $"{order.Patient?.Firstname} {order.Patient?.Lastname}";
+                        
+                        notificationsToAdd.Add(new Notification
+                        {
+                            UserName = User?.Identity?.Name ?? "System",
+                            Message = $"New medication schedule ready for {patientName}: {medicineName}",
+                            Type = "Info",
+                            IsRead = false,
+                            CreatedAt = DateTime.Now,
+                            LinkUrl = $"/Medication/Index"
+                        });
+
+                        // Create activity log
+                        activitiesToAdd.Add(new ActivityLog
+                        {
+                            PatientId = order.PatientId,
+                            UserName = User?.Identity?.Name ?? "System",
+                            Action = "MedicationScheduleCreated",
+                            Description = $"New medication schedule created for {patientName}: {medicineName}",
+                            Category = "Clinical",
+                            Severity = "Info",
+                            CreatedAt = DateTime.Now
+                        });
+                    }
+                }
+
+                // Save all new administration logs
+                if (newAdministrationLogs.Any())
+                {
+                    await _context.AdministrationLogs.AddRangeAsync(newAdministrationLogs);
+                }
+
+                // Save notifications and activity logs
+                if (notificationsToAdd.Any())
+                {
+                    await _context.Notifications.AddRangeAsync(notificationsToAdd);
+                }
+
+                if (activitiesToAdd.Any())
+                {
+                    await _context.ActivityLogs.AddRangeAsync(activitiesToAdd);
+                }
+
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Medication administration logs reset completed. Created {newAdministrationLogs.Count} new logs for {tomorrow:yyyy-MM-dd}";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during manual medication reset: {ex}");
+                TempData["ErrorMessage"] = "An error occurred while resetting medication logs.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// Helper method to check if a medication order is active for a specific date
+        /// </summary>
+        private bool IsOrderActiveForDate(MedicationOrder order, DateTime date)
+        {
+            // Check if order starts on or before the target date
+            if (order.StartDate.Date > date)
+                return false;
+
+            // Check if order is discontinued before the target date
+            if (!order.NoDiscontinueDate && order.DiscontinueDate.HasValue && order.DiscontinueDate.Value.Date < date)
+                return false;
+
+            // Handle NonDaily scheduling
+            if (order.ScheduledType == "NonDaily" && order.DaysInterval.HasValue && order.DaysInterval.Value > 0)
+            {
+                var daysSinceStart = (date - order.StartDate.Date).Days;
+                return daysSinceStart % order.DaysInterval.Value == 0;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Test method to debug status changing - can be removed after testing
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> TestStatusChange(int medicationOrderId)
+        {
+            try
+            {
+                var order = await _context.MedicationOrders
+                    .Include(o => o.Medicine)
+                    .FirstOrDefaultAsync(o => o.MedicationOrderId == medicationOrderId);
+
+                if (order == null)
+                {
+                    TempData["ErrorMessage"] = "Medication order not found";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var result = new
+                {
+                    OrderId = order.MedicationOrderId,
+                    CurrentStatus = order.Status,
+                    Breakfast = order.Breakfast,
+                    Lunch = order.Lunch,
+                    Dinner = order.Dinner,
+                    Bedtime = order.Bedtime,
+                    MedicineName = order.Medicine?.GenericName ?? "Unknown"
+                };
+
+                TempData["SuccessMessage"] = $"Order {medicationOrderId}: Status={result.CurrentStatus}, Scheduled: BF={result.Breakfast}, L={result.Lunch}, D={result.Dinner}, BT={result.Bedtime}";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// Test method to check if reset service is working - can be removed after testing
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> TestResetService()
+        {
+            try
+            {
+                var today = DateTime.Today;
+                var tomorrow = today.AddDays(1);
+
+                // Check ALL medication orders to see their statuses
+                var allOrders = await _context.MedicationOrders.ToListAsync();
+                var statusBreakdown = allOrders.GroupBy(o => o.Status)
+                    .Select(g => $"{g.Key}: {g.Count()}")
+                    .ToList();
+
+                // Check how many active orders exist
+                var activeOrders = await _context.MedicationOrders
+                    .Where(mo => mo.Status == MedicationOrderStatus.Active.ToString() ||
+                                 mo.Status == MedicationOrderStatus.InProgress.ToString() ||
+                                 mo.Status == MedicationOrderStatus.NotStarted.ToString())
+                    .CountAsync();
+
+                // Check how many administration logs exist for tomorrow
+                var tomorrowLogs = await _context.AdministrationLogs
+                    .Where(al => al.AdministrationDate.Date == tomorrow)
+                    .CountAsync();
+
+                // Check orders that match the reset service criteria
+                var matchingOrders = await _context.MedicationOrders
+                    .Where(mo => mo.StartDate.Date <= tomorrow)
+                    .Where(mo => mo.NoDiscontinueDate || 
+                                 (mo.DiscontinueDate.HasValue && mo.DiscontinueDate.Value.Date >= tomorrow))
+                    .Where(mo => mo.Status == MedicationOrderStatus.Active.ToString() ||
+                                 mo.Status == MedicationOrderStatus.InProgress.ToString() ||
+                                 mo.Status == MedicationOrderStatus.NotStarted.ToString())
+                    .CountAsync();
+
+                var statusInfo = string.Join(", ", statusBreakdown);
+                TempData["SuccessMessage"] = $"Total orders: {allOrders.Count} | Active/InProgress/NotStarted: {activeOrders} | Matching criteria: {matchingOrders} | Logs for tomorrow: {tomorrowLogs}<br/>Status breakdown: {statusInfo}";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error testing reset service: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

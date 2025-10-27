@@ -5,6 +5,8 @@ namespace SafehavenPMS.Enum
     {
         NotStarted,
         Active,
+        InProgress,
+        Completed,
         Discontinued
     }
 }
