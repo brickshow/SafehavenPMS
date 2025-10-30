@@ -74,6 +74,28 @@ namespace SafehavenPMS.Controllers
                 .GroupBy(a => a.MedicationOrderId)
                 .ToDictionary(g => g.Key, g => g.First());
 
+            // Base source for admin logs starts with all medicationOrders
+            var logsSource = medicationOrders;
+
+            // Apply log search filter (by patient name)
+            if (!string.IsNullOrEmpty(logSearch))
+                logsSource = logsSource.Where(o => ($"{o.Patient?.Firstname} {o.Patient?.Lastname}")
+                    .ToLower().Contains(logSearch.ToLower())).ToList();
+
+            // Apply log status filter (by order status; include group if any order matches)
+            if (!string.IsNullOrEmpty(logStatus))
+                logsSource = logsSource.Where(o => string.Equals(o.Status, logStatus, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Apply log sorting (currently supports Name)
+            if (!string.IsNullOrEmpty(logSortBy))
+            {
+                var ascLogs = string.Equals(logSortOrder, "ascending", StringComparison.OrdinalIgnoreCase);
+                if (string.Equals(logSortBy, "Name", StringComparison.OrdinalIgnoreCase))
+                    logsSource = ascLogs
+                        ? logsSource.OrderBy(o => o.Patient.Firstname).ThenBy(o => o.Patient.Lastname).ToList()
+                        : logsSource.OrderByDescending(o => o.Patient.Firstname).ThenByDescending(o => o.Patient.Lastname).ToList();
+            }
+
             // Map to view model
             var model = new MedicationPageViewModel
             {
@@ -111,7 +133,7 @@ namespace SafehavenPMS.Controllers
                     DiscontinueDate = m.DiscontinueDate,
                     NoDiscontinueDate = m.NoDiscontinueDate
                 }).ToList(),
-                AdministrationLogs = medicationOrders
+                AdministrationLogs = logsSource
                     .GroupBy(a => a.PatientId)
                     .Select(g => new AdministrationLogViewModel
                     {

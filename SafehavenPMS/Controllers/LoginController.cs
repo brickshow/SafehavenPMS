@@ -161,8 +161,7 @@ namespace SafehavenPMS.Controllers
             var input = model.UsernameOrEmail?.Trim();
             if (string.IsNullOrEmpty(input))
             {
-                ModelState.AddModelError(string.Empty, "Username or Email is required.");
-                TempData["Error"] = "Username or Email is required.";
+                ViewBag.Info = "Please enter your username or email.";
                 return View(model);
             }
 
@@ -175,22 +174,20 @@ namespace SafehavenPMS.Controllers
 
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "No account found with that username or email.");
-                TempData["Error"] = "No account found with that username or email.";
+                // Do not surface an error; show informational message instead
+                ViewBag.Info = "If an account exists for the provided value, an OTP will be sent.";
                 return View(model);
             }
 
             if (!user.IsActive)
             {
-                ModelState.AddModelError(string.Empty, "Account is deactivated.");
-                TempData["Error"] = "Account is deactivated.";
+                ViewBag.Info = "This account is deactivated. Please contact support.";
                 return View(model);
             }
 
             if (string.IsNullOrEmpty(user.Email))
             {
-                ModelState.AddModelError(string.Empty, "No email address found for this account.");
-                TempData["Error"] = "No email address found for this account.";
+                ViewBag.Info = "No email is associated with this account.";
                 return View(model);
             }
 
@@ -204,10 +201,30 @@ namespace SafehavenPMS.Controllers
 
             // Send OTP to email using either username or fullname
             var displayName = !string.IsNullOrWhiteSpace(user.Fullname) ? user.Fullname : user.Username;
-            await _emailService.SendOtpAsync(displayName, user.Email, otp);
-
-            // Redirect directly to EnterOtp page
-            return RedirectToAction("EnterOtp", "Login");
+            try
+            {
+                await _emailService.SendOtpAsync(displayName, user.Email, otp);
+                // Redirect directly to EnterOtp page
+                return RedirectToAction("EnterOtp", "Login");
+            }
+            catch (System.Net.Mail.SmtpException ex)
+            {
+                _logger.LogError(ex, "SMTP error while sending OTP to {Email}", user.Email);
+                ViewBag.Warning = "Unable to send OTP email right now. Please check your internet connection and try again.";
+                return View(model);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error while sending OTP to {Email}", user.Email);
+                ViewBag.Warning = "Network error. Please check your internet connection and try again.";
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while sending OTP to {Email}", user.Email);
+                ViewBag.Warning = "Something went wrong while sending the OTP. Please try again later.";
+                return View(model);
+            }
         }
 
         [HttpGet]

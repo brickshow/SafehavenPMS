@@ -106,9 +106,9 @@
             </div>
 
            <!-- Sort by -->
-            <div class="sort-by d-flex align-items-center">
+            @* <div class="sort-by d-flex align-items-center">
                 <form asp-controller="Assessment" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
-                    @* preserve existing query params so logic is unchanged *@
+
                     <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                     <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                     <input type="hidden" name="status" value="@ViewBag.Status" />
@@ -118,6 +118,22 @@
                         <option value="@(null)" selected="@(string.IsNullOrEmpty(ViewBag.SortBy as string) || ViewBag.SortBy == "")">Sort by</option>
                         <option value="Name" selected="@(ViewBag.SortBy as string == "Name")">Name</option>
                         <option value="ScheduledDate" selected="@(ViewBag.SortBy as string == "ScheduledDate")">Scheduled Date</option>
+                    </select>
+                </form>
+            </div> *@
+
+            <div class="sort-by d-flex align-items-center">
+                <form asp-controller="Assessment" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                    @* preserve existing query params so logic is unchanged *@
+                    <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                    <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
+                    <input type="hidden" name="status" value="@ViewBag.Status" />
+                    <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
+
+                    <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
+                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : null)'>Sort by</option>
+                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : null)'>Name</option>
+                        <option value="ScheduledDate" selected='@(ViewBag.SortBy == "ScheduledDate" ? "selected" : null)'>Scheduled Date</option>
                     </select>
                 </form>
             </div>
@@ -425,5 +441,32 @@
         // add active to clicked
         this.classList.add('active');
       });
+    });
+</script>
+
+<script>
+    // Persist SortBy selection across sessions for Assessment Index
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            var select = document.querySelector('form#sortForm select[name="sortBy"]');
+            if (!select) return;
+
+            var KEY = 'assessment_sortBy_v1';
+            var serverValue = '@(ViewBag.SortBy ?? "")';
+            var stored = localStorage.getItem(KEY);
+
+            if (serverValue && serverValue.length > 0) {
+                select.value = serverValue;
+                localStorage.setItem(KEY, serverValue);
+            } else if (stored && stored.length > 0) {
+                select.value = stored;
+            }
+
+            select.addEventListener('change', function () {
+                localStorage.setItem(KEY, select.value || '');
+            });
+        } catch (e) {
+            console.warn('Assessment SortBy localStorage sync failed', e);
+        }
     });
 </script>

@@ -79,18 +79,29 @@ namespace SafehavenPMS.Controllers
 
 
             // Apply sorting
-            if (string.IsNullOrEmpty(sortOrder))
+            if (string.IsNullOrEmpty(sortBy))
             {
                 // Default: newest to oldest by CreatedAt
                 query = query.OrderByDescending(s => s.CreatedAt);
             }
-            else
+            else if (string.Equals(sortBy, "Name", StringComparison.OrdinalIgnoreCase))
             {
-                // Toggle by Firstname
                 query = sortOrder == "ascending"
                     ? query.OrderBy(s => s.Firstname).ThenBy(s => s.Lastname)
-                    : query.OrderByDescending(s => s.Firstname).ThenBy(s => s.Lastname);
+                    : query.OrderByDescending(s => s.Firstname).ThenByDescending(s => s.Lastname);
             }
+            else if (string.Equals(sortBy, "DateAdded", StringComparison.OrdinalIgnoreCase))
+            {
+                query = sortOrder == "ascending"
+                    ? query.OrderBy(s => s.CreatedAt)
+                    : query.OrderByDescending(s => s.CreatedAt);
+            }
+            else
+            {
+                // Fallback: default to newest first
+                query = query.OrderByDescending(s => s.CreatedAt);
+            }
+
 
             // Calculate total pages for filtered results
             int totalItems = await query.CountAsync();

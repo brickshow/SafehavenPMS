@@ -18,14 +18,16 @@
                 </div>
                 <div class="d-flex flex-row align-items-center gap-2 ms-3">
                     <select name="orderStatus" class="form-select form-select-sm" style="min-width:140px;" onchange="this.form.submit()">
-                        <option value="" selected="@(string.IsNullOrEmpty(ViewBag.OrderStatus as string) ? "selected" : null)">All Statuses</option>
-                        <option value="Pending" selected="@(ViewBag.OrderStatus == "Pending" ? "selected" : null)">Pending</option>
-                        <option value="Taken" selected="@(ViewBag.OrderStatus == "Taken" ? "selected" : null)">Taken</option>
-                        <option value="Refused" selected="@(ViewBag.OrderStatus == "Refused" ? "selected" : null)">Refused</option>
+                        <option value="" selected="@((ViewBag.OrderStatus == null || ViewBag.OrderStatus == "") ? "selected" : "")">All Statuses</option>
+                        <option value="Active" selected="@(ViewBag.OrderStatus == "Active" ? "selected" : "")">Active</option>
+                        <option value="NotStarted" selected="@(ViewBag.OrderStatus == "NotStarted" ? "selected" : "")">Not Started</option>
+                        <option value="InProgress" selected="@(ViewBag.OrderStatus == "InProgress" ? "selected" : "")">In Progress</option>
+                        <option value="Completed" selected="@(ViewBag.OrderStatus == "Completed" ? "selected" : "")">Completed</option>
+                        <option value="Discontinued" selected="@(ViewBag.OrderStatus == "Discontinued" ? "selected" : "")">Discontinued</option>
                     </select>
                     <select name="orderSortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
-                        <option value="" selected="@(ViewBag.OrderSortBy == "" ? "selected" : null)">Sort by</option>
-                        <option value="Name" selected="@(ViewBag.OrderSortBy == "Name" ? "selected" : null)">Name</option>
+                        <option value="" selected="@((ViewBag.OrderSortBy == null || ViewBag.OrderSortBy == "") ? "selected" : "")">Sort by</option>
+                        <option value="Name" selected="@(ViewBag.OrderSortBy == "Name" ? "selected" : "")">Name</option>
                     </select>
                     <input type="hidden" name="orderSortOrder" value="@(ViewBag.OrderSortOrder == "descending" ? "ascending" : "descending")" />
                 </div>
@@ -132,6 +134,8 @@
                     <h5 class="modal-title" id="medicineDetailsLabel-@order.MedicationOrderId">Medicine Order Details</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
+
+
 
                 @* 🔹 Modal Body *@
                 <div class="modal-body">
@@ -245,3 +249,49 @@
         text-decoration: none;
     }
 </style>
+
+<script>
+    // Persist orders tab status and sort selections across refreshes
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            var statusSel = document.querySelector('select[name="orderStatus"]');
+            var sortSel = document.querySelector('select[name="orderSortBy"]');
+            var statusKEY = 'medication_order_status_v1';
+            var sortKEY = 'medication_order_sortBy_v1';
+
+            if (statusSel) {
+                var serverStatus = '@(ViewBag.OrderStatus ?? "")';
+                var storedStatus = localStorage.getItem(statusKEY);
+                if (serverStatus && serverStatus.length > 0) {
+                    statusSel.value = serverStatus;
+                    localStorage.setItem(statusKEY, serverStatus);
+                } else if (storedStatus && storedStatus.length > 0) {
+                    statusSel.value = storedStatus;
+                } else {
+                    statusSel.value = '';
+                }
+                statusSel.addEventListener('change', function(){
+                    localStorage.setItem(statusKEY, statusSel.value || '');
+                });
+            }
+
+            if (sortSel) {
+                var serverSort = '@(ViewBag.OrderSortBy ?? "")';
+                var storedSort = localStorage.getItem(sortKEY);
+                if (serverSort && serverSort.length > 0) {
+                    sortSel.value = serverSort;
+                    localStorage.setItem(sortKEY, serverSort);
+                } else if (storedSort && storedSort.length > 0) {
+                    sortSel.value = storedSort;
+                } else {
+                    sortSel.value = '';
+                }
+                sortSel.addEventListener('change', function(){
+                    localStorage.setItem(sortKEY, sortSel.value || '');
+                });
+            }
+        } catch (e) {
+            console.warn('Medication orders filter persistence failed', e);
+        }
+    });
+</script>

@@ -15,28 +15,24 @@
             <div class="top-content m-2 d-flex justify-content-between align-content-center">
                 <div class="top-left-corner d-flex flex-row align-items-center gap-2">
                     @* Search bar *@
-                    <form asp-controller="ServiceType" asp-action="Search" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
+                    <form asp-controller="Services" asp-action="Index" method="get" class="d-flex flex-row justify-content-center m-1 gap-2">
                         <div class="search-input-wrapper d-flex flex-row gap-2">
                             <i class='bx bx-search search-icon'></i>
-                            <input name="searchQuery" class="form-control search-input" placeholder="Search patients..." />
+                            <input name="searchQuery" value="@ViewBag.SearchQuery" class="form-control search-input" placeholder="Search services or role..." />
                         </div>
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
 
                     <!-- Sort by -->
                     <div class="sort-by d-flex align-items-center">
-                        <form asp-controller="Patient" asp-action="SortBy" method="get" id="sortForm">
+                        <form asp-controller="Services" asp-action="Index" method="get" id="sortForm" class="d-flex align-items-center gap-2">
+                            <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
+                            <input type="hidden" name="pageSize" value="@ViewBag.PageSize" />
                             <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
-                            <button type="submit" class="sort-button d-flex align-items-center justify-content-between">
-                                <span class="me-2">Sort by</span>
-                                <div class="number-box d-flex align-items-center gap-1">
-                                    <div class="numbers d-flex flex-column justify-content-center align-items-center">
-                                        <span class="number">A</span>
-                                        <span class="number">Z</span>
-                                    </div>
-                                    <i class='bx bx-up-arrow-alt @(ViewBag.SortOrder == "descending" ? "rotate-180" : "")'></i>
-                                </div>
-                            </button>
+                            <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
+                                <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : null)'>Sort by</option>
+                                <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : null)'>Name</option>
+                            </select>
                         </form>
                     </div>
                 </div>
@@ -115,9 +111,9 @@
     <div class="d-flex justify-content-between align-items-center m-2 mt-4">
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Show</span>
-            <form asp-controller="Patient" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <form asp-controller="Services" asp-action="Index" method="get" class="d-flex align-items-center gap-2">
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
-                <input type="hidden" name="status" value="@ViewBag.Status" />
+                <input type="hidden" name="sortBy" value="@ViewBag.SortBy" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                 <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
                     <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
@@ -129,9 +125,9 @@
             </form>
         </div>
 
-        <div class="d-flex align-items-center justify-content-center">
+        @* <div class="d-flex align-items-center justify-content-center">
             <a class="print-button d-flex justify-content-center align-items-center text-decoration-none" onclick="window.print()"><i class="bx bx-printer"></i></a>
-        </div>
+        </div> *@
     </div>
 
     <div class="table-responsive-custom">
@@ -199,12 +195,12 @@
     <div class="bot-content py-3">
         <div class="d-flex justify-content-between align-items-center px-3">
             <div style="opacity:.5;">
-                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalPatientCount ?? 0)</span>
+                <span>Showing @(Model?.Count() ?? 0) out of @(ViewBag.TotalServices ?? 0)</span>
             </div>
             <nav aria-label="Clinical staff list pagination">
                 <ul class="pagination mb-0">
                     <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Previous">
+                        <a class="page-link" href="@Url.Action("Index", "Services", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, sortBy = ViewBag.SortBy })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
@@ -217,12 +213,12 @@
                         @for (int i = startPage; i <= endPage; i++)
                         {
                             <li class="page-item @(currentPage == i ? "active" : "")">
-                                <a class="page-link" href="@Url.Action("Index", "Patient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })">@i</a>
+                                <a class="page-link" href="@Url.Action("Index", "Services", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, sortBy = ViewBag.SortBy })">@i</a>
                             </li>
                         }
                     }
                     <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "Patient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = ViewBag.Status })" aria-label="Next">
+                        <a class="page-link" href="@Url.Action("Index", "Services", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, sortBy = ViewBag.SortBy })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>

@@ -632,7 +632,7 @@ namespace SafehavenPMS.Controllers
 
             // Populate doctor list for select
             var staffList = await _context.ClinicalStaffs
-                .Select(s => new { s.ClinicalStaffID, FullName = (s.Firstname + " " + s.Lastname) })
+                .Select(s => new { s.ClinicalStaffID, FullName = (s.Firstname + " " + s.Lastname + " - " + s.Position) })
                 .ToListAsync();
 
             ViewBag.StaffList = new SelectList(staffList, "ClinicalStaffID", "FullName", vm.ClinicalStaffID);

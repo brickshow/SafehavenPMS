@@ -48,7 +48,8 @@ namespace SafehavenPMS.Controllers
             int? pageSize = 10,
             string searchQuery = null,
             string status = null,
-            string sortOrder = null)
+            string sortOrder = null,
+            string sortBy = null)
         {
             var query = _context.Patients
                 .Include(c => c.ClinicalStaffPatients)
@@ -105,6 +106,7 @@ namespace SafehavenPMS.Controllers
             ViewBag.SearchQuery = searchQuery;
             ViewBag.Status = status;
             ViewBag.SortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder;
+            ViewBag.SortBy = sortBy ?? "";
 
             // ?? Apply search filter
             if (!string.IsNullOrEmpty(searchQuery))
@@ -133,17 +135,28 @@ namespace SafehavenPMS.Controllers
                 // Leave ViewBag.Status as-is (null/empty) so the UI still shows "All Statuses"
             }
 
-            // ?? Apply sorting
-            if (sortOrder == null)
+            // ?? Apply sorting (by field then order)
+            var effectiveSortBy = string.IsNullOrEmpty(sortBy) ? "DateAdded" : sortBy;
+            var effectiveOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder.ToLower();
+
+            if (string.Equals(effectiveSortBy, "Name", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.OrderByDescending(p => p.CreatedAt);
-            }
-            else
-            {
-                query = sortOrder == "ascending"
+                query = effectiveOrder == "ascending"
                     ? query.OrderBy(p => p.Firstname).ThenBy(p => p.Lastname)
                     : query.OrderByDescending(p => p.Firstname).ThenByDescending(p => p.Lastname);
             }
+            else if (string.Equals(effectiveSortBy, "DateAdded", StringComparison.OrdinalIgnoreCase))
+            {
+                query = effectiveOrder == "ascending"
+                    ? query.OrderBy(p => p.CreatedAt)
+                    : query.OrderByDescending(p => p.CreatedAt);
+            }
+            else
+            {
+                // Default sort if no recognized sort option is provided
+                query = query.OrderByDescending(p => p.CreatedAt);
+            }
+
 
             // ?? Pagination
             int totalItems = await query.CountAsync();
@@ -175,11 +188,12 @@ namespace SafehavenPMS.Controllers
         }
 
         [HttpGet]
-        public IActionResult SortBy(string sortOrder)
+        public IActionResult SortBy(string sortOrder, string sortBy)
         {
             return RedirectToAction("Index", new
             {
                 sortOrder,
+                sortBy,
                 page = 1,
                 pageSize = ViewBag.PageSize ?? 10,
                 searchQuery = ViewBag.SearchQuery,
@@ -267,7 +281,7 @@ namespace SafehavenPMS.Controllers
                 return View(model);
             }
 
-            if (model.DateOfBirth > DateTime.Now)
+            if (model.DateOfBirth >= DateTime.Now)
             {
                 TempData["Message"] = "Please provide a valid Birthdate";
                 return View();
@@ -583,7 +597,7 @@ namespace SafehavenPMS.Controllers
             return View(patients);
         }
 
-         private string GetCurrentUserName()
+        private string GetCurrentUserName()
         {
             // Try to get display name first
             var name = User?.FindFirst(ClaimTypes.Name)?.Value;

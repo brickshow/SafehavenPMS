@@ -145,12 +145,10 @@
                     <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
 
                     <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
-                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
-                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
-                        <option value="DateAdded" selected='@(ViewBag.SortBy == "DateAdded" ? "selected" : "")'>Date Added</option>
+                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : null)'>Sort by</option>
+                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : null)'>Name</option>
+                        <option value="DateAdded" selected='@(ViewBag.SortBy == "DateAdded" ? "selected" : null)'>Date Added</option>
                     </select>
-
-                    
                 </form>
             </div>
 
@@ -516,6 +514,16 @@
             statusSelect.value = serverStatus;
         } catch (e) {
             console.warn('Could not set status select value', e);
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        var sortBySelect = document.querySelector('select[name="sortBy"]');
+        if (!sortBySelect) return;
+        var serverSortBy = '@(ViewBag.SortBy ?? "")';
+        try {
+            sortBySelect.value = serverSortBy;
+        } catch (e) {
+            console.warn('Could not set sortBy select value', e);
         }
     });
 </script>

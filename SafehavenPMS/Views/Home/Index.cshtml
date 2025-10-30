@@ -110,8 +110,8 @@
             </div>
         </div>
         <div class="col-12 col-lg-6">
-            <div class="panel-body d-flex align-items-center justify-content-center">
-                @await Html.PartialAsync("_CalendarPartial")
+            <div class="panel-body">
+                <div id="appointmentCalendar"></div>
             </div>
         </div>
     </div>
@@ -271,5 +271,92 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('patientsPieChart');
   canvas.parentElement.style.minHeight = '220px';
   // -------------------------------------------------------------------
+
+  // --- Appointments Calendar (FullCalendar) ---
+  try {
+      const calEl = document.getElementById('appointmentCalendar');
+      if (calEl && window.FullCalendar) {
+          const calendar = new FullCalendar.Calendar(calEl, {
+              initialView: 'dayGridMonth',
+              height: 'auto',
+              headerToolbar: {
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'dayGridMonth,timeGridWeek,timeGridDay'
+              },
+              events: '/Appointment/GetAppointments',
+              selectable: true,
+               eventContent: function(arg){
+                   var span = document.createElement('span');
+                   span.className = 'cal-badge';
+                   // keep title as tooltip for accessibility
+                   if (arg.event && arg.event.title) span.title = arg.event.title;
+                   return { domNodes: [span] };
+               },
+              dayCellDidMount: function (info) {
+                  const today = new Date();
+                  const d = info.date;
+                  if (d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate()) {
+                      info.el.style.backgroundColor = '#fff4e5';
+                      info.el.style.border = '2px solid #00A3B4';
+                      info.el.style.borderRadius = '8px';
+                  }
+              }
+          });
+          calendar.render();
+      }
+  } catch (e) {
+      console.warn('Calendar init failed', e);
+  }
 });
 </script>
+
+<style>
+    /* Calendar styles copied to match _Calendar.cshtml design */
+    #appointmentCalendar {
+        max-width: 100%;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    .fc .fc-toolbar.fc-header-toolbar {
+        background: linear-gradient(to right, #069FB2, #058594);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    .fc .fc-toolbar-title {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    .fc .fc-daygrid-day-number {
+        color: #015F6B;
+        font-weight: 600;
+    }
+    .fc .fc-scrollgrid,
+    .fc .fc-scrollgrid td,
+    .fc .fc-daygrid-day {
+        border-color: #b3dfe5;
+    }
+    .fc .fc-daygrid-day-frame {
+        background-color: #f8fcfc;
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: #015F6B;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+     /* small badge for events */
+     .cal-badge{
+         display:inline-block;
+         width:10px;
+         height:10px;
+         border-radius:50%;
+         background: linear-gradient(to right, #069FB2, #058594);
+         box-shadow: 0 0 0 1px #ffffff; /* tiny outline for contrast */
+         margin: 2px 2px 0 0;
+     }
+</style>

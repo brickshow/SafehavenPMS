@@ -21,14 +21,63 @@ namespace SafehavenPMS.Controllers
         }
 
         // GET: Services
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string searchQuery = null,
+            string sortBy = null,
+            string sortOrder = null,
+            int page = 1,
+            int pageSize = 10)
         {
-            var services = await _context.Services
+            // normalize
+            sortOrder = string.IsNullOrEmpty(sortOrder) ? "descending" : sortOrder.ToLower();
+            bool asc = sortOrder == "ascending";
+
+            var query = _context.Services
                 .Where(s => !s.IsArchived)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var s = searchQuery.Trim().ToLower();
+                query = query.Where(x =>
+                    (x.ServiceName ?? "").ToLower().Contains(s) ||
+                    (x.AssignedRole ?? "").ToLower().Contains(s));
+            }
+
+            // sorting: default by CreatedAt if none, else by Name
+            if (string.Equals(sortBy, "Name", StringComparison.OrdinalIgnoreCase))
+            {
+                query = asc ? query.OrderBy(x => x.ServiceName) : query.OrderByDescending(x => x.ServiceName);
+            }
+            else
+            {
+                query = asc ? query.OrderBy(x => x.CreatedAt) : query.OrderByDescending(x => x.CreatedAt);
+            }
+
+            int totalItems = await query.CountAsync();
+            int totalPages = (pageSize > 0) ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+            page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+            List<Service> services;
+            if (pageSize == 0)
+            {
+                services = await query.ToListAsync();
+            }
+            else
+            {
+                services = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            }
+
+            // viewbags for view state
+            ViewBag.SearchQuery = searchQuery;
+            ViewBag.SortBy = sortBy ?? "";
+            ViewBag.SortOrder = sortOrder;
+            ViewBag.PageSize = pageSize;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalServices = totalItems;
 
             ViewBag.ServiceTypes = new SelectList(await _context.ServiceTypes.ToListAsync(), "ServiceTypeId", "ServiceName");
-            ViewBag.TotalServices = services.Count;
             return View(services);
         }
 

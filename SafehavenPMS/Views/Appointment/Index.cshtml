@@ -215,6 +215,22 @@
         font-weight: 600;
         font-size: 0.95rem;
     }
+
+    /* Adjust the height of day cells in month view */
+    .fc-daygrid-day-frame {
+        min-height: 200px !important; /* Adjust this value as desired (default ~80px) */
+    }
+
+    /* Optional: adjust event spacing inside the cells */
+    .fc-daygrid-event {
+        margin: 2px 0 !important;
+    }
+
+    /* For week and day (timeGrid) views, adjust slot height */
+    .fc-timegrid-slot {
+        height: 60px !important; /* Default is around 40px */
+    }
+
 </style>
 
 <script>
@@ -280,8 +296,6 @@
                             background-color:${bgColor};
                             width:100%;border-radius:6px;padding:2px;">
                             <strong>${info.event.extendedProps.visitType}</strong><br/>
-                            <small>Doctor: ${info.event.extendedProps.doctorName}</small><br/>
-                            <small>Patient: ${info.event.extendedProps.patientName}</small><br/>
                             <small>${info.event.extendedProps.time}</small>
                         </div>`
                 };

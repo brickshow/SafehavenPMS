@@ -32,9 +32,9 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <!-- CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="~/css/bootstrap.min.css" rel="stylesheet" />
     <!-- JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="~/js/bootstrap.bundle.min.js"></script>
 
     @* Icons8 *@
     <link rel="stylesheet" href="https://cdn.lineicons.com/2.0/LineIcons.css">
@@ -149,6 +149,25 @@
                 // fallback to Home
                 return "/Home/Index/";
             }
+
+            // Active state helpers for navigation highlighting
+            private string CurrentController => ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+            private string CurrentAction => ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+            private bool IsActiveController(params string[] controllers)
+            {
+                if (controllers == null || controllers.Length == 0) return false;
+                foreach (var c in controllers)
+                {
+                    if (string.Equals(CurrentController, c, StringComparison.OrdinalIgnoreCase)) return true;
+                }
+                return false;
+            }
+            private string ActiveLinkIf(string controller, string action = null)
+            {
+                bool match = string.Equals(CurrentController, controller, StringComparison.OrdinalIgnoreCase)
+                             && (action == null || string.Equals(CurrentAction, action, StringComparison.OrdinalIgnoreCase));
+                return match ? "active-link" : string.Empty;
+            }
         }
 
          @* @if (User.IsInRole("Family"))
@@ -196,7 +215,7 @@
             @* Patient Management *@
             @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
             {
-                <li class="navigation">
+                <li class="navigation @(IsActiveController("Patient","ProgressNote") ? "active open" : "")">
                     <a href="#" class="nav-parent">
                         <i class='bx bxs-user'></i>
                         <span class="link_name">Patient Management</span>
@@ -207,7 +226,7 @@
                         @if (HasAnyRole("Admin","Staff", "Recovery Coach"))
                         {
                             <li>
-                                <a asp-controller="Patient" asp-action="AddNewPatient">
+                                <a asp-controller="Patient" asp-action="AddNewPatient" class="@ActiveLinkIf("Patient","AddNewPatient")">
                                     <span>Register Patient</span>
                                 </a>
                             </li>
@@ -217,7 +236,7 @@
                         @if (HasAnyRole("Admin","Physician","Psychiatrist","Nurse","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
                         {
                             <li>
-                                <a asp-controller="Patient" asp-action="Index">
+                                <a asp-controller="Patient" asp-action="Index" class="@ActiveLinkIf("Patient","Index")">
                                     <span>Patient List</span>
                                 </a>
                             </li>
@@ -227,7 +246,7 @@
                         @if (HasAnyRole("Admin","Physician","Psychiatrist","Recovery Coach","Social Worker","Occupational Therapist","Psychologist"))
                         {
                             <li>
-                                <a asp-controller="ProgressNote" asp-action="Index">
+                                <a asp-controller="ProgressNote" asp-action="Index" class="@ActiveLinkIf("ProgressNote","Index")">
                                     <span>Progress Notes</span>
                                 </a>
                             </li>
@@ -238,7 +257,7 @@
 
            @if (HasAnyRole("Admin","Staff","Doctor","Physician","Psychiatrist","Recovery Coach"))
             {
-                <li class="navigation">
+                <li class="navigation @(IsActiveController("Intake","Approval","Admission","DischargedPatient") ? "active open" : "")">
                     <a href="#" class="nav-parent"> 
                         <i class='bx bx-detail'></i>
                         <span class="link_name">Patient Movements</span>
@@ -247,18 +266,18 @@
                     <ul class="submenu">
                         @if (HasAnyRole("Recovery Coach"))
                         {
-                            <li><a asp-controller="Intake" asp-action="Index"><span>Intake</span></a></li>
+                            <li><a asp-controller="Intake" asp-action="Index" class="@ActiveLinkIf("Intake","Index")"><span>Intake</span></a></li>
                         }
                         else
                         {
                             @* Show Approval only for Admin *@
                             @if (HasAnyRole("Admin"))
                             {
-                                <li><a asp-controller="Approval" asp-action="Index"><span>Approval</span></a></li>
+                                <li><a asp-controller="Approval" asp-action="Index" class="@ActiveLinkIf("Approval","Index")"><span>Approval</span></a></li>
                             }
 
-                            <li><a asp-controller="Admission" asp-action="Index"><span>Admission</span></a></li>
-                            <li><a asp-controller="DischargedPatient" asp-action="Index"><span>Discharge</span></a></li>
+                            <li><a asp-controller="Admission" asp-action="Index" class="@ActiveLinkIf("Admission","Index")"><span>Admission</span></a></li>
+                            <li><a asp-controller="DischargedPatient" asp-action="Index" class="@ActiveLinkIf("DischargedPatient","Index")"><span>Discharge</span></a></li>
                         }
                     </ul>
                 </li>
@@ -266,28 +285,28 @@
 
             @if (HasAnyRole("Admin","Physician","Psychiatrist","Recovery Coach"))
             {
-                <li class="navigation">
+                <li class="navigation @(IsActiveController("Appointment","Scheduling") ? "active open" : "")">
                     <a href="#" class="nav-parent">
                         <i class='bx bxs-calendar'></i>
                         <span class="link_name">Scheduling</span>
                         <i class='bx bx-chevron-down caret'></i>
                     </a>
                     <ul class="submenu">
-                        <li><a asp-controller="Appointment" asp-action="Index"><span>Doctor's Calendar</span></a></li>
-                        <li><a asp-controller="Scheduling" asp-action="Index"><span>General Scheduling</span></a></li>
+                        <li><a asp-controller="Appointment" asp-action="Index" class="@ActiveLinkIf("Appointment","Index")"><span>Doctor's Calendar</span></a></li>
+                        <li><a asp-controller="Scheduling" asp-action="Index" class="@ActiveLinkIf("Scheduling","Index")"><span>General Scheduling</span></a></li>
                     </ul>
                 </li>
             }
             else if (HasAnyRole("Social Worker", "Occupational Therapist", "Psychologist"))
             {
-                <li class="navigation">
+                <li class="navigation @(IsActiveController("Appointment") ? "active open" : "")">
                     <a href="#" class="nav-parent">
                         <i class='bx bxs-calendar'></i>
                         <span class="link_name">Scheduling</span>
                         <i class='bx bx-chevron-down caret'></i>
                     </a>
                     <ul class="submenu">
-                        <li><a asp-controller="Appointment" asp-action="Index"><span>Doctor's Calendar</span></a></li>
+                        <li><a asp-controller="Appointment" asp-action="Index" class="@ActiveLinkIf("Appointment","Index")"><span>Doctor's Calendar</span></a></li>
                     </ul>
                 </li>
 }
@@ -296,7 +315,7 @@
             @* Assessment: clinicians only *@
             @if (HasAnyRole("Admin", "Doctor", "Physician", "Psychiatrist"))
             {
-                <li class="navigation">
+                <li class="navigation @(IsActiveController("Assessment","PsychiatricAssessment") ? "active open" : "")">
                     <a href="#" class="nav-parent">
                         <i class='bx bx-clipboard'></i>
                         <span class="link_name">Assessment</span>
@@ -307,7 +326,7 @@
                         @if (HasAnyRole("Admin", "Doctor", "Physician", "Nurse"))
                         {
                             <li>
-                                <a asp-controller="Assessment" asp-action="Index">
+                                <a asp-controller="Assessment" asp-action="Index" class="@ActiveLinkIf("Assessment","Index")">
                                     <span>Initial Assessment</span>
                                 </a>
                             </li>
@@ -317,7 +336,7 @@
                         @if (HasAnyRole("Admin", "Doctor", "Psychiatrist"))
                         {
                             <li>
-                                <a asp-controller="PsychiatricAssessment" asp-action="Index">
+                                <a asp-controller="PsychiatricAssessment" asp-action="Index" class="@ActiveLinkIf("PsychiatricAssessment","Index")">
                                     <span>Psychiatric Assessment</span>
                                 </a>
                             </li>
@@ -387,15 +406,15 @@
                 @* Administration / Services: Admin + Setup roles *@
                 @if (HasAnyRole("Admin"))
                 {
-                    <li class="navigation">
+                    <li class="navigation @(IsActiveController("Services","BillingSetup") ? "active open" : "")">
                         <a href="#" class="nav-parent">
                             <i class='bx bxs-cog'></i> 
                             <span class="link_name">Administration</span>
                             <i class='bx bx-chevron-down caret'></i>
                         </a>
                         <ul class="submenu">
-                            <li><a asp-controller="Services" asp-action="Index"><span>Services</span></a></li>
-                            <li><a asp-controller="BillingSetup" asp-action="Index"><span>Setup Billing</span></a></li>
+                            <li><a asp-controller="Services" asp-action="Index" class="@ActiveLinkIf("Services","Index")"><span>Services</span></a></li>
+                            <li><a asp-controller="BillingSetup" asp-action="Index" class="@ActiveLinkIf("BillingSetup","Index")"><span>Setup Billing</span></a></li>
                         </ul>
                     </li>
 

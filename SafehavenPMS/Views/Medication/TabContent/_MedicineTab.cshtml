@@ -16,7 +16,7 @@
             </div>
             <div>
                 <select name="medSortBy" class="form-select form-select-sm" style="min-width:160px; max-width:200px;" onchange="this.form.submit()">
-                    <option value="" selected='@(ViewBag.MedSortBy == "" ? "selected" : "")'>Sort by</option>
+                    <option value="" selected='@((ViewBag.MedSortBy == null || ViewBag.MedSortBy == "") ? "selected" : "")'>Sort by</option>
                     <option value="Name" selected='@(ViewBag.MedSortBy == "Name" ? "selected" : "")'>Name</option>
                     <option value="DateAdded" selected='@(ViewBag.MedSortBy == "DateAdded" ? "selected" : "")'>Date Added</option>
                 </select>
@@ -241,5 +241,57 @@
         document.getElementById("medicineToDelete").value = medId;
 
         console.log(medId);
+    });
+</script>
+
+<script>
+    // Persist medicine tab sortBy selection across refreshes
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            var select = document.querySelector('select[name="medSortBy"]');
+            if (!select) return;
+
+            var KEY = 'medication_med_sortBy_v1';
+            var serverValue = '@(ViewBag.MedSortBy ?? "")';
+            var stored = localStorage.getItem(KEY);
+
+            if (serverValue && serverValue.length > 0) {
+                select.value = serverValue;
+                localStorage.setItem(KEY, serverValue);
+            } else if (stored && stored.length > 0) {
+                select.value = stored;
+            } else {
+                // Ensure default is selected when no value
+                select.value = '';
+            }
+
+            select.addEventListener('change', function () {
+                localStorage.setItem(KEY, select.value || '');
+            });
+        } catch (e) {
+            console.warn('Medicine sortBy persistence failed', e);
+        }
+    });
+    
+    // Optionally persist medSearch
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            var input = document.querySelector('input[name="medSearch"]');
+            if (!input) return;
+            var KEY = 'medication_med_search_v1';
+            var serverValue = '@(ViewBag.MedSearch ?? "")';
+            var stored = localStorage.getItem(KEY);
+            if (serverValue && serverValue.length > 0) {
+                input.value = serverValue;
+                localStorage.setItem(KEY, serverValue);
+            } else if (stored && stored.length > 0) {
+                input.value = stored;
+            }
+            input.addEventListener('input', function(){
+                localStorage.setItem(KEY, input.value || '');
+            });
+        } catch (e) {
+            console.warn('Medicine search persistence failed', e);
+        }
     });
 </script>

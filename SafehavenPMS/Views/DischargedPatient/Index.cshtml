@@ -20,10 +20,10 @@
                             <input name="searchQuery" value="@(ViewBag.SearchQuery ?? "")" class="form-control search-input" placeholder="Search patients..." />
                         </div>
                         <input type="hidden" name="status" value="Discharged" />
+                        <input type="hidden" name="sortBy" value="@ViewBag.SortBy" />
+                        <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
                         <button type="submit" class="btn-custom" style="height:30px">Search</button>
                     </form>
-
-                  
                 </div>
             </div>
         </div>
@@ -76,6 +76,7 @@
                 <input type="hidden" name="searchQuery" value="@ViewBag.SearchQuery" />
                 <input type="hidden" name="status" value="@ViewBag.Status" />
                 <input type="hidden" name="sortOrder" value="@ViewBag.SortOrder" />
+                        <input type="hidden" name="sortBy" value="@ViewBag.SortBy" />
                 <select class="form-select form-select-sm" name="pageSize" style="width: auto;" onchange="this.form.submit()">
                     <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
                     <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
@@ -87,8 +88,7 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-between">
-        <!-- Sort by -->
-        <!-- Sort by -->
+            
             <div class="sort-by d-flex align-items-center">
                 <form asp-controller="DischargedPatient" asp-action="SortBy" method="get" id="sortForm" class="d-flex align-items-center gap-2">
                     @* preserve existing query params so logic is unchanged *@
@@ -98,13 +98,13 @@
                     <input type="hidden" name="sortOrder" value="@(ViewBag.SortOrder == "descending" ? "ascending" : "descending")" />
 
                     <select name="sortBy" class="form-select form-select-sm" style="min-width:160px;" onchange="this.form.submit()">
-                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : "")'>Sort by</option>
-                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : "")'>Name</option>
-                        <option value="DateAdded" selected='@(ViewBag.SortBy == "DateAdded" ? "selected" : "")'>Date Added</option>
+                        <option value="" selected='@(ViewBag.SortBy == "" ? "selected" : null)'>Sort by</option>
+                        <option value="Name" selected='@(ViewBag.SortBy == "Name" ? "selected" : null)'>Name</option>
+                        <option value="DateAdded" selected='@(ViewBag.SortBy == "DateAdded" ? "selected" : null)'>Discharge Date</option>
                     </select>
                 </form>
             </div>
-    </div>
+        </div>
     
 
         @* <div class="d-flex align-items-center justify-content-center">
@@ -194,7 +194,7 @@
             <nav aria-label="Clinical staff list pagination">
                 <ul class="pagination mb-0">
                     <li class="page-item @(ViewBag.CurrentPage == null || (int)ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = "Discharged" })" aria-label="Previous">
+                        <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage - 1 : 1), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, sortBy = ViewBag.SortBy, status = "Discharged" })" aria-label="Previous">
                             <i class='bx bx-chevron-left fs-5'></i>
                         </a>
                     </li>
@@ -207,12 +207,12 @@
                         @for (int i = startPage; i <= endPage; i++)
                         {
                             <li class="page-item @(currentPage == i ? "active" : "")">
-                                <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = "Discharged" })">@i</a>
+                                <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = i, pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, sortBy = ViewBag.SortBy, status = "Discharged" })">@i</a>
                             </li>
                         }
                     }
                     <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.TotalPages == null || (int)ViewBag.PageSize == 0 || (int)ViewBag.CurrentPage == (int)ViewBag.TotalPages) ? "disabled" : "")">
-                        <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, status = "Discharged" })" aria-label="Next">
+                        <a class="page-link" href="@Url.Action("Index", "DischargedPatient", new { page = (ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage + 1 : 2), pageSize = ViewBag.PageSize ?? 10, searchQuery = ViewBag.SearchQuery, sortOrder = ViewBag.SortOrder, sortBy = ViewBag.SortBy, status = "Discharged" })" aria-label="Next">
                             <i class='bx bx-chevron-right fs-5'></i>
                         </a>
                     </li>
@@ -437,4 +437,29 @@
         // Set the staff ID in the hidden input field inside the modal
         document.getElementById('staffIdToDelete').value = staffId;
       });
+
+    // Persist SortBy similarly to Patient Index: set from server, fallback to localStorage, no auto-submit
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            var select = document.querySelector('form#sortForm select[name="sortBy"]');
+            if (!select) return;
+
+            var KEY = 'discharged_sortBy_v2';
+            var serverValue = '@(ViewBag.SortBy ?? "")';
+            var stored = localStorage.getItem(KEY);
+
+            if (serverValue && serverValue.length > 0) {
+                select.value = serverValue;
+                localStorage.setItem(KEY, serverValue);
+            } else if (stored && stored.length > 0) {
+                select.value = stored;
+            }
+
+            select.addEventListener('change', function () {
+                localStorage.setItem(KEY, select.value || '');
+            });
+        } catch (e) {
+            console.warn('SortBy localStorage sync failed', e);
+        }
+    });
 </script>

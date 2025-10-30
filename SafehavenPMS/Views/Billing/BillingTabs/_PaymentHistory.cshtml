@@ -12,11 +12,20 @@
         <h5 class="mb-0">@(items.Count > 0 ? $"{items.Count} Payments" : "No payments found")</h5>
     </div>
 
-    <div class="row m-4 mb-3">
-        <div class="col-md-4 text-end">
-            <form method="get" asp-controller="Billing" asp-action="Index" class="d-flex justify-content-end gap-2">
-                <input name="q" class="form-control me-2" placeholder="Search by patient name" />
-                <button type="submit" class="btn btn-teal">Search</button>
+    <div class="row m-4 mb-3 align-items-end">
+        <div class="col-md-8">
+            <form method="get" asp-controller="Billing" asp-action="Index" class="row g-2 align-items-end">
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted">From</label>
+                    <input type="date" name="historyFrom" class="form-control" value="@((ViewBag.Filters?.historyFrom) ?? "")" />
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label small text-muted">To</label>
+                    <input type="date" name="historyTo" class="form-control" value="@((ViewBag.Filters?.historyTo) ?? "")" />
+                </div>
+                <div class="col-sm-4">
+                    <button type="submit" class="btn btn-teal w-100">Apply</button>
+                </div>
             </form>
         </div>
     </div>

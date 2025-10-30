@@ -11,11 +11,22 @@
     <div class="card-header table-header text-white">
         <h5 class="mb-0">@(payments.Count > 0 ? $"{payments.Count} Payments" : "No payments found")</h5>
     </div>
-    <div class="row m-4 mb-3">
-        <div class="col-md-4 text-end">
-            <form method="get" asp-controller="Billing" asp-action="Index" class="d-flex justify-content-end gap-2">
-                <input name="q" class="form-control me-2" placeholder="Search by patient name" />
+    <div class="row m-4 mb-3 align-items-center">
+        <div class="col-md-7">
+            <form method="get" asp-controller="Billing" asp-action="Index" class="d-flex gap-2">
+                <input name="paymentSearch" class="form-control" placeholder="Search ref, invoice, or patient" value="@((ViewBag.Filters?.paymentSearch) ?? "")" />
                 <button type="submit" class="btn btn-teal">Search</button>
+            </form>
+        </div>
+        <div class="col-md-5 text-end">
+            <form method="get" asp-controller="Billing" asp-action="Index" class="d-inline-flex align-items-center gap-2">
+                <input type="hidden" name="paymentSearch" value="@((ViewBag.Filters?.paymentSearch) ?? "")" />
+                <select name="paymentStatus" class="form-select form-select-sm" style="min-width:180px;" onchange="this.form.submit()">
+                    <option value="" selected="@(((string)ViewBag.Filters?.paymentStatus == null || (string)ViewBag.Filters?.paymentStatus == "") ? "selected" : null)">All Statuses</option>
+                    <option value="Pending Review" selected="@(((string)ViewBag.Filters?.paymentStatus) == "Pending Review" ? "selected" : null)">Pending Review</option>
+                    <option value="Verified" selected="@(((string)ViewBag.Filters?.paymentStatus) == "Verified" ? "selected" : null)">Verified</option>
+                    <option value="Rejected" selected="@(((string)ViewBag.Filters?.paymentStatus) == "Rejected" ? "selected" : null)">Rejected</option>
+                </select>
             </form>
         </div>
     </div>

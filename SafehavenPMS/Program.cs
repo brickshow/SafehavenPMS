@@ -130,5 +130,3 @@ app.MapControllerRoute(
     pattern: "{controller=Login}/{action=Login}/{id?}");
 app.MapHub<SafehavenPMS.Hubs.MessageHub>("/messageHub");
 app.Run();
-
-
