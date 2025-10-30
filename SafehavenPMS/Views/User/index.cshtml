@@ -60,12 +60,12 @@
                             <option value="Cashier" @(roleVal == "Cashier" ? "selected" : "")>Cashier</option>
                         </select> *@
 
-                        <div class="form-check d-flex align-items-center ms-1">
+                        @* <div class="form-check d-flex align-items-center ms-1">
                             <input class="form-check-input" type="checkbox" name="showInactive" value="1" id="showInactive" @(showInactiveVal == "1" ? "checked" : "") />
                             <label class="form-check-label ms-1" for="showInactive">Show inactive</label>
                         </div>
 
-                        <button type="submit" class="btn btn-outline-secondary">Filter</button>
+                        <button type="submit" class="btn btn-outline-secondary">Filter</button> *@
                     </form>
 
                 </div>
@@ -154,7 +154,7 @@
                     <tr>
                         <td colspan="8" class="text-center">No users found.</td>
                     </tr>
-                }
+                }    
                 else
                 {
                     int startRow = ((ViewBag.CurrentPage as int? ?? 1) - 1) * (ViewBag.PageSize as int? ?? Model.Count());
